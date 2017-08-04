@@ -9,16 +9,22 @@ public class Lexer {
 
   public ImmutableList<Token> tokenize(String sql) throws ParserException {
     ImmutableList.Builder<Token> builder = ImmutableList.builder();
-    String ident = "";
+    String literal = "";
     for (int i = 0; i < sql.length(); i++) {
       char c = sql.charAt(i);
       if (Tokens.DELIMITERS.contains(c)) {
-        if (ident.matches(Tokens.IDENT)) {
-          builder.add(new Token(ident));
-        } else if (!ident.isEmpty()) {
-          throw new ParserException("Invalid identifier '" + ident + "' (" + i + ").");
+        if (literal.matches(Tokens.IDENT)) {
+          builder.add(new Token(literal));
+        } else if (literal.matches(Tokens.STRING_LITERAL)) {
+          builder.add(new Token(literal));
+        } else if (literal.matches(Tokens.LONG_LITERAL)) {
+          builder.add(new Token(literal));
+        } else if (literal.matches(Tokens.DOUBLE_LITERAL)) {
+          builder.add(new Token(literal));
+        } else if (!literal.isEmpty()) {
+          throw new ParserException("Invalid literal '" + literal + "' (" + i + ").");
         }
-        ident = "";
+        literal = "";
         if (c == Tokens.LESS && i < sql.length() - 1 && sql.charAt(i + 1) == Tokens.EQ) {
           builder.add(new Token(Tokens.LEQ));
           i++;
@@ -29,7 +35,7 @@ public class Lexer {
           builder.add(new Token(String.valueOf(c)));
         }
       } else {
-        ident = ident + c;
+        literal = literal + c;
       }
     }
     return builder.build();

@@ -4,22 +4,22 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.cosyan.db.sql.SyntaxTree.AllColumns;
+import com.cosyan.db.sql.SyntaxTree.AsteriskExpression;
 import com.cosyan.db.sql.SyntaxTree.BinaryExpression;
-import com.cosyan.db.sql.SyntaxTree.ColumnAggr;
-import com.cosyan.db.sql.SyntaxTree.ColumnExpr;
-import com.cosyan.db.sql.SyntaxTree.ColumnRef;
+import com.cosyan.db.sql.SyntaxTree.DoubleLiteral;
 import com.cosyan.db.sql.SyntaxTree.Expression;
+import com.cosyan.db.sql.SyntaxTree.FuncCallExpression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
+import com.cosyan.db.sql.SyntaxTree.IdentExpression;
+import com.cosyan.db.sql.SyntaxTree.LongLiteral;
 import com.cosyan.db.sql.SyntaxTree.Node;
 import com.cosyan.db.sql.SyntaxTree.Select;
+import com.cosyan.db.sql.SyntaxTree.StringLiteral;
 import com.cosyan.db.sql.SyntaxTree.Table;
 import com.cosyan.db.sql.SyntaxTree.TableExpr;
 import com.cosyan.db.sql.SyntaxTree.TableRef;
 import com.cosyan.db.sql.SyntaxTree.UnaryExpression;
-import com.cosyan.db.sql.SyntaxTree.Where;
 import com.cosyan.db.sql.Tokens.Token;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
@@ -33,12 +33,16 @@ public class Parser {
     return parse(lexer.tokenize(sql));
   }
 
+  Expression parseExpression(String sql) throws ParserException {
+    return parseExpression(Iterators.peekingIterator(lexer.tokenize(sql).iterator()), 0);
+  }
+  
   public SyntaxTree parse(ImmutableList<Token> tokens) throws ParserException {
     return new SyntaxTree(parseTokens(Iterators.peekingIterator(tokens.iterator())));
   }
 
   private Node parseTokens(PeekingIterator<Token> tokens) throws ParserException {
-    if (tokens.peek().getString().equals(Tokens.SELECT)) {
+    if (tokens.peek().is(Tokens.SELECT)) {
       return parseSelect(tokens);
     }
     throw new ParserException("Syntax error.");
@@ -46,48 +50,65 @@ public class Parser {
 
   private Select parseSelect(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.SELECT);
-    ImmutableList<ColumnExpr> columns = parseColumns(tokens);
+    ImmutableList<Expression> columns = parseExprs(tokens, Tokens.FROM);
     Table table = parseTable(tokens);
-    Optional<Where> where;
-    if (tokens.peek().getString().equals(Tokens.WHERE)) {
-      where = Optional.of(parseWhere(tokens));
+    Optional<Expression> where;
+    if (tokens.peek().is(Tokens.WHERE)) {
+      tokens.next();
+      where = Optional.of(parseExpression(tokens, 0));
     } else {
       where = Optional.empty();
     }
     return new Select(columns, table, where);
   }
 
-  private ImmutableList<ColumnExpr> parseColumns(PeekingIterator<Token> tokens)
-      throws ParserException {
-    ImmutableList.Builder<ColumnExpr> columns = ImmutableList.builder();
-    while(true) {
-      columns.add(parseColumn(tokens));
-      if (tokens.peek().getString().equals(Tokens.COMMA)) {
+  private Expression parsePrimary(PeekingIterator<Token> tokens) throws ParserException {
+    Token token = tokens.peek();
+    if (token.is(Tokens.PARENT_OPEN)) {
+      tokens.next();
+      Expression expr = parseExpression(tokens, 0);
+      assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+      return expr;
+    } else if (token.is(Tokens.ASTERISK)) {
+      tokens.next();
+      return new AsteriskExpression();
+    } else if (token.getString().matches(Tokens.IDENT)) {
+      Ident ident = new Ident(tokens.next().getString());
+      if (tokens.peek().is(Tokens.PARENT_OPEN)) {
         tokens.next();
-      } else if (tokens.peek().getString().equals(Tokens.FROM)) {
+        return new FuncCallExpression(
+            ident, parseExprs(tokens, String.valueOf(Tokens.PARENT_CLOSED)));
+      } else {
+        return new IdentExpression(ident);
+      }
+    } else if (token.getString().matches(Tokens.LONG_LITERAL)) {
+      tokens.next();
+      return new LongLiteral(Long.valueOf(token.getString()));
+    } else if (token.getString().matches(Tokens.DOUBLE_LITERAL)) {
+      tokens.next();
+      return new DoubleLiteral(Double.valueOf(token.getString()));
+    } else if (token.getString().matches(Tokens.STRING_LITERAL)) {
+      tokens.next();
+      return new StringLiteral(token.getString().substring(1, token.getString().length() - 1));
+    } else {
+      throw new ParserException("Expected literal but got " + token.getString() + ".");
+    }
+  }
+
+  private ImmutableList<Expression> parseExprs(PeekingIterator<Token> tokens, String terminator)
+      throws ParserException {
+    ImmutableList.Builder<Expression> exprs = ImmutableList.builder();
+    while (true) {
+      exprs.add(parsePrimary(tokens));
+      assertPeek(tokens, String.valueOf(Tokens.COMMA), terminator);
+      if (tokens.peek().is(Tokens.COMMA)) {
+        tokens.next();
+      } else if (tokens.peek().is(terminator)) {
         tokens.next();
         break;
       }
     }
-    return columns.build();
-  }
-
-  private ColumnExpr parseColumn(PeekingIterator<Token> tokens) throws ParserException {
-    System.out.println(tokens.peek().getString());
-    if (tokens.peek().is(Tokens.ASTERISK)) {
-      tokens.next();
-      assertPeek(tokens, Tokens.FROM, String.valueOf(Tokens.COMMA));
-      return new AllColumns();
-    } else if (Tokens.AGGREGATORS.contains(tokens.peek().getString())) {
-      String aggr = tokens.next().getString();
-      Ident ident = parseIdent(tokens);
-      assertPeek(tokens, Tokens.FROM, String.valueOf(Tokens.COMMA));
-      return new ColumnAggr(aggr, ident);
-    } else {
-      Ident ident = parseIdent(tokens);
-      assertPeek(tokens, Tokens.FROM, String.valueOf(Tokens.COMMA));
-      return new ColumnRef(ident);
-    }
+    return exprs.build();
   }
 
   private Ident parseIdent(PeekingIterator<Token> tokens) throws ParserException {
@@ -100,7 +121,7 @@ public class Parser {
   }
 
   private Table parseTable(PeekingIterator<Token> tokens) throws ParserException {
-    if (tokens.peek().getString().equals(Tokens.PARENT_OPEN)) {
+    if (tokens.peek().is(Tokens.PARENT_OPEN)) {
       tokens.next();
       Select select = parseSelect(tokens);
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
@@ -110,32 +131,29 @@ public class Parser {
     }
   }
 
-  private Where parseWhere(PeekingIterator<Token> tokens) throws ParserException {
-    assertNext(tokens, Tokens.WHERE);
-    Expression condition = parseExpression(tokens, 0);
-    return new Where(condition);
-  }
-
-  private Expression parseExpression(PeekingIterator<Token> tokens, int precedence) throws ParserException {
-    if (tokens.peek().getString().equals(Tokens.PARENT_OPEN)) {
-      Expression expr = parseExpression(tokens, 0);
-      assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-      return expr;
-    } else if(tokens.peek().getString().equals(Tokens.NOT)) {
-      return new UnaryExpression(tokens.next(), parseExpression(tokens, precedence + 1));
+  Expression parseExpression(PeekingIterator<Token> tokens, int precedence) throws ParserException {
+    if (precedence >= Tokens.BINARY_OPERATORS_PRECEDENCE.size()) {
+      return parsePrimary(tokens);
+    } else if (tokens.peek().is(Tokens.NOT) && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.NOT)) {
+      return new UnaryExpression(new Ident(tokens.next().getString()), parseExpression(tokens, precedence + 1));
     } else {
       return parseBinaryExpression(tokens, precedence);
     }
   }
-  
+
   private Expression parseBinaryExpression(PeekingIterator<Token> tokens, int precedence) throws ParserException {
     Expression left = parseExpression(tokens, precedence + 1);
-    if (Tokens.BINARY_BOOL_OPERATORS.keySet().contains(tokens.peek().getString())) {
-      Token op = tokens.next();
+    for (;;) {
+      Token token = tokens.peek();
+      if (!Tokens.BINARY_OPERATORS.contains(token.getString())) {
+        return left;
+      }
+      if (!Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(token.getString())) {
+        return left;
+      }
+      tokens.next();
       Expression right = parseExpression(tokens, precedence + 1);
-      return new BinaryExpression(op, left, right);
-    } else {
-      return left;
+      left = new BinaryExpression(new Ident(token.getString()), left, right);
     }
   }
 

@@ -1,6 +1,6 @@
 package com.cosyan.db.sql;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
 public class Tokens {
@@ -17,6 +17,12 @@ public class Tokens {
 
   public static String IDENT = IDENT_COMP + "(\\." + IDENT_COMP + ")*";
 
+  public static String STRING_LITERAL = "'.*'";
+
+  public static String LONG_LITERAL = "[0-9]+";
+
+  public static String DOUBLE_LITERAL = "[0-9]+\\.[0-9]+";
+
   public static char SPACE = ' ';
 
   public static char TAB = '\t';
@@ -24,9 +30,9 @@ public class Tokens {
   public static char NEWLINE = '\n';
 
   public static char CARBACK = '\r';
-  
+
   public static char COMMA = ',';
-  
+
   public static char COMMA_COLON = ';';
 
   public static char PLUS = '+';
@@ -52,13 +58,13 @@ public class Tokens {
   public static String LEQ = "<=";
 
   public static String GEQ = ">=";
-  
+
   public static String NOT = "not";
-  
+
   public static String AND = "and";
-  
+
   public static String OR = "or";
-  
+
   public static String XOR = "xor";
 
   public static String COUNT = "count";
@@ -69,7 +75,9 @@ public class Tokens {
 
   public static String MAX = "max";
 
-  public static ImmutableSet<Character> DELIMITERS = ImmutableSet.<Character> builder()
+  public static String SUM = "sum";
+
+  public static ImmutableSet<Character> DELIMITERS = ImmutableSet.<Character>builder()
       .add(SPACE)
       .add(TAB)
       .add(NEWLINE)
@@ -93,33 +101,41 @@ public class Tokens {
       DISTINCT,
       FROM,
       WHERE);
-  
-  public static ImmutableSet<String> AGGREGATORS = ImmutableSet.<String> builder()
+
+  public static ImmutableSet<String> AGGREGATORS = ImmutableSet.<String>builder()
       .add(COUNT)
       .add(AVG)
       .add(MIN)
       .add(MAX)
-      .build();
-  
-  public static ImmutableMap<String, Integer> BINARY_BOOL_OPERATORS = ImmutableMap.<String, Integer> builder()
-      .put(AND, 1)
-      .put(OR, 2)
-      .put(XOR, 3)
-      .build();
-  
-  public static ImmutableSet<String> BINARY_LOGIC_OPERATORS = ImmutableSet.<String> builder()
-      .add(String.valueOf(EQ))
-      .add(String.valueOf(LESS))
-      .add(String.valueOf(GREATER))
-      .add(LEQ)
-      .add(GEQ)
+      .add(SUM)
       .build();
 
+  public static ImmutableList<ImmutableSet<String>> BINARY_OPERATORS_PRECEDENCE = ImmutableList.<ImmutableSet<String>>builder()
+      .add(ImmutableSet.of(OR))
+      .add(ImmutableSet.of(AND))
+      .add(ImmutableSet.of(XOR))
+      .add(ImmutableSet.of(NOT))
+      .add(ImmutableSet.of(
+          String.valueOf(EQ),
+          String.valueOf(LESS),
+          String.valueOf(GREATER),
+          LEQ,
+          GEQ))
+      .build();
+  
+  private static ImmutableSet.Builder<String> binOpsBuilder = ImmutableSet.builder();
+  static {
+    for (ImmutableSet<String> ops : BINARY_OPERATORS_PRECEDENCE) {
+      binOpsBuilder.addAll(ops);
+    }
+  }
+  public static ImmutableSet<String> BINARY_OPERATORS = binOpsBuilder.build();
+  
   public static ImmutableSet<Character> WHITESPACE = ImmutableSet.of(
-    SPACE,
-    TAB,
-    NEWLINE,
-    CARBACK);
+      SPACE,
+      TAB,
+      NEWLINE,
+      CARBACK);
 
   public static class Token {
     private final String string;
@@ -139,6 +155,10 @@ public class Tokens {
 
     public boolean is(char c) {
       return string.equals(String.valueOf(c));
+    }
+
+    public boolean is(String s) {
+      return string.equals(s);
     }
   }
 }
