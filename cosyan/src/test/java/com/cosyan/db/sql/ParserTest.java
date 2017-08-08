@@ -8,7 +8,6 @@ import org.junit.Test;
 
 import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.SyntaxTree.AsteriskExpression;
-import com.cosyan.db.sql.SyntaxTree.BinaryExpression;
 import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.FuncCallExpression;
 import com.cosyan.db.sql.SyntaxTree.Ident;

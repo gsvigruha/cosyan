@@ -5,7 +5,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.cosyan.db.sql.SyntaxTree.AsteriskExpression;
-import com.cosyan.db.sql.SyntaxTree.BinaryExpression;
 import com.cosyan.db.sql.SyntaxTree.DoubleLiteral;
 import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.FuncCallExpression;
