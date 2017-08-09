@@ -1,8 +1,12 @@
 package com.cosyan.db.model;
 
-import java.util.Map;
+import java.io.DataInputStream;
 
+import com.cosyan.db.io.TableReader;
+import com.cosyan.db.io.TableReader.DerivedTableReader;
+import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.MetaRepo.ModelException;
 import com.google.common.collect.ImmutableMap;
 
 import lombok.Data;
@@ -12,13 +16,14 @@ public abstract class TableMeta {
 
   public abstract ImmutableMap<String, ? extends ColumnMeta> columns();
 
-  public abstract ImmutableMap<String, Object> read();
+  public abstract TableReader reader() throws ModelException;
 
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class MaterializedTableMeta extends TableMeta {
     private final String tableName;
     private final ImmutableMap<String, BasicColumn> columns;
+    private final MetaRepo metaRepo;
 
     @Override
     public ImmutableMap<String, ? extends ColumnMeta> columns() {
@@ -26,9 +31,10 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ImmutableMap<String, Object> read() {
-      // TODO Auto-generated method stub
-      return null;
+    public TableReader reader() throws ModelException {
+      return new MaterializedTableReader(
+          new DataInputStream(metaRepo.open(this)),
+          columns());
     }
   }
 
@@ -44,13 +50,8 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ImmutableMap<String, Object> read() {
-      ImmutableMap<String, Object> sourceValues = sourceTable.read();
-      ImmutableMap.Builder<String, Object> values = ImmutableMap.builder();
-      for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
-        values.put(entry.getKey(), entry.getValue().getValue(sourceValues));
-      }
-      return values.build();
+    public TableReader reader() throws ModelException {
+      return new DerivedTableReader(sourceTable.reader(), columns());
     }
   }
 }

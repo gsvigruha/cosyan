@@ -4,6 +4,7 @@ import static com.cosyan.db.sql.SyntaxTree.assertType;
 
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.sql.SyntaxTree.Expression;
@@ -21,9 +22,9 @@ public class BinaryExpression extends Expression {
   private final Expression right;
 
   @Override
-  public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
-    final DerivedColumn leftColumn = left.compile(sourceTable);
-    final DerivedColumn rightColumn = right.compile(sourceTable);
+  public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) throws ModelException {
+    final DerivedColumn leftColumn = left.compile(sourceTable, metaRepo);
+    final DerivedColumn rightColumn = right.compile(sourceTable, metaRepo);
 
     if (ident.is(Tokens.AND)) {
       assertType(DataTypes.BoolType, leftColumn.getType());

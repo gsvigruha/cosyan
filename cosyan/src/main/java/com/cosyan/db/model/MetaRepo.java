@@ -1,22 +1,27 @@
 package com.cosyan.db.model;
 
-import java.util.HashMap;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.cosyan.db.conf.Config;
 import com.cosyan.db.model.BuiltinFunctions.Function;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 
 public class MetaRepo {
 
-  private static MetaRepo repo = new MetaRepo();
+  private final Config config;
+  private final ConcurrentHashMap<String, MaterializedTableMeta> tables;
+  private final ConcurrentHashMap<String, Function> builtinFunctions;
 
-  public static MetaRepo instance() {
-    return repo;
+  public MetaRepo(Config config) {
+    this.config = config;
+    this.tables = new ConcurrentHashMap<>();
+    this.builtinFunctions = new ConcurrentHashMap<>();
   }
-
-  private ConcurrentHashMap<String, MaterializedTableMeta> tables;
-  private HashMap<String, Function> builtinFunctions;
 
   public MaterializedTableMeta table(Ident ident) throws ModelException {
     if (ident.parts().length != 1) {
@@ -27,7 +32,16 @@ public class MetaRepo {
     }
     return tables.get(ident.getString());
   }
-  
+
+  public InputStream open(MaterializedTableMeta table) throws ModelException {
+    String path = config.dataDir() + File.separator + table.getTableName();
+    try {
+      return new FileInputStream(path);
+    } catch (FileNotFoundException e) {
+      throw new ModelException("Table file not found: " + path + ".");
+    }
+  }
+
   public Function function(Ident ident) throws ModelException {
     if (ident.parts().length != 1) {
       throw new ModelException("Invalid function identifier " + ident.getString() + ".");

@@ -48,7 +48,7 @@ public class SyntaxTree {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static abstract class Expression extends Node {
-    public abstract DerivedColumn compile(TableMeta sourceTable) throws ModelException;
+    public abstract DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) throws ModelException;
 
     public abstract String getName();
   }
@@ -67,7 +67,7 @@ public class SyntaxTree {
         if (expr instanceof AsteriskExpression) {
           tableColumns.putAll(sourceTable.columns());
         } else {
-          tableColumns.put(expr.getName(), expr.compile(sourceTable));
+          tableColumns.put(expr.getName(), expr.compile(sourceTable, metaRepo));
         }
       }
       return new DerivedTableMeta(sourceTable, tableColumns.build());
@@ -107,9 +107,9 @@ public class SyntaxTree {
     private final Expression expr;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
+    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) throws ModelException {
       if (ident.getString().equals(Tokens.NOT)) {
-        DerivedColumn exprColumn = expr.compile(sourceTable);
+        DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo);
         assertType(DataTypes.BoolType, exprColumn.getType());
         return new DerivedColumn(DataTypes.BoolType) {
 
@@ -135,7 +135,7 @@ public class SyntaxTree {
     private final Ident ident;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
+    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) throws ModelException {
       final String key = ident.getString();
       if (sourceTable.columns().containsKey(key)) {
         return new DerivedColumn(sourceTable.columns().get(key).getType()) {
@@ -162,7 +162,7 @@ public class SyntaxTree {
     private final String val;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable) {
+    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) {
       return new DerivedColumn(DataTypes.StringType) {
 
         @Override
@@ -184,7 +184,7 @@ public class SyntaxTree {
     private final long val;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable) {
+    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) {
       return new DerivedColumn(DataTypes.LongType) {
 
         @Override
@@ -206,7 +206,7 @@ public class SyntaxTree {
     private final Double val;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable) {
+    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) {
       return new DerivedColumn(DataTypes.DoubleType) {
 
         @Override
@@ -229,12 +229,11 @@ public class SyntaxTree {
     private final ImmutableList<Expression> args;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
-      MetaRepo metaRepo = MetaRepo.instance();
+    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) throws ModelException {
       Function function = metaRepo.function(ident);
       ImmutableList.Builder<DerivedColumn> argColumnsBuilder = ImmutableList.builder();
       for (int i = 0; i < function.argTypes().size(); i++) {
-        DerivedColumn col = args.get(i).compile(sourceTable);
+        DerivedColumn col = args.get(i).compile(sourceTable, metaRepo);
         assertType(function.argTypes().get(i), col.getType());
         argColumnsBuilder.add(col);
       }
@@ -261,7 +260,7 @@ public class SyntaxTree {
   public static class AsteriskExpression extends Expression {
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable) {
+    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) {
       throw new UnsupportedOperationException();
     }
 
