@@ -55,21 +55,36 @@ public abstract class TableReader {
   public static class DerivedTableReader extends TableReader {
 
     private final TableReader sourceReader;
+    private final ColumnMeta whereColumn;
 
     public DerivedTableReader(
-        TableReader sourceReader, ImmutableMap<String, ?extends ColumnMeta> columns) {
+        TableReader sourceReader,
+        ImmutableMap<String, ? extends ColumnMeta> columns,
+        ColumnMeta whereColumn) {
       super(columns);
       this.sourceReader = sourceReader;
+      this.whereColumn = whereColumn;
     }
 
     @Override
     public ImmutableMap<String, Object> read() throws IOException {
-      ImmutableMap<String, Object> sourceValues = sourceReader.read();
-      ImmutableMap.Builder<String, Object> values = ImmutableMap.builder();
-      for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-        values.put(entry.getKey(), entry.getValue().getValue(sourceValues));
-      }
-      return values.build();
+      ImmutableMap<String, Object> values = null;
+      do {
+        ImmutableMap<String, Object> sourceValues = sourceReader.read();
+        if (sourceValues == null) {
+          return null;
+        }
+        if (!(boolean) whereColumn.getValue(sourceValues)) {
+          values = null;
+        } else {
+          ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
+          for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
+            builder.put(entry.getKey(), entry.getValue().getValue(sourceValues));
+          }
+          values = builder.build();
+        }
+      } while (values == null);
+      return values;
     }
   }
 }

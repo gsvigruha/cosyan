@@ -73,7 +73,14 @@ public class SyntaxTree {
           tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, metaRepo));
         }
       }
-      return new DerivedTableMeta(sourceTable, tableColumns.build());
+      DerivedColumn whereColumn;
+      if (where.isPresent()) {
+        whereColumn = where.get().compile(sourceTable, metaRepo);
+        assertType(DataTypes.BoolType, whereColumn.getType());
+      } else {
+        whereColumn = ColumnMeta.TRUE_COLUMN;
+      }
+      return new DerivedTableMeta(sourceTable, tableColumns.build(), whereColumn);
     }
   }
 

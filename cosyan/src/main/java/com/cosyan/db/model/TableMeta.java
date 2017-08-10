@@ -43,6 +43,7 @@ public abstract class TableMeta {
   public static class DerivedTableMeta extends TableMeta {
     private final TableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
+    private final ColumnMeta whereColumn;
 
     @Override
     public ImmutableMap<String, ? extends ColumnMeta> columns() {
@@ -51,7 +52,7 @@ public abstract class TableMeta {
 
     @Override
     public TableReader reader() throws ModelException {
-      return new DerivedTableReader(sourceTable.reader(), columns());
+      return new DerivedTableReader(sourceTable.reader(), columns(), whereColumn);
     }
   }
 }

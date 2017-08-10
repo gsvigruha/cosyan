@@ -89,4 +89,20 @@ public class CompilerTest {
     TableReader reader = tableMeta.reader();
     assertEquals(ImmutableMap.of("_c0", 3L, "_c1", "ABC", "_c2", "b"), reader.read());
   }
+
+  @Test
+  public void testWhere() throws Exception {
+    SyntaxTree tree = parser.parse("select * from table where b > 1;");
+    TableMeta tableMeta = compiler.query(tree);
+    TableReader reader = tableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "xyz", "b", 5L, "c", 6.7), reader.read());
+  }
+
+  @Test
+  public void testInnerSelect() throws Exception {
+    SyntaxTree tree = parser.parse("select * from (select * from table where b > 1);");
+    TableMeta tableMeta = compiler.query(tree);
+    TableReader reader = tableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "xyz", "b", 5L, "c", 6.7), reader.read());
+  }
 }

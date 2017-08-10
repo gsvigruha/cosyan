@@ -35,4 +35,12 @@ public abstract class ColumnMeta {
       super(type);
     }
   }
+
+  public static final DerivedColumn TRUE_COLUMN = new DerivedColumn(DataTypes.BoolType) {
+
+    @Override
+    public Object getValue(ImmutableMap<String, Object> sourceValues) {
+      return true;
+    }
+  };
 }
