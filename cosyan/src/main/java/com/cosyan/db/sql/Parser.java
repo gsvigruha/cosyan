@@ -98,7 +98,7 @@ public class Parser {
       throws ParserException {
     ImmutableList.Builder<Expression> exprs = ImmutableList.builder();
     while (true) {
-      exprs.add(parsePrimary(tokens));
+      exprs.add(parseExpression(tokens, 0));
       assertPeek(tokens, String.valueOf(Tokens.COMMA), terminator);
       if (tokens.peek().is(Tokens.COMMA)) {
         tokens.next();

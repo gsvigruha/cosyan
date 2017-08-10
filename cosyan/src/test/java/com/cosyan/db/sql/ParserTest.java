@@ -65,6 +65,18 @@ public class ParserTest {
   }
 
   @Test
+  public void testSelectComplex() throws ParserException {
+    SyntaxTree tree = parser.parse("select a, b + 1, c * 2.0 > 3.0 from table;");
+    assertEquals(tree, new SyntaxTree(new Select(
+        ImmutableList.of(new AsteriskExpression()),
+        new TableRef(new Ident("table")),
+        Optional.of(new BinaryExpression(
+            new Ident("="),
+            new IdentExpression(new Ident("a")),
+            new LongLiteral(1))))));
+  }
+
+  @Test
   public void testExpr() throws ParserException {
     Expression expr = parser.parseExpression("a = 1;");
     assertEquals(expr, new BinaryExpression(

@@ -121,6 +121,12 @@ public class Tokens {
           String.valueOf(GREATER),
           LEQ,
           GEQ))
+      .add(ImmutableSet.of(
+          String.valueOf(PLUS),
+          String.valueOf(MINUS),
+          String.valueOf(DIV),
+          String.valueOf(ASTERISK),
+          String.valueOf(MOD)))
       .build();
   
   private static ImmutableSet.Builder<String> binOpsBuilder = ImmutableSet.builder();

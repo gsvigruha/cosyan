@@ -4,9 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.Properties;
-
-import com.google.common.base.Optional;
 
 public class Config {
 
@@ -16,17 +15,22 @@ public class Config {
 
   public static final String DATA_DIR = "DATA_DIR";
 
-  private final Properties props = new Properties();
+  private final Properties props;
 
   public Config() throws ConfigException {
-    String file = Optional.of(System.getenv("CONF_FILE")).or(CONF_FILE_DEFAULT);
+    String file = Optional.ofNullable(System.getenv("CONF_FILE")).orElse(CONF_FILE_DEFAULT);
     try {
+      props = new Properties();
       props.load(new FileInputStream(new File(file)));
     } catch (FileNotFoundException e) {
       throw new ConfigException("Config file not found: " + file + ".");
     } catch (IOException e) {
       throw new ConfigException("Error loading config file: " + file + ".");
     }
+  }
+
+  public Config(Properties props) {
+    this.props = props;
   }
 
   public String dataDir() {

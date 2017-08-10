@@ -33,7 +33,7 @@ public class SyntaxTree {
     private final String string;
 
     public String[] parts() {
-      return string.split(".");
+      return string.split("\\.");
     }
 
     public boolean is(String str) {
@@ -50,7 +50,9 @@ public class SyntaxTree {
   public static abstract class Expression extends Node {
     public abstract DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) throws ModelException;
 
-    public abstract String getName();
+    public String getName(String def) {
+      return def;
+    }
   }
 
   @Data
@@ -63,11 +65,12 @@ public class SyntaxTree {
     public TableMeta compile(MetaRepo metaRepo) throws ModelException {
       TableMeta sourceTable = table.compile(metaRepo);
       ImmutableMap.Builder<String, ColumnMeta> tableColumns = ImmutableMap.builder();
+      int i = 0;
       for (Expression expr : columns) {
         if (expr instanceof AsteriskExpression) {
           tableColumns.putAll(sourceTable.columns());
         } else {
-          tableColumns.put(expr.getName(), expr.compile(sourceTable, metaRepo));
+          tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, metaRepo));
         }
       }
       return new DerivedTableMeta(sourceTable, tableColumns.build());
@@ -122,11 +125,6 @@ public class SyntaxTree {
         throw new UnsupportedOperationException();
       }
     }
-
-    @Override
-    public String getName() {
-      return "not_" + ident.getString();
-    }
   }
 
   @Data
@@ -146,12 +144,13 @@ public class SyntaxTree {
           }
         };
       } else {
-        throw new ModelException("Column " + key + " does not exist.");
+        throw new ModelException(
+            "Column '" + key + "' does not exist in " + sourceTable.columns().keySet() + ".");
       }
     }
 
     @Override
-    public String getName() {
+    public String getName(String def) {
       return ident.getString();
     }
   }
@@ -171,11 +170,6 @@ public class SyntaxTree {
         }
       };
     }
-
-    @Override
-    public String getName() {
-      return "c_" + val;
-    }
   }
 
   @Data
@@ -192,11 +186,6 @@ public class SyntaxTree {
           return val;
         }
       };
-    }
-
-    @Override
-    public String getName() {
-      return "c_" + val;
     }
   }
 
@@ -215,11 +204,6 @@ public class SyntaxTree {
         }
       };
     }
-
-    @Override
-    public String getName() {
-      return "c_" + val;
-    }
   }
 
   @Data
@@ -230,16 +214,16 @@ public class SyntaxTree {
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) throws ModelException {
-      Function function = metaRepo.function(ident);
+      Function<?> function = metaRepo.function(ident);
       ImmutableList.Builder<DerivedColumn> argColumnsBuilder = ImmutableList.builder();
-      for (int i = 0; i < function.argTypes().size(); i++) {
+      for (int i = 0; i < function.getArgTypes().size(); i++) {
         DerivedColumn col = args.get(i).compile(sourceTable, metaRepo);
-        assertType(function.argTypes().get(i), col.getType());
+        assertType(function.getArgTypes().get(i), col.getType());
         argColumnsBuilder.add(col);
       }
       ImmutableList<DerivedColumn> argColumns = argColumnsBuilder.build();
 
-      return new DerivedColumn(function.returnType()) {
+      return new DerivedColumn(function.getReturnType()) {
 
         @Override
         public Object getValue(ImmutableMap<String, Object> sourceValues) {
@@ -247,11 +231,6 @@ public class SyntaxTree {
               ImmutableList.copyOf(argColumns.stream().map(col -> col.getValue(sourceValues)).iterator()));
         }
       };
-    }
-
-    @Override
-    public String getName() {
-      return "f_" + ident.getString();
     }
   }
 
@@ -265,7 +244,7 @@ public class SyntaxTree {
     }
 
     @Override
-    public String getName() {
+    public String getName(String def) {
       throw new UnsupportedOperationException();
     }
   }
