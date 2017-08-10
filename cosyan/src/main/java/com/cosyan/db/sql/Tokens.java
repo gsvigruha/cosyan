@@ -13,6 +13,12 @@ public class Tokens {
 
   public static String WHERE = "where";
 
+  public static String GROUP = "group";
+
+  public static String BY = "by";
+
+  public static String AS = "as";
+
   private static String IDENT_COMP = "[a-z][a-z0-9_]*";
 
   public static String IDENT = IDENT_COMP + "(\\." + IDENT_COMP + ")*";
@@ -110,7 +116,8 @@ public class Tokens {
       .add(SUM)
       .build();
 
-  public static ImmutableList<ImmutableSet<String>> BINARY_OPERATORS_PRECEDENCE = ImmutableList.<ImmutableSet<String>>builder()
+  public static ImmutableList<ImmutableSet<String>> BINARY_OPERATORS_PRECEDENCE = ImmutableList
+      .<ImmutableSet<String>>builder()
       .add(ImmutableSet.of(OR))
       .add(ImmutableSet.of(AND))
       .add(ImmutableSet.of(XOR))
@@ -128,7 +135,7 @@ public class Tokens {
           String.valueOf(ASTERISK),
           String.valueOf(MOD)))
       .build();
-  
+
   private static ImmutableSet.Builder<String> binOpsBuilder = ImmutableSet.builder();
   static {
     for (ImmutableSet<String> ops : BINARY_OPERATORS_PRECEDENCE) {
@@ -136,7 +143,7 @@ public class Tokens {
     }
   }
   public static ImmutableSet<String> BINARY_OPERATORS = binOpsBuilder.build();
-  
+
   public static ImmutableSet<Character> WHITESPACE = ImmutableSet.of(
       SPACE,
       TAB,

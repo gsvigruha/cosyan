@@ -8,6 +8,7 @@ import org.junit.Test;
 
 import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.SyntaxTree.AsteriskExpression;
+import com.cosyan.db.sql.SyntaxTree.DoubleLiteral;
 import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.FuncCallExpression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
@@ -29,6 +30,7 @@ public class ParserTest {
     assertEquals(tree, new SyntaxTree(new Select(
         ImmutableList.of(new AsteriskExpression()),
         new TableRef(new Ident("table")),
+        Optional.empty(),
         Optional.empty())));
   }
 
@@ -38,6 +40,7 @@ public class ParserTest {
     assertEquals(tree, new SyntaxTree(new Select(
         ImmutableList.of(new IdentExpression(new Ident("a")), new IdentExpression(new Ident("b"))),
         new TableRef(new Ident("table")),
+        Optional.empty(),
         Optional.empty())));
   }
 
@@ -49,6 +52,7 @@ public class ParserTest {
             new Ident("sum"),
             ImmutableList.of(new IdentExpression(new Ident("a"))))),
         new TableRef(new Ident("table")),
+        Optional.empty(),
         Optional.empty())));
   }
 
@@ -61,19 +65,42 @@ public class ParserTest {
         Optional.of(new BinaryExpression(
             new Ident("="),
             new IdentExpression(new Ident("a")),
-            new LongLiteral(1))))));
+            new LongLiteral(1))),
+        Optional.empty())));
+  }
+
+  @Test
+  public void testSelectGroupBy() throws ParserException {
+    SyntaxTree tree = parser.parse("select sum(b) from table group by a;");
+    assertEquals(tree, new SyntaxTree(new Select(
+        ImmutableList.of(new FuncCallExpression(
+            new Ident("sum"),
+            ImmutableList.of(new IdentExpression(new Ident("b"))))),
+        new TableRef(new Ident("table")),
+        Optional.empty(),
+        Optional.of(ImmutableList.of(new IdentExpression(new Ident("a")))))));
   }
 
   @Test
   public void testSelectComplex() throws ParserException {
     SyntaxTree tree = parser.parse("select a, b + 1, c * 2.0 > 3.0 from table;");
     assertEquals(tree, new SyntaxTree(new Select(
-        ImmutableList.of(new AsteriskExpression()),
-        new TableRef(new Ident("table")),
-        Optional.of(new BinaryExpression(
-            new Ident("="),
+        ImmutableList.of(
             new IdentExpression(new Ident("a")),
-            new LongLiteral(1))))));
+            new BinaryExpression(
+                new Ident("+"),
+                new IdentExpression(new Ident("b")),
+                new LongLiteral(1L)),
+            new BinaryExpression(
+                new Ident(">"),
+                new BinaryExpression(
+                    new Ident("*"),
+                    new IdentExpression(new Ident("c")),
+                    new DoubleLiteral(2.0)),
+                new DoubleLiteral(3.0))),
+        new TableRef(new Ident("table")),
+        Optional.empty(),
+        Optional.empty())));
   }
 
   @Test

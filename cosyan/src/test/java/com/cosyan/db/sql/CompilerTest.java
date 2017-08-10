@@ -105,4 +105,12 @@ public class CompilerTest {
     TableReader reader = tableMeta.reader();
     assertEquals(ImmutableMap.of("a", "xyz", "b", 5L, "c", 6.7), reader.read());
   }
+
+  @Test
+  public void testAliasing() throws Exception {
+    SyntaxTree tree = parser.parse("select b + 2 as x, c * 3.0 as y from table;");
+    TableMeta tableMeta = compiler.query(tree);
+    TableReader reader = tableMeta.reader();
+    assertEquals(ImmutableMap.of("x", 3L, "y", 3.0), reader.read());
+  }
 }

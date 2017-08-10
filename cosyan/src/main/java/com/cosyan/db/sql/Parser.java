@@ -4,6 +4,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.cosyan.db.sql.SyntaxTree.AggregationExpression;
+import com.cosyan.db.sql.SyntaxTree.AsExpression;
 import com.cosyan.db.sql.SyntaxTree.AsteriskExpression;
 import com.cosyan.db.sql.SyntaxTree.DoubleLiteral;
 import com.cosyan.db.sql.SyntaxTree.Expression;
@@ -49,7 +51,8 @@ public class Parser {
 
   private Select parseSelect(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.SELECT);
-    ImmutableList<Expression> columns = parseExprs(tokens, Tokens.FROM);
+    ImmutableList<Expression> columns = parseExprs(tokens, true, Tokens.FROM);
+    tokens.next();
     Table table = parseTable(tokens);
     Optional<Expression> where;
     if (tokens.peek().is(Tokens.WHERE)) {
@@ -58,7 +61,21 @@ public class Parser {
     } else {
       where = Optional.empty();
     }
-    return new Select(columns, table, where);
+    Optional<ImmutableList<Expression>> groupBy;
+    if (tokens.peek().is(Tokens.GROUP)) {
+      tokens.next();
+      assertNext(tokens, Tokens.BY);
+      groupBy = Optional.of(parseExprs(tokens, true, String.valueOf(Tokens.COMMA_COLON)));
+      for (Expression expr : groupBy.get()) {
+        if (expr.isAggregation() != AggregationExpression.NO) {
+          throw new ParserException("Invalid expression in group by: '" + expr + "'.");
+        }
+      }
+    } else {
+      groupBy = Optional.empty();
+    }
+    assertPeek(tokens, String.valueOf(Tokens.COMMA_COLON), String.valueOf(Tokens.PARENT_CLOSED));
+    return new Select(columns, table, where, groupBy);
   }
 
   private Expression parsePrimary(PeekingIterator<Token> tokens) throws ParserException {
@@ -75,8 +92,10 @@ public class Parser {
       Ident ident = new Ident(tokens.next().getString());
       if (tokens.peek().is(Tokens.PARENT_OPEN)) {
         tokens.next();
-        return new FuncCallExpression(
-            ident, parseExprs(tokens, String.valueOf(Tokens.PARENT_CLOSED)));
+        ImmutableList<Expression> argExprs =
+            parseExprs(tokens, false, String.valueOf(Tokens.PARENT_CLOSED));
+        tokens.next();
+        return new FuncCallExpression(ident, argExprs);
       } else {
         return new IdentExpression(ident);
       }
@@ -94,16 +113,24 @@ public class Parser {
     }
   }
 
-  private ImmutableList<Expression> parseExprs(PeekingIterator<Token> tokens, String terminator)
-      throws ParserException {
+  private ImmutableList<Expression> parseExprs(
+      PeekingIterator<Token> tokens,
+      boolean allowAlias,
+      String... terminators) throws ParserException {
     ImmutableList.Builder<Expression> exprs = ImmutableList.builder();
     while (true) {
-      exprs.add(parseExpression(tokens, 0));
-      assertPeek(tokens, String.valueOf(Tokens.COMMA), terminator);
+      Expression expr = parseExpression(tokens, 0);
+      if (allowAlias && tokens.peek().is(Tokens.AS)) {
+        tokens.next();
+        Ident ident = parseIdent(tokens);
+        exprs.add(new AsExpression(ident, expr));
+      } else {
+        exprs.add(expr);
+      }
       if (tokens.peek().is(Tokens.COMMA)) {
         tokens.next();
-      } else if (tokens.peek().is(terminator)) {
-        tokens.next();
+      } else {
+        assertPeek(tokens, terminators);
         break;
       }
     }

@@ -1,29 +1,75 @@
 package com.cosyan.db.model;
 
+import java.util.Spliterator;
+
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.MetaRepo.ModelException;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 public class BuiltinFunctions {
 
   @Data
-  public static abstract class Function<T> {
+  public static abstract class Function {
 
-    private final String ident;
+    protected final String ident;
 
     private final boolean isAggregation;
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = false)
+  public static abstract class SimpleFunction<T> extends Function {
+
+    private final ImmutableList<DataType<?>> argTypes;
 
     private final DataType<T> returnType;
 
-    private final ImmutableList<DataType<?>> argTypes;
+    public SimpleFunction(String ident, DataType<T> returnType, ImmutableList<DataType<?>> argTypes) {
+      super(ident, false);
+      this.argTypes = argTypes;
+      this.returnType = returnType;
+    }
 
     public abstract T call(ImmutableList<Object> argValues);
   }
 
-  public static class Length extends Function<Long> {
+  @Data
+  @EqualsAndHashCode(callSuper = false)
+  public static abstract class TypedAggrFunction<T, U> extends Function {
+
+    private final DataType<U> argType;
+
+    private final DataType<T> returnType;
+
+    public TypedAggrFunction(String ident, DataType<T> returnType, DataType<U> argType) {
+      super(ident, false);
+      this.argType = argType;
+      this.returnType = returnType;
+    }
+
+    public abstract U aggregate(Iterable<T> values);
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = false)
+  public static abstract class AggrFunction extends Function {
+
+    protected static final int characteristics = Spliterator.IMMUTABLE;
+
+    public AggrFunction(String ident) {
+      super(ident, false);
+    }
+
+    public abstract TypedAggrFunction<?, ?> forType(DataType<?> argType) throws ModelException;
+  }
+
+  public static class Length extends SimpleFunction<Long> {
     public Length() {
-      super("length", false, DataTypes.LongType, ImmutableList.of(DataTypes.StringType));
+      super("length", DataTypes.LongType, ImmutableList.of(DataTypes.StringType));
     }
 
     @Override
@@ -32,9 +78,9 @@ public class BuiltinFunctions {
     }
   }
 
-  public static class Upper extends Function<String> {
+  public static class Upper extends SimpleFunction<String> {
     public Upper() {
-      super("upper", false, DataTypes.StringType, ImmutableList.of(DataTypes.StringType));
+      super("upper", DataTypes.StringType, ImmutableList.of(DataTypes.StringType));
     }
 
     @Override
@@ -43,9 +89,9 @@ public class BuiltinFunctions {
     }
   }
 
-  public static class Lower extends Function<String> {
+  public static class Lower extends SimpleFunction<String> {
     public Lower() {
-      super("lower", false, DataTypes.StringType, ImmutableList.of(DataTypes.StringType));
+      super("lower", DataTypes.StringType, ImmutableList.of(DataTypes.StringType));
     }
 
     @Override
@@ -54,9 +100,9 @@ public class BuiltinFunctions {
     }
   }
 
-  public static class Substr extends Function<String> {
+  public static class Substr extends SimpleFunction<String> {
     public Substr() {
-      super("substr", false, DataTypes.StringType,
+      super("substr", DataTypes.StringType,
           ImmutableList.of(DataTypes.StringType, DataTypes.LongType, DataTypes.LongType));
     }
 
@@ -68,10 +114,50 @@ public class BuiltinFunctions {
     }
   }
 
-  public static final ImmutableList<Function<?>> ALL = ImmutableList.<Function<?>>builder()
+  public static class Sum extends AggrFunction {
+    public Sum() {
+      super("sum");
+    }
+
+    @Override
+    public TypedAggrFunction<?, ?> forType(DataType<?> argType) throws ModelException {
+      if (argType == DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double, Double>(ident, DataTypes.DoubleType, DataTypes.DoubleType) {
+          @Override
+          public Double aggregate(Iterable<Double> values) {
+            double sum = 0.0;
+            for (Double d : values) {
+              sum += d;
+            }
+            return sum;
+          }
+        };
+      } else if (argType == DataTypes.LongType) {
+        return new TypedAggrFunction<Long, Long>(ident, DataTypes.LongType, DataTypes.LongType) {
+          @Override
+          public Long aggregate(Iterable<Long> values) {
+            long sum = 0L;
+            for (Long d : values) {
+              sum += d;
+            }
+            return sum;
+          }
+        };
+      } else {
+        throw new ModelException("Invalid type for sum: '" + argType + "'.");
+      }
+    }
+  }
+
+  public static final ImmutableMap<String, AggrFunction> AGGREGATIONS = ImmutableMap.<String, AggrFunction>builder()
+      .put("sum", new Sum())
+      .build();
+
+  public static final ImmutableList<SimpleFunction<?>> SIMPLE = ImmutableList.<SimpleFunction<?>>builder()
       .add(new Length())
       .add(new Upper())
       .add(new Lower())
       .add(new Substr())
       .build();
+
 }

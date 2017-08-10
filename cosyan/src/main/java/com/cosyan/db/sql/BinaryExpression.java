@@ -10,6 +10,8 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta;
+import com.cosyan.db.sql.Parser.ParserException;
+import com.cosyan.db.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableMap;
@@ -512,6 +514,25 @@ public class BinaryExpression extends Expression {
     } else {
       throw new ModelException("Unsupported binary expression " + ident.getString() +
           " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
+    }
+  }
+
+  @Override
+  public AggregationExpression isAggregation() throws ParserException {
+    AggregationExpression leftAggr = left.isAggregation();
+    AggregationExpression rightAggr = right.isAggregation();
+    if (leftAggr == AggregationExpression.NO) {
+      if (rightAggr == AggregationExpression.NO || rightAggr == AggregationExpression.EITHER) {
+        return AggregationExpression.NO;
+      }
+    } else if (leftAggr == AggregationExpression.YES) {
+      if (rightAggr == AggregationExpression.YES || rightAggr == AggregationExpression.EITHER) {
+        return AggregationExpression.YES;
+      }
+    } if (leftAggr == AggregationExpression.EITHER && rightAggr == AggregationExpression.EITHER) {
+      return AggregationExpression.EITHER;
+    } else {
+      throw new ParserException("Incompatible left and right expression for " + ident.getString() + ".");
     }
   }
 }

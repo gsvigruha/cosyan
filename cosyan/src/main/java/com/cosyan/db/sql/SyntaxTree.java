@@ -2,7 +2,7 @@ package com.cosyan.db.sql;
 
 import java.util.Optional;
 
-import com.cosyan.db.model.BuiltinFunctions.Function;
+import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
@@ -11,6 +11,8 @@ import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.DerivedTableMeta;
+import com.cosyan.db.model.TableMeta.GroupByTableMeta;
+import com.cosyan.db.sql.Parser.ParserException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -20,6 +22,10 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class SyntaxTree {
+
+  public static enum AggregationExpression {
+    YES, NO, EITHER
+  }
 
   @Data
   @EqualsAndHashCode(callSuper = false)
@@ -53,6 +59,8 @@ public class SyntaxTree {
     public String getName(String def) {
       return def;
     }
+
+    public abstract AggregationExpression isAggregation() throws ParserException;
   }
 
   @Data
@@ -61,16 +69,37 @@ public class SyntaxTree {
     private final ImmutableList<Expression> columns;
     private final Table table;
     private final Optional<Expression> where;
+    private final Optional<ImmutableList<Expression>> groupBy;
 
     public TableMeta compile(MetaRepo metaRepo) throws ModelException {
       TableMeta sourceTable = table.compile(metaRepo);
+      final TableMeta effectiveTable;
+      if (groupBy.isPresent()) {
+        ImmutableMap.Builder<String, ColumnMeta> keyColumnsBuilder = ImmutableMap.builder();
+        for (Expression expr : groupBy.get()) {
+          DerivedColumn keyColumn = expr.compile(sourceTable, metaRepo);
+          String name = expr.getName(null);
+          if (name == null) {
+            throw new ModelException("Expression in group by must be named: '" + expr + "'.");
+          }
+          keyColumnsBuilder.put(name, keyColumn);
+        }
+        ImmutableMap<String, ColumnMeta> keyColumns = keyColumnsBuilder.build();
+        effectiveTable = new GroupByTableMeta(
+            sourceTable,
+            keyColumns,
+            sourceTable.columns(),
+            ColumnMeta.TRUE_COLUMN);
+      } else {
+        effectiveTable = sourceTable;
+      }
       ImmutableMap.Builder<String, ColumnMeta> tableColumns = ImmutableMap.builder();
       int i = 0;
       for (Expression expr : columns) {
         if (expr instanceof AsteriskExpression) {
           tableColumns.putAll(sourceTable.columns());
         } else {
-          tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, metaRepo));
+          tableColumns.put(expr.getName("_c" + (i++)), expr.compile(effectiveTable, metaRepo));
         }
       }
       DerivedColumn whereColumn;
@@ -112,6 +141,28 @@ public class SyntaxTree {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
+  public static class AsExpression extends Expression {
+    private final Ident ident;
+    private final Expression expr;
+
+    @Override
+    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) throws ModelException {
+      return expr.compile(sourceTable, metaRepo);
+    }
+
+    @Override
+    public AggregationExpression isAggregation() throws ParserException {
+      return expr.isAggregation();
+    }
+
+    @Override
+    public String getName(String def) {
+      return ident.getString();
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
   public static class UnaryExpression extends Expression {
     private final Ident ident;
     private final Expression expr;
@@ -131,6 +182,11 @@ public class SyntaxTree {
       } else {
         throw new UnsupportedOperationException();
       }
+    }
+
+    @Override
+    public AggregationExpression isAggregation() throws ParserException {
+      return expr.isAggregation();
     }
   }
 
@@ -160,6 +216,11 @@ public class SyntaxTree {
     public String getName(String def) {
       return ident.getString();
     }
+
+    @Override
+    public AggregationExpression isAggregation() {
+      return AggregationExpression.NO;
+    }
   }
 
   @Data
@@ -176,6 +237,11 @@ public class SyntaxTree {
           return val;
         }
       };
+    }
+
+    @Override
+    public AggregationExpression isAggregation() {
+      return AggregationExpression.EITHER;
     }
   }
 
@@ -194,6 +260,11 @@ public class SyntaxTree {
         }
       };
     }
+
+    @Override
+    public AggregationExpression isAggregation() {
+      return AggregationExpression.EITHER;
+    }
   }
 
   @Data
@@ -211,6 +282,11 @@ public class SyntaxTree {
         }
       };
     }
+
+    @Override
+    public AggregationExpression isAggregation() {
+      return AggregationExpression.EITHER;
+    }
   }
 
   @Data
@@ -221,7 +297,7 @@ public class SyntaxTree {
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) throws ModelException {
-      Function<?> function = metaRepo.function(ident);
+      SimpleFunction<?> function = metaRepo.simpleFunction(ident);
       ImmutableList.Builder<DerivedColumn> argColumnsBuilder = ImmutableList.builder();
       for (int i = 0; i < function.getArgTypes().size(); i++) {
         DerivedColumn col = args.get(i).compile(sourceTable, metaRepo);
@@ -239,6 +315,11 @@ public class SyntaxTree {
         }
       };
     }
+
+    @Override
+    public AggregationExpression isAggregation() {
+      return AggregationExpression.NO;
+    }
   }
 
   @Data
@@ -253,6 +334,11 @@ public class SyntaxTree {
     @Override
     public String getName(String def) {
       throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public AggregationExpression isAggregation() {
+      return AggregationExpression.NO;
     }
   }
 

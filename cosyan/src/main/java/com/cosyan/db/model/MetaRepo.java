@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.cosyan.db.conf.Config;
-import com.cosyan.db.model.BuiltinFunctions.Function;
+import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
@@ -21,14 +21,14 @@ public class MetaRepo {
 
   private final Config config;
   private final ConcurrentHashMap<String, MaterializedTableMeta> tables;
-  private final ConcurrentHashMap<String, Function<?>> builtinFunctions;
+  private final ConcurrentHashMap<String, SimpleFunction<?>> simpleFunctions;
 
   public MetaRepo(Config config) {
     this.config = config;
     this.tables = new ConcurrentHashMap<>();
-    this.builtinFunctions = new ConcurrentHashMap<>();
-    for (Function<?> builtinFunction : BuiltinFunctions.ALL) {
-      builtinFunctions.put(builtinFunction.getIdent(), builtinFunction);
+    this.simpleFunctions = new ConcurrentHashMap<>();
+    for (SimpleFunction<?> simpleFunction : BuiltinFunctions.SIMPLE) {
+      simpleFunctions.put(simpleFunction.getIdent(), simpleFunction);
     }
   }
 
@@ -61,14 +61,14 @@ public class MetaRepo {
     return new FileOutputStream(config.dataDir() + File.separator + tableName);
   }
 
-  public Function<?> function(Ident ident) throws ModelException {
+  public SimpleFunction<?> simpleFunction(Ident ident) throws ModelException {
     if (ident.parts().length != 1) {
       throw new ModelException("Invalid function identifier " + ident.getString() + ".");
     }
-    if (!builtinFunctions.containsKey(ident.getString())) {
+    if (!simpleFunctions.containsKey(ident.getString())) {
       throw new ModelException("Function " + ident.getString() + " does not exist.");
     }
-    return builtinFunctions.get(ident.getString());
+    return simpleFunctions.get(ident.getString());
   }
 
   public static class ModelException extends Exception {

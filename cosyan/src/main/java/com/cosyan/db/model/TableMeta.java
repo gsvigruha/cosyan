@@ -55,4 +55,24 @@ public abstract class TableMeta {
       return new DerivedTableReader(sourceTable.reader(), columns(), whereColumn);
     }
   }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class GroupByTableMeta extends TableMeta {
+    private final TableMeta sourceTable;
+    private final ImmutableMap<String, ColumnMeta> keyColumns;
+    private final ImmutableMap<String, ? extends ColumnMeta> valueColumns;
+    private final ColumnMeta havingColumn;
+
+    @Override
+    public ImmutableMap<String, ? extends ColumnMeta> columns() {
+      return valueColumns;
+    }
+
+    @Override
+    public TableReader reader() throws ModelException {
+      //return new GroupByTableReader(sourceTable.reader(), keyColumns, valueColumns, havingColumn);
+      return null;
+    }
+  }
 }
