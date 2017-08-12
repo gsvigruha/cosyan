@@ -39,19 +39,19 @@ public class BuiltinFunctions {
 
   @Data
   @EqualsAndHashCode(callSuper = false)
-  public static abstract class TypedAggrFunction<T, U> extends Function {
+  public static abstract class TypedAggrFunction<T> extends Function {
 
-    private final DataType<U> argType;
+    private final DataType<?> argType;
 
     private final DataType<T> returnType;
 
-    public TypedAggrFunction(String ident, DataType<T> returnType, DataType<U> argType) {
+    public TypedAggrFunction(String ident, DataType<T> returnType, DataType<?> argType) {
       super(ident, false);
       this.argType = argType;
       this.returnType = returnType;
     }
 
-    public abstract U aggregate(Iterable<T> values);
+    public abstract Object aggregate(Object x, Object y);
   }
 
   @Data
@@ -64,7 +64,7 @@ public class BuiltinFunctions {
       super(ident, false);
     }
 
-    public abstract TypedAggrFunction<?, ?> forType(DataType<?> argType) throws ModelException;
+    public abstract TypedAggrFunction<?> forType(DataType<?> argType) throws ModelException;
   }
 
   public static class Length extends SimpleFunction<Long> {
@@ -120,27 +120,19 @@ public class BuiltinFunctions {
     }
 
     @Override
-    public TypedAggrFunction<?, ?> forType(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> forType(DataType<?> argType) throws ModelException {
       if (argType == DataTypes.DoubleType) {
-        return new TypedAggrFunction<Double, Double>(ident, DataTypes.DoubleType, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType, DataTypes.DoubleType) {
           @Override
-          public Double aggregate(Iterable<Double> values) {
-            double sum = 0.0;
-            for (Double d : values) {
-              sum += d;
-            }
-            return sum;
+          public Double aggregate(Object x, Object y) {
+            return (Double) x + (Double) y;
           }
         };
       } else if (argType == DataTypes.LongType) {
-        return new TypedAggrFunction<Long, Long>(ident, DataTypes.LongType, DataTypes.LongType) {
+        return new TypedAggrFunction<Long>(ident, DataTypes.LongType, DataTypes.LongType) {
           @Override
-          public Long aggregate(Iterable<Long> values) {
-            long sum = 0L;
-            for (Long d : values) {
-              sum += d;
-            }
-            return sum;
+          public Long aggregate(Object x, Object y) {
+            return (Long) x + (Long) y;
           }
         };
       } else {

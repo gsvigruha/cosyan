@@ -3,8 +3,10 @@ package com.cosyan.db.sql;
 import static com.cosyan.db.sql.SyntaxTree.assertType;
 
 import java.util.Date;
+import java.util.List;
 
 import com.cosyan.db.model.ColumnMeta;
+import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo;
@@ -14,7 +16,6 @@ import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
-import com.google.common.collect.ImmutableMap;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,11 +26,33 @@ public class BinaryExpression extends Expression {
   private final Ident ident;
   private final Expression left;
   private final Expression right;
+  private final AggregationExpression aggregation;
+
+  public BinaryExpression(
+      Ident ident,
+      Expression left,
+      Expression right) throws ParserException {
+    this.ident = ident;
+    this.left = left;
+    this.right = right;
+    AggregationExpression leftAggr = left.isAggregation();
+    AggregationExpression rightAggr = right.isAggregation();
+    if (leftAggr == rightAggr) {
+      this.aggregation = leftAggr;
+    } else if (leftAggr == AggregationExpression.EITHER) {
+      this.aggregation = rightAggr;
+    } else if (rightAggr == AggregationExpression.EITHER) {
+      this.aggregation = leftAggr;
+    } else {
+      throw new ParserException("Incompatible left and right expression for " + ident.getString() + ".");
+    }
+  }
 
   @Override
-  public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo) throws ModelException {
-    final DerivedColumn leftColumn = left.compile(sourceTable, metaRepo);
-    final DerivedColumn rightColumn = right.compile(sourceTable, metaRepo);
+  public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns)
+      throws ModelException {
+    final DerivedColumn leftColumn = left.compile(sourceTable, metaRepo, aggrColumns);
+    final DerivedColumn rightColumn = right.compile(sourceTable, metaRepo, aggrColumns);
 
     if (ident.is(Tokens.AND)) {
       assertType(DataTypes.BoolType, leftColumn.getType());
@@ -37,7 +60,7 @@ public class BinaryExpression extends Expression {
       return new DerivedColumn(DataTypes.BoolType) {
 
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Boolean) leftColumn.getValue(sourceValues) && (Boolean) rightColumn.getValue(sourceValues);
         }
       };
@@ -47,7 +70,7 @@ public class BinaryExpression extends Expression {
       return new DerivedColumn(DataTypes.BoolType) {
 
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Boolean) leftColumn.getValue(sourceValues) || (Boolean) rightColumn.getValue(sourceValues);
         }
       };
@@ -57,7 +80,7 @@ public class BinaryExpression extends Expression {
       return new DerivedColumn(DataTypes.BoolType) {
 
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Boolean) leftColumn.getValue(sourceValues) ^ (Boolean) rightColumn.getValue(sourceValues);
         }
       };
@@ -90,28 +113,28 @@ public class BinaryExpression extends Expression {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.LongType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Long) leftColumn.getValue(sourceValues) * (Long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Double) leftColumn.getValue(sourceValues) * (Double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Double) leftColumn.getValue(sourceValues) * (Long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Long) leftColumn.getValue(sourceValues) * (Double) rightColumn.getValue(sourceValues);
         }
       };
@@ -125,35 +148,35 @@ public class BinaryExpression extends Expression {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.LongType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Long) leftColumn.getValue(sourceValues) + (Long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Double) leftColumn.getValue(sourceValues) + (Double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Double) leftColumn.getValue(sourceValues) + (Long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Long) leftColumn.getValue(sourceValues) + (Double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.StringType && rightColumn.getType() == DataTypes.StringType) {
       return new DerivedColumn(DataTypes.StringType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (String) leftColumn.getValue(sourceValues) + (String) rightColumn.getValue(sourceValues);
         }
       };
@@ -167,28 +190,28 @@ public class BinaryExpression extends Expression {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.LongType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Long) leftColumn.getValue(sourceValues) - (Long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Double) leftColumn.getValue(sourceValues) - (Double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Double) leftColumn.getValue(sourceValues) - (Long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Long) leftColumn.getValue(sourceValues) - (Double) rightColumn.getValue(sourceValues);
         }
       };
@@ -202,28 +225,28 @@ public class BinaryExpression extends Expression {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.LongType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Long) leftColumn.getValue(sourceValues) / (Long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Double) leftColumn.getValue(sourceValues) / (Double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Double) leftColumn.getValue(sourceValues) / (Long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Long) leftColumn.getValue(sourceValues) / (Double) rightColumn.getValue(sourceValues);
         }
       };
@@ -237,28 +260,28 @@ public class BinaryExpression extends Expression {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.LongType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Long) leftColumn.getValue(sourceValues) % (Long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Double) leftColumn.getValue(sourceValues) % (Double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Double) leftColumn.getValue(sourceValues) % (Long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.DoubleType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (Long) leftColumn.getValue(sourceValues) % (Double) rightColumn.getValue(sourceValues);
         }
       };
@@ -272,42 +295,42 @@ public class BinaryExpression extends Expression {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (long) leftColumn.getValue(sourceValues) == (long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (double) leftColumn.getValue(sourceValues) == (double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (double) leftColumn.getValue(sourceValues) == (long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (long) leftColumn.getValue(sourceValues) == (double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.StringType && rightColumn.getType() == DataTypes.StringType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return ((String) leftColumn.getValue(sourceValues)).equals((String) rightColumn.getValue(sourceValues));
         }
       };
     } else if (leftColumn.getType() == DataTypes.DateType && rightColumn.getType() == DataTypes.DateType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return ((Date) leftColumn.getValue(sourceValues)).equals((Date) rightColumn.getValue(sourceValues));
         }
       };
@@ -321,35 +344,35 @@ public class BinaryExpression extends Expression {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (long) leftColumn.getValue(sourceValues) < (long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (double) leftColumn.getValue(sourceValues) < (double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (double) leftColumn.getValue(sourceValues) < (long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (long) leftColumn.getValue(sourceValues) < (double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.StringType && rightColumn.getType() == DataTypes.StringType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return ((String) leftColumn.getValue(sourceValues))
               .compareTo((String) rightColumn.getValue(sourceValues)) < 0;
         }
@@ -357,7 +380,7 @@ public class BinaryExpression extends Expression {
     } else if (leftColumn.getType() == DataTypes.DateType && rightColumn.getType() == DataTypes.DateType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return ((Date) leftColumn.getValue(sourceValues)).compareTo((Date) rightColumn.getValue(sourceValues)) < 0;
         }
       };
@@ -371,35 +394,35 @@ public class BinaryExpression extends Expression {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (long) leftColumn.getValue(sourceValues) > (long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (double) leftColumn.getValue(sourceValues) > (double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (double) leftColumn.getValue(sourceValues) > (long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (long) leftColumn.getValue(sourceValues) > (double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.StringType && rightColumn.getType() == DataTypes.StringType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return ((String) leftColumn.getValue(sourceValues))
               .compareTo((String) rightColumn.getValue(sourceValues)) > 0;
         }
@@ -407,7 +430,7 @@ public class BinaryExpression extends Expression {
     } else if (leftColumn.getType() == DataTypes.DateType && rightColumn.getType() == DataTypes.DateType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return ((Date) leftColumn.getValue(sourceValues)).compareTo((Date) rightColumn.getValue(sourceValues)) > 0;
         }
       };
@@ -421,35 +444,35 @@ public class BinaryExpression extends Expression {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (long) leftColumn.getValue(sourceValues) <= (long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (double) leftColumn.getValue(sourceValues) <= (double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (double) leftColumn.getValue(sourceValues) <= (long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (long) leftColumn.getValue(sourceValues) <= (double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.StringType && rightColumn.getType() == DataTypes.StringType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return ((String) leftColumn.getValue(sourceValues))
               .compareTo((String) rightColumn.getValue(sourceValues)) <= 0;
         }
@@ -457,7 +480,7 @@ public class BinaryExpression extends Expression {
     } else if (leftColumn.getType() == DataTypes.DateType && rightColumn.getType() == DataTypes.DateType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return ((Date) leftColumn.getValue(sourceValues)).compareTo((Date) rightColumn.getValue(sourceValues)) <= 0;
         }
       };
@@ -471,35 +494,35 @@ public class BinaryExpression extends Expression {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (long) leftColumn.getValue(sourceValues) >= (long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (double) leftColumn.getValue(sourceValues) >= (double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (double) leftColumn.getValue(sourceValues) >= (long) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return (long) leftColumn.getValue(sourceValues) >= (double) rightColumn.getValue(sourceValues);
         }
       };
     } else if (leftColumn.getType() == DataTypes.StringType && rightColumn.getType() == DataTypes.StringType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return ((String) leftColumn.getValue(sourceValues))
               .compareTo((String) rightColumn.getValue(sourceValues)) >= 0;
         }
@@ -507,7 +530,7 @@ public class BinaryExpression extends Expression {
     } else if (leftColumn.getType() == DataTypes.DateType && rightColumn.getType() == DataTypes.DateType) {
       return new DerivedColumn(DataTypes.BoolType) {
         @Override
-        public Object getValue(ImmutableMap<String, Object> sourceValues) {
+        public Object getValue(Object[] sourceValues) {
           return ((Date) leftColumn.getValue(sourceValues)).compareTo((Date) rightColumn.getValue(sourceValues)) >= 0;
         }
       };
@@ -518,21 +541,7 @@ public class BinaryExpression extends Expression {
   }
 
   @Override
-  public AggregationExpression isAggregation() throws ParserException {
-    AggregationExpression leftAggr = left.isAggregation();
-    AggregationExpression rightAggr = right.isAggregation();
-    if (leftAggr == AggregationExpression.NO) {
-      if (rightAggr == AggregationExpression.NO || rightAggr == AggregationExpression.EITHER) {
-        return AggregationExpression.NO;
-      }
-    } else if (leftAggr == AggregationExpression.YES) {
-      if (rightAggr == AggregationExpression.YES || rightAggr == AggregationExpression.EITHER) {
-        return AggregationExpression.YES;
-      }
-    } if (leftAggr == AggregationExpression.EITHER && rightAggr == AggregationExpression.EITHER) {
-      return AggregationExpression.EITHER;
-    } else {
-      throw new ParserException("Incompatible left and right expression for " + ident.getString() + ".");
-    }
+  public AggregationExpression isAggregation() {
+    return aggregation;
   }
 }
