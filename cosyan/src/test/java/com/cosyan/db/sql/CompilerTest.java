@@ -195,6 +195,17 @@ public class CompilerTest {
   }
 
   @Test
+  public void testGroupByMultipleKey() throws Exception {
+    SyntaxTree tree = parser.parse("select a, b, sum(c) as c from large group by a, b;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "a", "b", 1L, "c", 2.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "a", "b", 3L, "c", 4.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "b", "b", 5L, "c", 6.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "b", "b", 7L, "c", 8.0), reader.readColumns());
+  }
+
+  @Test
   public void testGroupByAttrOrder() throws Exception {
     SyntaxTree tree = parser.parse("select sum(c) as c, a, a as d, sum(b) as b from large group by a;");
     ExposedTableMeta ExposedTableMeta = compiler.query(tree);
