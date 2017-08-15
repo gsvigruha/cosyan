@@ -144,7 +144,7 @@ public abstract class TableReader {
     private final TableReader sourceReader;
     private final ColumnMeta havingColumn;
     private final ImmutableMap<String, ? extends ColumnMeta> keyColumns;
-    private final ImmutableList<AggrColumn> valueColumns;
+    private final ImmutableList<AggrColumn> aggrColumns;
     private final int size;
 
     private Iterator<Object[]> iterator;
@@ -153,14 +153,14 @@ public abstract class TableReader {
     public AggrTableReader(
         TableReader sourceReader,
         ImmutableMap<String, ? extends ColumnMeta> keyColumns,
-        ImmutableList<AggrColumn> valueColumns,
+        ImmutableList<AggrColumn> aggrColumns,
         ColumnMeta havingColumn) {
       this.sourceReader = sourceReader;
       this.keyColumns = keyColumns;
-      this.valueColumns = valueColumns;
+      this.aggrColumns = aggrColumns;
       this.havingColumn = havingColumn;
       this.aggregated = false;
-      this.size = keyColumns.size() + valueColumns.size();
+      this.size = keyColumns.size() + aggrColumns.size();
     }
 
     @Override
@@ -197,18 +197,23 @@ public abstract class TableReader {
         }
         keyValues = builder.build();
         if (!aggregatedValues.containsKey(keyValues)) {
-          Object[] aggrValues = new Object[valueColumns.size()];
+          Object[] aggrValues = new Object[aggrColumns.size()];
           int i = 0;
-          for (AggrColumn column : valueColumns) {
-            aggrValues[i++] = column.getInnerValue(sourceValues);
+          for (AggrColumn column : aggrColumns) {
+            aggrValues[i++] = column.getFunction().init();
           }
           aggregatedValues.put(keyValues, aggrValues);
-        } else {
-          Object[] aggrValues = aggregatedValues.get(keyValues);
-          int i = 0;
-          for (AggrColumn column : valueColumns) {
-            aggrValues[i] = column.aggregate(aggrValues[i++], column.getInnerValue(sourceValues));
-          }
+        }
+        Object[] aggrValues = aggregatedValues.get(keyValues);
+        int i = 0;
+        for (AggrColumn column : aggrColumns) {
+          aggrValues[i] = column.getFunction().aggregate(aggrValues[i++], column.getInnerValue(sourceValues));
+        }
+      }
+      for (Object[] values : aggregatedValues.values()) {
+        int i = 0;
+        for (AggrColumn column : aggrColumns) {
+          values[i] = column.getFunction().finish(values[i++]);
         }
       }
       final Iterator<Entry<ImmutableList<Object>, Object[]>> innerIterator = aggregatedValues.entrySet().iterator();

@@ -37,6 +37,7 @@ public class BinaryExpression extends Expression {
     this.right = right;
     AggregationExpression leftAggr = left.isAggregation();
     AggregationExpression rightAggr = right.isAggregation();
+
     if (leftAggr == rightAggr) {
       this.aggregation = leftAggr;
     } else if (leftAggr == AggregationExpression.EITHER) {

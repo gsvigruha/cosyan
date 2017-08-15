@@ -128,11 +128,43 @@ public class CompilerTest {
   }
 
   @Test
-  public void testAggregate() throws Exception {
+  public void testGlobalAggregate() throws Exception {
     SyntaxTree tree = parser.parse("select sum(b) as b, sum(c) as c from large;");
     ExposedTableMeta ExposedTableMeta = compiler.query(tree);
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("b", 16L, "c", 20.0), reader.readColumns());
+  }
+
+  @Test
+  public void testAggregatorsSum() throws Exception {
+    SyntaxTree tree = parser.parse("select sum(1) as s1, sum(2.0) as s2, sum(b) as sb, sum(c) as sc from large;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("s1", 4L, "s2", 8.0, "sb", 16L, "sc", 20.0), reader.readColumns());
+  }
+
+  @Test
+  public void testAggregatorsCount() throws Exception {
+    SyntaxTree tree = parser.parse("select count(1) as c1, count(a) as ca, count(b) as cb, count(c) as cc from large;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("c1", 4L, "ca", 4L, "cb", 4L, "cc", 4L), reader.readColumns());
+  }
+
+  @Test
+  public void testAggregatorsMax() throws Exception {
+    SyntaxTree tree = parser.parse("select max(a) as a, max(b) as b, max(c) as c from large;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "b", "b", 7L, "c", 8.0), reader.readColumns());
+  }
+
+  @Test
+  public void testAggregatorsMin() throws Exception {
+    SyntaxTree tree = parser.parse("select min(a) as a, min(b) as b, min(c) as c from large;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "a", "b", 1L, "c", 2.0), reader.readColumns());
   }
 
   @Test
@@ -163,11 +195,40 @@ public class CompilerTest {
   }
 
   @Test
+  public void testGroupByAttrOrder() throws Exception {
+    SyntaxTree tree = parser.parse("select sum(c) as c, a, a as d, sum(b) as b from large group by a;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("c", 6.0, "a", "a", "d", "a", "b", 4L), reader.readColumns());
+    assertEquals(ImmutableMap.of("c", 14.0, "a", "b", "d", "b", "b", 12L), reader.readColumns());
+  }
+
+  @Test
   public void testGroupByAndWhere() throws Exception {
     SyntaxTree tree = parser.parse("select a, sum(b) as b from large where c % 4 = 0 group by a;");
     ExposedTableMeta ExposedTableMeta = compiler.query(tree);
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("a", "a", "b", 3L), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "b", "b", 7L), reader.readColumns());
+  }
+
+  @Test
+  public void testHaving() throws Exception {
+    SyntaxTree tree = parser.parse("select a from large group by a having sum(b) > 10;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "b"), reader.readColumns());
+  }
+
+  @Test(expected = ModelException.class)
+  public void testAggrInAggr() throws Exception {
+    SyntaxTree tree = parser.parse("select sum(sum(b)) from large;");
+    compiler.query(tree);
+  }
+
+  @Test(expected = ModelException.class)
+  public void testNonKeyOutsideOfAggr() throws Exception {
+    SyntaxTree tree = parser.parse("select b, sum(c) from large group by a;");
+    compiler.query(tree);
   }
 }

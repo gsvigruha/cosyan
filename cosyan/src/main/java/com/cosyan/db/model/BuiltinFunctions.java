@@ -5,7 +5,7 @@ import java.util.Spliterator;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -41,17 +41,18 @@ public class BuiltinFunctions {
   @EqualsAndHashCode(callSuper = false)
   public static abstract class TypedAggrFunction<T> extends Function {
 
-    private final DataType<?> argType;
-
     private final DataType<T> returnType;
 
-    public TypedAggrFunction(String ident, DataType<T> returnType, DataType<?> argType) {
+    public TypedAggrFunction(String ident, DataType<T> returnType) {
       super(ident, false);
-      this.argType = argType;
       this.returnType = returnType;
     }
 
-    public abstract Object aggregate(Object x, Object y);
+    public abstract Object init();
+
+    public abstract Object aggregate(Object a, Object x);
+    
+    public abstract T finish(Object x);
   }
 
   @Data
@@ -114,35 +115,11 @@ public class BuiltinFunctions {
     }
   }
 
-  public static class Sum extends AggrFunction {
-    public Sum() {
-      super("sum");
-    }
-
-    @Override
-    public TypedAggrFunction<?> forType(DataType<?> argType) throws ModelException {
-      if (argType == DataTypes.DoubleType) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType, DataTypes.DoubleType) {
-          @Override
-          public Double aggregate(Object x, Object y) {
-            return (Double) x + (Double) y;
-          }
-        };
-      } else if (argType == DataTypes.LongType) {
-        return new TypedAggrFunction<Long>(ident, DataTypes.LongType, DataTypes.LongType) {
-          @Override
-          public Long aggregate(Object x, Object y) {
-            return (Long) x + (Long) y;
-          }
-        };
-      } else {
-        throw new ModelException("Invalid type for sum: '" + argType + "'.");
-      }
-    }
-  }
-
-  public static final ImmutableMap<String, AggrFunction> AGGREGATIONS = ImmutableMap.<String, AggrFunction>builder()
-      .put("sum", new Sum())
+  public static final ImmutableList<AggrFunction> AGGREGATIONS = ImmutableList.<AggrFunction>builder()
+      .add(new Aggregators.Sum())
+      .add(new Aggregators.Count())
+      .add(new Aggregators.Max())
+      .add(new Aggregators.Min())
       .build();
 
   public static final ImmutableList<SimpleFunction<?>> SIMPLE = ImmutableList.<SimpleFunction<?>>builder()
@@ -152,4 +129,12 @@ public class BuiltinFunctions {
       .add(new Substr())
       .build();
 
+  public static final ImmutableSet<String> AGGREGATION_NAMES;
+  static {
+    ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+    for (AggrFunction function : AGGREGATIONS) {
+      builder.add(function.getIdent());
+    }
+    AGGREGATION_NAMES = builder.build();
+  }
 }

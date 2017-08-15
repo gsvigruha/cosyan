@@ -8,7 +8,6 @@ import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.MetaRepo.ModelException;
-import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableMap;
@@ -53,11 +52,6 @@ public class IOTestUtil {
     @Override
     public ExposedTableReader reader() throws ModelException {
       return new DummyTableReader(columns, data);
-    }
-
-    @Override
-    public ImmutableMap<String, ? extends ColumnMeta> keyColumns() {
-      return TableMeta.wholeTableKeys;
     }
 
     @Override

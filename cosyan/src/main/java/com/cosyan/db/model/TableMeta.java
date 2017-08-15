@@ -14,22 +14,29 @@ import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 public abstract class TableMeta {
 
-  protected static final ImmutableMap<String, ? extends ColumnMeta> wholeTableKeys = ImmutableMap.of("",
+  public static final ImmutableMap<String, ColumnMeta> wholeTableKeys = ImmutableMap.of("",
       ColumnMeta.TRUE_COLUMN);
 
   public abstract ImmutableMap<String, ? extends ColumnMeta> columns();
 
   protected abstract TableReader reader() throws ModelException;
 
-  public abstract ImmutableMap<String, ? extends ColumnMeta> keyColumns();
+  public abstract int indexOf(Ident ident) throws ModelException;
 
-  public abstract int indexOf(Ident ident);
+  protected int indexOf(ImmutableSet<String> keys, Ident ident) throws ModelException {
+    int index = keys.asList().indexOf(ident.getString());
+    if (index < 0) {
+      throw new ModelException("Invalid identifier '" + ident.getString() + "'.");
+    }
+    return index;
+  }
 
   public static abstract class ExposedTableMeta extends TableMeta {
     @Override
@@ -56,13 +63,8 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> keyColumns() {
-      return wholeTableKeys;
-    }
-
-    @Override
-    public int indexOf(Ident ident) {
-      return columns().keySet().asList().indexOf(ident.getString());
+    public int indexOf(Ident ident) throws ModelException {
+      return indexOf(columns().keySet(), ident);
     }
   }
 
@@ -83,13 +85,8 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> keyColumns() {
-      return wholeTableKeys;
-    }
-
-    @Override
-    public int indexOf(Ident ident) {
-      return columns().keySet().asList().indexOf(ident.getString());
+    public int indexOf(Ident ident) throws ModelException {
+      return indexOf(columns().keySet(), ident);
     }
   }
 
@@ -110,19 +107,14 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> keyColumns() {
-      return wholeTableKeys;
-    }
-
-    @Override
-    public int indexOf(Ident ident) {
+    public int indexOf(Ident ident) throws ModelException {
       return sourceTable.indexOf(ident);
     }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class GroupByTableMeta extends TableMeta {
+  public static class KeyValueTableMeta extends TableMeta {
     private final TableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> keyColumns;
     private final ImmutableMap<String, ? extends ColumnMeta> valueColumns;
@@ -133,26 +125,21 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> keyColumns() {
-      return keyColumns;
-    }
-
-    @Override
     public TableReader reader() throws ModelException {
       return sourceTable.reader();
     }
 
     @Override
-    public int indexOf(Ident ident) {
-      return sourceTable.indexOf(ident);
+    public int indexOf(Ident ident) throws ModelException {
+      return indexOf(keyColumns.keySet(), ident);
     }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class AggrTableMeta extends TableMeta {
-    private final TableMeta sourceTable;
-    private final ImmutableList<AggrColumn> valueColumns;
+    private final KeyValueTableMeta sourceTable;
+    private final ImmutableList<AggrColumn> aggrColumns;
     private final ColumnMeta havingColumn;
 
     @Override
@@ -161,18 +148,13 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> keyColumns() {
-      return wholeTableKeys;
-    }
-
-    @Override
     public TableReader reader() throws ModelException {
-      return new AggrTableReader(sourceTable.reader(), sourceTable.keyColumns(), valueColumns, havingColumn);
+      return new AggrTableReader(sourceTable.reader(), sourceTable.keyColumns, aggrColumns, havingColumn);
     }
 
     @Override
-    public int indexOf(Ident ident) {
-      return sourceTable.keyColumns().size() + sourceTable.indexOf(ident);
+    public int indexOf(Ident ident) throws ModelException {
+      return sourceTable.keyColumns.size() + sourceTable.indexOf(ident);
     }
   }
 }

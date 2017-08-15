@@ -1,5 +1,6 @@
 package com.cosyan.db.model;
 
+import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
 
 import lombok.Data;
@@ -35,15 +36,17 @@ public abstract class ColumnMeta {
     }
   }
 
-  public static abstract class AggrColumn extends DerivedColumn {
+  public static class AggrColumn extends DerivedColumn {
 
     private final int index;
     private final DerivedColumn baseColumn;
+    private TypedAggrFunction<?> function;
 
-    public AggrColumn(DataType<?> type, DerivedColumn baseColumn, int index) {
+    public AggrColumn(DataType<?> type, DerivedColumn baseColumn, int index, TypedAggrFunction<?> function) {
       super(type);
       this.baseColumn = baseColumn;
       this.index = index;
+      this.function = function;
     }
 
     @Override
@@ -55,7 +58,9 @@ public abstract class ColumnMeta {
       return baseColumn.getValue(sourceValues);
     }
 
-    public abstract Object aggregate(Object x, Object y);
+    public TypedAggrFunction<?> getFunction() {
+      return function;
+    }
   }
 
   public static final DerivedColumn TRUE_COLUMN = new DerivedColumn(DataTypes.BoolType) {

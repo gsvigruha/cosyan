@@ -31,6 +31,7 @@ public class ParserTest {
         ImmutableList.of(new AsteriskExpression()),
         new TableRef(new Ident("table")),
         Optional.empty(),
+        Optional.empty(),
         Optional.empty())));
   }
 
@@ -40,6 +41,7 @@ public class ParserTest {
     assertEquals(tree, new SyntaxTree(new Select(
         ImmutableList.of(new IdentExpression(new Ident("a")), new IdentExpression(new Ident("b"))),
         new TableRef(new Ident("table")),
+        Optional.empty(),
         Optional.empty(),
         Optional.empty())));
   }
@@ -52,6 +54,7 @@ public class ParserTest {
             new Ident("sum"),
             ImmutableList.of(new IdentExpression(new Ident("a"))))),
         new TableRef(new Ident("table")),
+        Optional.empty(),
         Optional.empty(),
         Optional.empty())));
   }
@@ -66,6 +69,7 @@ public class ParserTest {
             new Ident("="),
             new IdentExpression(new Ident("a")),
             new LongLiteral(1))),
+        Optional.empty(),
         Optional.empty())));
   }
 
@@ -78,7 +82,8 @@ public class ParserTest {
             ImmutableList.of(new IdentExpression(new Ident("b"))))),
         new TableRef(new Ident("table")),
         Optional.empty(),
-        Optional.of(ImmutableList.of(new IdentExpression(new Ident("a")))))));
+        Optional.of(ImmutableList.of(new IdentExpression(new Ident("a")))),
+        Optional.empty())));
   }
 
   @Test
@@ -99,6 +104,7 @@ public class ParserTest {
                     new DoubleLiteral(2.0)),
                 new DoubleLiteral(3.0))),
         new TableRef(new Ident("table")),
+        Optional.empty(),
         Optional.empty(),
         Optional.empty())));
   }
@@ -207,5 +213,10 @@ public class ParserTest {
             new Ident("="),
             new IdentExpression(new Ident("a")),
             new StringLiteral("x"))));
+  }
+
+  @Test(expected = ParserException.class)
+  public void testGroupByInconsistentAggr() throws Exception {
+    parser.parse("select sum(b) + b from large group by a;");
   }
 }

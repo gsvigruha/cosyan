@@ -35,7 +35,7 @@ public class MetaRepo {
       simpleFunctions.put(simpleFunction.getIdent(), simpleFunction);
     }
     this.aggrFunctions = new ConcurrentHashMap<>();
-    for (AggrFunction aggrFunction : BuiltinFunctions.AGGREGATIONS.values()) {
+    for (AggrFunction aggrFunction : BuiltinFunctions.AGGREGATIONS) {
       aggrFunctions.put(aggrFunction.getIdent(), aggrFunction);
     }
   }

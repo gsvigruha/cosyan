@@ -4,7 +4,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.cosyan.db.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.sql.SyntaxTree.AsExpression;
 import com.cosyan.db.sql.SyntaxTree.AsteriskExpression;
 import com.cosyan.db.sql.SyntaxTree.DoubleLiteral;
@@ -37,7 +36,7 @@ public class Parser {
   Expression parseExpression(String sql) throws ParserException {
     return parseExpression(Iterators.peekingIterator(lexer.tokenize(sql).iterator()), 0);
   }
-  
+
   public SyntaxTree parse(ImmutableList<Token> tokens) throws ParserException {
     return new SyntaxTree(parseTokens(Iterators.peekingIterator(tokens.iterator())));
   }
@@ -62,20 +61,23 @@ public class Parser {
       where = Optional.empty();
     }
     Optional<ImmutableList<Expression>> groupBy;
+    Optional<Expression> having;
     if (tokens.peek().is(Tokens.GROUP)) {
       tokens.next();
       assertNext(tokens, Tokens.BY);
-      groupBy = Optional.of(parseExprs(tokens, true, String.valueOf(Tokens.COMMA_COLON)));
-      for (Expression expr : groupBy.get()) {
-        if (expr.isAggregation() != AggregationExpression.NO) {
-          throw new ParserException("Invalid expression in group by: '" + expr + "'.");
-        }
+      groupBy = Optional.of(parseExprs(tokens, true, String.valueOf(Tokens.COMMA_COLON), Tokens.HAVING));
+      if (tokens.peek().is(Tokens.HAVING)) {
+        tokens.next();
+        having = Optional.of(parseExpression(tokens, 0));
+      } else {
+        having = Optional.empty();
       }
     } else {
       groupBy = Optional.empty();
+      having = Optional.empty();
     }
     assertPeek(tokens, String.valueOf(Tokens.COMMA_COLON), String.valueOf(Tokens.PARENT_CLOSED));
-    return new Select(columns, table, where, groupBy);
+    return new Select(columns, table, where, groupBy, having);
   }
 
   private Expression parsePrimary(PeekingIterator<Token> tokens) throws ParserException {
@@ -92,8 +94,7 @@ public class Parser {
       Ident ident = new Ident(tokens.next().getString());
       if (tokens.peek().is(Tokens.PARENT_OPEN)) {
         tokens.next();
-        ImmutableList<Expression> argExprs =
-            parseExprs(tokens, false, String.valueOf(Tokens.PARENT_CLOSED));
+        ImmutableList<Expression> argExprs = parseExprs(tokens, false, String.valueOf(Tokens.PARENT_CLOSED));
         tokens.next();
         return new FuncCallExpression(ident, argExprs);
       } else {
@@ -160,7 +161,8 @@ public class Parser {
   Expression parseExpression(PeekingIterator<Token> tokens, int precedence) throws ParserException {
     if (precedence >= Tokens.BINARY_OPERATORS_PRECEDENCE.size()) {
       return parsePrimary(tokens);
-    } else if (tokens.peek().is(Tokens.NOT) && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.NOT)) {
+    } else if (tokens.peek().is(Tokens.NOT)
+        && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.NOT)) {
       return new UnaryExpression(new Ident(tokens.next().getString()), parseExpression(tokens, precedence + 1));
     } else {
       return parseBinaryExpression(tokens, precedence);

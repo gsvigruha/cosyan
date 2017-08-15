@@ -17,6 +17,8 @@ public class Tokens {
 
   public static String BY = "by";
 
+  public static String HAVING = "having";
+
   public static String AS = "as";
 
   private static String IDENT_COMP = "[a-z][a-z0-9_]*";

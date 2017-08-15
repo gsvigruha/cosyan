@@ -15,7 +15,7 @@ import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMeta.FilteredTableMeta;
-import com.cosyan.db.model.TableMeta.GroupByTableMeta;
+import com.cosyan.db.model.TableMeta.KeyValueTableMeta;
 import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.sql.SyntaxTree.AsteriskExpression;
@@ -46,14 +46,22 @@ public class Compiler {
     ImmutableMap.Builder<String, ColumnMeta> tableColumns = ImmutableMap.builder();
     int i = 0;
     for (Expression expr : columns) {
+      tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, metaRepo, aggrColumns));
+    }
+    return tableColumns.build();
+  }
+
+  public static ImmutableMap<String, ColumnMeta> tableColumns(
+      MetaRepo metaRepo,
+      TableMeta sourceTable,
+      ImmutableList<Expression> columns) throws ModelException {
+    ImmutableMap.Builder<String, ColumnMeta> tableColumns = ImmutableMap.builder();
+    int i = 0;
+    for (Expression expr : columns) {
       if (expr instanceof AsteriskExpression) {
         tableColumns.putAll(sourceTable.columns());
       } else {
-        if (expr.isAggregation() == AggregationExpression.YES) {
-          tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, metaRepo, aggrColumns));
-        } else {
-          tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, metaRepo, aggrColumns));
-        }
+        tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, metaRepo));
       }
     }
     return tableColumns.build();
@@ -70,30 +78,45 @@ public class Compiler {
     }
   }
 
-  public static boolean hasAggregateColumns(ImmutableList<Expression> columns) throws ModelException {
-    for (Expression expr : columns) {
-      if (expr.isAggregation() == AggregationExpression.YES) {
-        return true;
-      }
+  public static DerivedColumn havingExpression(MetaRepo metaRepo, TableMeta sourceTable,
+      Optional<Expression> having, List<AggrColumn> aggrColumns) throws ModelException {
+    if (having.isPresent()) {
+      DerivedColumn havingColumn = having.get().compile(sourceTable, metaRepo, aggrColumns);
+      assertType(DataTypes.BoolType, havingColumn.getType());
+      return havingColumn;
+    } else {
+      return ColumnMeta.TRUE_COLUMN;
     }
-    return false;
   }
 
-  public static GroupByTableMeta groupByTable(MetaRepo metaRepo, TableMeta sourceTable,
+  public static boolean isAggregation(ImmutableList<Expression> columns) {
+    return columns.stream().anyMatch(column -> column.isAggregation() == AggregationExpression.YES);
+  }
+
+  public static KeyValueTableMeta keyValueTable(
+      MetaRepo metaRepo,
+      TableMeta sourceTable,
       Optional<ImmutableList<Expression>> groupBy) throws ModelException {
-    ImmutableMap.Builder<String, ColumnMeta> keyColumnsBuilder = ImmutableMap.builder();
-    for (Expression expr : groupBy.get()) {
-      DerivedColumn keyColumn = expr.compile(sourceTable, metaRepo);
-      String name = expr.getName(null);
-      if (name == null) {
-        throw new ModelException("Expression in group by must be named: '" + expr + "'.");
+    if (groupBy.isPresent()) {
+      ImmutableMap.Builder<String, ColumnMeta> keyColumnsBuilder = ImmutableMap.builder();
+      for (Expression expr : groupBy.get()) {
+        DerivedColumn keyColumn = expr.compile(sourceTable, metaRepo);
+        String name = expr.getName(null);
+        if (name == null) {
+          throw new ModelException("Expression in group by must be named: '" + expr + "'.");
+        }
+        keyColumnsBuilder.put(name, keyColumn);
       }
-      keyColumnsBuilder.put(name, keyColumn);
+      ImmutableMap<String, ColumnMeta> keyColumns = keyColumnsBuilder.build();
+      return new KeyValueTableMeta(
+          sourceTable,
+          keyColumns,
+          sourceTable.columns());
+    } else {
+      return new KeyValueTableMeta(
+          sourceTable,
+          TableMeta.wholeTableKeys,
+          sourceTable.columns());
     }
-    ImmutableMap<String, ColumnMeta> keyColumns = keyColumnsBuilder.build();
-    return new GroupByTableMeta(
-        sourceTable,
-        keyColumns,
-        sourceTable.columns());
   }
 }
