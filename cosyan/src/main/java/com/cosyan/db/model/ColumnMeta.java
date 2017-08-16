@@ -40,7 +40,7 @@ public abstract class ColumnMeta {
 
     private final int index;
     private final DerivedColumn baseColumn;
-    private TypedAggrFunction<?> function;
+    private final TypedAggrFunction<?> function;
 
     public AggrColumn(DataType<?> type, DerivedColumn baseColumn, int index, TypedAggrFunction<?> function) {
       super(type);
@@ -60,6 +60,28 @@ public abstract class ColumnMeta {
 
     public TypedAggrFunction<?> getFunction() {
       return function;
+    }
+  }
+
+  public static class OrderColumn extends DerivedColumn {
+
+    private final DerivedColumn baseColumn;
+    private final boolean asc;
+
+    public OrderColumn(DerivedColumn baseColumn, boolean asc) {
+      super(baseColumn.type);
+      this.baseColumn = baseColumn;
+      this.asc = asc;
+    }
+
+    @Override
+    public Object getValue(Object[] sourceValues) {
+      return baseColumn.getValue(sourceValues);
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public int compare(Object x, Object y) {
+      return asc ? ((Comparable) x).compareTo(y) : ((Comparable) y).compareTo(x);
     }
   }
 

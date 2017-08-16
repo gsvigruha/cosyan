@@ -15,7 +15,13 @@ public class Tokens {
 
   public static String GROUP = "group";
 
+  public static String ORDER = "order";
+
   public static String BY = "by";
+
+  public static String ASC = "asc";
+
+  public static String DESC = "desc";
 
   public static String HAVING = "having";
 
@@ -110,16 +116,9 @@ public class Tokens {
       FROM,
       WHERE);
 
-  public static ImmutableSet<String> AGGREGATORS = ImmutableSet.<String>builder()
-      .add(COUNT)
-      .add(AVG)
-      .add(MIN)
-      .add(MAX)
-      .add(SUM)
-      .build();
-
   public static ImmutableList<ImmutableSet<String>> BINARY_OPERATORS_PRECEDENCE = ImmutableList
       .<ImmutableSet<String>>builder()
+      .add(ImmutableSet.of(ASC, DESC))
       .add(ImmutableSet.of(OR))
       .add(ImmutableSet.of(AND))
       .add(ImmutableSet.of(XOR))

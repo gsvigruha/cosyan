@@ -65,7 +65,8 @@ public class Parser {
     if (tokens.peek().is(Tokens.GROUP)) {
       tokens.next();
       assertNext(tokens, Tokens.BY);
-      groupBy = Optional.of(parseExprs(tokens, true, String.valueOf(Tokens.COMMA_COLON), Tokens.HAVING));
+      groupBy = Optional.of(parseExprs(tokens, true,
+          String.valueOf(Tokens.COMMA_COLON), Tokens.HAVING, Tokens.ORDER));
       if (tokens.peek().is(Tokens.HAVING)) {
         tokens.next();
         having = Optional.of(parseExpression(tokens, 0));
@@ -76,8 +77,17 @@ public class Parser {
       groupBy = Optional.empty();
       having = Optional.empty();
     }
+    Optional<ImmutableList<Expression>> orderBy;
+    if (tokens.peek().is(Tokens.ORDER)) {
+      tokens.next();
+      assertNext(tokens, Tokens.BY);
+      orderBy = Optional.of(parseExprs(tokens, true,
+          String.valueOf(Tokens.COMMA_COLON)));
+    } else {
+      orderBy = Optional.empty();
+    }
     assertPeek(tokens, String.valueOf(Tokens.COMMA_COLON), String.valueOf(Tokens.PARENT_CLOSED));
-    return new Select(columns, table, where, groupBy, having);
+    return new Select(columns, table, where, groupBy, having, orderBy);
   }
 
   private Expression parsePrimary(PeekingIterator<Token> tokens) throws ParserException {
@@ -163,14 +173,22 @@ public class Parser {
       return parsePrimary(tokens);
     } else if (tokens.peek().is(Tokens.NOT)
         && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.NOT)) {
-      return new UnaryExpression(new Ident(tokens.next().getString()), parseExpression(tokens, precedence + 1));
+      return new UnaryExpression(tokens.next(), parseExpression(tokens, precedence + 1));
     } else {
-      return parseBinaryExpression(tokens, precedence);
+      Expression primary = parseExpression(tokens, precedence + 1);
+      if (tokens.peek().is(Tokens.ASC) && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.ASC)) {
+        return new UnaryExpression(tokens.next(), primary);
+      } else if (tokens.peek().is(Tokens.DESC)
+          && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.DESC)) {
+        return new UnaryExpression(tokens.next(), primary);
+      } else {
+        return parseBinaryExpression(primary, tokens, precedence);
+      }
     }
   }
 
-  private Expression parseBinaryExpression(PeekingIterator<Token> tokens, int precedence) throws ParserException {
-    Expression left = parseExpression(tokens, precedence + 1);
+  private Expression parseBinaryExpression(Expression left, PeekingIterator<Token> tokens, int precedence)
+      throws ParserException {
     for (;;) {
       Token token = tokens.peek();
       if (!Tokens.BINARY_OPERATORS.contains(token.getString())) {

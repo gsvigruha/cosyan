@@ -18,6 +18,7 @@ import com.cosyan.db.sql.SyntaxTree.Select;
 import com.cosyan.db.sql.SyntaxTree.StringLiteral;
 import com.cosyan.db.sql.SyntaxTree.TableRef;
 import com.cosyan.db.sql.SyntaxTree.UnaryExpression;
+import com.cosyan.db.sql.Tokens.Token;
 import com.google.common.collect.ImmutableList;
 
 public class ParserTest {
@@ -32,6 +33,7 @@ public class ParserTest {
         new TableRef(new Ident("table")),
         Optional.empty(),
         Optional.empty(),
+        Optional.empty(),
         Optional.empty())));
   }
 
@@ -41,6 +43,7 @@ public class ParserTest {
     assertEquals(tree, new SyntaxTree(new Select(
         ImmutableList.of(new IdentExpression(new Ident("a")), new IdentExpression(new Ident("b"))),
         new TableRef(new Ident("table")),
+        Optional.empty(),
         Optional.empty(),
         Optional.empty(),
         Optional.empty())));
@@ -54,6 +57,7 @@ public class ParserTest {
             new Ident("sum"),
             ImmutableList.of(new IdentExpression(new Ident("a"))))),
         new TableRef(new Ident("table")),
+        Optional.empty(),
         Optional.empty(),
         Optional.empty(),
         Optional.empty())));
@@ -70,6 +74,7 @@ public class ParserTest {
             new IdentExpression(new Ident("a")),
             new LongLiteral(1))),
         Optional.empty(),
+        Optional.empty(),
         Optional.empty())));
   }
 
@@ -83,6 +88,7 @@ public class ParserTest {
         new TableRef(new Ident("table")),
         Optional.empty(),
         Optional.of(ImmutableList.of(new IdentExpression(new Ident("a")))),
+        Optional.empty(),
         Optional.empty())));
   }
 
@@ -104,6 +110,7 @@ public class ParserTest {
                     new DoubleLiteral(2.0)),
                 new DoubleLiteral(3.0))),
         new TableRef(new Ident("table")),
+        Optional.empty(),
         Optional.empty(),
         Optional.empty(),
         Optional.empty())));
@@ -191,7 +198,7 @@ public class ParserTest {
   public void testExprNot() throws ParserException {
     Expression expr = parser.parseExpression("not a;");
     assertEquals(expr, new UnaryExpression(
-        new Ident("not"),
+        new Token(Tokens.NOT),
         new IdentExpression(new Ident("a"))));
   }
 
@@ -200,15 +207,15 @@ public class ParserTest {
     Expression expr = parser.parseExpression("not a and not b;");
     assertEquals(expr, new BinaryExpression(
         new Ident("and"),
-        new UnaryExpression(new Ident("not"), new IdentExpression(new Ident("a"))),
-        new UnaryExpression(new Ident("not"), new IdentExpression(new Ident("b")))));
+        new UnaryExpression(new Token(Tokens.NOT), new IdentExpression(new Ident("a"))),
+        new UnaryExpression(new Token(Tokens.NOT), new IdentExpression(new Ident("b")))));
   }
 
   @Test
   public void testExprNotWithLogical() throws ParserException {
     Expression expr = parser.parseExpression("not a = 'x';");
     assertEquals(expr, new UnaryExpression(
-        new Ident("not"),
+        new Token(Tokens.NOT),
         new BinaryExpression(
             new Ident("="),
             new IdentExpression(new Ident("a")),

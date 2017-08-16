@@ -10,6 +10,7 @@ import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
+import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.MetaRepo;
@@ -19,7 +20,9 @@ import com.cosyan.db.model.TableMeta.AggrTableMeta;
 import com.cosyan.db.model.TableMeta.DerivedTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMeta.KeyValueTableMeta;
+import com.cosyan.db.model.TableMeta.SortedTableMeta;
 import com.cosyan.db.sql.Parser.ParserException;
+import com.cosyan.db.sql.Tokens.Token;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -94,10 +97,12 @@ public class SyntaxTree {
     private final Optional<Expression> where;
     private final Optional<ImmutableList<Expression>> groupBy;
     private final Optional<Expression> having;
+    private final Optional<ImmutableList<Expression>> orderBy;
 
     public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
       ExposedTableMeta sourceTable = table.compile(metaRepo);
       TableMeta filteredTable = Compiler.filteredTable(metaRepo, sourceTable, where);
+      DerivedTableMeta fullTable;
       if (Compiler.isAggregation(columns) || groupBy.isPresent()) {
         KeyValueTableMeta intermediateTable = Compiler.keyValueTable(metaRepo, filteredTable, groupBy);
         List<AggrColumn> aggrColumns = new LinkedList<>();
@@ -105,13 +110,19 @@ public class SyntaxTree {
             aggrColumns);
         DerivedColumn havingColumn = Compiler.havingExpression(metaRepo, intermediateTable, having,
             aggrColumns);
-        return new DerivedTableMeta(new AggrTableMeta(
+        fullTable = new DerivedTableMeta(new AggrTableMeta(
             intermediateTable,
             ImmutableList.copyOf(aggrColumns),
             havingColumn), tableColumns);
       } else {
         ImmutableMap<String, ColumnMeta> tableColumns = Compiler.tableColumns(metaRepo, filteredTable, columns);
-        return new DerivedTableMeta(filteredTable, tableColumns);
+        fullTable = new DerivedTableMeta(filteredTable, tableColumns);
+      }
+      if (orderBy.isPresent()) {
+        ImmutableList<OrderColumn> orderColumns = Compiler.orderColumns(metaRepo, fullTable, orderBy.get());
+        return new SortedTableMeta(fullTable, orderColumns);
+      } else {
+        return fullTable;
       }
     }
   }
@@ -168,13 +179,13 @@ public class SyntaxTree {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class UnaryExpression extends Expression {
-    private final Ident ident;
+    private final Token token;
     private final Expression expr;
 
     @Override
     public DerivedColumn compile(
         TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) throws ModelException {
-      if (ident.getString().equals(Tokens.NOT)) {
+      if (token.is(Tokens.NOT)) {
         DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo, aggrColumns);
         assertType(DataTypes.BoolType, exprColumn.getType());
         return new DerivedColumn(DataTypes.BoolType) {
@@ -184,6 +195,12 @@ public class SyntaxTree {
             return !((Boolean) exprColumn.getValue(sourceValues));
           }
         };
+      } else if (token.is(Tokens.ASC)) {
+        DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo, aggrColumns);
+        return new OrderColumn(exprColumn, true);
+      } else if (token.is(Tokens.DESC)) {
+        DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo, aggrColumns);
+        return new OrderColumn(exprColumn, false);
       } else {
         throw new UnsupportedOperationException();
       }

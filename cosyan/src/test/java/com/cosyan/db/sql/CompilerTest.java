@@ -231,6 +231,28 @@ public class CompilerTest {
     assertEquals(ImmutableMap.of("a", "b"), reader.readColumns());
   }
 
+  @Test
+  public void testOrderBy() throws Exception {
+    SyntaxTree tree = parser.parse("select b from large order by b desc;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("b", 7L), reader.readColumns());
+    assertEquals(ImmutableMap.of("b", 5L), reader.readColumns());
+    assertEquals(ImmutableMap.of("b", 3L), reader.readColumns());
+    assertEquals(ImmutableMap.of("b", 1L), reader.readColumns());
+  }
+
+  @Test
+  public void testOrderByMultipleKeys() throws Exception {
+    SyntaxTree tree = parser.parse("select a, b from large order by a desc, b;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "b", "b", 5L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "b", "b", 7L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "a", "b", 1L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "a", "b", 3L), reader.readColumns());
+  }
+  
   @Test(expected = ModelException.class)
   public void testAggrInAggr() throws Exception {
     SyntaxTree tree = parser.parse("select sum(sum(b)) from large;");

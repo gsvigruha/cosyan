@@ -9,10 +9,12 @@ import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
+import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta;
+import com.cosyan.db.model.TableMeta.DerivedTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMeta.FilteredTableMeta;
 import com.cosyan.db.model.TableMeta.KeyValueTableMeta;
@@ -118,5 +120,19 @@ public class Compiler {
           TableMeta.wholeTableKeys,
           sourceTable.columns());
     }
+  }
+
+  public static ImmutableList<OrderColumn> orderColumns(MetaRepo metaRepo, DerivedTableMeta sourceTable,
+      ImmutableList<Expression> orderBy) throws ModelException {
+    ImmutableList.Builder<OrderColumn> orderColumnsBuilder = ImmutableList.builder();
+    for (Expression expr : orderBy) {
+      DerivedColumn column = expr.compile(sourceTable, metaRepo);
+      if (column instanceof OrderColumn) {
+        orderColumnsBuilder.add((OrderColumn) column);
+      } else {
+        orderColumnsBuilder.add(new OrderColumn(column, true));
+      }
+    }
+    return orderColumnsBuilder.build();
   }
 }

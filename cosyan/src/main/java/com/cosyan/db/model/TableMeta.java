@@ -8,8 +8,10 @@ import com.cosyan.db.io.TableReader.DerivedTableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.io.TableReader.FilteredTableReader;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
+import com.cosyan.db.io.TableReader.SortedTableReader;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableList;
@@ -41,6 +43,7 @@ public abstract class TableMeta {
   public static abstract class ExposedTableMeta extends TableMeta {
     @Override
     public abstract ExposedTableReader reader() throws ModelException;
+    
   }
 
   @Data
@@ -155,6 +158,28 @@ public abstract class TableMeta {
     @Override
     public int indexOf(Ident ident) throws ModelException {
       return sourceTable.keyColumns.size() + sourceTable.indexOf(ident);
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class SortedTableMeta extends ExposedTableMeta {
+    private final ExposedTableMeta sourceTable;
+    private final ImmutableList<OrderColumn> orderColumns;
+
+    @Override
+    public ImmutableMap<String, ? extends ColumnMeta> columns() {
+      return sourceTable.columns();
+    }
+
+    @Override
+    public ExposedTableReader reader() throws ModelException {
+      return new SortedTableReader(sourceTable.reader(), orderColumns);
+    }
+
+    @Override
+    public int indexOf(Ident ident) throws ModelException {
+      return sourceTable.indexOf(ident);
     }
   }
 }
