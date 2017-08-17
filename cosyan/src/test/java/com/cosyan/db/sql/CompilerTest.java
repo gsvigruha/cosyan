@@ -134,6 +134,7 @@ public class CompilerTest {
     ExposedTableMeta ExposedTableMeta = compiler.query(tree);
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("a", "xyz", "b", 5L, "c", 6.7), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -142,6 +143,7 @@ public class CompilerTest {
     ExposedTableMeta ExposedTableMeta = compiler.query(tree);
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("a", "xyz", "b", 5L, "c", 6.7), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -158,6 +160,7 @@ public class CompilerTest {
     ExposedTableMeta ExposedTableMeta = compiler.query(tree);
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("b", 16L, "c", 20.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -166,6 +169,7 @@ public class CompilerTest {
     ExposedTableMeta ExposedTableMeta = compiler.query(tree);
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("s1", 4L, "s2", 8.0, "sb", 16L, "sc", 20.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -174,6 +178,7 @@ public class CompilerTest {
     ExposedTableMeta ExposedTableMeta = compiler.query(tree);
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("c1", 4L, "ca", 4L, "cb", 4L, "cc", 4L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -182,6 +187,7 @@ public class CompilerTest {
     ExposedTableMeta ExposedTableMeta = compiler.query(tree);
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("a", "b", "b", 7L, "c", 8.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -190,6 +196,7 @@ public class CompilerTest {
     ExposedTableMeta ExposedTableMeta = compiler.query(tree);
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("a", "a", "b", 1L, "c", 2.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -199,6 +206,7 @@ public class CompilerTest {
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("a", "a", "b", 4L, "c", 6.0), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "b", "b", 12L, "c", 14.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -208,6 +216,7 @@ public class CompilerTest {
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("a", "a", "b", 6L, "c", 12.0), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "b", "b", 14L, "c", 28.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -217,6 +226,7 @@ public class CompilerTest {
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("a", "a", "b", 10.0), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "b", "b", 26.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -228,6 +238,7 @@ public class CompilerTest {
     assertEquals(ImmutableMap.of("a", "a", "b", 3L, "c", 4.0), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "b", "b", 5L, "c", 6.0), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "b", "b", 7L, "c", 8.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -237,6 +248,7 @@ public class CompilerTest {
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("c", 6.0, "a", "a", "d", "a", "b", 4L), reader.readColumns());
     assertEquals(ImmutableMap.of("c", 14.0, "a", "b", "d", "b", "b", 12L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -246,6 +258,7 @@ public class CompilerTest {
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("a", "a", "b", 3L), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "b", "b", 7L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -254,6 +267,7 @@ public class CompilerTest {
     ExposedTableMeta ExposedTableMeta = compiler.query(tree);
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("a", "b"), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -265,6 +279,7 @@ public class CompilerTest {
     assertEquals(ImmutableMap.of("b", 5L), reader.readColumns());
     assertEquals(ImmutableMap.of("b", 3L), reader.readColumns());
     assertEquals(ImmutableMap.of("b", 1L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -276,6 +291,7 @@ public class CompilerTest {
     assertEquals(ImmutableMap.of("a", "b", "b", 7L), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "a", "b", 1L), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "a", "b", 3L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -285,6 +301,7 @@ public class CompilerTest {
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("a", "a", "b", 1L, "x", "a", "y", 2L), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "c", "b", 5L, "x", "c", "y", 6L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -294,6 +311,7 @@ public class CompilerTest {
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("x", "a", "y", 2L, "a", "a", "b", 1L), reader.readColumns());
     assertEquals(ImmutableMap.of("x", "c", "y", 6L, "a", "c", "b", 5L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -303,6 +321,7 @@ public class CompilerTest {
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("a", "a", "b", 1L, "x", "a", "y", 1L), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "a", "b", 1L, "x", "a", "y", 5L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test
@@ -312,6 +331,7 @@ public class CompilerTest {
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("x", "a", "y", 1L, "a", "a", "b", 1L), reader.readColumns());
     assertEquals(ImmutableMap.of("x", "a", "y", 5L, "a", "a", "b", 1L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 
   @Test(expected = ModelException.class)
