@@ -19,6 +19,7 @@ import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.AggrTableMeta;
 import com.cosyan.db.model.TableMeta.DerivedTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
+import com.cosyan.db.model.TableMeta.JoinTableMeta;
 import com.cosyan.db.model.TableMeta.KeyValueTableMeta;
 import com.cosyan.db.model.TableMeta.SortedTableMeta;
 import com.cosyan.db.sql.Parser.ParserException;
@@ -150,6 +151,43 @@ public class SyntaxTree {
 
     public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
       return select.compile(metaRepo);
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class JoinExpr extends Table {
+    private final Token joinType;
+    private final Table left;
+    private final Table right;
+    private final Expression onExpr;
+
+    public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
+      TableMeta leftTable = left.compile(metaRepo);
+      TableMeta rightTable = right.compile(metaRepo);
+      ImmutableList.Builder<ColumnMeta> leftJoinColumns = ImmutableList.builder();
+      ImmutableList.Builder<ColumnMeta> rightJoinColumns = ImmutableList.builder();
+      ImmutableList<BinaryExpression> exprs = ImmutableList.copyOf(decompose(onExpr, new LinkedList<BinaryExpression>()));
+      for (BinaryExpression expr : exprs) {
+        leftJoinColumns.add(expr.getLeft().compile(leftTable, metaRepo));
+        rightJoinColumns.add(expr.getRight().compile(rightTable, metaRepo));
+      }
+      return new JoinTableMeta(joinType, leftTable, rightTable, leftJoinColumns.build(), rightJoinColumns.build());
+    }
+
+    private List<BinaryExpression> decompose(Expression expr, LinkedList<BinaryExpression> collector) throws ModelException {
+      if (expr instanceof BinaryExpression) {
+        BinaryExpression binaryExpr = (BinaryExpression) expr;
+        if (binaryExpr.getIdent().getString().equals(Tokens.AND)) {
+          decompose(binaryExpr.getLeft(), collector);
+          decompose(binaryExpr.getRight(), collector);
+        } else if (binaryExpr.getIdent().getString().equals(String.valueOf(Tokens.EQ))) {
+          collector.add(binaryExpr);
+        } else {
+          throw new ModelException("Only 'and' and '=' binary expressions are allowed in the 'on' expression of joins.");  
+        }
+      }
+      return collector;
     }
   }
 

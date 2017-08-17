@@ -11,6 +11,7 @@ import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.FuncCallExpression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.sql.SyntaxTree.IdentExpression;
+import com.cosyan.db.sql.SyntaxTree.JoinExpr;
 import com.cosyan.db.sql.SyntaxTree.LongLiteral;
 import com.cosyan.db.sql.SyntaxTree.Node;
 import com.cosyan.db.sql.SyntaxTree.Select;
@@ -53,6 +54,14 @@ public class Parser {
     ImmutableList<Expression> columns = parseExprs(tokens, true, Tokens.FROM);
     tokens.next();
     Table table = parseTable(tokens);
+    if (tokens.peek().is(Tokens.INNER) || tokens.peek().is(Tokens.LEFT) || tokens.peek().is(Tokens.RIGHT)) {
+      Token joinType = tokens.next();
+      assertNext(tokens, Tokens.JOIN);
+      Table rightTable = parseTable(tokens);
+      assertNext(tokens, Tokens.ON);
+      Expression onExpr = parseExpression(tokens, 0);
+      table = new JoinExpr(joinType, table, rightTable, onExpr);
+    }
     Optional<Expression> where;
     if (tokens.peek().is(Tokens.WHERE)) {
       tokens.next();
@@ -66,7 +75,7 @@ public class Parser {
       tokens.next();
       assertNext(tokens, Tokens.BY);
       groupBy = Optional.of(parseExprs(tokens, true,
-          String.valueOf(Tokens.COMMA_COLON), Tokens.HAVING, Tokens.ORDER));
+          String.valueOf(Tokens.COMMA_COLON), String.valueOf(Tokens.PARENT_CLOSED), Tokens.HAVING, Tokens.ORDER));
       if (tokens.peek().is(Tokens.HAVING)) {
         tokens.next();
         having = Optional.of(parseExpression(tokens, 0));
@@ -82,7 +91,7 @@ public class Parser {
       tokens.next();
       assertNext(tokens, Tokens.BY);
       orderBy = Optional.of(parseExprs(tokens, true,
-          String.valueOf(Tokens.COMMA_COLON)));
+          String.valueOf(Tokens.COMMA_COLON), String.valueOf(Tokens.PARENT_CLOSED)));
     } else {
       orderBy = Optional.empty();
     }

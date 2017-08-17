@@ -7,6 +7,7 @@ import com.cosyan.db.io.TableReader.AggrTableReader;
 import com.cosyan.db.io.TableReader.DerivedTableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.io.TableReader.FilteredTableReader;
+import com.cosyan.db.io.TableReader.HashJoinTableReader;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SortedTableReader;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
@@ -14,6 +15,8 @@ import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.sql.SyntaxTree.Ident;
+import com.cosyan.db.sql.Tokens;
+import com.cosyan.db.sql.Tokens.Token;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -43,7 +46,6 @@ public abstract class TableMeta {
   public static abstract class ExposedTableMeta extends TableMeta {
     @Override
     public abstract ExposedTableReader reader() throws ModelException;
-    
   }
 
   @Data
@@ -180,6 +182,43 @@ public abstract class TableMeta {
     @Override
     public int indexOf(Ident ident) throws ModelException {
       return sourceTable.indexOf(ident);
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class JoinTableMeta extends ExposedTableMeta {
+    private final Token joinType;
+    private final TableMeta leftTable;
+    private final TableMeta rightTable;
+    private final ImmutableList<ColumnMeta> leftTableJoinColumns;
+    private final ImmutableList<ColumnMeta> rightTableJoinColumns;
+
+    @Override
+    public ImmutableMap<String, ? extends ColumnMeta> columns() {
+      return ImmutableMap.<String, ColumnMeta>builder()
+          .putAll(leftTable.columns())
+          .putAll(rightTable.columns())
+          .build();
+    }
+
+    @Override
+    public ExposedTableReader reader() throws ModelException {
+      if (joinType.is(Tokens.INNER)) {
+        return new HashJoinTableReader(leftTable.reader(), rightTable.reader(), leftTableJoinColumns,
+            rightTableJoinColumns, columns(), true);
+      } else {
+        throw new ModelException("Unknown join type '" + joinType.getString() + "'.");
+      }
+    }
+
+    @Override
+    public int indexOf(Ident ident) throws ModelException {
+      if (leftTable.columns().containsKey(ident.getString())) {
+        return leftTable.indexOf(ident);
+      } else {
+        return leftTable.columns().size() + rightTable.indexOf(ident);
+      }
     }
   }
 }

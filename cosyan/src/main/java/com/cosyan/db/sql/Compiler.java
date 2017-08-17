@@ -22,6 +22,8 @@ import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.sql.SyntaxTree.AsteriskExpression;
 import com.cosyan.db.sql.SyntaxTree.Expression;
+import com.cosyan.db.sql.SyntaxTree.Ident;
+import com.cosyan.db.sql.SyntaxTree.IdentExpression;
 import com.cosyan.db.sql.SyntaxTree.Select;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -61,7 +63,10 @@ public class Compiler {
     int i = 0;
     for (Expression expr : columns) {
       if (expr instanceof AsteriskExpression) {
-        tableColumns.putAll(sourceTable.columns());
+        for (String columnName : sourceTable.columns().keySet()) {
+          tableColumns.put(columnName,
+              new IdentExpression(new Ident(columnName)).compile(sourceTable, metaRepo));
+        }
       } else {
         tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, metaRepo));
       }

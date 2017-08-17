@@ -11,6 +11,20 @@ public class Tokens {
 
   public static String FROM = "from";
 
+  public static String INNER = "inner";
+
+  public static String LEFT = "left";
+
+  public static String RIGHT = "right";
+
+  public static String FULL = "full";
+
+  public static String OUTER = "outer";
+
+  public static String JOIN = "join";
+
+  public static String ON = "on";
+
   public static String WHERE = "where";
 
   public static String GROUP = "group";

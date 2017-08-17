@@ -51,6 +51,31 @@ public class CompilerTest {
             new Object[] { "a", 3L, 4.0 },
             new Object[] { "b", 5L, 6.0 },
             new Object[] { "b", 7L, 8.0 } }));
+
+    metaRepo.registerTable("left", new DummyMaterializedTableMeta(
+        ImmutableMap.of(
+            "a", new BasicColumn(0, DataTypes.StringType),
+            "b", new BasicColumn(1, DataTypes.LongType)),
+        new Object[][] {
+            new Object[] { "a", 1L },
+            new Object[] { "b", 1L },
+            new Object[] { "c", 5L } }));
+
+    metaRepo.registerTable("right", new DummyMaterializedTableMeta(
+        ImmutableMap.of(
+            "x", new BasicColumn(0, DataTypes.StringType),
+            "y", new BasicColumn(1, DataTypes.LongType)),
+        new Object[][] {
+            new Object[] { "a", 2L },
+            new Object[] { "c", 6L } }));
+
+    metaRepo.registerTable("dupl", new DummyMaterializedTableMeta(
+        ImmutableMap.of(
+            "x", new BasicColumn(0, DataTypes.StringType),
+            "y", new BasicColumn(1, DataTypes.LongType)),
+        new Object[][] {
+            new Object[] { "a", 1L },
+            new Object[] { "a", 5L } }));
   }
 
   @Test
@@ -252,7 +277,43 @@ public class CompilerTest {
     assertEquals(ImmutableMap.of("a", "a", "b", 1L), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "a", "b", 3L), reader.readColumns());
   }
-  
+
+  @Test
+  public void testInnerJoin1() throws Exception {
+    SyntaxTree tree = parser.parse("select * from left inner join right on a = x;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "a", "b", 1L, "x", "a", "y", 2L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "c", "b", 5L, "x", "c", "y", 6L), reader.readColumns());
+  }
+
+  @Test
+  public void testInnerJoin2() throws Exception {
+    SyntaxTree tree = parser.parse("select * from right inner join left on x = a;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("x", "a", "y", 2L, "a", "a", "b", 1L), reader.readColumns());
+    assertEquals(ImmutableMap.of("x", "c", "y", 6L, "a", "c", "b", 5L), reader.readColumns());
+  }
+
+  @Test
+  public void testInnerJoinDuplication1() throws Exception {
+    SyntaxTree tree = parser.parse("select * from left inner join dupl on a = x;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "a", "b", 1L, "x", "a", "y", 1L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "a", "b", 1L, "x", "a", "y", 5L), reader.readColumns());
+  }
+
+  @Test
+  public void testInnerJoinDuplication2() throws Exception {
+    SyntaxTree tree = parser.parse("select * from dupl inner join left on x = a;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("x", "a", "y", 1L, "a", "a", "b", 1L), reader.readColumns());
+    assertEquals(ImmutableMap.of("x", "a", "y", 5L, "a", "a", "b", 1L), reader.readColumns());
+  }
+
   @Test(expected = ModelException.class)
   public void testAggrInAggr() throws Exception {
     SyntaxTree tree = parser.parse("select sum(sum(b)) from large;");
