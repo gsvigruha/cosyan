@@ -76,6 +76,17 @@ public class CompilerTest {
         new Object[][] {
             new Object[] { "a", 1L },
             new Object[] { "a", 5L } }));
+
+    metaRepo.registerTable("null", new DummyMaterializedTableMeta(
+        ImmutableMap.of(
+            "a", new BasicColumn(0, DataTypes.StringType),
+            "b", new BasicColumn(1, DataTypes.LongType),
+            "c", new BasicColumn(2, DataTypes.DoubleType)),
+        new Object[][] {
+            new Object[] { DataTypes.NULL, 1L, 2.0 },
+            new Object[] { "b", DataTypes.NULL, 4.0 },
+            new Object[] { "c", 5L, DataTypes.NULL } }));
+
   }
 
   @Test
@@ -331,6 +342,55 @@ public class CompilerTest {
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("x", "a", "y", 1L, "a", "a", "b", 1L), reader.readColumns());
     assertEquals(ImmutableMap.of("x", "a", "y", 5L, "a", "a", "b", 1L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testReadLinesWithNull() throws Exception {
+    SyntaxTree tree = parser.parse("select * from null;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", DataTypes.NULL, "b", 1L, "c", 2.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "b", "b", DataTypes.NULL, "c", 4.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "c", "b", 5L, "c", DataTypes.NULL), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testNullInBinaryExpression() throws Exception {
+    SyntaxTree tree = parser.parse("select a + 'x' as a, b * 2 as b, c - 1 as c from null;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", DataTypes.NULL, "b", 2L, "c", 1.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "bx", "b", DataTypes.NULL, "c", 3.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "cx", "b", 10L, "c", DataTypes.NULL), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test(expected = ModelException.class)
+  public void testNullEquals() throws Exception {
+    SyntaxTree tree = parser.parse("select * from null where b = null;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testWhereIsNull() throws Exception {
+    SyntaxTree tree = parser.parse("select * from null where b is null;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "b", "b", DataTypes.NULL, "c", 4.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testWhereIsNotNull() throws Exception {
+    SyntaxTree tree = parser.parse("select * from null where b is not null;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", DataTypes.NULL, "b", 1L, "c", 2.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "c", "b", 5L, "c", DataTypes.NULL), reader.readColumns());
     assertEquals(null, reader.readColumns());
   }
 

@@ -25,4 +25,21 @@ public class DataTypes {
   public static final DataType<Boolean> BoolType = new DataType<>("Boolean");
 
   public static final DataType<Date> DateType = new DataType<>("Date");
+
+  public static final class NullType implements Comparable<Object> {
+    @Override
+    public boolean equals(Object o) {
+      return o == NULL;
+    }
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+    @Override
+    public int compareTo(Object o) {
+      return o == NULL ? 0 : -1;
+    }
+  }
+
+  public static final NullType NULL = new NullType();
 }

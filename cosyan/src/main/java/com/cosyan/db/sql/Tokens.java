@@ -1,7 +1,10 @@
 package com.cosyan.db.sql;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
+import lombok.Data;
 
 public class Tokens {
 
@@ -87,6 +90,10 @@ public class Tokens {
 
   public static String GEQ = ">=";
 
+  public static String IS = "is";
+
+  public static String NULL = "null";
+
   public static String NOT = "not";
 
   public static String AND = "and";
@@ -94,6 +101,8 @@ public class Tokens {
   public static String OR = "or";
 
   public static String XOR = "xor";
+
+  public static String IMPL = "impl";
 
   public static String COUNT = "count";
 
@@ -136,6 +145,8 @@ public class Tokens {
       .add(ImmutableSet.of(OR))
       .add(ImmutableSet.of(AND))
       .add(ImmutableSet.of(XOR))
+      .add(ImmutableSet.of(IMPL))
+      .add(ImmutableSet.of(IS))
       .add(ImmutableSet.of(NOT))
       .add(ImmutableSet.of(
           String.valueOf(EQ),
@@ -165,16 +176,9 @@ public class Tokens {
       NEWLINE,
       CARBACK);
 
+  @Data
   public static class Token {
     private final String string;
-
-    public Token(String string) {
-      this.string = string;
-    }
-
-    public String getString() {
-      return string;
-    }
 
     @Override
     public String toString() {
@@ -187,6 +191,10 @@ public class Tokens {
 
     public boolean is(String s) {
       return string.equals(s);
+    }
+    
+    public static Token concat(String... tokens) {
+      return new Token(Joiner.on(" ").join(tokens));
     }
   }
 }

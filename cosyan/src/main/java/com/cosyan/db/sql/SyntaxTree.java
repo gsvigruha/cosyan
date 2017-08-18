@@ -239,6 +239,22 @@ public class SyntaxTree {
       } else if (token.is(Tokens.DESC)) {
         DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo, aggrColumns);
         return new OrderColumn(exprColumn, false);
+      } else if (token.is(Token.concat(Tokens.IS, Tokens.NOT, Tokens.NULL).getString())) {
+        DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo, aggrColumns);
+        return new DerivedColumn(DataTypes.BoolType) {
+          @Override
+          public Object getValue(Object[] sourceValues) {
+            return exprColumn.getValue(sourceValues) != DataTypes.NULL;
+          }
+        };
+      } else if (token.is(Token.concat(Tokens.IS, Tokens.NULL).getString())) {
+        DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo, aggrColumns);
+        return new DerivedColumn(DataTypes.BoolType) {
+          @Override
+          public Object getValue(Object[] sourceValues) {
+            return exprColumn.getValue(sourceValues) == DataTypes.NULL;
+          }
+        };
       } else {
         throw new UnsupportedOperationException();
       }

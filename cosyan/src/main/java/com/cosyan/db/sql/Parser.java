@@ -190,6 +190,19 @@ public class Parser {
       } else if (tokens.peek().is(Tokens.DESC)
           && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.DESC)) {
         return new UnaryExpression(tokens.next(), primary);
+      } else if (tokens.peek().is(Tokens.IS)
+          && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.IS)) {
+        tokens.next();
+        boolean not;
+        if (tokens.peek().is(Tokens.NOT)) {
+          not = true;
+          tokens.next();
+        } else {
+          not = false;
+        }
+        assertNext(tokens, Tokens.NULL);
+        return new UnaryExpression(
+            not ? Token.concat(Tokens.IS, Tokens.NOT, Tokens.NULL) : Token.concat(Tokens.IS, Tokens.NULL), primary);
       } else {
         return parseBinaryExpression(primary, tokens, precedence);
       }
