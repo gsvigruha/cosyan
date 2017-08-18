@@ -367,6 +367,48 @@ public class CompilerTest {
     assertEquals(null, reader.readColumns());
   }
 
+  @Test
+  public void testNullInFuncCall() throws Exception {
+    SyntaxTree tree = parser.parse("select length(a) as a from null;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", DataTypes.NULL), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", 1L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", 1L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testNullInAggregation() throws Exception {
+    SyntaxTree tree = parser.parse("select sum(b) as b, count(c) as c from null;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("b", 6L, "c", 2L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testNullAsAggregationKey() throws Exception {
+    SyntaxTree tree = parser.parse("select a, sum(b) as b from null group by a;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "b", "b", 0L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "c", "b", 5L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", DataTypes.NULL, "b", 1L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testOrderByNull() throws Exception {
+    SyntaxTree tree = parser.parse("select * from null order by b;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "b", "b", DataTypes.NULL, "c", 4.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", DataTypes.NULL, "b", 1L, "c", 2.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "c", "b", 5L, "c", DataTypes.NULL), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
   @Test(expected = ModelException.class)
   public void testNullEquals() throws Exception {
     SyntaxTree tree = parser.parse("select * from null where b = null;");

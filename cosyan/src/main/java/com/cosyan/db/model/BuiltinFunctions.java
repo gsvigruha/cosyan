@@ -50,8 +50,16 @@ public class BuiltinFunctions {
 
     public abstract Object init();
 
-    public abstract Object aggregate(Object a, Object x);
-    
+    public Object aggregate(Object a, Object x) {
+      if (x != DataTypes.NULL) {
+        return aggregateImpl(a, x);
+      } else {
+        return a;
+      }
+    }
+
+    public abstract Object aggregateImpl(Object a, Object x);
+
     public abstract T finish(Object x);
   }
 

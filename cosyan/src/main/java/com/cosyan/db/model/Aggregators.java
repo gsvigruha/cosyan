@@ -17,7 +17,7 @@ public class Aggregators {
       if (argType == DataTypes.DoubleType) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
           @Override
-          public Double aggregate(Object a, Object x) {
+          public Double aggregateImpl(Object a, Object x) {
             return (Double) a + (Double) x;
           }
 
@@ -34,7 +34,7 @@ public class Aggregators {
       } else if (argType == DataTypes.LongType) {
         return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
           @Override
-          public Long aggregate(Object a, Object x) {
+          public Long aggregateImpl(Object a, Object x) {
             return (Long) a + (Long) x;
           }
 
@@ -63,7 +63,7 @@ public class Aggregators {
     public TypedAggrFunction<?> forType(DataType<?> argType) throws ModelException {
       return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
         @Override
-        public Long aggregate(Object a, Object x) {
+        public Long aggregateImpl(Object a, Object x) {
           return (Long) a + 1L;
         }
 
@@ -90,7 +90,7 @@ public class Aggregators {
       if (argType == DataTypes.DoubleType) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
           @Override
-          public Double aggregate(Object a, Object x) {
+          public Double aggregateImpl(Object a, Object x) {
             return Math.max((Double) a, (Double) x);
           }
 
@@ -107,7 +107,7 @@ public class Aggregators {
       } else if (argType == DataTypes.LongType) {
         return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
           @Override
-          public Long aggregate(Object a, Object x) {
+          public Long aggregateImpl(Object a, Object x) {
             return Math.max((Long) a, (Long) x);
           }
 
@@ -124,7 +124,7 @@ public class Aggregators {
       } else if (argType == DataTypes.StringType) {
         return new TypedAggrFunction<String>(ident, DataTypes.StringType) {
           @Override
-          public String aggregate(Object a, Object x) {
+          public String aggregateImpl(Object a, Object x) {
             return a == null ? (String) x : ((String) a).compareTo((String) x) > 0 ? (String) a : (String) x;
           }
 
@@ -154,7 +154,7 @@ public class Aggregators {
       if (argType == DataTypes.DoubleType) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
           @Override
-          public Double aggregate(Object a, Object x) {
+          public Double aggregateImpl(Object a, Object x) {
             return Math.min((Double) a, (Double) x);
           }
 
@@ -171,7 +171,7 @@ public class Aggregators {
       } else if (argType == DataTypes.LongType) {
         return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
           @Override
-          public Long aggregate(Object a, Object x) {
+          public Long aggregateImpl(Object a, Object x) {
             return Math.min((Long) a, (Long) x);
           }
 
@@ -188,7 +188,7 @@ public class Aggregators {
       } else if (argType == DataTypes.StringType) {
         return new TypedAggrFunction<String>(ident, DataTypes.StringType) {
           @Override
-          public String aggregate(Object a, Object x) {
+          public String aggregateImpl(Object a, Object x) {
             return a == null ? (String) x : ((String) a).compareTo((String) x) < 0 ? (String) a : (String) x;
           }
 

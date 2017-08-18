@@ -167,7 +167,8 @@ public class SyntaxTree {
       TableMeta rightTable = right.compile(metaRepo);
       ImmutableList.Builder<ColumnMeta> leftJoinColumns = ImmutableList.builder();
       ImmutableList.Builder<ColumnMeta> rightJoinColumns = ImmutableList.builder();
-      ImmutableList<BinaryExpression> exprs = ImmutableList.copyOf(decompose(onExpr, new LinkedList<BinaryExpression>()));
+      ImmutableList<BinaryExpression> exprs = ImmutableList
+          .copyOf(decompose(onExpr, new LinkedList<BinaryExpression>()));
       for (BinaryExpression expr : exprs) {
         leftJoinColumns.add(expr.getLeft().compile(leftTable, metaRepo));
         rightJoinColumns.add(expr.getRight().compile(rightTable, metaRepo));
@@ -175,7 +176,8 @@ public class SyntaxTree {
       return new JoinTableMeta(joinType, leftTable, rightTable, leftJoinColumns.build(), rightJoinColumns.build());
     }
 
-    private List<BinaryExpression> decompose(Expression expr, LinkedList<BinaryExpression> collector) throws ModelException {
+    private List<BinaryExpression> decompose(Expression expr, LinkedList<BinaryExpression> collector)
+        throws ModelException {
       if (expr instanceof BinaryExpression) {
         BinaryExpression binaryExpr = (BinaryExpression) expr;
         if (binaryExpr.getIdent().getString().equals(Tokens.AND)) {
@@ -184,7 +186,8 @@ public class SyntaxTree {
         } else if (binaryExpr.getIdent().getString().equals(String.valueOf(Tokens.EQ))) {
           collector.add(binaryExpr);
         } else {
-          throw new ModelException("Only 'and' and '=' binary expressions are allowed in the 'on' expression of joins.");  
+          throw new ModelException(
+              "Only 'and' and '=' binary expressions are allowed in the 'on' expression of joins.");
         }
       }
       return collector;
@@ -431,10 +434,15 @@ public class SyntaxTree {
 
           @Override
           public Object getValue(Object[] sourceValues) {
-            return function.call(
-                ImmutableList.copyOf(argColumns.stream().map(col -> col.getValue(sourceValues)).iterator()));
+            ImmutableList<Object> params = ImmutableList
+                .copyOf(argColumns.stream().map(col -> col.getValue(sourceValues)).iterator());
+            for (Object param : params) {
+              if (param == DataTypes.NULL) {
+                return DataTypes.NULL;
+              }
+            }
+            return function.call(params);
           }
-
         };
       }
     }
