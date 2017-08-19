@@ -25,6 +25,7 @@ import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.sql.SyntaxTree.IdentExpression;
 import com.cosyan.db.sql.SyntaxTree.Select;
+import com.cosyan.db.sql.SyntaxTree.Statement;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -40,6 +41,13 @@ public class Compiler {
       throw new ModelException("Expected select.");
     }
     return ((Select) tree.getRoot()).compile(metaRepo);
+  }
+
+  public boolean statement(SyntaxTree tree) throws ModelException, ConfigException, ParserException {
+    if (!tree.isStatement()) {
+      throw new ModelException("Expected statement.");
+    }
+    return ((Statement) tree.getRoot()).execute(metaRepo);
   }
 
   public static ImmutableMap<String, ColumnMeta> tableColumns(

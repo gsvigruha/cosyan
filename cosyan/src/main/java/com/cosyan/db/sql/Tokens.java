@@ -8,6 +8,20 @@ import lombok.Data;
 
 public class Tokens {
 
+  public static String CREATE = "create";
+
+  public static String TABLE = "table";
+
+  public static String VARCHAR = "varchar";
+
+  public static String INTEGER = "integer";
+
+  public static String FLOAT = "float";
+
+  public static String BOOLEAN = "boolean";
+
+  public static String TIMESTAMP = "timestamp";
+
   public static String SELECT = "select";
 
   public static String DISTINCT = "distinct";
@@ -192,7 +206,7 @@ public class Tokens {
     public boolean is(String s) {
       return string.equals(s);
     }
-    
+
     public static Token concat(String... tokens) {
       return new Token(Joiner.on(" ").join(tokens));
     }

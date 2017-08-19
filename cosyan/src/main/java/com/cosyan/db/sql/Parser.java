@@ -4,6 +4,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.sql.CreateStatement.ColumnDefinition;
+import com.cosyan.db.sql.CreateStatement.Create;
 import com.cosyan.db.sql.SyntaxTree.AsExpression;
 import com.cosyan.db.sql.SyntaxTree.AsTable;
 import com.cosyan.db.sql.SyntaxTree.AsteriskExpression;
@@ -46,8 +50,62 @@ public class Parser {
   private Node parseTokens(PeekingIterator<Token> tokens) throws ParserException {
     if (tokens.peek().is(Tokens.SELECT)) {
       return parseSelect(tokens);
+    } else if (tokens.peek().is(Tokens.CREATE)) {
+      return parseCreate(tokens);
     }
     throw new ParserException("Syntax error.");
+  }
+
+  private Create parseCreate(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.CREATE);
+    assertNext(tokens, Tokens.TABLE);
+    Ident ident = parseIdent(tokens);
+    if (!ident.isSimple()) {
+      throw new ParserException("Expected simple identifier but got '" + ident + "'.");
+    }
+    assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+    ImmutableList.Builder<ColumnDefinition> columns = ImmutableList.builder();
+    while (true) {
+      columns.add(parseColumnDefinition(tokens));
+      if (tokens.peek().is(Tokens.COMMA)) {
+        tokens.next();
+      } else {
+        assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+        break;
+      }
+    }
+    return new Create(ident.getString(), columns.build());
+  }
+
+  private ColumnDefinition parseColumnDefinition(PeekingIterator<Token> tokens) throws ParserException {
+    Ident ident = parseIdent(tokens);
+    if (!ident.isSimple()) {
+      throw new ParserException("Expected simple identifier but got '" + ident + "'.");
+    }
+    DataType<?> type = parseDataType(tokens);
+    if (tokens.peek().is(Tokens.NOT)) {
+      tokens.next();
+      assertNext(tokens, Tokens.NULL);
+      return new ColumnDefinition(ident.getString(), type, false);
+    } else {
+      return new ColumnDefinition(ident.getString(), type, true); 
+    }
+  }
+
+  private DataType<?> parseDataType(PeekingIterator<Token> tokens) throws ParserException {
+    Token token = tokens.next();
+    if (token.is(Tokens.VARCHAR)) {
+      return DataTypes.StringType;
+    } else if (token.is(Tokens.INTEGER)) {
+      return DataTypes.LongType;
+    } else if (token.is(Tokens.FLOAT)) {
+      return DataTypes.DoubleType;
+    } else if (token.is(Tokens.TIMESTAMP)) {
+      return DataTypes.DateType;
+    } else if (token.is(Tokens.BOOLEAN)) {
+      return DataTypes.BoolType;
+    }
+    throw new ParserException("Unknown data type '" + token + "'.");
   }
 
   private Select parseSelect(PeekingIterator<Token> tokens) throws ParserException {

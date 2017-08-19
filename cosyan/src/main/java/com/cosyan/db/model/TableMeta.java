@@ -29,11 +29,31 @@ public abstract class TableMeta {
   public static final ImmutableMap<String, ColumnMeta> wholeTableKeys = ImmutableMap.of("",
       ColumnMeta.TRUE_COLUMN);
 
-  public abstract ColumnMeta column(Ident ident);
+  /**
+   * @param ident
+   * @return The ColumnMeta identified by <code>ident</code> in this table.
+   * @throws ModelException
+   *           if <code>ident</code> is not present or ambiguous.
+   */
+  public abstract ColumnMeta column(Ident ident) throws ModelException;
+  
+  protected ColumnMeta column(Ident ident, ImmutableMap<String, ? extends ColumnMeta> columns) throws ModelException {
+    ColumnMeta column = columns.get(ident.getString());
+    if (column == null) {
+      throw new ModelException("Column '" + ident + "' not found in table.");
+    }
+    return column;
+  }
 
   protected abstract TableReader reader() throws ModelException;
 
-  public abstract int indexOf(Ident ident);
+  /**
+   * @param ident
+   * @return The index of <code>ident</code> in this table or -1 if not present.
+   * @throws ModelException
+   *           if the <code>ident</code> is ambiguous in this table.
+   */
+  public abstract int indexOf(Ident ident) throws ModelException;
 
   protected int indexOf(ImmutableSet<String> keys, Ident ident) {
     return keys.asList().indexOf(ident.getString());
@@ -79,14 +99,14 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ColumnMeta column(Ident ident) {
+    public ColumnMeta column(Ident ident) throws ModelException {
       if (ident.isSimple()) {
-        return columns().get(ident.getString());
+        return column(ident, columns);
       } else {
         if (ident.head().equals(tableName)) {
-          return columns().get(ident.tail().getString());
+          return column(ident.tail(), columns);
         } else {
-          return null;
+          throw new ModelException("Table mismatch '" + ident.head() + "' instead of '" + tableName + "'.");
         }
       }
     }
@@ -114,8 +134,8 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ColumnMeta column(Ident ident) {
-      return columns().get(ident.getString());
+    public ColumnMeta column(Ident ident) throws ModelException {
+      return column(ident, columns);
     }
   }
 
@@ -136,12 +156,12 @@ public abstract class TableMeta {
     }
 
     @Override
-    public int indexOf(Ident ident) {
+    public int indexOf(Ident ident) throws ModelException {
       return sourceTable.indexOf(ident);
     }
 
     @Override
-    public ColumnMeta column(Ident ident) {
+    public ColumnMeta column(Ident ident) throws ModelException {
       return sourceTable.column(ident);
     }
   }
@@ -163,7 +183,7 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ColumnMeta column(Ident ident) {
+    public ColumnMeta column(Ident ident) throws ModelException {
       return sourceTable.column(ident);
     }
   }
@@ -186,7 +206,7 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ColumnMeta column(Ident ident) {
+    public ColumnMeta column(Ident ident) throws ModelException {
       return sourceTable.column(ident);
     }
   }
@@ -208,12 +228,12 @@ public abstract class TableMeta {
     }
 
     @Override
-    public int indexOf(Ident ident) {
+    public int indexOf(Ident ident) throws ModelException {
       return sourceTable.indexOf(ident);
     }
 
     @Override
-    public ColumnMeta column(Ident ident) {
+    public ColumnMeta column(Ident ident) throws ModelException {
       return sourceTable.column(ident);
     }
   }
@@ -229,10 +249,7 @@ public abstract class TableMeta {
 
     @Override
     public ImmutableMap<String, ? extends ColumnMeta> columns() {
-      return ImmutableMap.<String, ColumnMeta>builder()
-          .putAll(leftTable.columns())
-          .putAll(rightTable.columns())
-          .build();
+      throw new UnsupportedOperationException();
     }
 
     @Override
@@ -246,7 +263,7 @@ public abstract class TableMeta {
     }
 
     @Override
-    public int indexOf(Ident ident) {
+    public int indexOf(Ident ident) throws ModelException {
       int leftIndex = leftTable.indexOf(ident);
       int rightIndex = rightTable.indexOf(ident);
       if (leftIndex >= 0 && rightIndex < 0) {
@@ -254,16 +271,15 @@ public abstract class TableMeta {
       }
       if (leftIndex < 0 && rightIndex >= 0) {
         return leftTable.columns().size() + rightIndex;
-      } 
+      }
       if (leftIndex >= 0 && rightIndex >= 0) {
-        // TODO: throw exception here and below.
-        return -1;
+        throw new ModelException("Ambiguous column reference '" + ident + "'.");
       }
       return -1;
     }
 
     @Override
-    public ColumnMeta column(Ident ident) {
+    public ColumnMeta column(Ident ident) throws ModelException {
       int leftIndex = leftTable.indexOf(ident);
       int rightIndex = rightTable.indexOf(ident);
       if (leftIndex >= 0 && rightIndex < 0) {
@@ -271,11 +287,11 @@ public abstract class TableMeta {
       }
       if (leftIndex < 0 && rightIndex >= 0) {
         return rightTable.column(ident);
-      } 
-      if (leftIndex >= 0 && rightIndex >= 0) {
-        return null;
       }
-      return null;
+      if (leftIndex >= 0 && rightIndex >= 0) {
+        throw new ModelException("Ambiguous column reference '" + ident + "'.");
+      }
+      throw new ModelException("Column '" + ident + "' not found in table.");
     }
   }
 
@@ -301,7 +317,7 @@ public abstract class TableMeta {
     }
 
     @Override
-    public int indexOf(Ident ident) {
+    public int indexOf(Ident ident) throws ModelException {
       if (ident.isSimple()) {
         return sourceTable.indexOf(ident);
       } else {
@@ -314,14 +330,14 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ColumnMeta column(Ident ident) {
+    public ColumnMeta column(Ident ident) throws ModelException {
       if (ident.isSimple()) {
         return sourceTable.column(ident);
       } else {
         if (ident.head().equals(this.ident.getString())) {
           return sourceTable.column(ident.tail());
         } else {
-          return null;
+          throw new ModelException("Column '" + ident + "' not found in table.");
         }
       }
     }

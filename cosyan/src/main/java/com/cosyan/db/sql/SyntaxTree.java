@@ -48,6 +48,10 @@ public class SyntaxTree {
 
   }
 
+  public static interface Statement {
+    public boolean execute(MetaRepo metaRepo);
+  }
+
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class Ident extends Node {
@@ -511,6 +515,10 @@ public class SyntaxTree {
 
   public boolean isSelect() {
     return root instanceof Select;
+  }
+
+  public boolean isStatement() {
+    return root instanceof Statement;
   }
 
   public static void assertType(DataType<?> expectedType, DataType<?> dataType) throws ModelException {
