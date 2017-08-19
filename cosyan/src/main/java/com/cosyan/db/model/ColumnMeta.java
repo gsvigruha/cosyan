@@ -18,10 +18,12 @@ public abstract class ColumnMeta {
   public static class BasicColumn extends ColumnMeta {
 
     private final int index;
+    private final boolean nullable;
 
-    public BasicColumn(int index, DataType<?> type) {
+    public BasicColumn(int index, DataType<?> type, boolean nullable) {
       super(type);
       this.index = index;
+      this.nullable = nullable;
     }
 
     @Override

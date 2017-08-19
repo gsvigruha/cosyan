@@ -68,7 +68,7 @@ public class MetaRepo {
     ImmutableMap.Builder<String, BasicColumn> builder = ImmutableMap.builder();
     int i = 0;
     for (Map.Entry<String, DataType<?>> entry : columns.entrySet()) {
-      builder.put(entry.getKey(), new BasicColumn(i++, entry.getValue()));
+      builder.put(entry.getKey(), new BasicColumn(i++, entry.getValue(), /* nullable= */true));
     }
     tables.put(tableName, new MaterializedTableMeta(tableName, builder.build(), this));
     return new FileOutputStream(config.dataDir() + File.separator + tableName);

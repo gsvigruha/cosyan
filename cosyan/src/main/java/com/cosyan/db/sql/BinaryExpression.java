@@ -15,7 +15,7 @@ import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.sql.SyntaxTree.Expression;
-import com.cosyan.db.sql.SyntaxTree.Ident;
+import com.cosyan.db.sql.Tokens.Token;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,16 +24,16 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class BinaryExpression extends Expression {
 
-  private final Ident ident;
+  private final Token token;
   private final Expression left;
   private final Expression right;
   private final AggregationExpression aggregation;
 
   public BinaryExpression(
-      Ident ident,
+      Token token,
       Expression left,
       Expression right) throws ParserException {
-    this.ident = ident;
+    this.token = token;
     this.left = left;
     this.right = right;
     AggregationExpression leftAggr = left.isAggregation();
@@ -46,7 +46,7 @@ public class BinaryExpression extends Expression {
     } else if (rightAggr == AggregationExpression.EITHER) {
       this.aggregation = leftAggr;
     } else {
-      throw new ParserException("Incompatible left and right expression for " + ident.getString() + ".");
+      throw new ParserException("Incompatible left and right expression for " + token.getString() + ".");
     }
   }
 
@@ -80,7 +80,7 @@ public class BinaryExpression extends Expression {
     final DerivedColumn leftColumn = left.compile(sourceTable, metaRepo, aggrColumns);
     final DerivedColumn rightColumn = right.compile(sourceTable, metaRepo, aggrColumns);
 
-    if (ident.is(Tokens.AND)) {
+    if (token.is(Tokens.AND)) {
       assertType(DataTypes.BoolType, leftColumn.getType());
       assertType(DataTypes.BoolType, rightColumn.getType());
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
@@ -90,7 +90,7 @@ public class BinaryExpression extends Expression {
           return (Boolean) l && (Boolean) r;
         }
       };
-    } else if (ident.is(Tokens.OR)) {
+    } else if (token.is(Tokens.OR)) {
       assertType(DataTypes.BoolType, leftColumn.getType());
       assertType(DataTypes.BoolType, rightColumn.getType());
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
@@ -100,7 +100,7 @@ public class BinaryExpression extends Expression {
           return (Boolean) l || (Boolean) r;
         }
       };
-    } else if (ident.is(Tokens.XOR)) {
+    } else if (token.is(Tokens.XOR)) {
       assertType(DataTypes.BoolType, leftColumn.getType());
       assertType(DataTypes.BoolType, rightColumn.getType());
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
@@ -110,7 +110,7 @@ public class BinaryExpression extends Expression {
           return (Boolean) l ^ (Boolean) r;
         }
       };
-    } else if (ident.is(Tokens.IMPL)) {
+    } else if (token.is(Tokens.IMPL)) {
       assertType(DataTypes.BoolType, leftColumn.getType());
       assertType(DataTypes.BoolType, rightColumn.getType());
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
@@ -120,28 +120,28 @@ public class BinaryExpression extends Expression {
           return !(Boolean) l || (Boolean) r;
         }
       };
-    } else if (ident.is(Tokens.ASTERISK)) {
+    } else if (token.is(Tokens.ASTERISK)) {
       return asteriskExpression(leftColumn, rightColumn);
-    } else if (ident.is(Tokens.PLUS)) {
+    } else if (token.is(Tokens.PLUS)) {
       return plusExpression(leftColumn, rightColumn);
-    } else if (ident.is(Tokens.MINUS)) {
+    } else if (token.is(Tokens.MINUS)) {
       return minusExpression(leftColumn, rightColumn);
-    } else if (ident.is(Tokens.DIV)) {
+    } else if (token.is(Tokens.DIV)) {
       return divExpression(leftColumn, rightColumn);
-    } else if (ident.is(Tokens.MOD)) {
+    } else if (token.is(Tokens.MOD)) {
       return modExpression(leftColumn, rightColumn);
-    } else if (ident.is(Tokens.EQ)) {
+    } else if (token.is(Tokens.EQ)) {
       return eqExpression(leftColumn, rightColumn);
-    } else if (ident.is(Tokens.LESS)) {
+    } else if (token.is(Tokens.LESS)) {
       return lessExpression(leftColumn, rightColumn);
-    } else if (ident.is(Tokens.GREATER)) {
+    } else if (token.is(Tokens.GREATER)) {
       return greaterExpression(leftColumn, rightColumn);
-    } else if (ident.is(Tokens.LEQ)) {
+    } else if (token.is(Tokens.LEQ)) {
       return leqExpression(leftColumn, rightColumn);
-    } else if (ident.is(Tokens.GEQ)) {
+    } else if (token.is(Tokens.GEQ)) {
       return geqExpression(leftColumn, rightColumn);
     } else {
-      throw new ModelException("Unsupported binary expression '" + ident.getString() + "'.");
+      throw new ModelException("Unsupported binary expression '" + token.getString() + "'.");
     }
   }
 
@@ -175,7 +175,7 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + ident.getString() +
+      throw new ModelException("Unsupported binary expression " + token.getString() +
           " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
     }
   }
@@ -217,7 +217,7 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + ident.getString() +
+      throw new ModelException("Unsupported binary expression " + token.getString() +
           " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
     }
   }
@@ -252,7 +252,7 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + ident.getString() +
+      throw new ModelException("Unsupported binary expression " + token.getString() +
           " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
     }
   }
@@ -287,7 +287,7 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + ident.getString() +
+      throw new ModelException("Unsupported binary expression " + token.getString() +
           " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
     }
   }
@@ -322,7 +322,7 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + ident.getString() +
+      throw new ModelException("Unsupported binary expression " + token.getString() +
           " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
     }
   }
@@ -371,7 +371,7 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + ident.getString() +
+      throw new ModelException("Unsupported binary expression " + token.getString() +
           " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
     }
   }
@@ -420,7 +420,7 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + ident.getString() +
+      throw new ModelException("Unsupported binary expression " + token.getString() +
           " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
     }
   }
@@ -469,7 +469,7 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + ident.getString() +
+      throw new ModelException("Unsupported binary expression " + token.getString() +
           " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
     }
   }
@@ -518,7 +518,7 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + ident.getString() +
+      throw new ModelException("Unsupported binary expression " + token.getString() +
           " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
     }
   }
@@ -567,7 +567,7 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + ident.getString() +
+      throw new ModelException("Unsupported binary expression " + token.getString() +
           " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
     }
   }

@@ -70,7 +70,7 @@ public class ParserTest {
         ImmutableList.of(new AsteriskExpression()),
         new TableRef(new Ident("table")),
         Optional.of(new BinaryExpression(
-            new Ident("="),
+            new Token("="),
             new IdentExpression(new Ident("a")),
             new LongLiteral(1))),
         Optional.empty(),
@@ -99,13 +99,13 @@ public class ParserTest {
         ImmutableList.of(
             new IdentExpression(new Ident("a")),
             new BinaryExpression(
-                new Ident("+"),
+                new Token("+"),
                 new IdentExpression(new Ident("b")),
                 new LongLiteral(1L)),
             new BinaryExpression(
-                new Ident(">"),
+                new Token(">"),
                 new BinaryExpression(
-                    new Ident("*"),
+                    new Token("*"),
                     new IdentExpression(new Ident("c")),
                     new DoubleLiteral(2.0)),
                 new DoubleLiteral(3.0))),
@@ -120,7 +120,7 @@ public class ParserTest {
   public void testExpr() throws ParserException {
     Expression expr = parser.parseExpression("a = 1;");
     assertEquals(expr, new BinaryExpression(
-        new Ident("="),
+        new Token("="),
         new IdentExpression(new Ident("a")),
         new LongLiteral(1)));
   }
@@ -129,9 +129,9 @@ public class ParserTest {
   public void testExprPrecedence1() throws ParserException {
     Expression expr = parser.parseExpression("a and b or c;");
     assertEquals(expr, new BinaryExpression(
-        new Ident("or"),
+        new Token("or"),
         new BinaryExpression(
-            new Ident("and"),
+            new Token("and"),
             new IdentExpression(new Ident("a")),
             new IdentExpression(new Ident("b"))),
         new IdentExpression(new Ident("c"))));
@@ -141,10 +141,10 @@ public class ParserTest {
   public void testExprPrecedence2() throws ParserException {
     Expression expr = parser.parseExpression("a or b and c;");
     assertEquals(expr, new BinaryExpression(
-        new Ident("or"),
+        new Token("or"),
         new IdentExpression(new Ident("a")),
         new BinaryExpression(
-            new Ident("and"),
+            new Token("and"),
             new IdentExpression(new Ident("b")),
             new IdentExpression(new Ident("c")))));
   }
@@ -153,9 +153,9 @@ public class ParserTest {
   public void testExprParentheses1() throws ParserException {
     Expression expr = parser.parseExpression("(a or b) and c;");
     assertEquals(expr, new BinaryExpression(
-        new Ident("and"),
+        new Token("and"),
         new BinaryExpression(
-            new Ident("or"),
+            new Token("or"),
             new IdentExpression(new Ident("a")),
             new IdentExpression(new Ident("b"))),
         new IdentExpression(new Ident("c"))));
@@ -165,10 +165,10 @@ public class ParserTest {
   public void testExprParentheses2() throws ParserException {
     Expression expr = parser.parseExpression("a and (b or c);");
     assertEquals(expr, new BinaryExpression(
-        new Ident("and"),
+        new Token("and"),
         new IdentExpression(new Ident("a")),
         new BinaryExpression(
-            new Ident("or"),
+            new Token("or"),
             new IdentExpression(new Ident("b")),
             new IdentExpression(new Ident("c")))));
   }
@@ -177,9 +177,9 @@ public class ParserTest {
   public void testExprLogical() throws ParserException {
     Expression expr = parser.parseExpression("a > 1 or c;");
     assertEquals(expr, new BinaryExpression(
-        new Ident("or"),
+        new Token("or"),
         new BinaryExpression(
-            new Ident(">"),
+            new Token(">"),
             new IdentExpression(new Ident("a")),
             new LongLiteral(1)),
         new IdentExpression(new Ident("c"))));
@@ -189,7 +189,7 @@ public class ParserTest {
   public void testExprFuncCall() throws ParserException {
     Expression expr = parser.parseExpression("a and f(b);");
     assertEquals(expr, new BinaryExpression(
-        new Ident("and"),
+        new Token("and"),
         new IdentExpression(new Ident("a")),
         new FuncCallExpression(new Ident("f"), ImmutableList.of(new IdentExpression(new Ident("b"))))));
   }
@@ -206,7 +206,7 @@ public class ParserTest {
   public void testExprNotInBinary() throws ParserException {
     Expression expr = parser.parseExpression("not a and not b;");
     assertEquals(expr, new BinaryExpression(
-        new Ident("and"),
+        new Token("and"),
         new UnaryExpression(new Token(Tokens.NOT), new IdentExpression(new Ident("a"))),
         new UnaryExpression(new Token(Tokens.NOT), new IdentExpression(new Ident("b")))));
   }
@@ -217,7 +217,7 @@ public class ParserTest {
     assertEquals(expr, new UnaryExpression(
         new Token(Tokens.NOT),
         new BinaryExpression(
-            new Ident("="),
+            new Token("="),
             new IdentExpression(new Ident("a")),
             new StringLiteral("x"))));
   }

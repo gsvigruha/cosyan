@@ -37,10 +37,10 @@ public class CreateStatementTest {
     SyntaxTree tree = parser.parse("create table t1 (a varchar not null, b integer, c float, d boolean, e timestamp);");
     compiler.statement(tree);
     ExposedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
-    assertEquals(new BasicColumn(0, DataTypes.StringType), tableMeta.column(new Ident("a")));
-    assertEquals(new BasicColumn(1, DataTypes.LongType), tableMeta.column(new Ident("b")));
-    assertEquals(new BasicColumn(2, DataTypes.DoubleType), tableMeta.column(new Ident("c")));
-    assertEquals(new BasicColumn(3, DataTypes.BoolType), tableMeta.column(new Ident("d")));
-    assertEquals(new BasicColumn(4, DataTypes.DateType), tableMeta.column(new Ident("e")));
+    assertEquals(new BasicColumn(0, DataTypes.StringType, false), tableMeta.column(new Ident("a")));
+    assertEquals(new BasicColumn(1, DataTypes.LongType, true), tableMeta.column(new Ident("b")));
+    assertEquals(new BasicColumn(2, DataTypes.DoubleType, true), tableMeta.column(new Ident("c")));
+    assertEquals(new BasicColumn(3, DataTypes.BoolType, true), tableMeta.column(new Ident("d")));
+    assertEquals(new BasicColumn(4, DataTypes.DateType, true), tableMeta.column(new Ident("e")));
   }
 }

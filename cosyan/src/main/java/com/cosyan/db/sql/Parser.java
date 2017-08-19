@@ -287,7 +287,7 @@ public class Parser {
       }
       tokens.next();
       Expression right = parseExpression(tokens, precedence + 1);
-      left = new BinaryExpression(new Ident(token.getString()), left, right);
+      left = new BinaryExpression(token, left, right);
     }
   }
 

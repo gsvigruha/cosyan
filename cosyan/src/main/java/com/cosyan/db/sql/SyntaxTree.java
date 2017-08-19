@@ -199,10 +199,10 @@ public class SyntaxTree {
         throws ModelException {
       if (expr instanceof BinaryExpression) {
         BinaryExpression binaryExpr = (BinaryExpression) expr;
-        if (binaryExpr.getIdent().getString().equals(Tokens.AND)) {
+        if (binaryExpr.getToken().is(Tokens.AND)) {
           decompose(binaryExpr.getLeft(), collector);
           decompose(binaryExpr.getRight(), collector);
-        } else if (binaryExpr.getIdent().getString().equals(String.valueOf(Tokens.EQ))) {
+        } else if (binaryExpr.getToken().is(Tokens.EQ)) {
           collector.add(binaryExpr);
         } else {
           throw new ModelException(
