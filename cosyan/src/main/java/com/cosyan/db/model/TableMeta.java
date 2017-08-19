@@ -29,21 +29,19 @@ public abstract class TableMeta {
   public static final ImmutableMap<String, ColumnMeta> wholeTableKeys = ImmutableMap.of("",
       ColumnMeta.TRUE_COLUMN);
 
-  public abstract ImmutableMap<String, ? extends ColumnMeta> columns();
+  public abstract ColumnMeta column(Ident ident);
 
   protected abstract TableReader reader() throws ModelException;
 
-  public abstract int indexOf(Ident ident) throws ModelException;
+  public abstract int indexOf(Ident ident);
 
-  protected int indexOf(ImmutableSet<String> keys, Ident ident) throws ModelException {
-    int index = keys.asList().indexOf(ident.getString());
-    if (index < 0) {
-      throw new ModelException("Invalid identifier '" + ident.getString() + "'.");
-    }
-    return index;
+  protected int indexOf(ImmutableSet<String> keys, Ident ident) {
+    return keys.asList().indexOf(ident.getString());
   }
 
   public static abstract class ExposedTableMeta extends TableMeta {
+    public abstract ImmutableMap<String, ? extends ColumnMeta> columns();
+
     @Override
     public abstract ExposedTableReader reader() throws ModelException;
   }
@@ -68,8 +66,29 @@ public abstract class TableMeta {
     }
 
     @Override
-    public int indexOf(Ident ident) throws ModelException {
-      return indexOf(columns().keySet(), ident);
+    public int indexOf(Ident ident) {
+      if (ident.isSimple()) {
+        return indexOf(columns().keySet(), ident);
+      } else {
+        if (ident.head().equals(tableName)) {
+          return indexOf(columns().keySet(), ident.tail());
+        } else {
+          return -1;
+        }
+      }
+    }
+
+    @Override
+    public ColumnMeta column(Ident ident) {
+      if (ident.isSimple()) {
+        return columns().get(ident.getString());
+      } else {
+        if (ident.head().equals(tableName)) {
+          return columns().get(ident.tail().getString());
+        } else {
+          return null;
+        }
+      }
     }
   }
 
@@ -90,8 +109,13 @@ public abstract class TableMeta {
     }
 
     @Override
-    public int indexOf(Ident ident) throws ModelException {
+    public int indexOf(Ident ident) {
       return indexOf(columns().keySet(), ident);
+    }
+
+    @Override
+    public ColumnMeta column(Ident ident) {
+      return columns().get(ident.getString());
     }
   }
 
@@ -112,8 +136,13 @@ public abstract class TableMeta {
     }
 
     @Override
-    public int indexOf(Ident ident) throws ModelException {
+    public int indexOf(Ident ident) {
       return sourceTable.indexOf(ident);
+    }
+
+    @Override
+    public ColumnMeta column(Ident ident) {
+      return sourceTable.column(ident);
     }
   }
 
@@ -122,12 +151,6 @@ public abstract class TableMeta {
   public static class KeyValueTableMeta extends TableMeta {
     private final TableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> keyColumns;
-    private final ImmutableMap<String, ? extends ColumnMeta> valueColumns;
-
-    @Override
-    public ImmutableMap<String, ? extends ColumnMeta> columns() {
-      return valueColumns;
-    }
 
     @Override
     public TableReader reader() throws ModelException {
@@ -135,8 +158,13 @@ public abstract class TableMeta {
     }
 
     @Override
-    public int indexOf(Ident ident) throws ModelException {
+    public int indexOf(Ident ident) {
       return indexOf(keyColumns.keySet(), ident);
+    }
+
+    @Override
+    public ColumnMeta column(Ident ident) {
+      return sourceTable.column(ident);
     }
   }
 
@@ -148,18 +176,18 @@ public abstract class TableMeta {
     private final ColumnMeta havingColumn;
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> columns() {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
     public TableReader reader() throws ModelException {
       return new AggrTableReader(sourceTable.reader(), sourceTable.keyColumns, aggrColumns, havingColumn);
     }
 
     @Override
-    public int indexOf(Ident ident) throws ModelException {
+    public int indexOf(Ident ident) {
       return sourceTable.keyColumns.size() + sourceTable.indexOf(ident);
+    }
+
+    @Override
+    public ColumnMeta column(Ident ident) {
+      return sourceTable.column(ident);
     }
   }
 
@@ -180,8 +208,13 @@ public abstract class TableMeta {
     }
 
     @Override
-    public int indexOf(Ident ident) throws ModelException {
+    public int indexOf(Ident ident) {
       return sourceTable.indexOf(ident);
+    }
+
+    @Override
+    public ColumnMeta column(Ident ident) {
+      return sourceTable.column(ident);
     }
   }
 
@@ -189,8 +222,8 @@ public abstract class TableMeta {
   @EqualsAndHashCode(callSuper = true)
   public static class JoinTableMeta extends ExposedTableMeta {
     private final Token joinType;
-    private final TableMeta leftTable;
-    private final TableMeta rightTable;
+    private final ExposedTableMeta leftTable;
+    private final ExposedTableMeta rightTable;
     private final ImmutableList<ColumnMeta> leftTableJoinColumns;
     private final ImmutableList<ColumnMeta> rightTableJoinColumns;
 
@@ -206,18 +239,90 @@ public abstract class TableMeta {
     public ExposedTableReader reader() throws ModelException {
       if (joinType.is(Tokens.INNER)) {
         return new HashJoinTableReader(leftTable.reader(), rightTable.reader(), leftTableJoinColumns,
-            rightTableJoinColumns, columns(), true);
+            rightTableJoinColumns, true);
       } else {
         throw new ModelException("Unknown join type '" + joinType.getString() + "'.");
       }
     }
 
     @Override
-    public int indexOf(Ident ident) throws ModelException {
-      if (leftTable.columns().containsKey(ident.getString())) {
-        return leftTable.indexOf(ident);
+    public int indexOf(Ident ident) {
+      int leftIndex = leftTable.indexOf(ident);
+      int rightIndex = rightTable.indexOf(ident);
+      if (leftIndex >= 0 && rightIndex < 0) {
+        return leftIndex;
+      }
+      if (leftIndex < 0 && rightIndex >= 0) {
+        return leftTable.columns().size() + rightIndex;
+      } 
+      if (leftIndex >= 0 && rightIndex >= 0) {
+        // TODO: throw exception here and below.
+        return -1;
+      }
+      return -1;
+    }
+
+    @Override
+    public ColumnMeta column(Ident ident) {
+      int leftIndex = leftTable.indexOf(ident);
+      int rightIndex = rightTable.indexOf(ident);
+      if (leftIndex >= 0 && rightIndex < 0) {
+        return leftTable.column(ident);
+      }
+      if (leftIndex < 0 && rightIndex >= 0) {
+        return rightTable.column(ident);
+      } 
+      if (leftIndex >= 0 && rightIndex >= 0) {
+        return null;
+      }
+      return null;
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class AliasedTableMeta extends ExposedTableMeta {
+    private final Ident ident;
+    private final ExposedTableMeta sourceTable;
+
+    public AliasedTableMeta(Ident ident, ExposedTableMeta sourceTable) {
+      this.ident = ident;
+      this.sourceTable = sourceTable;
+    }
+
+    @Override
+    public ExposedTableReader reader() throws ModelException {
+      return sourceTable.reader();
+    }
+
+    @Override
+    public ImmutableMap<String, ? extends ColumnMeta> columns() {
+      return sourceTable.columns();
+    }
+
+    @Override
+    public int indexOf(Ident ident) {
+      if (ident.isSimple()) {
+        return sourceTable.indexOf(ident);
       } else {
-        return leftTable.columns().size() + rightTable.indexOf(ident);
+        if (ident.head().equals(this.ident.getString())) {
+          return sourceTable.indexOf(ident.tail());
+        } else {
+          return -1;
+        }
+      }
+    }
+
+    @Override
+    public ColumnMeta column(Ident ident) {
+      if (ident.isSimple()) {
+        return sourceTable.column(ident);
+      } else {
+        if (ident.head().equals(this.ident.getString())) {
+          return sourceTable.column(ident.tail());
+        } else {
+          return null;
+        }
       }
     }
   }

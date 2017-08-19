@@ -5,7 +5,6 @@ import static com.cosyan.db.sql.SyntaxTree.assertType;
 import java.util.Date;
 import java.util.List;
 
-import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;

@@ -57,7 +57,7 @@ public class Compiler {
 
   public static ImmutableMap<String, ColumnMeta> tableColumns(
       MetaRepo metaRepo,
-      TableMeta sourceTable,
+      ExposedTableMeta sourceTable,
       ImmutableList<Expression> columns) throws ModelException {
     ImmutableMap.Builder<String, ColumnMeta> tableColumns = ImmutableMap.builder();
     int i = 0;
@@ -74,7 +74,7 @@ public class Compiler {
     return tableColumns.build();
   }
 
-  public static TableMeta filteredTable(
+  public static ExposedTableMeta filteredTable(
       MetaRepo metaRepo, ExposedTableMeta sourceTable, Optional<Expression> where) throws ModelException {
     if (where.isPresent()) {
       DerivedColumn whereColumn = where.get().compile(sourceTable, metaRepo);
@@ -102,7 +102,7 @@ public class Compiler {
 
   public static KeyValueTableMeta keyValueTable(
       MetaRepo metaRepo,
-      TableMeta sourceTable,
+      ExposedTableMeta sourceTable,
       Optional<ImmutableList<Expression>> groupBy) throws ModelException {
     if (groupBy.isPresent()) {
       ImmutableMap.Builder<String, ColumnMeta> keyColumnsBuilder = ImmutableMap.builder();
@@ -117,13 +117,11 @@ public class Compiler {
       ImmutableMap<String, ColumnMeta> keyColumns = keyColumnsBuilder.build();
       return new KeyValueTableMeta(
           sourceTable,
-          keyColumns,
-          sourceTable.columns());
+          keyColumns);
     } else {
       return new KeyValueTableMeta(
           sourceTable,
-          TableMeta.wholeTableKeys,
-          sourceTable.columns());
+          TableMeta.wholeTableKeys);
     }
   }
 

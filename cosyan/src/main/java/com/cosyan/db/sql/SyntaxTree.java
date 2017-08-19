@@ -1,5 +1,6 @@
 package com.cosyan.db.sql;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +18,7 @@ import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.AggrTableMeta;
+import com.cosyan.db.model.TableMeta.AliasedTableMeta;
 import com.cosyan.db.model.TableMeta.DerivedTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMeta.JoinTableMeta;
@@ -24,6 +26,7 @@ import com.cosyan.db.model.TableMeta.KeyValueTableMeta;
 import com.cosyan.db.model.TableMeta.SortedTableMeta;
 import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.Tokens.Token;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -52,6 +55,18 @@ public class SyntaxTree {
 
     public String[] parts() {
       return string.split("\\.");
+    }
+
+    public boolean isSimple() {
+      return parts().length == 1;
+    }
+
+    public String head() {
+      return parts()[0];
+    }
+
+    public Ident tail() {
+      return new Ident(Joiner.on(".").join(Arrays.copyOfRange(parts(), 1, parts().length)));
     }
 
     public boolean is(String str) {
@@ -102,7 +117,7 @@ public class SyntaxTree {
 
     public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
       ExposedTableMeta sourceTable = table.compile(metaRepo);
-      TableMeta filteredTable = Compiler.filteredTable(metaRepo, sourceTable, where);
+      ExposedTableMeta filteredTable = Compiler.filteredTable(metaRepo, sourceTable, where);
       DerivedTableMeta fullTable;
       if (Compiler.isAggregation(columns) || groupBy.isPresent()) {
         KeyValueTableMeta intermediateTable = Compiler.keyValueTable(metaRepo, filteredTable, groupBy);
@@ -163,8 +178,8 @@ public class SyntaxTree {
     private final Expression onExpr;
 
     public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
-      TableMeta leftTable = left.compile(metaRepo);
-      TableMeta rightTable = right.compile(metaRepo);
+      ExposedTableMeta leftTable = left.compile(metaRepo);
+      ExposedTableMeta rightTable = right.compile(metaRepo);
       ImmutableList.Builder<ColumnMeta> leftJoinColumns = ImmutableList.builder();
       ImmutableList.Builder<ColumnMeta> rightJoinColumns = ImmutableList.builder();
       ImmutableList<BinaryExpression> exprs = ImmutableList
@@ -219,6 +234,18 @@ public class SyntaxTree {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
+  public static class AsTable extends Table {
+    private final Ident ident;
+    private final Table table;
+
+    @Override
+    public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
+      return new AliasedTableMeta(ident, table.compile(metaRepo));
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
   public static class UnaryExpression extends Expression {
     private final Token token;
     private final Expression expr;
@@ -245,18 +272,23 @@ public class SyntaxTree {
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NOT, Tokens.NULL).getString())) {
         DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo, aggrColumns);
         return new DerivedColumn(DataTypes.BoolType) {
+
           @Override
           public Object getValue(Object[] sourceValues) {
             return exprColumn.getValue(sourceValues) != DataTypes.NULL;
           }
         };
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NULL).getString())) {
-        DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo, aggrColumns);
+
+        DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo,
+            aggrColumns);
         return new DerivedColumn(DataTypes.BoolType) {
+
           @Override
           public Object getValue(Object[] sourceValues) {
             return exprColumn.getValue(sourceValues) == DataTypes.NULL;
           }
+
         };
       } else {
         throw new UnsupportedOperationException();
@@ -277,26 +309,28 @@ public class SyntaxTree {
     @Override
     public DerivedColumn compile(
         TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) throws ModelException {
-      final String key = ident.getString();
-      if (sourceTable.columns().containsKey(key)) {
-        // Guava immutable collections keep iteration order;
-        final int index = sourceTable.indexOf(ident);
-        return new DerivedColumn(sourceTable.columns().get(key).getType()) {
-
-          @Override
-          public Object getValue(Object[] sourceValues) {
-            return sourceValues[index];
-          }
-        };
-      } else {
+      // Guava immutable collections keep iteration order;
+      final int index = sourceTable.indexOf(ident);
+      if (index < 0) {
         throw new ModelException(
-            "Column '" + key + "' does not exist in " + sourceTable.columns().keySet() + ".");
+            "Column '" + ident + "' does not exist.");
       }
+      return new DerivedColumn(sourceTable.column(ident).getType()) {
+
+        @Override
+        public Object getValue(Object[] sourceValues) {
+          return sourceValues[index];
+        }
+      };
     }
 
     @Override
     public String getName(String def) {
-      return ident.getString();
+      if (ident.isSimple()) {
+        return ident.getString();
+      } else {
+        return ident.tail().getString();
+      }
     }
 
     @Override

@@ -58,5 +58,10 @@ public class IOTestUtil {
     public int indexOf(Ident ident) {
       return columns().keySet().asList().indexOf(ident.getString());
     }
+
+    @Override
+    public ColumnMeta column(Ident ident) {
+      return columns().get(ident.getString());
+    }    
   }
 }

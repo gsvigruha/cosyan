@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.cosyan.db.sql.SyntaxTree.AsExpression;
+import com.cosyan.db.sql.SyntaxTree.AsTable;
 import com.cosyan.db.sql.SyntaxTree.AsteriskExpression;
 import com.cosyan.db.sql.SyntaxTree.DoubleLiteral;
 import com.cosyan.db.sql.SyntaxTree.Expression;
@@ -167,13 +168,20 @@ public class Parser {
   }
 
   private Table parseTable(PeekingIterator<Token> tokens) throws ParserException {
+    final Table table;
     if (tokens.peek().is(Tokens.PARENT_OPEN)) {
       tokens.next();
       Select select = parseSelect(tokens);
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-      return new TableExpr(select);
+      table = new TableExpr(select);
     } else {
-      return new TableRef(parseIdent(tokens));
+      table = new TableRef(parseIdent(tokens));
+    }
+    if (tokens.peek().is(Tokens.AS)) {
+      tokens.next();
+      return new AsTable(parseIdent(tokens), table);
+    } else {
+      return table;
     }
   }
 
@@ -244,6 +252,8 @@ public class Parser {
   }
 
   public static class ParserException extends Exception {
+    private static final long serialVersionUID = 1L;
+
     public ParserException(String msg) {
       super(msg);
     }

@@ -98,6 +98,14 @@ public class CompilerTest {
   }
 
   @Test
+  public void testTableAlias() throws Exception {
+    SyntaxTree tree = parser.parse("select t.a from table as t;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "abc"), reader.readColumns());
+  }
+
+  @Test
   public void testReadArithmeticExpressions1() throws Exception {
     SyntaxTree tree = parser.parse("select b + 2, c * 3.0, c / b, c - 1, 3 % 2 from table;");
     ExposedTableMeta ExposedTableMeta = compiler.query(tree);
@@ -342,6 +350,38 @@ public class CompilerTest {
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("x", "a", "y", 1L, "a", "a", "b", 1L), reader.readColumns());
     assertEquals(ImmutableMap.of("x", "a", "y", 5L, "a", "a", "b", 1L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testInnerJoinTableAlias() throws Exception {
+    SyntaxTree tree = parser.parse("select l.a, l.b, r.x, r.y from left as l inner join right as r on l.a = r.x;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "a", "b", 1L, "x", "a", "y", 2L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "c", "b", 5L, "x", "c", "y", 6L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testInnerJoinSubSelectAlias() throws Exception {
+    SyntaxTree tree = parser.parse("select l.a, r.x from left as l inner join "
+        + "(select x from right) as r on l.a = r.x;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "a", "x", "a"), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "c", "x", "c"), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testInnerJoinAliasSolvesNameCollision() throws Exception {
+    SyntaxTree tree = parser.parse("select l.a as l, r.a as r from left as l inner join "
+        + "(select x as a from right) as r on l.a = r.a;");
+    ExposedTableMeta ExposedTableMeta = compiler.query(tree);
+    ExposedTableReader reader = ExposedTableMeta.reader();
+    assertEquals(ImmutableMap.of("l", "a", "r", "a"), reader.readColumns());
+    assertEquals(ImmutableMap.of("l", "c", "r", "c"), reader.readColumns());
     assertEquals(null, reader.readColumns());
   }
 

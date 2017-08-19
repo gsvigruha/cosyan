@@ -303,8 +303,8 @@ public abstract class TableReader {
 
   public static class HashJoinTableReader extends ExposedTableReader {
 
-    private final TableReader mainTableReader;
-    private final TableReader joinTableReader;
+    private final ExposedTableReader mainTableReader;
+    private final ExposedTableReader joinTableReader;
     private final ImmutableList<ColumnMeta> mainTableJoinColumns;
     private final ImmutableList<ColumnMeta> joinTableJoinColumns;
     private final boolean mainTableFirst;
@@ -315,13 +315,12 @@ public abstract class TableReader {
     private Object[] mainTableValues;
 
     public HashJoinTableReader(
-        TableReader mainTableReader,
-        TableReader joinTableReader,
+        ExposedTableReader mainTableReader,
+        ExposedTableReader joinTableReader,
         ImmutableList<ColumnMeta> mainTableJoinColumns,
         ImmutableList<ColumnMeta> joinTableJoinColumns,
-        ImmutableMap<String, ? extends ColumnMeta> allColumns,
         boolean mainTableFirst) {
-      super(allColumns);
+      super(null); // TODO fix design here
       this.mainTableReader = mainTableReader;
       this.joinTableReader = joinTableReader;
       this.mainTableJoinColumns = mainTableJoinColumns;
@@ -360,7 +359,7 @@ public abstract class TableReader {
     }
 
     private Object[] match(Object[] mainTableValues, Object[] joinTableValues) {
-      Object[] result = new Object[columns.size()];
+      Object[] result = new Object[mainTableReader.columns.size() + joinTableReader.columns.size()];
       if (joinTableValues == null) {
         return null;
       }
