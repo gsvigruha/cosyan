@@ -8,6 +8,7 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.sql.CreateStatement.ColumnDefinition;
 import com.cosyan.db.sql.CreateStatement.Create;
+import com.cosyan.db.sql.InsertIntoStatement.InsertInto;
 import com.cosyan.db.sql.SyntaxTree.AsExpression;
 import com.cosyan.db.sql.SyntaxTree.AsTable;
 import com.cosyan.db.sql.SyntaxTree.AsteriskExpression;
@@ -17,6 +18,7 @@ import com.cosyan.db.sql.SyntaxTree.FuncCallExpression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.sql.SyntaxTree.IdentExpression;
 import com.cosyan.db.sql.SyntaxTree.JoinExpr;
+import com.cosyan.db.sql.SyntaxTree.Literal;
 import com.cosyan.db.sql.SyntaxTree.LongLiteral;
 import com.cosyan.db.sql.SyntaxTree.Node;
 import com.cosyan.db.sql.SyntaxTree.Select;
@@ -52,17 +54,60 @@ public class Parser {
       return parseSelect(tokens);
     } else if (tokens.peek().is(Tokens.CREATE)) {
       return parseCreate(tokens);
+    } else if (tokens.peek().is(Tokens.INSERT)) {
+      return parseInsert(tokens);
     }
     throw new ParserException("Syntax error.");
+  }
+
+  private InsertInto parseInsert(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.INSERT);
+    assertNext(tokens, Tokens.INTO);
+    Ident ident = parseSimpleIdent(tokens);
+    Optional<ImmutableList<Ident>> columns;
+    if (tokens.peek().is(Tokens.PARENT_OPEN)) {
+      tokens.next();
+      ImmutableList.Builder<Ident> builder = ImmutableList.builder();
+      while (true) {
+        builder.add(parseSimpleIdent(tokens));
+        if (tokens.peek().is(Tokens.COMMA)) {
+          tokens.next();
+        } else {
+          assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+          break;
+        }
+      }
+      columns = Optional.of(builder.build());
+    } else {
+      columns = Optional.empty();
+    }
+    assertNext(tokens, Tokens.VALUES);
+    assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+    ImmutableList.Builder<Literal> values = ImmutableList.builder();
+    while (true) {
+      values.add(parseLiteral(tokens));
+      if (tokens.peek().is(Tokens.COMMA)) {
+        tokens.next();
+      } else {
+        assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+        break;
+      }
+    }
+    return new InsertInto(ident, columns, values.build());
+  }
+
+  private Literal parseLiteral(PeekingIterator<Token> tokens) throws ParserException {
+    Expression expr = parsePrimary(tokens);
+    if (!(expr instanceof Literal)) {
+      throw new ParserException("Expected literal but got '" + expr + "'.");
+    }
+    return (Literal) expr;
   }
 
   private Create parseCreate(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.CREATE);
     assertNext(tokens, Tokens.TABLE);
-    Ident ident = parseIdent(tokens);
-    if (!ident.isSimple()) {
-      throw new ParserException("Expected simple identifier but got '" + ident + "'.");
-    }
+    Ident ident = parseSimpleIdent(tokens);
     assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
     ImmutableList.Builder<ColumnDefinition> columns = ImmutableList.builder();
     while (true) {
@@ -78,17 +123,14 @@ public class Parser {
   }
 
   private ColumnDefinition parseColumnDefinition(PeekingIterator<Token> tokens) throws ParserException {
-    Ident ident = parseIdent(tokens);
-    if (!ident.isSimple()) {
-      throw new ParserException("Expected simple identifier but got '" + ident + "'.");
-    }
+    Ident ident = parseSimpleIdent(tokens);
     DataType<?> type = parseDataType(tokens);
     if (tokens.peek().is(Tokens.NOT)) {
       tokens.next();
       assertNext(tokens, Tokens.NULL);
       return new ColumnDefinition(ident.getString(), type, false);
     } else {
-      return new ColumnDefinition(ident.getString(), type, true); 
+      return new ColumnDefinition(ident.getString(), type, true);
     }
   }
 
@@ -223,6 +265,14 @@ public class Parser {
     } else {
       throw new ParserException("Expected identifier but got " + token.getString() + ".");
     }
+  }
+
+  private Ident parseSimpleIdent(PeekingIterator<Token> tokens) throws ParserException {
+    Ident ident = parseIdent(tokens);
+    if (!ident.isSimple()) {
+      throw new ParserException("Expected simple identifier but got '" + ident + "'.");
+    }
+    return ident;
   }
 
   private Table parseTable(PeekingIterator<Token> tokens) throws ParserException {

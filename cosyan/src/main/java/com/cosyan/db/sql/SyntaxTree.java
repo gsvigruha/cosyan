@@ -1,5 +1,6 @@
 package com.cosyan.db.sql;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,7 +50,11 @@ public class SyntaxTree {
   }
 
   public static interface Statement {
-    public boolean execute(MetaRepo metaRepo);
+    public boolean execute(MetaRepo metaRepo) throws ModelException, IOException;
+  }
+  
+  public static interface Literal {
+    public Object getValue();
   }
 
   @Data
@@ -345,8 +350,8 @@ public class SyntaxTree {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class StringLiteral extends Expression {
-    private final String val;
+  public static class StringLiteral extends Expression implements Literal {
+    private final String value;
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) {
@@ -354,7 +359,7 @@ public class SyntaxTree {
 
         @Override
         public Object getValue(Object[] sourceValues) {
-          return val;
+          return value;
         }
       };
     }
@@ -367,8 +372,8 @@ public class SyntaxTree {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class LongLiteral extends Expression {
-    private final long val;
+  public static class LongLiteral extends Expression implements Literal {
+    private final Long value;
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) {
@@ -376,7 +381,7 @@ public class SyntaxTree {
 
         @Override
         public Object getValue(Object[] sourceValues) {
-          return val;
+          return value;
         }
       };
     }
@@ -389,8 +394,8 @@ public class SyntaxTree {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class DoubleLiteral extends Expression {
-    private final Double val;
+  public static class DoubleLiteral extends Expression implements Literal {
+    private final Double value;
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) {
@@ -398,7 +403,7 @@ public class SyntaxTree {
 
         @Override
         public Object getValue(Object[] sourceValues) {
-          return val;
+          return value;
         }
       };
     }

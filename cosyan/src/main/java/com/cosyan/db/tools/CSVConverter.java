@@ -59,7 +59,7 @@ public class CSVConverter {
         } else {
           throw new UnsupportedOperationException();
         }
-        TableWriter.write(value, dataType, output);
+        TableWriter.writeColumn(value, dataType, output);
       }
     }
     parser.close();

@@ -35,6 +35,11 @@ public class IOTestUtil {
       }
       return iterator.next();
     }
+
+    @Override
+    public void close() throws IOException {
+
+    }
   }
 
   @Data
@@ -62,6 +67,6 @@ public class IOTestUtil {
     @Override
     public ColumnMeta column(Ident ident) {
       return columns().get(ident.getString());
-    }    
+    }
   }
 }

@@ -72,7 +72,7 @@ public class ParserTest {
         Optional.of(new BinaryExpression(
             new Token("="),
             new IdentExpression(new Ident("a")),
-            new LongLiteral(1))),
+            new LongLiteral(1L))),
         Optional.empty(),
         Optional.empty(),
         Optional.empty())));
@@ -122,7 +122,7 @@ public class ParserTest {
     assertEquals(expr, new BinaryExpression(
         new Token("="),
         new IdentExpression(new Ident("a")),
-        new LongLiteral(1)));
+        new LongLiteral(1L)));
   }
 
   @Test
@@ -181,7 +181,7 @@ public class ParserTest {
         new BinaryExpression(
             new Token(">"),
             new IdentExpression(new Ident("a")),
-            new LongLiteral(1)),
+            new LongLiteral(1L)),
         new IdentExpression(new Ident("c"))));
   }
 

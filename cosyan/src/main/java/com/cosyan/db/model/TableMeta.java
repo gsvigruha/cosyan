@@ -10,6 +10,7 @@ import com.cosyan.db.io.TableReader.FilteredTableReader;
 import com.cosyan.db.io.TableReader.HashJoinTableReader;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SortedTableReader;
+import com.cosyan.db.io.TableWriter.TableAppender;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
@@ -74,7 +75,7 @@ public abstract class TableMeta {
     private final MetaRepo metaRepo;
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> columns() {
+    public ImmutableMap<String, BasicColumn> columns() {
       return columns;
     }
 
@@ -85,6 +86,10 @@ public abstract class TableMeta {
           columns());
     }
 
+    public TableAppender appender() throws ModelException {
+      return new TableAppender(metaRepo.append(this), columns.values().asList());
+    }
+    
     @Override
     public int indexOf(Ident ident) {
       if (ident.isSimple()) {

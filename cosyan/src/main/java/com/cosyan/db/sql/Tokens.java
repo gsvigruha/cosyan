@@ -22,6 +22,12 @@ public class Tokens {
 
   public static String TIMESTAMP = "timestamp";
 
+  public static String INSERT = "insert";
+
+  public static String INTO = "into";
+
+  public static String VALUES = "values";
+
   public static String SELECT = "select";
 
   public static String DISTINCT = "distinct";

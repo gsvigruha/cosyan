@@ -58,6 +58,15 @@ public class MetaRepo {
       throw new ModelException("Table file not found: " + path + ".");
     }
   }
+  
+  public FileOutputStream append(MaterializedTableMeta table) throws ModelException {
+    String path = config.dataDir() + File.separator + table.getTableName();
+    try {
+      return new FileOutputStream(path, true);
+    } catch (FileNotFoundException e) {
+      throw new ModelException("Table file not found: " + path + ".");
+    }
+  }
 
   public void registerTable(String tableName, ExposedTableMeta tableMeta) {
     tables.put(tableName, tableMeta);

@@ -2,6 +2,7 @@ package com.cosyan.db.sql;
 
 import static com.cosyan.db.sql.SyntaxTree.assertType;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,7 +44,7 @@ public class Compiler {
     return ((Select) tree.getRoot()).compile(metaRepo);
   }
 
-  public boolean statement(SyntaxTree tree) throws ModelException, ConfigException, ParserException {
+  public boolean statement(SyntaxTree tree) throws ModelException, ConfigException, ParserException, IOException {
     if (!tree.isStatement()) {
       throw new ModelException("Expected statement.");
     }

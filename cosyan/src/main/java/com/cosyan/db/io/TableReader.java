@@ -29,6 +29,8 @@ public abstract class TableReader {
 
   public abstract Object[] read() throws IOException;
 
+  public abstract void close() throws IOException;
+
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static abstract class ExposedTableReader extends TableReader {
@@ -60,24 +62,41 @@ public abstract class TableReader {
     }
 
     @Override
+    public void close() throws IOException {
+      inputStream.close();
+    }
+
+    @Override
     public Object[] read() throws IOException {
+      if (inputStream.available() == 0) {
+        close();
+        return null;
+      }
       Object[] values = new Object[columns.size()];
       int i = 0; // ImmutableMap.entrySet() keeps iteration order.
       for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
         final Object value;
-        if (entry.getValue().getType() == DataTypes.BoolType) {
-          value = inputStream.readBoolean();
-        } else if (entry.getValue().getType() == DataTypes.LongType) {
-          value = inputStream.readLong();
-        } else if (entry.getValue().getType() == DataTypes.DoubleType) {
-          value = inputStream.readDouble();
-        } else if (entry.getValue().getType() == DataTypes.StringType) {
-          value = inputStream.readUTF();
-        } else if (entry.getValue().getType() == DataTypes.DateType) {
-          value = new Date(inputStream.readLong());
+        byte fieldDesc = inputStream.readByte();
+        if (fieldDesc == 0) {
+          value = DataTypes.NULL;
+        } else if (fieldDesc == 1) {
+          if (entry.getValue().getType() == DataTypes.BoolType) {
+            value = inputStream.readBoolean();
+          } else if (entry.getValue().getType() == DataTypes.LongType) {
+            value = inputStream.readLong();
+          } else if (entry.getValue().getType() == DataTypes.DoubleType) {
+            value = inputStream.readDouble();
+          } else if (entry.getValue().getType() == DataTypes.StringType) {
+            value = inputStream.readUTF();
+          } else if (entry.getValue().getType() == DataTypes.DateType) {
+            value = new Date(inputStream.readLong());
+          } else {
+            throw new UnsupportedOperationException();
+          }
         } else {
           throw new UnsupportedOperationException();
         }
+          
         values[i++] = value;
       }
       return values;
@@ -93,6 +112,11 @@ public abstract class TableReader {
         ImmutableMap<String, ? extends ColumnMeta> columns) {
       super(columns);
       this.sourceReader = sourceReader;
+    }
+
+    @Override
+    public void close() throws IOException {
+      sourceReader.close();
     }
 
     @Override
@@ -123,6 +147,11 @@ public abstract class TableReader {
       super(sourceReader.columns);
       this.sourceReader = sourceReader;
       this.whereColumn = whereColumn;
+    }
+
+    @Override
+    public void close() throws IOException {
+      sourceReader.close();
     }
 
     @Override
@@ -166,6 +195,11 @@ public abstract class TableReader {
       this.havingColumn = havingColumn;
       this.aggregated = false;
       this.size = keyColumns.size() + aggrColumns.size();
+    }
+
+    @Override
+    public void close() throws IOException {
+      sourceReader.close();
     }
 
     @Override
@@ -261,6 +295,11 @@ public abstract class TableReader {
     }
 
     @Override
+    public void close() throws IOException {
+      sourceReader.close();
+    }
+
+    @Override
     public Object[] read() throws IOException {
       if (!sorted) {
         sort();
@@ -327,6 +366,12 @@ public abstract class TableReader {
       this.joinTableJoinColumns = joinTableJoinColumns;
       this.mainTableFirst = mainTableFirst;
       this.joined = false;
+    }
+
+    @Override
+    public void close() throws IOException {
+      mainTableReader.close();
+      joinTableReader.close();
     }
 
     @Override
