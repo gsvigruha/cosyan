@@ -36,7 +36,7 @@ public abstract class TableMeta {
    *           if <code>ident</code> is not present or ambiguous.
    */
   public abstract ColumnMeta column(Ident ident) throws ModelException;
-  
+
   protected ColumnMeta column(Ident ident, ImmutableMap<String, ? extends ColumnMeta> columns) throws ModelException {
     ColumnMeta column = columns.get(ident.getString());
     if (column == null) {
@@ -249,7 +249,10 @@ public abstract class TableMeta {
 
     @Override
     public ImmutableMap<String, ? extends ColumnMeta> columns() {
-      throw new UnsupportedOperationException();
+      return ImmutableMap.<String, ColumnMeta>builder()
+          .putAll(leftTable.columns())
+          .putAll(rightTable.columns())
+          .build();
     }
 
     @Override
