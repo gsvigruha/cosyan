@@ -2,7 +2,6 @@ package com.cosyan.db.model;
 
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.google.common.hash.BloomFilter;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

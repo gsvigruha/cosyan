@@ -29,6 +29,8 @@ import com.cosyan.db.sql.SyntaxTree.TableExpr;
 import com.cosyan.db.sql.SyntaxTree.TableRef;
 import com.cosyan.db.sql.SyntaxTree.UnaryExpression;
 import com.cosyan.db.sql.Tokens.Token;
+import com.cosyan.db.sql.UpdateStatement.SetExpression;
+import com.cosyan.db.sql.UpdateStatement.Update;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterators;
@@ -59,6 +61,8 @@ public class Parser {
       return parseInsert(tokens);
     } else if (tokens.peek().is(Tokens.DELETE)) {
       return parseDelete(tokens);
+    } else if (tokens.peek().is(Tokens.UPDATE)) {
+      return parseUpdate(tokens);
     }
     throw new ParserException("Syntax error.");
   }
@@ -114,6 +118,33 @@ public class Parser {
       throw new ParserException("Expected literal but got '" + expr + "'.");
     }
     return (Literal) expr;
+  }
+
+  private Update parseUpdate(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.UPDATE);
+    Ident ident = parseSimpleIdent(tokens);
+    assertNext(tokens, Tokens.SET);
+    ImmutableList.Builder<SetExpression> updates = ImmutableList.builder();
+    while (true) {
+      Ident columnIdent = parseSimpleIdent(tokens);
+      assertNext(tokens, String.valueOf(Tokens.EQ));
+      Expression expr = parseExpression(tokens, 0);
+      updates.add(new SetExpression(columnIdent, expr));
+      if (tokens.peek().is(Tokens.COMMA)) {
+        tokens.next();
+      } else {
+        break;
+      }
+    }
+
+    Optional<Expression> where;
+    if (tokens.peek().is(Tokens.WHERE)) {
+      tokens.next();
+      where = Optional.of(parseExpression(tokens, 0));
+    } else {
+      where = Optional.empty();
+    }
+    return new Update(ident, updates.build(), where);
   }
 
   private Create parseCreate(PeekingIterator<Token> tokens) throws ParserException {

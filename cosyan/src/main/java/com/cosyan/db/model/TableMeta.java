@@ -11,7 +11,9 @@ import com.cosyan.db.io.TableReader.HashJoinTableReader;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SortedTableReader;
 import com.cosyan.db.io.TableWriter.TableAppender;
+import com.cosyan.db.io.TableWriter.TableDeleteAndCollector;
 import com.cosyan.db.io.TableWriter.TableDeleter;
+import com.cosyan.db.io.TableWriter.TableUpdater;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
@@ -96,6 +98,12 @@ public abstract class TableMeta {
       return new TableDeleter(metaRepo.update(this), columns.values().asList(), whereColumn);
     }
 
+    public TableUpdater updater(ImmutableMap<Integer, DerivedColumn> updateExprs, DerivedColumn whereColumn) throws ModelException {
+      return new TableUpdater(
+          new TableDeleteAndCollector(metaRepo.update(this), columns.values().asList(), updateExprs, whereColumn),
+          new TableAppender(metaRepo.append(this), columns.values().asList()));
+    }
+    
     @Override
     public int indexOf(Ident ident) {
       if (ident.isSimple()) {

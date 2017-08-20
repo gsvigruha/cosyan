@@ -7,12 +7,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.io.MappedDataFile;
 import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
@@ -61,7 +59,7 @@ public class MetaRepo {
       throw new ModelException("Table file not found: " + path + ".");
     }
   }
-  
+
   public FileOutputStream append(MaterializedTableMeta table) throws ModelException {
     String path = config.dataDir() + File.separator + table.getTableName();
     try {
@@ -71,18 +69,17 @@ public class MetaRepo {
     }
   }
 
-  public MappedByteBuffer update(MaterializedTableMeta table) throws ModelException {
+  public MappedDataFile update(MaterializedTableMeta table) throws ModelException {
     String path = config.dataDir() + File.separator + table.getTableName();
     try {
-      RandomAccessFile raf = new RandomAccessFile(path, "rw");
-      return raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, raf.length());
+      return new MappedDataFile(path);
     } catch (FileNotFoundException e) {
       throw new ModelException("Table file not found: " + path + ".");
     } catch (IOException e) {
       throw new ModelException(e.getMessage());
     }
   }
-  
+
   public void registerTable(String tableName, ExposedTableMeta tableMeta) {
     tables.put(tableName, tableMeta);
   }

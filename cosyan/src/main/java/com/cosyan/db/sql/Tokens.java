@@ -32,6 +32,10 @@ public class Tokens {
 
   public static String DELETE = "delete";
 
+  public static String UPDATE = "update";
+
+  public static String SET = "set";
+
   public static String SELECT = "select";
 
   public static String DISTINCT = "distinct";
