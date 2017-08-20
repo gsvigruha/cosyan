@@ -8,6 +8,7 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.sql.CreateStatement.ColumnDefinition;
 import com.cosyan.db.sql.CreateStatement.Create;
+import com.cosyan.db.sql.DeleteStatement.Delete;
 import com.cosyan.db.sql.InsertIntoStatement.InsertInto;
 import com.cosyan.db.sql.SyntaxTree.AsExpression;
 import com.cosyan.db.sql.SyntaxTree.AsTable;
@@ -56,8 +57,19 @@ public class Parser {
       return parseCreate(tokens);
     } else if (tokens.peek().is(Tokens.INSERT)) {
       return parseInsert(tokens);
+    } else if (tokens.peek().is(Tokens.DELETE)) {
+      return parseDelete(tokens);
     }
     throw new ParserException("Syntax error.");
+  }
+
+  private Delete parseDelete(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.DELETE);
+    assertNext(tokens, Tokens.FROM);
+    Ident ident = parseSimpleIdent(tokens);
+    assertNext(tokens, Tokens.WHERE);
+    Expression where = parseExpression(tokens, 0);
+    return new Delete(ident, where);
   }
 
   private InsertInto parseInsert(PeekingIterator<Token> tokens) throws ParserException {
@@ -125,13 +137,22 @@ public class Parser {
   private ColumnDefinition parseColumnDefinition(PeekingIterator<Token> tokens) throws ParserException {
     Ident ident = parseSimpleIdent(tokens);
     DataType<?> type = parseDataType(tokens);
+    boolean nullable;
     if (tokens.peek().is(Tokens.NOT)) {
       tokens.next();
       assertNext(tokens, Tokens.NULL);
-      return new ColumnDefinition(ident.getString(), type, false);
+      nullable = false;
     } else {
-      return new ColumnDefinition(ident.getString(), type, true);
+      nullable = true;
     }
+    boolean unique;
+    if (tokens.peek().is(Tokens.UNIQUE)) {
+      tokens.next();
+      unique = true;
+    } else {
+      unique = false;
+    }
+    return new ColumnDefinition(ident.getString(), type, nullable, unique);
   }
 
   private DataType<?> parseDataType(PeekingIterator<Token> tokens) throws ParserException {

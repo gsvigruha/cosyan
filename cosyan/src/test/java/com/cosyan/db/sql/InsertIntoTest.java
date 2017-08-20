@@ -63,4 +63,11 @@ public class InsertIntoTest {
     assertEquals(ImmutableMap.of("a", DataTypes.NULL, "b", 5L, "c", 4.0), reader.readColumns());
     assertEquals(null, reader.readColumns());
   }
+
+  @Test(expected = ModelException.class)
+  public void testNotNullable() throws Exception {
+    compiler.statement(parser.parse("create table t3 (a varchar not null, b integer);"));
+    compiler.statement(parser.parse("insert into t3 values ('x', 1);"));
+    compiler.statement(parser.parse("insert into t3 (b) values (2);"));
+  }
 }

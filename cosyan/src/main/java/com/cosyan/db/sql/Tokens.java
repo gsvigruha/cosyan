@@ -22,11 +22,15 @@ public class Tokens {
 
   public static String TIMESTAMP = "timestamp";
 
+  public static String UNIQUE = "unique";
+
   public static String INSERT = "insert";
 
   public static String INTO = "into";
 
   public static String VALUES = "values";
+
+  public static String DELETE = "delete";
 
   public static String SELECT = "select";
 

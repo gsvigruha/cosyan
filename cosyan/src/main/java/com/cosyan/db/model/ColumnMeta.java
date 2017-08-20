@@ -2,6 +2,7 @@ package com.cosyan.db.model;
 
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.google.common.hash.BloomFilter;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,17 +20,24 @@ public abstract class ColumnMeta {
 
     private final int index;
     private final boolean nullable;
+    private final boolean unique;
 
-    public BasicColumn(int index, DataType<?> type, boolean nullable) {
+    public BasicColumn(int index, DataType<?> type) {
+      this(index, type, true, false);
+    }
+
+    public BasicColumn(int index, DataType<?> type, boolean nullable, boolean unique) {
       super(type);
       this.index = index;
       this.nullable = nullable;
+      this.unique = unique;
     }
 
     @Override
     public Object getValue(Object[] sourceValues) {
       return sourceValues[index];
     }
+
   }
 
   public static abstract class DerivedColumn extends ColumnMeta {

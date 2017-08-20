@@ -1,8 +1,8 @@
 package com.cosyan.db.tools;
 
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -13,7 +13,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
-import com.cosyan.db.io.TableWriter;
+import com.cosyan.db.io.Serializer;
+import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.MetaRepo;
@@ -30,7 +31,7 @@ public class CSVConverter {
   public void convertWithSchema(
       String tableName,
       String csvFile,
-      ImmutableMap<String, DataType<?>> columns,
+      ImmutableMap<String, BasicColumn> columns,
       Optional<Character> quoteChar,
       Optional<Character> separatorChar) throws IOException, ModelException, ParseException {
 
@@ -40,12 +41,14 @@ public class CSVConverter {
         .withDelimiter(separatorChar.orElse(','))
         .withQuote(quoteChar.orElse('"'));
     CSVParser parser = CSVParser.parse(new File(csvFile), Charset.defaultCharset(), format);
-    DataOutputStream output = new DataOutputStream(metaRepo.openForWrite(tableName, columns));
+    OutputStream os = metaRepo.openForWrite(tableName, columns);
     for (CSVRecord csvRecord : parser) {
-      for (Map.Entry<String, DataType<?>> entry : columns.entrySet()) {
+      Object[] values = new Object[columns.size()];
+      int i = 0;
+      for (Map.Entry<String, BasicColumn> entry : columns.entrySet()) {
         String stringValue = csvRecord.get(entry.getKey());
         Object value;
-        DataType<?> dataType = entry.getValue();
+        DataType<?> dataType = entry.getValue().getType();
         if (dataType == DataTypes.BoolType) {
           value = Boolean.parseBoolean(stringValue);
         } else if (dataType == DataTypes.LongType) {
@@ -59,10 +62,11 @@ public class CSVConverter {
         } else {
           throw new UnsupportedOperationException();
         }
-        TableWriter.writeColumn(value, dataType, output);
+        values[i++] = value;
       }
+      os.write(Serializer.write(values, columns.values().asList()));
     }
     parser.close();
-    output.close();
+    os.close();
   }
 }

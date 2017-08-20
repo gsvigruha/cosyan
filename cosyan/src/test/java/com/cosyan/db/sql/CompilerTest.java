@@ -34,18 +34,18 @@ public class CompilerTest {
     compiler = new Compiler(metaRepo);
     metaRepo.registerTable("table", new DummyMaterializedTableMeta(
         ImmutableMap.of(
-            "a", new BasicColumn(0, DataTypes.StringType, false),
-            "b", new BasicColumn(1, DataTypes.LongType, false),
-            "c", new BasicColumn(2, DataTypes.DoubleType, false)),
+            "a", new BasicColumn(0, DataTypes.StringType),
+            "b", new BasicColumn(1, DataTypes.LongType),
+            "c", new BasicColumn(2, DataTypes.DoubleType)),
         new Object[][] {
             new Object[] { "abc", 1L, 1.0 },
             new Object[] { "xyz", 5L, 6.7 } }));
 
     metaRepo.registerTable("large", new DummyMaterializedTableMeta(
         ImmutableMap.of(
-            "a", new BasicColumn(0, DataTypes.StringType, false),
-            "b", new BasicColumn(1, DataTypes.LongType, false),
-            "c", new BasicColumn(2, DataTypes.DoubleType, false)),
+            "a", new BasicColumn(0, DataTypes.StringType),
+            "b", new BasicColumn(1, DataTypes.LongType),
+            "c", new BasicColumn(2, DataTypes.DoubleType)),
         new Object[][] {
             new Object[] { "a", 1L, 2.0 },
             new Object[] { "a", 3L, 4.0 },
@@ -54,8 +54,8 @@ public class CompilerTest {
 
     metaRepo.registerTable("left", new DummyMaterializedTableMeta(
         ImmutableMap.of(
-            "a", new BasicColumn(0, DataTypes.StringType, false),
-            "b", new BasicColumn(1, DataTypes.LongType, false)),
+            "a", new BasicColumn(0, DataTypes.StringType),
+            "b", new BasicColumn(1, DataTypes.LongType)),
         new Object[][] {
             new Object[] { "a", 1L },
             new Object[] { "b", 1L },
@@ -63,25 +63,25 @@ public class CompilerTest {
 
     metaRepo.registerTable("right", new DummyMaterializedTableMeta(
         ImmutableMap.of(
-            "x", new BasicColumn(0, DataTypes.StringType, false),
-            "y", new BasicColumn(1, DataTypes.LongType, false)),
+            "x", new BasicColumn(0, DataTypes.StringType),
+            "y", new BasicColumn(1, DataTypes.LongType)),
         new Object[][] {
             new Object[] { "a", 2L },
             new Object[] { "c", 6L } }));
 
     metaRepo.registerTable("dupl", new DummyMaterializedTableMeta(
         ImmutableMap.of(
-            "x", new BasicColumn(0, DataTypes.StringType, false),
-            "y", new BasicColumn(1, DataTypes.LongType, false)),
+            "x", new BasicColumn(0, DataTypes.StringType),
+            "y", new BasicColumn(1, DataTypes.LongType)),
         new Object[][] {
             new Object[] { "a", 1L },
             new Object[] { "a", 5L } }));
 
     metaRepo.registerTable("null", new DummyMaterializedTableMeta(
         ImmutableMap.of(
-            "a", new BasicColumn(0, DataTypes.StringType, true),
-            "b", new BasicColumn(1, DataTypes.LongType, true),
-            "c", new BasicColumn(2, DataTypes.DoubleType, true)),
+            "a", new BasicColumn(0, DataTypes.StringType, true, false),
+            "b", new BasicColumn(1, DataTypes.LongType, true, false),
+            "c", new BasicColumn(2, DataTypes.DoubleType, true, false)),
         new Object[][] {
             new Object[] { DataTypes.NULL, 1L, 2.0 },
             new Object[] { "b", DataTypes.NULL, 4.0 },

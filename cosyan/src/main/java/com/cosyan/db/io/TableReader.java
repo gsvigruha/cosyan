@@ -3,7 +3,6 @@ package com.cosyan.db.io;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -14,7 +13,6 @@ import java.util.TreeMap;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
-import com.cosyan.db.model.DataTypes;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.LinkedListMultimap;
@@ -68,36 +66,9 @@ public abstract class TableReader {
 
     @Override
     public Object[] read() throws IOException {
-      if (inputStream.available() == 0) {
+      Object[] values = Serializer.read(columns.values().asList(), inputStream);
+      if (values == null) {
         close();
-        return null;
-      }
-      Object[] values = new Object[columns.size()];
-      int i = 0; // ImmutableMap.entrySet() keeps iteration order.
-      for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-        final Object value;
-        byte fieldDesc = inputStream.readByte();
-        if (fieldDesc == 0) {
-          value = DataTypes.NULL;
-        } else if (fieldDesc == 1) {
-          if (entry.getValue().getType() == DataTypes.BoolType) {
-            value = inputStream.readBoolean();
-          } else if (entry.getValue().getType() == DataTypes.LongType) {
-            value = inputStream.readLong();
-          } else if (entry.getValue().getType() == DataTypes.DoubleType) {
-            value = inputStream.readDouble();
-          } else if (entry.getValue().getType() == DataTypes.StringType) {
-            value = inputStream.readUTF();
-          } else if (entry.getValue().getType() == DataTypes.DateType) {
-            value = new Date(inputStream.readLong());
-          } else {
-            throw new UnsupportedOperationException();
-          }
-        } else {
-          throw new UnsupportedOperationException();
-        }
-          
-        values[i++] = value;
       }
       return values;
     }

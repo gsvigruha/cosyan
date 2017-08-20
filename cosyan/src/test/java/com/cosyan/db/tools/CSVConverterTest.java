@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
@@ -43,7 +44,10 @@ public class CSVConverterTest {
     csvConverter.convertWithSchema(
         "table",
         "target/test-classes/simple.csv",
-        ImmutableMap.of("a", DataTypes.StringType, "b", DataTypes.LongType, "c", DataTypes.DoubleType),
+        ImmutableMap.of(
+            "a", new BasicColumn(0, DataTypes.StringType),
+            "b", new BasicColumn(1, DataTypes.LongType),
+            "c", new BasicColumn(2, DataTypes.DoubleType)),
         Optional.empty(),
         Optional.empty());
     SyntaxTree tree = parser.parse("select * from table;");

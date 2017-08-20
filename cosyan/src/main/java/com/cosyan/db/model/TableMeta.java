@@ -11,8 +11,10 @@ import com.cosyan.db.io.TableReader.HashJoinTableReader;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SortedTableReader;
 import com.cosyan.db.io.TableWriter.TableAppender;
+import com.cosyan.db.io.TableWriter.TableDeleter;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.sql.SyntaxTree.Ident;
@@ -89,7 +91,11 @@ public abstract class TableMeta {
     public TableAppender appender() throws ModelException {
       return new TableAppender(metaRepo.append(this), columns.values().asList());
     }
-    
+
+    public TableDeleter deleter(DerivedColumn whereColumn) throws ModelException {
+      return new TableDeleter(metaRepo.update(this), columns.values().asList(), whereColumn);
+    }
+
     @Override
     public int indexOf(Ident ident) {
       if (ident.isSimple()) {

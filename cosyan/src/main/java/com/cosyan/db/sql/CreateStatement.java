@@ -25,7 +25,8 @@ public class CreateStatement {
       ImmutableMap.Builder<String, BasicColumn> builder = ImmutableMap.builder();
       int i = 0;
       for (ColumnDefinition column : columns) {
-        builder.put(column.getName(), new BasicColumn(i++, column.getType(), column.isNullable()));
+        builder.put(column.getName(),
+            new BasicColumn(i++, column.getType(), column.isNullable(), column.isUnique()));
       }
       MaterializedTableMeta tableMeta = new MaterializedTableMeta(name, builder.build(), metaRepo);
       metaRepo.registerTable(name, tableMeta);
@@ -39,5 +40,6 @@ public class CreateStatement {
     private final String name;
     private final DataType<?> type;
     private final boolean nullable;
+    private final boolean unique;
   }
 }

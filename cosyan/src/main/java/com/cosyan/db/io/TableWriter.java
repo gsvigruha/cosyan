@@ -1,42 +1,18 @@
 package com.cosyan.db.io;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Date;
+import java.nio.MappedByteBuffer;
 
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.MetaRepo.ModelException;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
 
 public class TableWriter {
-
-  public static void writeColumn(
-      Object value, DataType<?> dataType, DataOutputStream stream) throws IOException {
-    if (value == DataTypes.NULL) {
-      stream.writeByte(0);
-      return;
-    } else {
-      stream.writeByte(1);
-    }
-    if (dataType == DataTypes.BoolType) {
-      stream.writeBoolean((boolean) value);
-    } else if (dataType == DataTypes.LongType) {
-      stream.writeLong((long) value);
-    } else if (dataType == DataTypes.DoubleType) {
-      stream.writeDouble((double) value);
-    } else if (dataType == DataTypes.StringType) {
-      stream.writeUTF((String) value);
-    } else if (dataType == DataTypes.DateType) {
-      stream.writeLong(((Date) value).getTime());
-    } else {
-      throw new UnsupportedOperationException();
-    }
-  }
 
   @Data
   public static class TableAppender {
@@ -44,17 +20,52 @@ public class TableWriter {
     private final FileOutputStream fos;
     private final ImmutableList<BasicColumn> columns;
 
-    public void write(Object[] values) throws IOException {
-      ByteArrayOutputStream b = new ByteArrayOutputStream();
-      DataOutputStream stream = new DataOutputStream(b);
-      for (int i = 0; i < columns.size(); i++) {
-        writeColumn(values[i], columns.get(i).getType(), stream);
+    public void write(Object[] values) throws IOException, ModelException {
+      for (int i = 0; i < values.length; i++) {
+        BasicColumn column = columns.get(i);
+        if (!column.isNullable() && values[i] == DataTypes.NULL) {
+          throw new ModelException("Column is not nullable.");
+        }
       }
-      fos.write(b.toByteArray());
+      fos.write(Serializer.write(values, columns));
     }
-    
+
     public void close() throws IOException {
       fos.close();
+    }
+  }
+
+  @Data
+  public static class TableDeleter {
+
+    private MappedByteBuffer buffer;
+    private final ImmutableList<BasicColumn> columns;
+    private final DerivedColumn whereColumn;
+
+    public TableDeleter(MappedByteBuffer buffer, ImmutableList<BasicColumn> columns, DerivedColumn whereColumn) {
+      this.buffer = buffer;
+      this.columns = columns;
+      this.whereColumn = whereColumn;
+    }
+
+    public void delete() throws IOException {
+      do {
+        buffer.mark();
+        Object[] values = Serializer.read(columns, buffer);
+        if (values == null) {
+          return;
+        }
+        if ((boolean) whereColumn.getValue(values)) {
+          int p = buffer.position();
+          buffer.reset();
+          buffer.put((byte) 0);
+          buffer.position(p);
+        }
+      } while (buffer.hasRemaining());
+    }
+
+    public void close() throws IOException {
+      buffer.force();
     }
   }
 }

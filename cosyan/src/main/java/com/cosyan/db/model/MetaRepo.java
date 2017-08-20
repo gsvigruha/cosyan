@@ -4,9 +4,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Map;
+import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.cosyan.db.conf.Config;
@@ -68,18 +71,25 @@ public class MetaRepo {
     }
   }
 
+  public MappedByteBuffer update(MaterializedTableMeta table) throws ModelException {
+    String path = config.dataDir() + File.separator + table.getTableName();
+    try {
+      RandomAccessFile raf = new RandomAccessFile(path, "rw");
+      return raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, raf.length());
+    } catch (FileNotFoundException e) {
+      throw new ModelException("Table file not found: " + path + ".");
+    } catch (IOException e) {
+      throw new ModelException(e.getMessage());
+    }
+  }
+  
   public void registerTable(String tableName, ExposedTableMeta tableMeta) {
     tables.put(tableName, tableMeta);
   }
 
   public OutputStream openForWrite(
-      String tableName, ImmutableMap<String, DataType<?>> columns) throws ModelException, FileNotFoundException {
-    ImmutableMap.Builder<String, BasicColumn> builder = ImmutableMap.builder();
-    int i = 0;
-    for (Map.Entry<String, DataType<?>> entry : columns.entrySet()) {
-      builder.put(entry.getKey(), new BasicColumn(i++, entry.getValue(), /* nullable= */true));
-    }
-    tables.put(tableName, new MaterializedTableMeta(tableName, builder.build(), this));
+      String tableName, ImmutableMap<String, BasicColumn> columns) throws ModelException, FileNotFoundException {
+    tables.put(tableName, new MaterializedTableMeta(tableName, columns, this));
     return new FileOutputStream(config.dataDir() + File.separator + tableName);
   }
 

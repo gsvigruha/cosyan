@@ -19,6 +19,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 public class InsertIntoStatement {
+
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class InsertInto extends Node implements Statement {
