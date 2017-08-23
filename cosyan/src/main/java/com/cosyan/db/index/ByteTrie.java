@@ -1,5 +1,6 @@
 package com.cosyan.db.index;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -94,6 +95,14 @@ public abstract class ByteTrie<T> {
     this.fileName = fileName;
     this.raf = new RandomAccessFile(fileName, "rw");
     saveIndex(0, root);
+  }
+
+  public void close() throws IOException {
+    raf.close();
+  }
+
+  public void reOpen() throws FileNotFoundException {
+    this.raf = new RandomAccessFile(fileName, "rw");
   }
 
   protected abstract Leaf<T> loadLeaf(long filePointer) throws IOException;
@@ -252,7 +261,7 @@ public abstract class ByteTrie<T> {
 
   public static class LongIndex extends ByteTrie<Long> {
 
-    protected LongIndex(String fileName) throws IOException {
+    public LongIndex(String fileName) throws IOException {
       super(fileName);
     }
 
@@ -287,7 +296,7 @@ public abstract class ByteTrie<T> {
 
   public static class StringIndex extends ByteTrie<String> {
 
-    protected StringIndex(String fileName) throws IOException {
+    public StringIndex(String fileName) throws IOException {
       super(fileName);
     }
 

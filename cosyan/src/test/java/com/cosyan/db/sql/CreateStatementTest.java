@@ -37,10 +37,26 @@ public class CreateStatementTest {
     SyntaxTree tree = parser.parse("create table t1 (a varchar not null, b integer, c float, d boolean, e timestamp);");
     compiler.statement(tree);
     ExposedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
-    assertEquals(new BasicColumn(0, DataTypes.StringType, false, false), tableMeta.column(new Ident("a")));
-    assertEquals(new BasicColumn(1, DataTypes.LongType, true, false), tableMeta.column(new Ident("b")));
-    assertEquals(new BasicColumn(2, DataTypes.DoubleType, true, false), tableMeta.column(new Ident("c")));
-    assertEquals(new BasicColumn(3, DataTypes.BoolType, true, false), tableMeta.column(new Ident("d")));
-    assertEquals(new BasicColumn(4, DataTypes.DateType, true, false), tableMeta.column(new Ident("e")));
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, false),
+        tableMeta.column(new Ident("a")));
+    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, false),
+        tableMeta.column(new Ident("b")));
+    assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false),
+        tableMeta.column(new Ident("c")));
+    assertEquals(new BasicColumn(3, "d", DataTypes.BoolType, true, false),
+        tableMeta.column(new Ident("d")));
+    assertEquals(new BasicColumn(4, "e", DataTypes.DateType, true, false),
+        tableMeta.column(new Ident("e")));
+  }
+
+  @Test
+  public void testCreateTableUniqueColumns() throws Exception {
+    SyntaxTree tree = parser.parse("create table t1 (a varchar unique not null, b integer unique);");
+    compiler.statement(tree);
+    ExposedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true),
+        tableMeta.column(new Ident("a")));
+    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, true),
+        tableMeta.column(new Ident("b")));
   }
 }

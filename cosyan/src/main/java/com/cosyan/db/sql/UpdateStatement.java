@@ -3,6 +3,7 @@ package com.cosyan.db.sql;
 import java.io.IOException;
 import java.util.Optional;
 
+import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.TableWriter.TableUpdater;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
@@ -36,7 +37,7 @@ public class UpdateStatement {
     private final Optional<Expression> where;
 
     @Override
-    public boolean execute(MetaRepo metaRepo) throws ModelException, IOException {
+    public boolean execute(MetaRepo metaRepo) throws ModelException, IOException, IndexException {
       MaterializedTableMeta tableMeta = (MaterializedTableMeta) metaRepo.table(table);
       ImmutableMap.Builder<Integer, DerivedColumn> columnExprs = ImmutableMap.builder();
       for (SetExpression update : updates) {

@@ -168,6 +168,13 @@ public class Parser {
   private ColumnDefinition parseColumnDefinition(PeekingIterator<Token> tokens) throws ParserException {
     Ident ident = parseSimpleIdent(tokens);
     DataType<?> type = parseDataType(tokens);
+    boolean unique;
+    if (tokens.peek().is(Tokens.UNIQUE)) {
+      tokens.next();
+      unique = true;
+    } else {
+      unique = false;
+    }
     boolean nullable;
     if (tokens.peek().is(Tokens.NOT)) {
       tokens.next();
@@ -175,13 +182,6 @@ public class Parser {
       nullable = false;
     } else {
       nullable = true;
-    }
-    boolean unique;
-    if (tokens.peek().is(Tokens.UNIQUE)) {
-      tokens.next();
-      unique = true;
-    } else {
-      unique = false;
     }
     return new ColumnDefinition(ident.getString(), type, nullable, unique);
   }

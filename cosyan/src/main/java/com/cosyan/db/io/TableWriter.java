@@ -5,10 +5,12 @@ import java.io.IOException;
 import java.nio.MappedByteBuffer;
 import java.util.Map;
 
+import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.model.TableIndex;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -21,12 +23,16 @@ public class TableWriter {
 
     private final FileOutputStream fos;
     private final ImmutableList<BasicColumn> columns;
+    private final ImmutableMap<String, TableIndex> indexes;
 
-    public void write(Object[] values) throws IOException, ModelException {
+    public void write(Object[] values) throws IOException, ModelException, IndexException {
       for (int i = 0; i < values.length; i++) {
         BasicColumn column = columns.get(i);
         if (!column.isNullable() && values[i] == DataTypes.NULL) {
           throw new ModelException("Column is not nullable.");
+        }
+        if (column.isUnique() && values[i] != DataTypes.NULL) {
+          indexes.get(column.getName()).put(values[i], fos.getChannel().position());
         }
       }
       fos.write(Serializer.write(values, columns));
@@ -126,7 +132,7 @@ public class TableWriter {
     private final TableDeleteAndCollector deleter;
     private final TableAppender appender;
 
-    public boolean update() throws IOException, ModelException {
+    public boolean update() throws IOException, ModelException, IndexException {
       ImmutableList<Object[]> valuess = deleter.deleteAndCollect();
       deleter.close();
       for (Object[] values : valuess) {

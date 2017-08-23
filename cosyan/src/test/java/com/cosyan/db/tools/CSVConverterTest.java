@@ -45,9 +45,9 @@ public class CSVConverterTest {
         "table",
         "target/test-classes/simple.csv",
         ImmutableMap.of(
-            "a", new BasicColumn(0, DataTypes.StringType),
-            "b", new BasicColumn(1, DataTypes.LongType),
-            "c", new BasicColumn(2, DataTypes.DoubleType)),
+            "a", new BasicColumn(0, "a", DataTypes.StringType),
+            "b", new BasicColumn(1, "b", DataTypes.LongType),
+            "c", new BasicColumn(2, "c", DataTypes.DoubleType)),
         Optional.empty(),
         Optional.empty());
     SyntaxTree tree = parser.parse("select * from table;");

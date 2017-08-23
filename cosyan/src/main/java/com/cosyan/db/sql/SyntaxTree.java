@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
+import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.model.BuiltinFunctions;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
@@ -15,16 +16,16 @@ import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.DerivedTables.AggrTableMeta;
+import com.cosyan.db.model.DerivedTables.AliasedTableMeta;
+import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
+import com.cosyan.db.model.DerivedTables.JoinTableMeta;
+import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
+import com.cosyan.db.model.DerivedTables.SortedTableMeta;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta;
-import com.cosyan.db.model.TableMeta.AggrTableMeta;
-import com.cosyan.db.model.TableMeta.AliasedTableMeta;
-import com.cosyan.db.model.TableMeta.DerivedTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
-import com.cosyan.db.model.TableMeta.JoinTableMeta;
-import com.cosyan.db.model.TableMeta.KeyValueTableMeta;
-import com.cosyan.db.model.TableMeta.SortedTableMeta;
 import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.Tokens.Token;
 import com.google.common.base.Joiner;
@@ -50,7 +51,7 @@ public class SyntaxTree {
   }
 
   public static interface Statement {
-    public boolean execute(MetaRepo metaRepo) throws ModelException, IOException;
+    public boolean execute(MetaRepo metaRepo) throws ModelException, IOException, IndexException;
   }
   
   public static interface Literal {

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
 
+import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.TableWriter.TableAppender;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo;
@@ -28,7 +29,7 @@ public class InsertIntoStatement {
     private final ImmutableList<Literal> values;
 
     @Override
-    public boolean execute(MetaRepo metaRepo) throws ModelException, IOException {
+    public boolean execute(MetaRepo metaRepo) throws ModelException, IOException, IndexException {
       MaterializedTableMeta tableMeta = (MaterializedTableMeta) metaRepo.table(table);
       Object[] fullValues = new Object[tableMeta.columns().size()];
       if (columns.isPresent()) {

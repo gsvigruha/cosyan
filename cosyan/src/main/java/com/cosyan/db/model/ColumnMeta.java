@@ -18,16 +18,18 @@ public abstract class ColumnMeta {
   public static class BasicColumn extends ColumnMeta {
 
     private final int index;
+    private final String name;
     private final boolean nullable;
     private final boolean unique;
 
-    public BasicColumn(int index, DataType<?> type) {
-      this(index, type, true, false);
+    public BasicColumn(int index, String name, DataType<?> type) {
+      this(index, name, type, true, false);
     }
 
-    public BasicColumn(int index, DataType<?> type, boolean nullable, boolean unique) {
+    public BasicColumn(int index, String name, DataType<?> type, boolean nullable, boolean unique) {
       super(type);
       this.index = index;
+      this.name = name;
       this.nullable = nullable;
       this.unique = unique;
     }

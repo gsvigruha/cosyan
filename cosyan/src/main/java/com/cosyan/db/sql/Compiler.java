@@ -7,18 +7,19 @@ import java.util.List;
 import java.util.Optional;
 
 import com.cosyan.db.conf.Config.ConfigException;
+import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
+import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
+import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta;
-import com.cosyan.db.model.TableMeta.DerivedTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
-import com.cosyan.db.model.TableMeta.FilteredTableMeta;
-import com.cosyan.db.model.TableMeta.KeyValueTableMeta;
 import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.sql.SyntaxTree.AsteriskExpression;
@@ -44,7 +45,7 @@ public class Compiler {
     return ((Select) tree.getRoot()).compile(metaRepo);
   }
 
-  public boolean statement(SyntaxTree tree) throws ModelException, ConfigException, ParserException, IOException {
+  public boolean statement(SyntaxTree tree) throws ModelException, ConfigException, ParserException, IOException, IndexException {
     if (!tree.isStatement()) {
       throw new ModelException("Expected statement.");
     }

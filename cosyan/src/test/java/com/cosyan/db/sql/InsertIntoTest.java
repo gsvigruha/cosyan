@@ -12,6 +12,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo;
@@ -33,6 +34,9 @@ public class InsertIntoTest {
     compiler = new Compiler(metaRepo);
     Files.deleteIfExists(Paths.get("/tmp/data/t1"));
     Files.deleteIfExists(Paths.get("/tmp/data/t2"));
+    Files.deleteIfExists(Paths.get("/tmp/data/t3"));
+    Files.deleteIfExists(Paths.get("/tmp/data/t4"));
+    Files.deleteIfExists(Paths.get("/tmp/data/t5"));
     Files.createDirectories(Paths.get("/tmp/data"));
   }
 
@@ -69,5 +73,27 @@ public class InsertIntoTest {
     compiler.statement(parser.parse("create table t3 (a varchar not null, b integer);"));
     compiler.statement(parser.parse("insert into t3 values ('x', 1);"));
     compiler.statement(parser.parse("insert into t3 (b) values (2);"));
+  }
+
+  @Test(expected = IndexException.class)
+  public void testUniqueNotNull() throws Exception {
+    compiler.statement(parser.parse("create table t4 (a varchar unique not null);"));
+    compiler.statement(parser.parse("insert into t4 values ('x');"));
+    compiler.statement(parser.parse("insert into t4 values ('x');"));
+  }
+
+  @Test
+  public void testUniqueNull() throws Exception {
+    compiler.statement(parser.parse("create table t5 (a varchar unique, b integer);"));
+    compiler.statement(parser.parse("insert into t5 values ('x', 1);"));
+    compiler.statement(parser.parse("insert into t5 (b) values (1);"));
+    compiler.statement(parser.parse("insert into t5 (b) values (1);"));
+    SyntaxTree select = parser.parse("select * from t5;");
+    ExposedTableMeta tableMeta = compiler.query(select);
+    ExposedTableReader reader = tableMeta.reader();
+    assertEquals(ImmutableMap.of("a", "x", "b", 1L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", DataTypes.NULL, "b", 1L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", DataTypes.NULL, "b", 1L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
   }
 }

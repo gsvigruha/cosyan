@@ -16,15 +16,15 @@ public class DataTypes {
     }
   }
 
-  public static final DataType<String> StringType = new DataType<>("String");
+  public static final DataType<String> StringType = new DataType<>("varchar");
 
-  public static final DataType<Double> DoubleType = new DataType<>("Double");
+  public static final DataType<Double> DoubleType = new DataType<>("float");
 
-  public static final DataType<Long> LongType = new DataType<>("Long");
+  public static final DataType<Long> LongType = new DataType<>("integer");
 
-  public static final DataType<Boolean> BoolType = new DataType<>("Boolean");
+  public static final DataType<Boolean> BoolType = new DataType<>("boolean");
 
-  public static final DataType<Date> DateType = new DataType<>("Date");
+  public static final DataType<Date> DateType = new DataType<>("timestamp");
 
   public static final class NullType implements Comparable<Object> {
     @Override
