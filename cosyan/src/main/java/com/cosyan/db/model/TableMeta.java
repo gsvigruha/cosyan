@@ -67,6 +67,7 @@ public abstract class TableMeta {
     private final String tableName;
     private final ImmutableMap<String, BasicColumn> columns;
     private final MetaRepo metaRepo;
+    private ImmutableMap<String, DerivedColumn> constraints = ImmutableMap.of();
 
     @Override
     public ImmutableMap<String, BasicColumn> columns() {
@@ -81,7 +82,11 @@ public abstract class TableMeta {
     }
 
     public TableAppender appender() throws ModelException {
-      return new TableAppender(metaRepo.append(this), columns.values().asList(), metaRepo.collectIndexes(this));
+      return new TableAppender(
+          metaRepo.append(this),
+          columns.values().asList(),
+          metaRepo.collectIndexes(this),
+          constraints);
     }
 
     public TableDeleter deleter(DerivedColumn whereColumn) throws ModelException {
@@ -92,7 +97,11 @@ public abstract class TableMeta {
         throws ModelException {
       return new TableUpdater(
           new TableDeleteAndCollector(metaRepo.update(this), columns.values().asList(), updateExprs, whereColumn),
-          new TableAppender(metaRepo.append(this), columns.values().asList(), metaRepo.collectIndexes(this)));
+          new TableAppender(
+              metaRepo.append(this),
+              columns.values().asList(),
+              metaRepo.collectIndexes(this),
+              constraints));
     }
 
     @Override

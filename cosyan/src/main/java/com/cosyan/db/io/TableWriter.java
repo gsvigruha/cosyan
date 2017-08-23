@@ -24,15 +24,21 @@ public class TableWriter {
     private final FileOutputStream fos;
     private final ImmutableList<BasicColumn> columns;
     private final ImmutableMap<String, TableIndex> indexes;
+    private final ImmutableMap<String, DerivedColumn> constraints;
 
     public void write(Object[] values) throws IOException, ModelException, IndexException {
       for (int i = 0; i < values.length; i++) {
         BasicColumn column = columns.get(i);
         if (!column.isNullable() && values[i] == DataTypes.NULL) {
-          throw new ModelException("Column is not nullable.");
+          throw new ModelException("Column is not nullable (mandatory).");
         }
         if (column.isUnique() && values[i] != DataTypes.NULL) {
           indexes.get(column.getName()).put(values[i], fos.getChannel().position());
+        }
+      }
+      for (Map.Entry<String, DerivedColumn> constraint : constraints.entrySet()) {
+        if (!(boolean) constraint.getValue().getValue(values)) {
+          throw new ModelException("Constraint check " + constraint.getKey() + " failed.");
         }
       }
       fos.write(Serializer.write(values, columns));

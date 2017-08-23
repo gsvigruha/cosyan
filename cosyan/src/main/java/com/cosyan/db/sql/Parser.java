@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.sql.CreateStatement.ColumnDefinition;
+import com.cosyan.db.sql.CreateStatement.ConstraintDefinition;
 import com.cosyan.db.sql.CreateStatement.Create;
 import com.cosyan.db.sql.DeleteStatement.Delete;
 import com.cosyan.db.sql.InsertIntoStatement.InsertInto;
@@ -153,8 +154,13 @@ public class Parser {
     Ident ident = parseSimpleIdent(tokens);
     assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
     ImmutableList.Builder<ColumnDefinition> columns = ImmutableList.builder();
+    ImmutableList.Builder<ConstraintDefinition> constraints = ImmutableList.builder();
     while (true) {
-      columns.add(parseColumnDefinition(tokens));
+      if (tokens.peek().is(Tokens.CONSTRAINT)) {
+        constraints.add(parseConstraint(tokens));
+      } else {
+        columns.add(parseColumnDefinition(tokens));
+      }
       if (tokens.peek().is(Tokens.COMMA)) {
         tokens.next();
       } else {
@@ -162,7 +168,17 @@ public class Parser {
         break;
       }
     }
-    return new Create(ident.getString(), columns.build());
+    return new Create(ident.getString(), columns.build(), constraints.build());
+  }
+
+  private ConstraintDefinition parseConstraint(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.CONSTRAINT);
+    Ident ident = parseSimpleIdent(tokens);
+    assertNext(tokens, Tokens.CHECK);
+    assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+    Expression expr = parseExpression(tokens, 0);
+    assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+    return new ConstraintDefinition(ident.getString(), expr);
   }
 
   private ColumnDefinition parseColumnDefinition(PeekingIterator<Token> tokens) throws ParserException {

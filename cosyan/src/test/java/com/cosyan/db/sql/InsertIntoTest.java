@@ -18,6 +18,7 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
+import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableMap;
 
 public class InsertIntoTest {
@@ -37,6 +38,7 @@ public class InsertIntoTest {
     Files.deleteIfExists(Paths.get("/tmp/data/t3"));
     Files.deleteIfExists(Paths.get("/tmp/data/t4"));
     Files.deleteIfExists(Paths.get("/tmp/data/t5"));
+    Files.deleteIfExists(Paths.get("/tmp/data/t6"));
     Files.createDirectories(Paths.get("/tmp/data"));
   }
 
@@ -95,5 +97,12 @@ public class InsertIntoTest {
     assertEquals(ImmutableMap.of("a", DataTypes.NULL, "b", 1L), reader.readColumns());
     assertEquals(ImmutableMap.of("a", DataTypes.NULL, "b", 1L), reader.readColumns());
     assertEquals(null, reader.readColumns());
+  }
+
+  @Test(expected = ModelException.class)
+  public void testConstraint() throws Exception {
+    compiler.statement(parser.parse("create table t6 (a integer, b integer, constraint c check(a + b > 1));"));
+    compiler.statement(parser.parse("insert into t6 values (1, 1);"));
+    compiler.statement(parser.parse("insert into t6 values (0, 0);"));
   }
 }

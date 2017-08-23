@@ -24,6 +24,10 @@ public class Tokens {
 
   public static String UNIQUE = "unique";
 
+  public static String CONSTRAINT = "constraint";
+
+  public static String CHECK = "check";
+
   public static String INSERT = "insert";
 
   public static String INTO = "into";

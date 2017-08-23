@@ -3,11 +3,13 @@ package com.cosyan.db.sql;
 import java.io.IOException;
 
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
+import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.Node;
 import com.cosyan.db.sql.SyntaxTree.Statement;
 import com.google.common.collect.ImmutableList;
@@ -23,6 +25,7 @@ public class CreateStatement {
   public static class Create extends Node implements Statement {
     private final String name;
     private final ImmutableList<ColumnDefinition> columns;
+    private final ImmutableList<ConstraintDefinition> constraints;
 
     @Override
     public boolean execute(MetaRepo metaRepo) throws ModelException, IOException {
@@ -42,6 +45,16 @@ public class CreateStatement {
       }
       MaterializedTableMeta tableMeta = new MaterializedTableMeta(
           name, columnsBuilder.build(), metaRepo);
+      
+      ImmutableMap.Builder<String, DerivedColumn> constraintsBuilder = ImmutableMap.builder();
+      for (ConstraintDefinition constraint : constraints) {
+        DerivedColumn constraintColumn = constraint.getExpr().compile(tableMeta, metaRepo);
+        if (constraintColumn.getType() != DataTypes.BoolType) {
+          throw new ModelException("Constraint expression has to be boolean.");
+        }
+        constraintsBuilder.put(constraint.getName(), constraintColumn);
+      }
+      tableMeta.setConstraints(constraintsBuilder.build());
       metaRepo.registerTable(name, tableMeta);
       return true;
     }
@@ -54,5 +67,12 @@ public class CreateStatement {
     private final DataType<?> type;
     private final boolean nullable;
     private final boolean unique;
+  }
+  
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class ConstraintDefinition extends Node {
+    private final String name;
+    private final Expression expr;
   }
 }
