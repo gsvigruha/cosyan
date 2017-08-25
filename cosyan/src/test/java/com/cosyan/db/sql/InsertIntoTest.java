@@ -18,7 +18,6 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
-import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableMap;
 
 public class InsertIntoTest {

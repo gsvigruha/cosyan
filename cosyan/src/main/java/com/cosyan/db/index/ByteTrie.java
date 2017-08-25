@@ -163,7 +163,7 @@ public abstract class ByteTrie<T> {
         return -1;
       }
     }
-    byte keyByte = keyBytes[keyBytesIndex];
+    int keyByte = keyBytes[keyBytesIndex] - Byte.MIN_VALUE;
     long pointer = pointers[keyByte];
     if (pointer == 0) {
       // Equivalent of null pointer, search is over.
@@ -204,7 +204,7 @@ public abstract class ByteTrie<T> {
         return;
       }
     }
-    byte keyByte = keyBytes[keyBytesIndex];
+    int keyByte = keyBytes[keyBytesIndex] - Byte.MIN_VALUE;
     long pointer = pointers[keyByte];
     if (pointer == 0) {
       // Null pointer, create a leaf node.
@@ -235,7 +235,7 @@ public abstract class ByteTrie<T> {
         byte[] existingKeyBytes = toByteArray(leaf.key());
         if (keyBytesIndex + 1 < existingKeyBytes.length) {
           // Push the existing key down the trie if has more bytes.
-          newIndex[existingKeyBytes[keyBytesIndex + 1]] = pointer;
+          newIndex[existingKeyBytes[keyBytesIndex + 1] - Byte.MIN_VALUE] = pointer;
         } else {
           // Add to the new index if has no more bytes.
           newIndex[256] = pointer;
@@ -248,6 +248,47 @@ public abstract class ByteTrie<T> {
         saveIndex(parentPointer, pointers);
 
         put(indexPointer, newIndex, keyBytes, keyBytesIndex + 1, keyObject, objectIndex);
+      }
+    }
+  }
+
+  protected boolean delete(long parentPointer, long[] pointers, byte[] keyBytes, int keyBytesIndex, T keyObject)
+      throws IOException {
+    if (keyBytesIndex >= keyBytes.length) {
+      // Check current node.
+      long currentKey = pointers[256];
+      if (currentKey > 0) {
+        Leaf<T> leaf = getLeaf(currentKey);
+        if (keyObject.equals(leaf.key())) {
+          pointers[256] = 0;
+          saveIndex(parentPointer, pointers);
+          return true;
+        } else {
+          throw new RuntimeIndexException("Inconsistent state.");
+        }
+      } else {
+        return false;
+      }
+    }
+    int keyByte = keyBytes[keyBytesIndex] - Byte.MIN_VALUE;
+    long pointer = pointers[keyByte];
+    if (pointer == 0) {
+      // Equivalent of null pointer, search is over.
+      return false;
+    } else if (pointer < 0) {
+      // Pointer to index node.
+      Index<T> nextIndex = getIndex(pointer);
+      return delete(pointer, nextIndex.keys(), keyBytes, keyBytesIndex + 1, keyObject);
+    } else {
+      // Pointer to leaf node.
+      Leaf<T> leaf = getLeaf(pointer);
+      if (keyObject.equals(leaf.key())) {
+        pointers[keyByte] = 0;
+        saveIndex(parentPointer, pointers);
+        return true;
+      } else {
+        // Search is over and not found.
+        return false;
       }
     }
   }
@@ -278,6 +319,10 @@ public abstract class ByteTrie<T> {
 
     public void put(long key, long finalIndex) throws IOException, IndexException {
       put(0, root, toByteArray(key), 0, key, finalIndex);
+    }
+
+    public boolean delete(long key) throws IOException {
+      return delete(0, root, toByteArray(key), 0, key);
     }
 
     @Override
@@ -313,6 +358,10 @@ public abstract class ByteTrie<T> {
 
     public void put(String key, long finalIndex) throws IOException, IndexException {
       put(0, root, toByteArray(key), 0, key, finalIndex);
+    }
+
+    public boolean delete(String key) throws IOException {
+      return delete(0, root, toByteArray(key), 0, key);
     }
 
     @Override
