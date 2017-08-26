@@ -90,13 +90,21 @@ public abstract class TableMeta {
     }
 
     public TableDeleter deleter(DerivedColumn whereColumn) throws ModelException {
-      return new TableDeleter(metaRepo.update(this), columns.values().asList(), whereColumn);
+      return new TableDeleter(
+          metaRepo.update(this),
+          columns.values().asList(),
+          whereColumn,metaRepo.collectIndexes(this));
     }
 
     public TableUpdater updater(ImmutableMap<Integer, DerivedColumn> updateExprs, DerivedColumn whereColumn)
         throws ModelException {
       return new TableUpdater(
-          new TableDeleteAndCollector(metaRepo.update(this), columns.values().asList(), updateExprs, whereColumn),
+          new TableDeleteAndCollector(
+              metaRepo.update(this),
+              columns.values().asList(),
+              updateExprs,
+              whereColumn,
+              metaRepo.collectIndexes(this)),
           new TableAppender(
               metaRepo.append(this),
               columns.values().asList(),

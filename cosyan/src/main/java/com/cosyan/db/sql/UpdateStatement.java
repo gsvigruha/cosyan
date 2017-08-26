@@ -56,7 +56,7 @@ public class UpdateStatement {
       }
       TableUpdater updater = tableMeta.updater(columnExprs.build(), whereColumn);
       updater.update();
-      updater.close();
+      updater.commit();
       return true;
     }
   }

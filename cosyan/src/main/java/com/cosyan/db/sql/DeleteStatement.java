@@ -29,7 +29,7 @@ public class DeleteStatement {
       DerivedColumn whereColumn = where.compile(tableMeta, metaRepo);
       TableDeleter deleter = tableMeta.deleter(whereColumn);
       deleter.delete();
-      deleter.close();
+      deleter.commit();
       return true;
     }
   }

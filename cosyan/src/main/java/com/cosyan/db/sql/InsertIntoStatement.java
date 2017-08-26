@@ -50,7 +50,7 @@ public class InsertIntoStatement {
       }
       TableAppender appender = tableMeta.appender();
       appender.write(fullValues);
-      appender.close();
+      appender.commit();
       return true;
     }
   }

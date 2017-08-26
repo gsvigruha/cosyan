@@ -1,6 +1,7 @@
 package com.cosyan.db.sql;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -12,6 +13,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
@@ -31,6 +33,7 @@ public class UpdateTest {
     compiler = new Compiler(metaRepo);
     Files.deleteIfExists(Paths.get("/tmp/data/t1"));
     Files.deleteIfExists(Paths.get("/tmp/data/t2"));
+    Files.deleteIfExists(Paths.get("/tmp/data/t3"));
     Files.createDirectories(Paths.get("/tmp/data"));
   }
 
@@ -65,6 +68,24 @@ public class UpdateTest {
     reader = compiler.query(parser.parse("select * from t2;")).reader();
     assertEquals(ImmutableMap.of("a", "y", "b", 3L, "c", 4.0), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "z", "b", 1L, "c", 2.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testUpdateWithIndex() throws Exception {
+    compiler.statement(parser.parse("create table t3 (a varchar unique not null, b integer);"));
+    compiler.statement(parser.parse("insert into t3 values ('x', 1);"));
+    compiler.statement(parser.parse("insert into t3 values ('y', 2);"));
+
+    try {
+      compiler.statement(parser.parse("update t3 set a = 'y' where a = 'x';"));
+      fail();
+    } catch (IndexException e) {
+    }
+    compiler.statement(parser.parse("update t3 set a = 'z' where a = 'x';"));
+    ExposedTableReader reader = compiler.query(parser.parse("select * from t3;")).reader();
+    assertEquals(ImmutableMap.of("a", "y", "b", 2L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "z", "b", 1L), reader.readColumns());
     assertEquals(null, reader.readColumns());
   }
 }

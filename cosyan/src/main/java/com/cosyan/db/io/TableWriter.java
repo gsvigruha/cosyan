@@ -2,7 +2,9 @@ package com.cosyan.db.io;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.MappedByteBuffer;
+import java.io.RandomAccessFile;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
@@ -13,6 +15,8 @@ import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableIndex;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.ListMultimap;
 
 import lombok.Data;
 
@@ -25,6 +29,7 @@ public class TableWriter {
     private final ImmutableList<BasicColumn> columns;
     private final ImmutableMap<String, TableIndex> indexes;
     private final ImmutableMap<String, DerivedColumn> constraints;
+    private List<Object[]> valuess = new LinkedList<>();
 
     public void write(Object[] values) throws IOException, ModelException, IndexException {
       for (int i = 0; i < values.length; i++) {
@@ -41,7 +46,18 @@ public class TableWriter {
           throw new ModelException("Constraint check " + constraint.getKey() + " failed.");
         }
       }
-      fos.write(Serializer.write(values, columns));
+      this.valuess.add(values);
+    }
+
+    public void commit() throws IOException {
+      for (Object[] values : valuess) {
+        fos.write(Serializer.write(values, columns));
+      }
+      close();
+    }
+
+    public void rollback() throws IOException {
+      close();
     }
 
     public void close() throws IOException {
@@ -52,31 +68,60 @@ public class TableWriter {
   @Data
   public static class TableDeleter {
 
-    private MappedDataFile file;
+    private RandomAccessFile file;
     private final ImmutableList<BasicColumn> columns;
     private final DerivedColumn whereColumn;
+    private final ImmutableMap<String, TableIndex> indexes;
+    private final List<Long> recordsToDelete;
+    private final ListMultimap<String, Object> indexesToDelete;
 
-    public TableDeleter(MappedDataFile file, ImmutableList<BasicColumn> columns, DerivedColumn whereColumn) {
+    public TableDeleter(
+        RandomAccessFile file,
+        ImmutableList<BasicColumn> columns,
+        DerivedColumn whereColumn,
+        ImmutableMap<String, TableIndex> indexes) {
       this.file = file;
       this.columns = columns;
       this.whereColumn = whereColumn;
+      this.indexes = indexes;
+      this.recordsToDelete = new LinkedList<>();
+      this.indexesToDelete = LinkedListMultimap.create();
     }
 
     public void delete() throws IOException {
-      MappedByteBuffer buffer = file.getBuffer();
       do {
-        buffer.mark();
-        Object[] values = Serializer.read(columns, buffer);
+        long pos = file.getFilePointer();
+        Object[] values = Serializer.read(columns, file);
         if (values == null) {
           return;
         }
         if ((boolean) whereColumn.getValue(values)) {
-          int p = buffer.position();
-          buffer.reset();
-          buffer.put((byte) 0);
-          buffer.position(p);
+          recordsToDelete.add(pos);
+          for (BasicColumn column : columns) {
+            if (indexes.containsKey(column.getName())) {
+              indexesToDelete.put(column.getName(), values[column.getIndex()]);
+            }
+          }
         }
-      } while (buffer.hasRemaining());
+      } while (true);
+    }
+
+    public void commit() throws IOException {
+      for (Long pos : recordsToDelete) {
+        file.seek(pos);
+        file.writeByte(0);
+      }
+      for (String indexName : indexesToDelete.keySet()) {
+        TableIndex index = indexes.get(indexName);
+        for (Object key : indexesToDelete.get(indexName)) {
+          index.delete(key);
+        }
+      }
+      close();
+    }
+
+    public void rollback() throws IOException {
+      close();
     }
 
     public void close() throws IOException {
@@ -87,36 +132,44 @@ public class TableWriter {
   @Data
   public static class TableDeleteAndCollector {
 
-    private MappedDataFile file;
+    private RandomAccessFile file;
     private final ImmutableList<BasicColumn> columns;
     private final ImmutableMap<Integer, DerivedColumn> updateExprs;
     private final DerivedColumn whereColumn;
+    private final ImmutableMap<String, TableIndex> indexes;
+    private final List<Long> recordsToDelete;
+    private final ListMultimap<String, Object> indexesToDelete;
 
     public TableDeleteAndCollector(
-        MappedDataFile file,
+        RandomAccessFile file,
         ImmutableList<BasicColumn> columns,
         ImmutableMap<Integer, DerivedColumn> updateExprs,
-        DerivedColumn whereColumn) {
+        DerivedColumn whereColumn,
+        ImmutableMap<String, TableIndex> indexes) {
       this.file = file;
       this.columns = columns;
       this.updateExprs = updateExprs;
       this.whereColumn = whereColumn;
+      this.indexes = indexes;
+      this.recordsToDelete = new LinkedList<>();
+      this.indexesToDelete = LinkedListMultimap.create();
     }
 
     public ImmutableList<Object[]> deleteAndCollect() throws IOException {
-      MappedByteBuffer buffer = file.getBuffer();
       ImmutableList.Builder<Object[]> updatedRecords = ImmutableList.builder();
       do {
-        buffer.mark();
-        Object[] values = Serializer.read(columns, buffer);
+        long pos = file.getFilePointer();
+        Object[] values = Serializer.read(columns, file);
         if (values == null) {
           return updatedRecords.build();
         }
         if ((boolean) whereColumn.getValue(values)) {
-          int p = buffer.position();
-          buffer.reset();
-          buffer.put((byte) 0);
-          buffer.position(p);
+          recordsToDelete.add(pos);
+          for (BasicColumn column : columns) {
+            if (indexes.containsKey(column.getName())) {
+              indexesToDelete.put(column.getName(), values[column.getIndex()]);
+            }
+          }
           Object[] newValues = new Object[values.length];
           System.arraycopy(values, 0, newValues, 0, values.length);
           for (Map.Entry<Integer, DerivedColumn> updateExpr : updateExprs.entrySet()) {
@@ -124,8 +177,25 @@ public class TableWriter {
           }
           updatedRecords.add(newValues);
         }
-      } while (buffer.hasRemaining());
-      return updatedRecords.build();
+      } while (true);
+    }
+
+    public void commit() throws IOException {
+      for (Long pos : recordsToDelete) {
+        file.seek(pos);
+        file.writeByte(0);
+      }
+      for (String indexName : indexesToDelete.keySet()) {
+        TableIndex index = indexes.get(indexName);
+        for (Object key : indexesToDelete.get(indexName)) {
+          index.delete(key);
+        }
+      }
+      close();
+    }
+
+    public void rollback() throws IOException {
+      close();
     }
 
     public void close() throws IOException {
@@ -140,11 +210,19 @@ public class TableWriter {
 
     public boolean update() throws IOException, ModelException, IndexException {
       ImmutableList<Object[]> valuess = deleter.deleteAndCollect();
-      deleter.close();
       for (Object[] values : valuess) {
         appender.write(values);
       }
       return true;
+    }
+
+    public void commit() throws IOException {
+      deleter.commit();
+      appender.commit();
+    }
+
+    public void rollback() throws IOException {
+      close();
     }
 
     public void close() throws IOException {

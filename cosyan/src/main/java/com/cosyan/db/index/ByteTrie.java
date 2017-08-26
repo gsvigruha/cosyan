@@ -1,10 +1,14 @@
 package com.cosyan.db.index;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import com.cosyan.db.io.Serializer;
 import com.cosyan.db.model.DataTypes;
@@ -33,8 +37,12 @@ public abstract class ByteTrie<T> {
    */
   private static final int KEYS_SIZE = 257;
 
-  private static class Node<T> {
+  public static class Node<T> {
     protected int accesses = 0;
+
+    public int getAccesses() {
+      return accesses;
+    }
   }
 
   private static class Index<T> extends Node<T> {
@@ -133,18 +141,37 @@ public abstract class ByteTrie<T> {
         throw new RuntimeIndexException("Inconsistent state.");
       }
       raf.seek(fileIndex);
+      ByteBuffer bb = ByteBuffer.allocate(KEYS_SIZE * Long.BYTES);
+      raf.read(bb.array());
       long[] keysToLoad = new long[KEYS_SIZE];
-      for (int j = 0; j < KEYS_SIZE; j++) {
-        keysToLoad[j] = raf.readLong();
-      }
+      bb.asLongBuffer().get(keysToLoad);
+
       indexNode = new Index<T>(keysToLoad);
       trie.put(id, indexNode);
     }
     return indexNode;
   }
 
+  private void saveIndex(long id, long[] indices) throws IOException {
+    raf.seek(-id);
+    ByteBuffer bb = ByteBuffer.allocate(KEYS_SIZE * 8);
+    bb.asLongBuffer().put(indices);
+    raf.write(bb.array());
+  }
+
   public void cleanUp() {
     trie.clear();
+  }
+
+  public void cleanUp(int limit) {
+    Iterator<Map.Entry<Long, Node<T>>> iter = trie.entrySet().iterator();
+    while (iter.hasNext()) {
+      Map.Entry<Long, Node<T>> item = iter.next();
+      if (item.getValue().getAccesses() < limit) {
+        iter.remove();
+      }
+    }
+    //System.out.println(trie.size());
   }
 
   protected long get(long[] pointers, byte[] keyBytes, int keyBytesIndex, T keyObject)
@@ -293,13 +320,6 @@ public abstract class ByteTrie<T> {
     }
   }
 
-  private void saveIndex(long id, long[] indices) throws IOException {
-    raf.seek(-id);
-    for (long l : indices) {
-      raf.writeLong(l);
-    }
-  }
-
   public static class LongIndex extends ByteTrie<Long> {
 
     public LongIndex(String fileName) throws IOException {
@@ -334,8 +354,11 @@ public abstract class ByteTrie<T> {
     @Override
     protected void saveLeaf(long filePointer, Leaf<Long> leaf) throws IOException {
       raf.seek(filePointer);
-      Serializer.writeColumn(leaf.key(), DataTypes.LongType, raf);
-      raf.writeLong(leaf.index());
+      ByteArrayOutputStream b = new ByteArrayOutputStream(Long.BYTES * 2 + 1);
+      DataOutputStream stream = new DataOutputStream(b);
+      Serializer.writeColumn(leaf.key(), DataTypes.LongType, stream);
+      stream.writeLong(leaf.index());
+      raf.write(b.toByteArray());
     }
   }
 
@@ -373,8 +396,11 @@ public abstract class ByteTrie<T> {
     @Override
     protected void saveLeaf(long filePointer, Leaf<String> leaf) throws IOException {
       raf.seek(filePointer);
-      Serializer.writeColumn(leaf.key(), DataTypes.StringType, raf);
-      raf.writeLong(leaf.index());
+      ByteArrayOutputStream b = new ByteArrayOutputStream(Long.BYTES * 2 + 1);
+      DataOutputStream stream = new DataOutputStream(b);
+      Serializer.writeColumn(leaf.key(), DataTypes.StringType, stream);
+      stream.writeLong(leaf.index());
+      raf.write(b.toByteArray());
     }
   }
 }
