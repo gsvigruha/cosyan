@@ -64,7 +64,7 @@ public class CSVConverter {
         }
         values[i++] = value;
       }
-      os.write(Serializer.write(values, columns.values().asList()));
+      os.write(Serializer.serialize(values, columns.values().asList()));
     }
     parser.close();
     os.close();

@@ -15,8 +15,6 @@ import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableIndex;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.ListMultimap;
 
 import lombok.Data;
 
@@ -50,13 +48,19 @@ public class TableWriter {
     }
 
     public void commit() throws IOException {
+      for (TableIndex index : indexes.values()) {
+        index.commit();
+      }
       for (Object[] values : valuess) {
-        fos.write(Serializer.write(values, columns));
+        fos.write(Serializer.serialize(values, columns));
       }
       close();
     }
 
     public void rollback() throws IOException {
+      for (TableIndex index : indexes.values()) {
+        index.rollback();
+      }
       close();
     }
 
@@ -73,7 +77,6 @@ public class TableWriter {
     private final DerivedColumn whereColumn;
     private final ImmutableMap<String, TableIndex> indexes;
     private final List<Long> recordsToDelete;
-    private final ListMultimap<String, Object> indexesToDelete;
 
     public TableDeleter(
         RandomAccessFile file,
@@ -85,7 +88,6 @@ public class TableWriter {
       this.whereColumn = whereColumn;
       this.indexes = indexes;
       this.recordsToDelete = new LinkedList<>();
-      this.indexesToDelete = LinkedListMultimap.create();
     }
 
     public void delete() throws IOException {
@@ -99,7 +101,7 @@ public class TableWriter {
           recordsToDelete.add(pos);
           for (BasicColumn column : columns) {
             if (indexes.containsKey(column.getName())) {
-              indexesToDelete.put(column.getName(), values[column.getIndex()]);
+              indexes.get(column.getName()).delete(values[column.getIndex()]);
             }
           }
         }
@@ -107,20 +109,20 @@ public class TableWriter {
     }
 
     public void commit() throws IOException {
+      for (TableIndex index : indexes.values()) {
+        index.commit();
+      }
       for (Long pos : recordsToDelete) {
         file.seek(pos);
         file.writeByte(0);
-      }
-      for (String indexName : indexesToDelete.keySet()) {
-        TableIndex index = indexes.get(indexName);
-        for (Object key : indexesToDelete.get(indexName)) {
-          index.delete(key);
-        }
       }
       close();
     }
 
     public void rollback() throws IOException {
+      for (TableIndex index : indexes.values()) {
+        index.rollback();
+      }
       close();
     }
 
@@ -138,7 +140,6 @@ public class TableWriter {
     private final DerivedColumn whereColumn;
     private final ImmutableMap<String, TableIndex> indexes;
     private final List<Long> recordsToDelete;
-    private final ListMultimap<String, Object> indexesToDelete;
 
     public TableDeleteAndCollector(
         RandomAccessFile file,
@@ -152,7 +153,6 @@ public class TableWriter {
       this.whereColumn = whereColumn;
       this.indexes = indexes;
       this.recordsToDelete = new LinkedList<>();
-      this.indexesToDelete = LinkedListMultimap.create();
     }
 
     public ImmutableList<Object[]> deleteAndCollect() throws IOException {
@@ -167,7 +167,7 @@ public class TableWriter {
           recordsToDelete.add(pos);
           for (BasicColumn column : columns) {
             if (indexes.containsKey(column.getName())) {
-              indexesToDelete.put(column.getName(), values[column.getIndex()]);
+              indexes.get(column.getName()).delete(values[column.getIndex()]);
             }
           }
           Object[] newValues = new Object[values.length];
@@ -181,20 +181,20 @@ public class TableWriter {
     }
 
     public void commit() throws IOException {
+      for (TableIndex index : indexes.values()) {
+        index.commit();
+      }
       for (Long pos : recordsToDelete) {
         file.seek(pos);
         file.writeByte(0);
-      }
-      for (String indexName : indexesToDelete.keySet()) {
-        TableIndex index = indexes.get(indexName);
-        for (Object key : indexesToDelete.get(indexName)) {
-          index.delete(key);
-        }
       }
       close();
     }
 
     public void rollback() throws IOException {
+      for (TableIndex index : indexes.values()) {
+        index.rollback();
+      }
       close();
     }
 
@@ -222,6 +222,8 @@ public class TableWriter {
     }
 
     public void rollback() throws IOException {
+      deleter.rollback();
+      appender.rollback();
       close();
     }
 

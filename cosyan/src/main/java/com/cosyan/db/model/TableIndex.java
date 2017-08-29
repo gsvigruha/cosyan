@@ -12,6 +12,12 @@ public abstract class TableIndex {
 
   public abstract boolean delete(Object key) throws IOException;
 
+  public abstract long get(Object key) throws IOException;
+
+  public abstract void commit() throws IOException;
+
+  public abstract void rollback() throws IOException;
+
   public static class LongTableIndex extends TableIndex {
 
     private LongIndex index;
@@ -28,6 +34,21 @@ public abstract class TableIndex {
     @Override
     public boolean delete(Object key) throws IOException {
       return index.delete((Long) key);
+    }
+
+    @Override
+    public long get(Object key) throws IOException {
+      return index.get((Long) key);
+    }
+
+    @Override
+    public void commit() throws IOException {
+      index.commit();
+    }
+
+    @Override
+    public void rollback() throws IOException {
+      index.rollback();
     }
   }
 
@@ -47,6 +68,21 @@ public abstract class TableIndex {
     @Override
     public boolean delete(Object key) throws IOException {
       return index.delete((String) key);
+    }
+
+    @Override
+    public long get(Object key) throws IOException {
+      return index.get((String) key);
+    }
+
+    @Override
+    public void commit() throws IOException {
+      index.commit();
+    }
+
+    @Override
+    public void rollback() throws IOException {
+      index.rollback();
     }
   }
 }

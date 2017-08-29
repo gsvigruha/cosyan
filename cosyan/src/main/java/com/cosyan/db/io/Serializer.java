@@ -89,7 +89,7 @@ public class Serializer {
     }
   }
 
-  public static byte[] write(Object[] values, ImmutableList<? extends ColumnMeta> columns) throws IOException {
+  public static byte[] serialize(Object[] values, ImmutableList<? extends ColumnMeta> columns) throws IOException {
     ByteArrayOutputStream b = new ByteArrayOutputStream();
     DataOutputStream stream = new DataOutputStream(b);
     stream.writeByte(1);

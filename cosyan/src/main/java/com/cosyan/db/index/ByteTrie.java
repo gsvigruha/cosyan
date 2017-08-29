@@ -8,6 +8,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.cosyan.db.io.Serializer;
@@ -95,17 +96,20 @@ public abstract class ByteTrie<T> {
 
   private final String fileName;
   protected RandomAccessFile raf;
+  private long filePointer;
 
-  protected final long[] root = new long[KEYS_SIZE];
   private final HashMap<Long, Node<T>> trie = new HashMap<>();
+  private final LinkedHashMap<Long, Node<T>> pendingNodes = new LinkedHashMap<>();
 
   protected ByteTrie(String fileName) throws IOException {
     this.fileName = fileName;
     this.raf = new RandomAccessFile(fileName, "rw");
-    saveIndex(0, root);
+    saveIndex(0, new long[KEYS_SIZE]);
+    filePointer = raf.length();
   }
 
   public void close() throws IOException {
+    cleanUp();
     raf.close();
   }
 
@@ -113,14 +117,52 @@ public abstract class ByteTrie<T> {
     this.raf = new RandomAccessFile(fileName, "rw");
   }
 
+  public long get(T key) throws IOException {
+    return get(getIndex(0L).keys(), toByteArray(key), 0, key);
+  }
+
+  public void put(T key, long finalIndex) throws IOException, IndexException {
+    put(0, getIndex(0L).keys(), toByteArray(key), 0, key, finalIndex);
+  }
+
+  public boolean delete(T key) throws IOException {
+    return delete(0, getIndex(0L).keys(), toByteArray(key), 0, key);
+  }
+
+  public void commit() throws IOException {
+    for (Map.Entry<Long, Node<T>> node : pendingNodes.entrySet()) {
+      if (node.getKey() <= 0) {
+        saveIndex(node.getKey(), ((Index<T>) node.getValue()).keys());
+      } else {
+        saveLeaf(node.getKey(), ((Leaf<T>) node.getValue()));
+      }
+    }
+    trie.putAll(pendingNodes);
+    pendingNodes.clear();
+    if (filePointer != raf.length()) {
+      throw new RuntimeIndexException("Inconsistent state.");
+    }
+  }
+
+  public void rollback() throws IOException {
+    filePointer = raf.length();
+    pendingNodes.clear();
+  }
+
   protected abstract Leaf<T> loadLeaf(long filePointer) throws IOException;
 
   protected abstract void saveLeaf(long filePointer, Leaf<T> leaf) throws IOException;
 
+  protected abstract int leafSize(Leaf<T> leaf);
+
   protected abstract byte[] toByteArray(T key);
 
   private Leaf<T> getLeaf(long id) throws IOException {
-    Leaf<T> leafNode = (Leaf<T>) trie.get(id);
+    Leaf<T> leafNode = (Leaf<T>) pendingNodes.get(id);
+    if (leafNode != null) {
+      return leafNode;
+    }
+    leafNode = (Leaf<T>) trie.get(id);
     if (leafNode == null) {
       // Assume leaf node exists but not in memory.
       if (id >= raf.length()) {
@@ -133,9 +175,13 @@ public abstract class ByteTrie<T> {
   }
 
   private Index<T> getIndex(long id) throws IOException {
-    Index<T> indexNode = (Index<T>) trie.get(id);
-    long fileIndex = -id;
+    Index<T> indexNode = (Index<T>) pendingNodes.get(id);
+    if (indexNode != null) {
+      return indexNode;
+    }
+    indexNode = (Index<T>) trie.get(id);
     if (indexNode == null) {
+      long fileIndex = -id;
       // Index node exists but not in memory.
       if (fileIndex >= raf.length()) {
         throw new RuntimeIndexException("Inconsistent state.");
@@ -150,6 +196,13 @@ public abstract class ByteTrie<T> {
       trie.put(id, indexNode);
     }
     return indexNode;
+  }
+
+  private void modifyIndex(long parentPointer, long[] pointers, int i, long fileIndex) {
+    long[] newPointers = pointers.clone();
+    newPointers[i] = fileIndex;
+    Index<T> newIndex = new Index<>(newPointers);
+    pendingNodes.put(parentPointer, newIndex);
   }
 
   private void saveIndex(long id, long[] indices) throws IOException {
@@ -171,7 +224,6 @@ public abstract class ByteTrie<T> {
         iter.remove();
       }
     }
-    //System.out.println(trie.size());
   }
 
   protected long get(long[] pointers, byte[] keyBytes, int keyBytesIndex, T keyObject)
@@ -192,6 +244,9 @@ public abstract class ByteTrie<T> {
     }
     int keyByte = keyBytes[keyBytesIndex] - Byte.MIN_VALUE;
     long pointer = pointers[keyByte];
+    /*for (int i = 0;i<257;i++) {
+      System.out.println(i + "->"+pointers[i]);
+    }*/
     if (pointer == 0) {
       // Equivalent of null pointer, search is over.
       return -1;
@@ -221,13 +276,12 @@ public abstract class ByteTrie<T> {
         throw new IndexException("Key '" + keyObject + "' already present in index.");
       } else {
         Leaf<T> leaf = new Leaf<T>(keyObject, objectIndex);
-        long fileIndex = raf.length();
-        saveLeaf(fileIndex, leaf);
-        trie.put(fileIndex, leaf);
+        long fileIndex = filePointer;
+        pendingNodes.put(fileIndex, leaf);
+        filePointer += leafSize(leaf);
 
-        // Modify and save parent index.
-        pointers[256] = fileIndex;
-        saveIndex(parentPointer, pointers);
+        // Modify parent index.
+        modifyIndex(parentPointer, pointers, 256, fileIndex);
         return;
       }
     }
@@ -236,13 +290,12 @@ public abstract class ByteTrie<T> {
     if (pointer == 0) {
       // Null pointer, create a leaf node.
       Leaf<T> leaf = new Leaf<T>(keyObject, objectIndex);
-      long fileIndex = raf.length();
-      saveLeaf(fileIndex, leaf);
-      trie.put(fileIndex, leaf);
+      long fileIndex = filePointer;
+      pendingNodes.put(fileIndex, leaf);
+      filePointer += leafSize(leaf);
 
-      // Modify and save parent index.
-      pointers[keyByte] = fileIndex;
-      saveIndex(parentPointer, pointers);
+      // Modify parent index.
+      modifyIndex(parentPointer, pointers, keyByte, fileIndex);
       return;
     } else if (pointer < 0) {
       // Pointer to index node.
@@ -257,7 +310,7 @@ public abstract class ByteTrie<T> {
       } else {
         // Another non-final leaf node is present, need to split.
         // Create a new index node.
-        long indexPointer = -raf.length();
+        long indexPointer = -filePointer;
         long[] newIndex = new long[KEYS_SIZE];
         byte[] existingKeyBytes = toByteArray(leaf.key());
         if (keyBytesIndex + 1 < existingKeyBytes.length) {
@@ -267,19 +320,24 @@ public abstract class ByteTrie<T> {
           // Add to the new index if has no more bytes.
           newIndex[256] = pointer;
         }
-        saveIndex(indexPointer, newIndex);
-        trie.put(indexPointer, new Index<T>(newIndex));
+        // Add new index.
+        pendingNodes.put(indexPointer, new Index<T>(newIndex));
+        filePointer += KEYS_SIZE * Long.BYTES;
 
-        // Modify and save parent index.
-        pointers[keyByte] = indexPointer;
-        saveIndex(parentPointer, pointers);
+        // Modify parent index.
+        modifyIndex(parentPointer, pointers, keyByte, indexPointer);
 
         put(indexPointer, newIndex, keyBytes, keyBytesIndex + 1, keyObject, objectIndex);
       }
     }
   }
 
-  protected boolean delete(long parentPointer, long[] pointers, byte[] keyBytes, int keyBytesIndex, T keyObject)
+  protected boolean delete(
+      long parentPointer,
+      long[] pointers,
+      byte[] keyBytes,
+      int keyBytesIndex,
+      T keyObject)
       throws IOException {
     if (keyBytesIndex >= keyBytes.length) {
       // Check current node.
@@ -287,8 +345,7 @@ public abstract class ByteTrie<T> {
       if (currentKey > 0) {
         Leaf<T> leaf = getLeaf(currentKey);
         if (keyObject.equals(leaf.key())) {
-          pointers[256] = 0;
-          saveIndex(parentPointer, pointers);
+          modifyIndex(parentPointer, pointers, 256, 0);
           return true;
         } else {
           throw new RuntimeIndexException("Inconsistent state.");
@@ -310,8 +367,7 @@ public abstract class ByteTrie<T> {
       // Pointer to leaf node.
       Leaf<T> leaf = getLeaf(pointer);
       if (keyObject.equals(leaf.key())) {
-        pointers[keyByte] = 0;
-        saveIndex(parentPointer, pointers);
+        modifyIndex(parentPointer, pointers, keyByte, 0);
         return true;
       } else {
         // Search is over and not found.
@@ -333,18 +389,6 @@ public abstract class ByteTrie<T> {
       return buffer.array();
     }
 
-    public long get(long key) throws IOException {
-      return get(root, toByteArray(key), 0, key);
-    }
-
-    public void put(long key, long finalIndex) throws IOException, IndexException {
-      put(0, root, toByteArray(key), 0, key, finalIndex);
-    }
-
-    public boolean delete(long key) throws IOException {
-      return delete(0, root, toByteArray(key), 0, key);
-    }
-
     @Override
     protected Leaf<Long> loadLeaf(long filePointer) throws IOException {
       raf.seek(filePointer);
@@ -359,6 +403,11 @@ public abstract class ByteTrie<T> {
       Serializer.writeColumn(leaf.key(), DataTypes.LongType, stream);
       stream.writeLong(leaf.index());
       raf.write(b.toByteArray());
+    }
+
+    @Override
+    protected int leafSize(Leaf<Long> leaf) {
+      return Long.BYTES * 2 + 1;
     }
   }
 
@@ -375,18 +424,6 @@ public abstract class ByteTrie<T> {
       return buffer.array();
     }
 
-    public long get(String key) throws IOException {
-      return get(root, toByteArray(key), 0, key);
-    }
-
-    public void put(String key, long finalIndex) throws IOException, IndexException {
-      put(0, root, toByteArray(key), 0, key, finalIndex);
-    }
-
-    public boolean delete(String key) throws IOException {
-      return delete(0, root, toByteArray(key), 0, key);
-    }
-
     @Override
     protected Leaf<String> loadLeaf(long filePointer) throws IOException {
       raf.seek(filePointer);
@@ -396,11 +433,17 @@ public abstract class ByteTrie<T> {
     @Override
     protected void saveLeaf(long filePointer, Leaf<String> leaf) throws IOException {
       raf.seek(filePointer);
-      ByteArrayOutputStream b = new ByteArrayOutputStream(Long.BYTES * 2 + 1);
+      ByteArrayOutputStream b = new ByteArrayOutputStream(
+          Character.BYTES * leaf.key().length() + Long.BYTES + 1);
       DataOutputStream stream = new DataOutputStream(b);
       Serializer.writeColumn(leaf.key(), DataTypes.StringType, stream);
       stream.writeLong(leaf.index());
       raf.write(b.toByteArray());
+    }
+
+    @Override
+    protected int leafSize(Leaf<String> leaf) {
+      return Character.BYTES * leaf.key().length() + 4 + Long.BYTES + 1;
     }
   }
 }
