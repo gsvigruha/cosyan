@@ -308,6 +308,9 @@ public class Parser {
       String... terminators) throws ParserException {
     ImmutableList.Builder<Expression> exprs = ImmutableList.builder();
     while (true) {
+      if (ImmutableSet.copyOf(terminators).contains(tokens.peek().getString())) {
+        break;
+      }
       Expression expr = parseExpression(tokens, 0);
       if (allowAlias && tokens.peek().is(Tokens.AS)) {
         tokens.next();

@@ -3,7 +3,23 @@ package com.cosyan.db.model;
 import java.util.Spliterator;
 
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.MathFunctions.Ceil;
+import com.cosyan.db.model.MathFunctions.Exp;
+import com.cosyan.db.model.MathFunctions.Floor;
+import com.cosyan.db.model.MathFunctions.Log;
+import com.cosyan.db.model.MathFunctions.Log10;
+import com.cosyan.db.model.MathFunctions.Log2;
+import com.cosyan.db.model.MathFunctions.LogE;
+import com.cosyan.db.model.MathFunctions.Power;
+import com.cosyan.db.model.MathFunctions.Round;
 import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.model.StringFunctions.Contains;
+import com.cosyan.db.model.StringFunctions.Length;
+import com.cosyan.db.model.StringFunctions.Lower;
+import com.cosyan.db.model.StringFunctions.Matches;
+import com.cosyan.db.model.StringFunctions.Replace;
+import com.cosyan.db.model.StringFunctions.Substr;
+import com.cosyan.db.model.StringFunctions.Upper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -76,53 +92,6 @@ public class BuiltinFunctions {
     public abstract TypedAggrFunction<?> forType(DataType<?> argType) throws ModelException;
   }
 
-  public static class Length extends SimpleFunction<Long> {
-    public Length() {
-      super("length", DataTypes.LongType, ImmutableList.of(DataTypes.StringType));
-    }
-
-    @Override
-    public Long call(ImmutableList<Object> argValues) {
-      return (long) ((String) argValues.get(0)).length();
-    }
-  }
-
-  public static class Upper extends SimpleFunction<String> {
-    public Upper() {
-      super("upper", DataTypes.StringType, ImmutableList.of(DataTypes.StringType));
-    }
-
-    @Override
-    public String call(ImmutableList<Object> argValues) {
-      return ((String) argValues.get(0)).toUpperCase();
-    }
-  }
-
-  public static class Lower extends SimpleFunction<String> {
-    public Lower() {
-      super("lower", DataTypes.StringType, ImmutableList.of(DataTypes.StringType));
-    }
-
-    @Override
-    public String call(ImmutableList<Object> argValues) {
-      return ((String) argValues.get(0)).toLowerCase();
-    }
-  }
-
-  public static class Substr extends SimpleFunction<String> {
-    public Substr() {
-      super("substr", DataTypes.StringType,
-          ImmutableList.of(DataTypes.StringType, DataTypes.LongType, DataTypes.LongType));
-    }
-
-    @Override
-    public String call(ImmutableList<Object> argValues) {
-      int start = ((Long) argValues.get(1)).intValue();
-      int end = start + ((Long) argValues.get(2)).intValue();
-      return ((String) argValues.get(0)).substring(start, end);
-    }
-  }
-
   public static final ImmutableList<AggrFunction> AGGREGATIONS = ImmutableList.<AggrFunction>builder()
       .add(new Aggregators.Sum())
       .add(new Aggregators.Count())
@@ -135,6 +104,19 @@ public class BuiltinFunctions {
       .add(new Upper())
       .add(new Lower())
       .add(new Substr())
+      .add(new Matches())
+      .add(new Contains())
+      .add(new Replace())
+      // Math
+      .add(new Power())
+      .add(new Exp())
+      .add(new Log())
+      .add(new Log2())
+      .add(new LogE())
+      .add(new Log10())
+      .add(new Round())
+      .add(new Ceil())
+      .add(new Floor())
       .build();
 
   public static final ImmutableSet<String> AGGREGATION_NAMES;

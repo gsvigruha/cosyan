@@ -53,7 +53,7 @@ public class SyntaxTree {
   public static interface Statement {
     public boolean execute(MetaRepo metaRepo) throws ModelException, IOException, IndexException;
   }
-  
+
   public static interface Literal {
     public Object getValue();
   }
@@ -465,10 +465,19 @@ public class SyntaxTree {
         aggrColumns.add(aggrColumn);
         return aggrColumn;
       } else {
-        SimpleFunction<?> function = metaRepo.simpleFunction(ident);
         ImmutableList.Builder<DerivedColumn> argColumnsBuilder = ImmutableList.builder();
+        SimpleFunction<?> function;
+        ImmutableList<Expression> allArgs;
+        if (ident.isSimple()) {
+          function = metaRepo.simpleFunction(ident);
+          allArgs = args;
+        } else {
+          function = metaRepo.simpleFunction(ident.tail());
+          Expression objExpr = new IdentExpression(new Ident(ident.head()));
+          allArgs = ImmutableList.<Expression>builder().add(objExpr).addAll(args).build();
+        }
         for (int i = 0; i < function.getArgTypes().size(); i++) {
-          DerivedColumn col = args.get(i).compile(sourceTable, metaRepo);
+          DerivedColumn col = allArgs.get(i).compile(sourceTable, metaRepo);
           assertType(function.getArgTypes().get(i), col.getType());
           argColumnsBuilder.add(col);
         }
