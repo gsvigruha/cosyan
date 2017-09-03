@@ -49,6 +49,7 @@ public class InsertIntoStatement {
         }
       }
       TableAppender appender = tableMeta.appender();
+      appender.init();
       appender.write(fullValues);
       appender.commit();
       return true;

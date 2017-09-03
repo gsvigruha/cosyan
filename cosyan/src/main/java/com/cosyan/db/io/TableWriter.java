@@ -241,6 +241,10 @@ public class TableWriter {
     private final TableDeleteAndCollector deleter;
     private final TableAppender appender;
 
+    public void init() throws IOException {
+      appender.init();
+    }
+
     public boolean update() throws IOException, ModelException, IndexException {
       ImmutableList<Object[]> valuess = deleter.deleteAndCollect();
       for (Object[] values : valuess) {

@@ -55,6 +55,7 @@ public class UpdateStatement {
         whereColumn = ColumnMeta.TRUE_COLUMN;
       }
       TableUpdater updater = tableMeta.updater(columnExprs.build(), whereColumn);
+      updater.init();
       updater.update();
       updater.commit();
       return true;

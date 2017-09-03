@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -25,6 +26,7 @@ public abstract class ByteMultiTrie<T> {
 
   private static final int POINTERS_PER_NODE = 10;
   private static final int NODE_SIZE = Long.BYTES * (POINTERS_PER_NODE + 1);
+  private static final long NULL_VALUE = Long.MIN_VALUE;
 
   @Data
   private static class MultiLeaf {
@@ -57,6 +59,7 @@ public abstract class ByteMultiTrie<T> {
     public PendingNode() {
       nextPointer = 0L;
       values = new long[POINTERS_PER_NODE];
+      Arrays.fill(values, NULL_VALUE);
     }
 
     public long getValue(int i) {
@@ -141,7 +144,7 @@ public abstract class ByteMultiTrie<T> {
       ChainNode node = loadNode(nextPointer);
       for (int i = 0; i < POINTERS_PER_NODE; i++) {
         long value = node.getValue(i);
-        if (value > 0) {
+        if (value != NULL_VALUE) {
           result.add(value);
         }
       }
@@ -166,7 +169,7 @@ public abstract class ByteMultiTrie<T> {
     ChainNode node = loadNode(leaf.getLastIndex());
     int i;
     for (i = 0; i < POINTERS_PER_NODE; i++) {
-      if (node.getValue(i) == 0) {
+      if (node.getValue(i) == NULL_VALUE) {
         break; // Found an empty slot in the last node.
       }
     }
@@ -221,11 +224,11 @@ public abstract class ByteMultiTrie<T> {
         // Delete the first matching value by setting it to null.
         if (value == valueToDelete) {
           if (node instanceof PendingNode) {
-            ((PendingNode) node).getValues()[i] = 0;
+            ((PendingNode) node).getValues()[i] = NULL_VALUE;
           } else {
             PendingNode newNode = new PendingNode();
             System.arraycopy(((ImmutableNode) node).getValues(), 0, newNode.getValues(), 0, POINTERS_PER_NODE);
-            newNode.getValues()[i] = 0;
+            newNode.getValues()[i] = NULL_VALUE;
             newNode.setNextPointer(node.getNextPointer());
             pendingNodes.put(nextPointer, newNode);
           }
