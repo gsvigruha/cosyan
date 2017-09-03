@@ -3,12 +3,14 @@ package com.cosyan.db.sql;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.Properties;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -16,7 +18,10 @@ import com.cosyan.db.conf.Config;
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.model.MetaRepo;
+import com.cosyan.db.model.TableIndex;
+import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableMap;
 
 public class UpdateTest {
@@ -31,9 +36,7 @@ public class UpdateTest {
     metaRepo = new MetaRepo(new Config(props));
     parser = new Parser();
     compiler = new Compiler(metaRepo);
-    Files.deleteIfExists(Paths.get("/tmp/data/t1"));
-    Files.deleteIfExists(Paths.get("/tmp/data/t2"));
-    Files.deleteIfExists(Paths.get("/tmp/data/t3"));
+    FileUtils.cleanDirectory(new File("/tmp/data"));
     Files.createDirectories(Paths.get("/tmp/data"));
   }
 
@@ -87,5 +90,56 @@ public class UpdateTest {
     assertEquals(ImmutableMap.of("a", "y", "b", 2L), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "z", "b", 1L), reader.readColumns());
     assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testUpdateWithForeignKey() throws Exception {
+    compiler.statement(parser.parse("create table t4 (a varchar, constraint pk_a primary key (a));"));
+    compiler.statement(
+        parser.parse("create table t5 (a varchar, b varchar, constraint fk_b foreign key (b) references t4(a));"));
+    compiler.statement(parser.parse("insert into t4 values ('x');"));
+    compiler.statement(parser.parse("insert into t4 values ('y');"));
+    compiler.statement(parser.parse("insert into t5 values ('123', 'x');"));
+
+    try {
+      compiler.statement(parser.parse("update t4 set a = 'z' where a = 'x';"));
+      fail();
+    } catch (ModelException e) {
+    }
+
+    try {
+      compiler.statement(parser.parse("update t5 set b = 'z' where b = 'x';"));
+      fail();
+    } catch (ModelException e) {
+    }
+
+    compiler.statement(parser.parse("update t5 set b = 'y' where b = 'x';"));
+    ExposedTableReader reader = compiler.query(parser.parse("select * from t5;")).reader();
+    assertEquals(ImmutableMap.of("a", "123", "b", "y"), reader.readColumns());
+
+    compiler.statement(parser.parse("delete from t4 where a = 'x';"));
+  }
+
+  @Test
+  public void testUpdateWithForeignKeyIndexes() throws Exception {
+    compiler.statement(parser.parse("create table t6 (a varchar, constraint pk_a primary key (a));"));
+    compiler.statement(
+        parser.parse("create table t7 (a varchar, b varchar, constraint fk_b foreign key (b) references t6(a));"));
+    compiler.statement(parser.parse("insert into t6 values ('x');"));
+    compiler.statement(parser.parse("insert into t6 values ('y');"));
+    compiler.statement(parser.parse("insert into t7 values ('123', 'x');"));
+
+    TableIndex t6a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t6"))).get("a");
+    assertEquals(0L, t6a.get("x"));
+    assertEquals(8L, t6a.get("y"));
+    TableMultiIndex t7b = metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t7"))).get("b");
+    org.junit.Assert.assertArrayEquals(new long[] { 0L }, t7b.get("x"));
+    assertEquals(false, t7b.contains("y"));
+
+    compiler.statement(parser.parse("update t7 set b = 'y' where b = 'x';"));
+    assertEquals(0L, t6a.get("x"));
+    assertEquals(8L, t6a.get("y"));
+    assertEquals(false, t7b.contains("x"));
+    org.junit.Assert.assertArrayEquals(new long[] { 19L }, t7b.get("y"));
   }
 }
