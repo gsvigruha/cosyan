@@ -2,6 +2,7 @@ package com.cosyan.db.index;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -80,20 +81,32 @@ public abstract class ByteMultiTrie<T> {
     this.filePointer = raf.length();
   }
 
+  public void close() throws IOException {
+    raf.close();
+  }
+
+  public void reOpen() throws FileNotFoundException {
+    this.raf = new RandomAccessFile(fileName, "rw");
+  }
+
   public void commit() throws IOException {
     trie.commit();
     for (Map.Entry<Long, PendingNode> node : pendingNodes.entrySet()) {
-      raf.seek(node.getKey());
-      ByteBuffer bb = ByteBuffer.allocate(NODE_SIZE);
-      LongBuffer lb = bb.asLongBuffer();
-      lb.put(node.getValue().getNextPointer());
-      lb.put(node.getValue().getValues());
-      raf.write(bb.array());
+      saveNode(node.getKey(), node.getValue());
     }
     pendingNodes.clear();
     if (filePointer != raf.length()) {
       throw new RuntimeIndexException("Inconsistent state.");
     }
+  }
+
+  private void saveNode(long filePointer, PendingNode node) throws IOException {
+    raf.seek(filePointer);
+    ByteBuffer bb = ByteBuffer.allocate(NODE_SIZE);
+    LongBuffer lb = bb.asLongBuffer();
+    lb.put(node.getNextPointer());
+    lb.put(node.getValues());
+    raf.write(bb.array());
   }
 
   public void rollback() throws IOException {
@@ -140,21 +153,25 @@ public abstract class ByteMultiTrie<T> {
   public void put(T key, long finalIndex) throws IOException, IndexException {
     MultiLeaf leaf = trie.get(key);
     if (leaf == null) {
+      // Key doesn't exist.
       long newLeafPointer = filePointer;
-      leaf = new MultiLeaf(newLeafPointer, newLeafPointer);
+      // Create new chain node.
       PendingNode node = new PendingNode();
       pendingNodes.put(newLeafPointer, node);
       filePointer += NODE_SIZE;
+      // Save key in the index trie.
+      leaf = new MultiLeaf(newLeafPointer, newLeafPointer);
       trie.put(key, leaf);
     }
     ChainNode node = loadNode(leaf.getLastIndex());
     int i;
     for (i = 0; i < POINTERS_PER_NODE; i++) {
       if (node.getValue(i) == 0) {
-        break;
+        break; // Found an empty slot in the last node.
       }
     }
     if (i < POINTERS_PER_NODE) {
+      // Value can fit among the existing nodes.
       if (node instanceof PendingNode) {
         ((PendingNode) node).getValues()[i] = finalIndex;
       } else {
@@ -171,6 +188,7 @@ public abstract class ByteMultiTrie<T> {
       pendingNodes.put(newNodePointer, newNode);
       filePointer += NODE_SIZE;
 
+      // Modify the next pointer of the previous chain node.
       if (node instanceof PendingNode) {
         ((PendingNode) node).setNextPointer(newNodePointer);
       } else {
@@ -180,6 +198,7 @@ public abstract class ByteMultiTrie<T> {
         pendingNodes.put(leaf.getLastIndex(), newNode);
       }
 
+      // Modify the last index of the key in the trie.
       trie.delete(key);
       trie.put(key, new MultiLeaf(leaf.getFirstIndex(), newNodePointer));
     }
@@ -199,6 +218,7 @@ public abstract class ByteMultiTrie<T> {
       ChainNode node = loadNode(nextPointer);
       for (int i = 0; i < POINTERS_PER_NODE; i++) {
         long value = node.getValue(i);
+        // Delete the first matching value by setting it to null.
         if (value == valueToDelete) {
           if (node instanceof PendingNode) {
             ((PendingNode) node).getValues()[i] = 0;
@@ -217,9 +237,9 @@ public abstract class ByteMultiTrie<T> {
     return false;
   }
 
-  private static class MultiLeafIndex extends ByteTrie<Long, MultiLeaf> {
+  private static class LongMultiLeafIndex extends ByteTrie<Long, MultiLeaf> {
 
-    protected MultiLeafIndex(String fileName) throws IOException {
+    protected LongMultiLeafIndex(String fileName) throws IOException {
       super(fileName + "#index");
     }
 
@@ -241,7 +261,7 @@ public abstract class ByteMultiTrie<T> {
     @Override
     protected void saveLeaf(long filePointer, Leaf<Long, MultiLeaf> leaf) throws IOException {
       raf.seek(filePointer);
-      ByteArrayOutputStream b = new ByteArrayOutputStream(Long.BYTES * 3 + 1);
+      ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
       DataOutputStream stream = new DataOutputStream(b);
       Serializer.writeColumn(leaf.key(), DataTypes.LongType, stream);
       stream.writeLong(leaf.value().getFirstIndex());
@@ -255,9 +275,53 @@ public abstract class ByteMultiTrie<T> {
     }
   }
 
+  private static class StringMultiLeafIndex extends ByteTrie<String, MultiLeaf> {
+
+    protected StringMultiLeafIndex(String fileName) throws IOException {
+      super(fileName + "#index");
+    }
+
+    @Override
+    protected byte[] toByteArray(String key) {
+      ByteBuffer buffer = ByteBuffer.allocate(Character.BYTES * key.length());
+      buffer.asCharBuffer().put(key.toCharArray());
+      return buffer.array();
+    }
+
+    @Override
+    protected Leaf<String, MultiLeaf> loadLeaf(long filePointer) throws IOException {
+      raf.seek(filePointer);
+      return new Leaf<String, MultiLeaf>(
+          (String) Serializer.readColumn(DataTypes.StringType, raf),
+          new MultiLeaf(raf.readLong(), raf.readLong()));
+    }
+
+    @Override
+    protected void saveLeaf(long filePointer, Leaf<String, MultiLeaf> leaf) throws IOException {
+      raf.seek(filePointer);
+      ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
+      DataOutputStream stream = new DataOutputStream(b);
+      Serializer.writeColumn(leaf.key(), DataTypes.StringType, stream);
+      stream.writeLong(leaf.value().getFirstIndex());
+      stream.writeLong(leaf.value().getLastIndex());
+      raf.write(b.toByteArray());
+    }
+
+    @Override
+    protected int leafSize(Leaf<String, MultiLeaf> leaf) {
+      return Character.BYTES * leaf.key().length() + 4 + Long.BYTES * 2 + 1;
+    }
+  }
+  
   public static class LongMultiIndex extends ByteMultiTrie<Long> {
     protected LongMultiIndex(String fileName) throws IOException {
-      super(fileName + "#chain", new MultiLeafIndex(fileName));
+      super(fileName + "#chain", new LongMultiLeafIndex(fileName));
+    }
+  }
+
+  public static class StringMultiIndex extends ByteMultiTrie<String> {
+    protected StringMultiIndex(String fileName) throws IOException {
+      super(fileName + "#chain", new StringMultiLeafIndex(fileName));
     }
   }
 }

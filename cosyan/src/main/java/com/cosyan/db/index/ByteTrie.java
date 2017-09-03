@@ -395,7 +395,7 @@ public abstract class ByteTrie<K, V> {
     @Override
     protected void saveLeaf(long filePointer, Leaf<Long, Long> leaf) throws IOException {
       raf.seek(filePointer);
-      ByteArrayOutputStream b = new ByteArrayOutputStream(Long.BYTES * 2 + 1);
+      ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
       DataOutputStream stream = new DataOutputStream(b);
       Serializer.writeColumn(leaf.key(), DataTypes.LongType, stream);
       stream.writeLong(leaf.value());
@@ -430,8 +430,7 @@ public abstract class ByteTrie<K, V> {
     @Override
     protected void saveLeaf(long filePointer, Leaf<String, Long> leaf) throws IOException {
       raf.seek(filePointer);
-      ByteArrayOutputStream b = new ByteArrayOutputStream(
-          Character.BYTES * leaf.key().length() + Long.BYTES + 1);
+      ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
       DataOutputStream stream = new DataOutputStream(b);
       Serializer.writeColumn(leaf.key(), DataTypes.StringType, stream);
       stream.writeLong(leaf.value());
