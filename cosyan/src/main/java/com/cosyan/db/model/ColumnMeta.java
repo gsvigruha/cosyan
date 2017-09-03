@@ -19,8 +19,8 @@ public abstract class ColumnMeta {
 
     private final int index;
     private final String name;
-    private final boolean nullable;
-    private final boolean unique;
+    private boolean nullable;
+    private boolean unique;
 
     public BasicColumn(int index, String name, DataType<?> type) {
       this(index, name, type, true, false);

@@ -24,6 +24,14 @@ public class Tokens {
 
   public static String UNIQUE = "unique";
 
+  public static String PRIMARY = "primary";
+
+  public static String FOREIGN = "foreign";
+
+  public static String KEY = "key";
+  
+  public static String REFERENCES = "references";
+
   public static String CONSTRAINT = "constraint";
 
   public static String CHECK = "check";

@@ -20,7 +20,6 @@ import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.TableIndex.LongTableIndex;
 import com.cosyan.db.model.TableIndex.StringTableIndex;
-import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableMap;
@@ -28,7 +27,7 @@ import com.google.common.collect.ImmutableMap;
 public class MetaRepo {
 
   private final Config config;
-  private final ConcurrentHashMap<String, ExposedTableMeta> tables;
+  private final ConcurrentHashMap<String, MaterializedTableMeta> tables;
   private final ConcurrentHashMap<String, TableIndex> indexes;
 
   private final ConcurrentHashMap<String, SimpleFunction<?>> simpleFunctions;
@@ -48,7 +47,7 @@ public class MetaRepo {
     }
   }
 
-  public ExposedTableMeta table(Ident ident) throws ModelException {
+  public MaterializedTableMeta table(Ident ident) throws ModelException {
     if (ident.parts().length != 1) {
       throw new ModelException("Invalid table identifier '" + ident.getString() + "'.");
     }
@@ -96,7 +95,7 @@ public class MetaRepo {
     return builder.build();
   }
 
-  public void registerTable(String tableName, ExposedTableMeta tableMeta) {
+  public void registerTable(String tableName, MaterializedTableMeta tableMeta) {
     tables.put(tableName, tableMeta);
   }
 
@@ -104,9 +103,13 @@ public class MetaRepo {
     String path = config.dataDir() + File.separator + indexName;
     if (column.isUnique()) {
       if (column.getType() == DataTypes.StringType) {
-        indexes.put(indexName, new StringTableIndex(new StringIndex(path)));
+        if (!indexName.contains(indexName)) {
+          indexes.put(indexName, new StringTableIndex(new StringIndex(path)));
+        }
       } else if (column.getType() == DataTypes.LongType) {
-        indexes.put(indexName, new LongTableIndex(new LongIndex(path)));
+        if (!indexName.contains(indexName)) {
+          indexes.put(indexName, new LongTableIndex(new LongIndex(path)));
+        }
       } else {
         throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
             " and " + DataTypes.LongType + " types, not " + column.getType() + ".");

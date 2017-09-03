@@ -11,8 +11,11 @@ import com.cosyan.db.io.TableWriter.TableDeleter;
 import com.cosyan.db.io.TableWriter.TableUpdater;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
+import com.cosyan.db.model.Keys.ForeignKey;
+import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.sql.SyntaxTree.Ident;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
@@ -67,7 +70,10 @@ public abstract class TableMeta {
     private final String tableName;
     private final ImmutableMap<String, BasicColumn> columns;
     private final MetaRepo metaRepo;
-    private ImmutableMap<String, DerivedColumn> constraints = ImmutableMap.of();
+
+    private ImmutableMap<String, DerivedColumn> simpleChecks = ImmutableMap.of();
+    private PrimaryKey primaryKey;
+    private ImmutableList<ForeignKey> foreignKeys = ImmutableList.of();
 
     @Override
     public ImmutableMap<String, BasicColumn> columns() {
@@ -86,14 +92,14 @@ public abstract class TableMeta {
           metaRepo.append(this),
           columns.values().asList(),
           metaRepo.collectIndexes(this),
-          constraints);
+          simpleChecks);
     }
 
     public TableDeleter deleter(DerivedColumn whereColumn) throws ModelException {
       return new TableDeleter(
           metaRepo.update(this),
           columns.values().asList(),
-          whereColumn,metaRepo.collectIndexes(this));
+          whereColumn, metaRepo.collectIndexes(this));
     }
 
     public TableUpdater updater(ImmutableMap<Integer, DerivedColumn> updateExprs, DerivedColumn whereColumn)
@@ -109,7 +115,7 @@ public abstract class TableMeta {
               metaRepo.append(this),
               columns.values().asList(),
               metaRepo.collectIndexes(this),
-              constraints));
+              simpleChecks));
     }
 
     @Override

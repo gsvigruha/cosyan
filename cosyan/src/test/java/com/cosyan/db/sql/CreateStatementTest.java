@@ -59,4 +59,13 @@ public class CreateStatementTest {
     assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, true),
         tableMeta.column(new Ident("b")));
   }
+
+  @Test
+  public void testCreateTablePrimaryKey() throws Exception {
+    SyntaxTree tree = parser.parse("create table t1 (a varchar, constraint pk_a primary key (a));");
+    compiler.statement(tree);
+    ExposedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true),
+        tableMeta.column(new Ident("a")));
+  }
 }

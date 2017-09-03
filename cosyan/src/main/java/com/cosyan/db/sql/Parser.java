@@ -9,6 +9,9 @@ import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.sql.CreateStatement.ColumnDefinition;
 import com.cosyan.db.sql.CreateStatement.ConstraintDefinition;
 import com.cosyan.db.sql.CreateStatement.Create;
+import com.cosyan.db.sql.CreateStatement.ForeignKeyDefinition;
+import com.cosyan.db.sql.CreateStatement.PrimaryKeyDefinition;
+import com.cosyan.db.sql.CreateStatement.SimpleCheckDefinition;
 import com.cosyan.db.sql.DeleteStatement.Delete;
 import com.cosyan.db.sql.InsertIntoStatement.InsertInto;
 import com.cosyan.db.sql.SyntaxTree.AsExpression;
@@ -174,11 +177,34 @@ public class Parser {
   private ConstraintDefinition parseConstraint(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.CONSTRAINT);
     Ident ident = parseSimpleIdent(tokens);
-    assertNext(tokens, Tokens.CHECK);
-    assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
-    Expression expr = parseExpression(tokens, 0);
-    assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-    return new ConstraintDefinition(ident.getString(), expr);
+    if (tokens.peek().is(Tokens.CHECK)) {
+      tokens.next();
+      assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+      Expression expr = parseExpression(tokens, 0);
+      assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+      return new SimpleCheckDefinition(ident.getString(), expr);
+    } else if (tokens.peek().is(Tokens.PRIMARY)) {
+      tokens.next();
+      assertNext(tokens, Tokens.KEY);
+      assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+      Ident column = parseSimpleIdent(tokens);
+      assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+      return new PrimaryKeyDefinition(ident.getString(), column);
+    } else if (tokens.peek().is(Tokens.FOREIGN)) {
+      tokens.next();
+      assertNext(tokens, Tokens.KEY);
+      assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+      Ident column = parseSimpleIdent(tokens);
+      assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+      assertNext(tokens, Tokens.REFERENCES);
+      Ident refTable = parseSimpleIdent(tokens);
+      assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+      Ident refColumn = parseSimpleIdent(tokens);
+      assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+      return new ForeignKeyDefinition(ident.getString(), column, refTable, refColumn);
+    } else {
+      throw new ParserException("Unsupported constraint '" + tokens.peek() + "'.");
+    }
   }
 
   private ColumnDefinition parseColumnDefinition(PeekingIterator<Token> tokens) throws ParserException {

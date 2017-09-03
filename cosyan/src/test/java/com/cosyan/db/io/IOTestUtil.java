@@ -8,7 +8,7 @@ import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.MetaRepo.ModelException;
-import com.cosyan.db.model.TableMeta.ExposedTableMeta;
+import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableMap;
 
@@ -44,13 +44,19 @@ public class IOTestUtil {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class DummyMaterializedTableMeta extends ExposedTableMeta {
+  public static class DummyMaterializedTableMeta extends MaterializedTableMeta {
 
     private final ImmutableMap<String, BasicColumn> columns;
     private final Object[][] data;
 
+    public DummyMaterializedTableMeta(ImmutableMap<String, BasicColumn> columns, Object[][] data) {
+      super(null, columns, null);
+      this.columns = columns;
+      this.data = data;
+    }
+    
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> columns() {
+    public ImmutableMap<String, BasicColumn> columns() {
       return columns;
     }
 

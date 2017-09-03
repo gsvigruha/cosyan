@@ -26,7 +26,7 @@ public class TableWriter {
     private final FileOutputStream fos;
     private final ImmutableList<BasicColumn> columns;
     private final ImmutableMap<String, TableIndex> indexes;
-    private final ImmutableMap<String, DerivedColumn> constraints;
+    private final ImmutableMap<String, DerivedColumn> simpleChecks;
     private List<Object[]> valuess = new LinkedList<>();
 
     public void write(Object[] values) throws IOException, ModelException, IndexException {
@@ -39,7 +39,7 @@ public class TableWriter {
           indexes.get(column.getName()).put(values[i], fos.getChannel().position());
         }
       }
-      for (Map.Entry<String, DerivedColumn> constraint : constraints.entrySet()) {
+      for (Map.Entry<String, DerivedColumn> constraint : simpleChecks.entrySet()) {
         if (!(boolean) constraint.getValue().getValue(values)) {
           throw new ModelException("Constraint check " + constraint.getKey() + " failed.");
         }
