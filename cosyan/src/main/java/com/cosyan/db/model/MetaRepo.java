@@ -114,6 +114,17 @@ public class MetaRepo {
     return builder.build();
   }
 
+  public ImmutableMultimap<String, TableMultiIndex> collectReverseForeignIndexes(MaterializedTableMeta table)
+      throws ModelException {
+    ImmutableMultimap.Builder<String, TableMultiIndex> builder = ImmutableMultimap.builder();
+    for (ForeignKey reverseForeignKey : table.getReverseForeignKeys().values()) {
+      builder.put(
+          reverseForeignKey.getColumn().getName(),
+          multiIndexes.get(reverseForeignKey.getRefTable().getTableName() + "." + reverseForeignKey.getRefColumn().getName()));
+    }
+    return builder.build();
+  }
+
   public ImmutableMap<String, TableMultiIndex> collectMultiIndexes(MaterializedTableMeta table) throws ModelException {
     ImmutableMap.Builder<String, TableMultiIndex> builder = ImmutableMap.builder();
     for (BasicColumn column : table.columns().values()) {

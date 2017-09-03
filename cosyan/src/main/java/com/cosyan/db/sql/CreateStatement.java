@@ -86,6 +86,12 @@ public class CreateStatement {
           metaRepo.registerMultiIndex(name + "." + keyColumn.getName(), keyColumn);
           foreignKeysBuilder.put(foreignKey.getName(),
               new ForeignKey(foreignKey.getName(), keyColumn, refTable, refColumn));
+          refTable.setReverseForeignKeys(ImmutableMap.<String, ForeignKey>builder()
+              .putAll(refTable.getReverseForeignKeys())
+              .put(
+                  foreignKey.getName(),
+                  new ForeignKey(foreignKey.getName(), refColumn, tableMeta, keyColumn))
+              .build());
         }
       }
       tableMeta.setSimpleChecks(simpleChecksBuilder.build());

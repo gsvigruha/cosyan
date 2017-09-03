@@ -102,7 +102,9 @@ public abstract class TableMeta {
           metaRepo.update(this),
           columns.values().asList(),
           whereColumn,
-          metaRepo.collectUniqueIndexes(this));
+          metaRepo.collectUniqueIndexes(this),
+          metaRepo.collectMultiIndexes(this),
+          metaRepo.collectReverseForeignIndexes(this));
     }
 
     public TableUpdater updater(ImmutableMap<Integer, DerivedColumn> updateExprs, DerivedColumn whereColumn)
@@ -113,7 +115,9 @@ public abstract class TableMeta {
               columns.values().asList(),
               updateExprs,
               whereColumn,
-              metaRepo.collectUniqueIndexes(this)),
+              metaRepo.collectUniqueIndexes(this),
+              metaRepo.collectMultiIndexes(this),
+              metaRepo.collectReverseForeignIndexes(this)),
           new TableAppender(
               metaRepo.append(this),
               columns.values().asList(),

@@ -76,9 +76,6 @@ public class TableWriter {
       for (TableMultiIndex index : multiIndexes.values()) {
         index.commit();
       }
-      for (TableIndex index : foreignIndexes.values()) {
-        index.commit();
-      }
       fos.write(bos.toByteArray());
       close();
     }
@@ -88,9 +85,6 @@ public class TableWriter {
         index.rollback();
       }
       for (TableMultiIndex index : multiIndexes.values()) {
-        index.rollback();
-      }
-      for (TableIndex index : foreignIndexes.values()) {
         index.rollback();
       }
       close();
@@ -105,25 +99,15 @@ public class TableWriter {
   @Data
   public static class TableDeleter {
 
-    private RandomAccessFile file;
+    private final RandomAccessFile file;
     private final ImmutableList<BasicColumn> columns;
     private final DerivedColumn whereColumn;
     private final ImmutableMap<String, TableIndex> indexes;
-    private final List<Long> recordsToDelete;
+    private final ImmutableMap<String, TableMultiIndex> multiIndexes;
+    private final ImmutableMultimap<String, TableMultiIndex> reversedForeignIndexes;
+    private List<Long> recordsToDelete = new LinkedList<>();
 
-    public TableDeleter(
-        RandomAccessFile file,
-        ImmutableList<BasicColumn> columns,
-        DerivedColumn whereColumn,
-        ImmutableMap<String, TableIndex> indexes) {
-      this.file = file;
-      this.columns = columns;
-      this.whereColumn = whereColumn;
-      this.indexes = indexes;
-      this.recordsToDelete = new LinkedList<>();
-    }
-
-    public void delete() throws IOException {
+    public void delete() throws IOException, ModelException {
       do {
         long pos = file.getFilePointer();
         Object[] values = Serializer.read(columns, file);
@@ -133,8 +117,19 @@ public class TableWriter {
         if ((boolean) whereColumn.getValue(values)) {
           recordsToDelete.add(pos);
           for (BasicColumn column : columns) {
+            Object value = values[column.getIndex()];
             if (indexes.containsKey(column.getName())) {
-              indexes.get(column.getName()).delete(values[column.getIndex()]);
+              indexes.get(column.getName()).delete(value);
+            }
+            if (multiIndexes.containsKey(column.getName())) {
+              multiIndexes.get(column.getName()).delete(value);
+            }
+            if (reversedForeignIndexes.containsKey(column.getName())) {
+              for (TableMultiIndex reverseForeignIndex : reversedForeignIndexes.get(column.getName())) {
+                if (reverseForeignIndex.contains(value)) {
+                  throw new ModelException("Foreign key violation.");
+                }
+              }
             }
           }
         }
@@ -143,6 +138,9 @@ public class TableWriter {
 
     public void commit() throws IOException {
       for (TableIndex index : indexes.values()) {
+        index.commit();
+      }
+      for (TableMultiIndex index : multiIndexes.values()) {
         index.commit();
       }
       for (Long pos : recordsToDelete) {
@@ -156,6 +154,9 @@ public class TableWriter {
       for (TableIndex index : indexes.values()) {
         index.rollback();
       }
+      for (TableMultiIndex index : multiIndexes.values()) {
+        index.rollback();
+      }
       close();
     }
 
@@ -167,28 +168,16 @@ public class TableWriter {
   @Data
   public static class TableDeleteAndCollector {
 
-    private RandomAccessFile file;
+    private final RandomAccessFile file;
     private final ImmutableList<BasicColumn> columns;
     private final ImmutableMap<Integer, DerivedColumn> updateExprs;
     private final DerivedColumn whereColumn;
     private final ImmutableMap<String, TableIndex> indexes;
-    private final List<Long> recordsToDelete;
+    private final ImmutableMap<String, TableMultiIndex> multiIndexes;
+    private final ImmutableMultimap<String, TableMultiIndex> reversedForeignIndexes;
+    private List<Long> recordsToDelete = new LinkedList<>();
 
-    public TableDeleteAndCollector(
-        RandomAccessFile file,
-        ImmutableList<BasicColumn> columns,
-        ImmutableMap<Integer, DerivedColumn> updateExprs,
-        DerivedColumn whereColumn,
-        ImmutableMap<String, TableIndex> indexes) {
-      this.file = file;
-      this.columns = columns;
-      this.updateExprs = updateExprs;
-      this.whereColumn = whereColumn;
-      this.indexes = indexes;
-      this.recordsToDelete = new LinkedList<>();
-    }
-
-    public ImmutableList<Object[]> deleteAndCollect() throws IOException {
+    public ImmutableList<Object[]> deleteAndCollect() throws IOException, ModelException {
       ImmutableList.Builder<Object[]> updatedRecords = ImmutableList.builder();
       do {
         long pos = file.getFilePointer();
@@ -199,8 +188,19 @@ public class TableWriter {
         if ((boolean) whereColumn.getValue(values)) {
           recordsToDelete.add(pos);
           for (BasicColumn column : columns) {
+            Object value = values[column.getIndex()];
             if (indexes.containsKey(column.getName())) {
-              indexes.get(column.getName()).delete(values[column.getIndex()]);
+              indexes.get(column.getName()).delete(value);
+            }
+            if (multiIndexes.containsKey(column.getName())) {
+              multiIndexes.get(column.getName()).delete(value);
+            }
+            if (reversedForeignIndexes.containsKey(column.getName())) {
+              for (TableMultiIndex reverseForeignIndex : reversedForeignIndexes.get(column.getName())) {
+                if (reverseForeignIndex.contains(value)) {
+                  throw new ModelException("Foreign key violation.");
+                }
+              }
             }
           }
           Object[] newValues = new Object[values.length];
@@ -217,6 +217,9 @@ public class TableWriter {
       for (TableIndex index : indexes.values()) {
         index.commit();
       }
+      for (TableMultiIndex index : multiIndexes.values()) {
+        index.commit();
+      }
       for (Long pos : recordsToDelete) {
         file.seek(pos);
         file.writeByte(0);
@@ -226,6 +229,9 @@ public class TableWriter {
 
     public void rollback() throws IOException {
       for (TableIndex index : indexes.values()) {
+        index.rollback();
+      }
+      for (TableMultiIndex index : multiIndexes.values()) {
         index.rollback();
       }
       close();

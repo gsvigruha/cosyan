@@ -19,5 +19,10 @@ public class Keys {
     private final BasicColumn column;
     private final MaterializedTableMeta refTable;
     private final BasicColumn refColumn;
+
+    @Override
+    public String toString() {
+      return name;
+    }
   }
 }

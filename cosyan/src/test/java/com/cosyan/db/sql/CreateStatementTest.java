@@ -88,5 +88,11 @@ public class CreateStatementTest {
         t1,
         (BasicColumn) t1.column(new Ident("a")))),
         t2.getForeignKeys());
+    assertEquals(ImmutableMap.of("fk_b", new ForeignKey(
+        "fk_b",
+        (BasicColumn) t1.column(new Ident("a")),
+        t2,
+        (BasicColumn) t2.column(new Ident("b")))),
+        t1.getReverseForeignKeys());
   }
 }

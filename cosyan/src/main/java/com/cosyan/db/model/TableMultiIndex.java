@@ -18,6 +18,8 @@ public abstract class TableMultiIndex {
   public abstract void commit() throws IOException;
 
   public abstract void rollback() throws IOException;
+  
+  public abstract boolean contains(Object key) throws IOException;
 
   public static class LongTableMultiIndex extends TableMultiIndex {
 
@@ -55,6 +57,11 @@ public abstract class TableMultiIndex {
     @Override
     public void rollback() throws IOException {
       index.rollback();
+    }
+
+    @Override
+    public boolean contains(Object key) throws IOException {
+      return index.get((Long) key).length > 0;
     }
   }
 
@@ -95,6 +102,10 @@ public abstract class TableMultiIndex {
     public void rollback() throws IOException {
       index.rollback();
     }
+    
+    @Override
+    public boolean contains(Object key) throws IOException {
+      return index.get((String) key).length > 0;
+    }
   }
-
 }
