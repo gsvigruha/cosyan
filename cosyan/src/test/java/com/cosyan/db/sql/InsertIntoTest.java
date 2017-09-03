@@ -1,6 +1,7 @@
 package com.cosyan.db.sql;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,6 +39,8 @@ public class InsertIntoTest {
     Files.deleteIfExists(Paths.get("/tmp/data/t4"));
     Files.deleteIfExists(Paths.get("/tmp/data/t5"));
     Files.deleteIfExists(Paths.get("/tmp/data/t6"));
+    Files.deleteIfExists(Paths.get("/tmp/data/t7"));
+    Files.deleteIfExists(Paths.get("/tmp/data/t8"));
     Files.createDirectories(Paths.get("/tmp/data"));
   }
 
@@ -103,5 +106,21 @@ public class InsertIntoTest {
     compiler.statement(parser.parse("create table t6 (a integer, b integer, constraint c check(a + b > 1));"));
     compiler.statement(parser.parse("insert into t6 values (1, 1);"));
     compiler.statement(parser.parse("insert into t6 values (0, 0);"));
+  }
+
+  @Test
+  public void testForeignKeys() throws Exception {
+    compiler.statement(parser.parse("create table t7 (a varchar, constraint pk_a primary key (a));"));
+    compiler.statement(parser.parse("create table t8 (a varchar, b varchar, constraint fk_b foreign key (b) references t7(a));"));
+    try {
+      compiler.statement(parser.parse("insert into t8 values ('123', 'x');"));
+      fail();
+    } catch (ModelException e) {
+
+    }
+    compiler.statement(parser.parse("insert into t7 values ('x');"));
+    compiler.statement(parser.parse("insert into t8 values ('123', 'x');"));
+    ExposedTableReader reader = compiler.query(parser.parse("select * from t8;")).reader();
+    assertEquals(ImmutableMap.of("a", "123", "b", "x"), reader.readColumns());
   }
 }

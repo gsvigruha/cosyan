@@ -2,29 +2,28 @@ package com.cosyan.db.model;
 
 import java.io.IOException;
 
+import com.cosyan.db.index.ByteMultiTrie.LongMultiIndex;
+import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
 import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.index.ByteTrie.LongIndex;
-import com.cosyan.db.index.ByteTrie.StringIndex;
 
-public abstract class TableIndex {
-
+public abstract class TableMultiIndex {
   public abstract void put(Object key, long fileIndex) throws IOException, IndexException;
 
   public abstract boolean delete(Object key) throws IOException;
+  
+  public abstract boolean delete(Object key, long fileIndex) throws IOException;
 
-  public abstract long get(Object key) throws IOException;
-
-  public abstract boolean contains(Object key) throws IOException;
+  public abstract long[] get(Object key) throws IOException;
 
   public abstract void commit() throws IOException;
 
   public abstract void rollback() throws IOException;
 
-  public static class LongTableIndex extends TableIndex {
+  public static class LongTableMultiIndex extends TableMultiIndex {
 
-    private LongIndex index;
+    private LongMultiIndex index;
 
-    public LongTableIndex(LongIndex index) {
+    public LongTableMultiIndex(LongMultiIndex index) {
       this.index = index;
     }
 
@@ -39,7 +38,12 @@ public abstract class TableIndex {
     }
 
     @Override
-    public long get(Object key) throws IOException {
+    public boolean delete(Object key, long fileIndex) throws IOException {
+      return index.delete((Long) key, fileIndex);
+    }
+    
+    @Override
+    public long[] get(Object key) throws IOException {
       return index.get((Long) key);
     }
 
@@ -52,18 +56,13 @@ public abstract class TableIndex {
     public void rollback() throws IOException {
       index.rollback();
     }
-
-    @Override
-    public boolean contains(Object key) throws IOException {
-      return index.get((Long) key) != null;
-    }
   }
 
-  public static class StringTableIndex extends TableIndex {
+  public static class StringTableMultiIndex extends TableMultiIndex {
 
-    private StringIndex index;
+    private StringMultiIndex index;
 
-    public StringTableIndex(StringIndex index) {
+    public StringTableMultiIndex(StringMultiIndex index) {
       this.index = index;
     }
 
@@ -78,7 +77,12 @@ public abstract class TableIndex {
     }
 
     @Override
-    public long get(Object key) throws IOException {
+    public boolean delete(Object key, long fileIndex) throws IOException {
+      return index.delete((String) key, fileIndex);
+    }
+    
+    @Override
+    public long[] get(Object key) throws IOException {
       return index.get((String) key);
     }
 
@@ -91,10 +95,6 @@ public abstract class TableIndex {
     public void rollback() throws IOException {
       index.rollback();
     }
-
-    @Override
-    public boolean contains(Object key) throws IOException {
-      return index.get((String) key) != null;
-    }
   }
+
 }

@@ -312,15 +312,15 @@ public abstract class ByteMultiTrie<T> {
       return Character.BYTES * leaf.key().length() + 4 + Long.BYTES * 2 + 1;
     }
   }
-  
+
   public static class LongMultiIndex extends ByteMultiTrie<Long> {
-    protected LongMultiIndex(String fileName) throws IOException {
+    public LongMultiIndex(String fileName) throws IOException {
       super(fileName + "#chain", new LongMultiLeafIndex(fileName));
     }
   }
 
   public static class StringMultiIndex extends ByteMultiTrie<String> {
-    protected StringMultiIndex(String fileName) throws IOException {
+    public StringMultiIndex(String fileName) throws IOException {
       super(fileName + "#chain", new StringMultiLeafIndex(fileName));
     }
   }

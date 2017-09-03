@@ -42,7 +42,7 @@ public class CreateStatement {
             throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
                 " and " + DataTypes.LongType + " types, not " + column.getType() + ".");
           } else {
-            metaRepo.registerIndex(name + "." + column.getName(), basicColumn);
+            metaRepo.registerUniqueIndex(name + "." + column.getName(), basicColumn);
           }
         }
         columnsBuilder.put(column.getName(), basicColumn);
@@ -52,8 +52,11 @@ public class CreateStatement {
 
       ImmutableMap.Builder<String, DerivedColumn> simpleChecksBuilder = ImmutableMap.builder();
       PrimaryKeyDefinition primaryKey = null;
-      ImmutableList.Builder<ForeignKey> foreignKeysBuilder = ImmutableList.builder();
+      ImmutableMap.Builder<String, ForeignKey> foreignKeysBuilder = ImmutableMap.builder();
       for (ConstraintDefinition constraint : constraints) {
+        if (tableMeta.columns().containsKey(constraint.getName())) {
+          throw new ModelException("Name collision for constraint '" + constraint.getName() + "'.");
+        }
         if (constraint instanceof SimpleCheckDefinition) {
           SimpleCheckDefinition simpleCheck = (SimpleCheckDefinition) constraint;
           DerivedColumn constraintColumn = simpleCheck.getExpr().compile(tableMeta, metaRepo);
@@ -67,7 +70,7 @@ public class CreateStatement {
             BasicColumn keyColumn = (BasicColumn) tableMeta.column(primaryKey.getKeyColumn());
             keyColumn.setNullable(false);
             keyColumn.setUnique(true);
-            metaRepo.registerIndex(name + "." + keyColumn.getName(), keyColumn);
+            metaRepo.registerUniqueIndex(name + "." + keyColumn.getName(), keyColumn);
             tableMeta.setPrimaryKey(new PrimaryKey(primaryKey.getName(), keyColumn));
           } else {
             throw new ModelException("There can only be one primary key.");
@@ -80,7 +83,9 @@ public class CreateStatement {
           if (!refColumn.isUnique()) {
             throw new ModelException("Foreign key reference column has to be unique.");
           }
-          foreignKeysBuilder.add(new ForeignKey(foreignKey.getName(), keyColumn, refTable, refColumn));
+          metaRepo.registerMultiIndex(name + "." + keyColumn.getName(), keyColumn);
+          foreignKeysBuilder.put(foreignKey.getName(),
+              new ForeignKey(foreignKey.getName(), keyColumn, refTable, refColumn));
         }
       }
       tableMeta.setSimpleChecks(simpleChecksBuilder.build());
@@ -100,7 +105,7 @@ public class CreateStatement {
   }
 
   public interface ConstraintDefinition {
-
+    public String getName();
   }
 
   @Data

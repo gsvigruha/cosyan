@@ -1,5 +1,6 @@
 package com.cosyan.db.io;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -13,8 +14,10 @@ import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableIndex;
+import com.cosyan.db.model.TableMultiIndex;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultimap;
 
 import lombok.Data;
 
@@ -26,17 +29,36 @@ public class TableWriter {
     private final FileOutputStream fos;
     private final ImmutableList<BasicColumn> columns;
     private final ImmutableMap<String, TableIndex> indexes;
+    private final ImmutableMap<String, TableMultiIndex> multiIndexes;
+    private final ImmutableMultimap<String, TableIndex> foreignIndexes;
     private final ImmutableMap<String, DerivedColumn> simpleChecks;
-    private List<Object[]> valuess = new LinkedList<>();
+    private ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    private long fileIndex0;
+
+    public void init() throws IOException {
+      fileIndex0 = fos.getChannel().position();
+    }
 
     public void write(Object[] values) throws IOException, ModelException, IndexException {
       for (int i = 0; i < values.length; i++) {
+        Object value = values[i];
+        long fileIndex = fileIndex0 + bos.size();
         BasicColumn column = columns.get(i);
-        if (!column.isNullable() && values[i] == DataTypes.NULL) {
+        if (!column.isNullable() && value == DataTypes.NULL) {
           throw new ModelException("Column is not nullable (mandatory).");
         }
-        if (column.isUnique() && values[i] != DataTypes.NULL) {
-          indexes.get(column.getName()).put(values[i], fos.getChannel().position());
+        if (column.isUnique() && value != DataTypes.NULL) {
+          indexes.get(column.getName()).put(value, fileIndex);
+        }
+        if (multiIndexes.containsKey(column.getName())) {
+          multiIndexes.get(column.getName()).put(value, fileIndex);
+        }
+        if (foreignIndexes.containsKey(column.getName())) {
+          for (TableIndex foreignIndex : foreignIndexes.get(column.getName())) {
+            if (!foreignIndex.contains(value)) {
+              throw new ModelException("Foreign key violation.");
+            }
+          }
         }
       }
       for (Map.Entry<String, DerivedColumn> constraint : simpleChecks.entrySet()) {
@@ -44,16 +66,20 @@ public class TableWriter {
           throw new ModelException("Constraint check " + constraint.getKey() + " failed.");
         }
       }
-      this.valuess.add(values);
+      bos.write(Serializer.serialize(values, columns));
     }
 
     public void commit() throws IOException {
       for (TableIndex index : indexes.values()) {
         index.commit();
       }
-      for (Object[] values : valuess) {
-        fos.write(Serializer.serialize(values, columns));
+      for (TableMultiIndex index : multiIndexes.values()) {
+        index.commit();
       }
+      for (TableIndex index : foreignIndexes.values()) {
+        index.commit();
+      }
+      fos.write(bos.toByteArray());
       close();
     }
 
@@ -61,10 +87,17 @@ public class TableWriter {
       for (TableIndex index : indexes.values()) {
         index.rollback();
       }
+      for (TableMultiIndex index : multiIndexes.values()) {
+        index.rollback();
+      }
+      for (TableIndex index : foreignIndexes.values()) {
+        index.rollback();
+      }
       close();
     }
 
     public void close() throws IOException {
+      bos.close();
       fos.close();
     }
   }

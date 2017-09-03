@@ -15,7 +15,6 @@ import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.sql.SyntaxTree.Ident;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
@@ -73,7 +72,8 @@ public abstract class TableMeta {
 
     private ImmutableMap<String, DerivedColumn> simpleChecks = ImmutableMap.of();
     private PrimaryKey primaryKey;
-    private ImmutableList<ForeignKey> foreignKeys = ImmutableList.of();
+    private ImmutableMap<String, ForeignKey> foreignKeys = ImmutableMap.of();
+    private ImmutableMap<String, ForeignKey> reverseForeignKeys = ImmutableMap.of();
 
     @Override
     public ImmutableMap<String, BasicColumn> columns() {
@@ -91,7 +91,9 @@ public abstract class TableMeta {
       return new TableAppender(
           metaRepo.append(this),
           columns.values().asList(),
-          metaRepo.collectIndexes(this),
+          metaRepo.collectUniqueIndexes(this),
+          metaRepo.collectMultiIndexes(this),
+          metaRepo.collectForeignIndexes(this),
           simpleChecks);
     }
 
@@ -99,7 +101,8 @@ public abstract class TableMeta {
       return new TableDeleter(
           metaRepo.update(this),
           columns.values().asList(),
-          whereColumn, metaRepo.collectIndexes(this));
+          whereColumn,
+          metaRepo.collectUniqueIndexes(this));
     }
 
     public TableUpdater updater(ImmutableMap<Integer, DerivedColumn> updateExprs, DerivedColumn whereColumn)
@@ -110,11 +113,13 @@ public abstract class TableMeta {
               columns.values().asList(),
               updateExprs,
               whereColumn,
-              metaRepo.collectIndexes(this)),
+              metaRepo.collectUniqueIndexes(this)),
           new TableAppender(
               metaRepo.append(this),
               columns.values().asList(),
-              metaRepo.collectIndexes(this),
+              metaRepo.collectUniqueIndexes(this),
+              metaRepo.collectMultiIndexes(this),
+              metaRepo.collectForeignIndexes(this),
               simpleChecks));
     }
 
