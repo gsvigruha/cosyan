@@ -29,7 +29,7 @@ public class Tokens {
   public static String FOREIGN = "foreign";
 
   public static String KEY = "key";
-  
+
   public static String REFERENCES = "references";
 
   public static String CONSTRAINT = "constraint";
@@ -84,16 +84,6 @@ public class Tokens {
 
   public static String AS = "as";
 
-  private static String IDENT_COMP = "[a-z][a-z0-9_]*";
-
-  public static String IDENT = IDENT_COMP + "(\\." + IDENT_COMP + ")*";
-
-  public static String STRING_LITERAL = "'.*'";
-
-  public static String LONG_LITERAL = "[0-9]+";
-
-  public static String DOUBLE_LITERAL = "[0-9]+\\.[0-9]+";
-
   public static char SPACE = ' ';
 
   public static char TAB = '\t';
@@ -125,6 +115,12 @@ public class Tokens {
   public static char PARENT_OPEN = '(';
 
   public static char PARENT_CLOSED = ')';
+
+  public static char SINGLE_QUOTE = '\'';
+
+  public static char DOUBLE_QUOTE = '"';
+
+  public static char DOT = '.';
 
   public static String LEQ = "<=";
 
@@ -235,6 +231,66 @@ public class Tokens {
 
     public static Token concat(String... tokens) {
       return new Token(Joiner.on(" ").join(tokens));
+    }
+
+    public boolean isString() {
+      return false;
+    }
+
+    public boolean isFloat() {
+      return false;
+    }
+
+    public boolean isInt() {
+      return false;
+    }
+
+    public boolean isIdent() {
+      return false;
+    }
+  }
+
+  public static class StringToken extends Token {
+    public StringToken(String string) {
+      super(string);
+    }
+
+    @Override
+    public boolean isString() {
+      return true;
+    }
+  }
+
+  public static class IntToken extends Token {
+    public IntToken(String string) {
+      super(string);
+    }
+
+    @Override
+    public boolean isInt() {
+      return true;
+    }
+  }
+
+  public static class FloatToken extends Token {
+    public FloatToken(String string) {
+      super(string);
+    }
+
+    @Override
+    public boolean isFloat() {
+      return true;
+    }
+  }
+
+  public static class IdentToken extends Token {
+    public IdentToken(String string) {
+      super(string);
+    }
+
+    @Override
+    public boolean isIdent() {
+      return true;
     }
   }
 }

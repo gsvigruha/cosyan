@@ -304,7 +304,7 @@ public class Parser {
     } else if (token.is(Tokens.ASTERISK)) {
       tokens.next();
       return new AsteriskExpression();
-    } else if (token.getString().matches(Tokens.IDENT)) {
+    } else if (token.isIdent()) {
       Ident ident = new Ident(tokens.next().getString());
       if (tokens.peek().is(Tokens.PARENT_OPEN)) {
         tokens.next();
@@ -314,15 +314,15 @@ public class Parser {
       } else {
         return new IdentExpression(ident);
       }
-    } else if (token.getString().matches(Tokens.LONG_LITERAL)) {
+    } else if (token.isInt()) {
       tokens.next();
       return new LongLiteral(Long.valueOf(token.getString()));
-    } else if (token.getString().matches(Tokens.DOUBLE_LITERAL)) {
+    } else if (token.isFloat()) {
       tokens.next();
       return new DoubleLiteral(Double.valueOf(token.getString()));
-    } else if (token.getString().matches(Tokens.STRING_LITERAL)) {
+    } else if (token.isString()) {
       tokens.next();
-      return new StringLiteral(token.getString().substring(1, token.getString().length() - 1));
+      return new StringLiteral(token.getString());
     } else {
       throw new ParserException("Expected literal but got " + token.getString() + ".");
     }
@@ -357,7 +357,7 @@ public class Parser {
 
   private Ident parseIdent(PeekingIterator<Token> tokens) throws ParserException {
     Token token = tokens.next();
-    if (token.getString().matches(Tokens.IDENT)) {
+    if (token.isIdent()) {
       return new Ident(token.getString());
     } else {
       throw new ParserException("Expected identifier but got " + token.getString() + ".");
