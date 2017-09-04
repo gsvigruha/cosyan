@@ -150,24 +150,24 @@ public class Tokens {
 
   public static String SUM = "sum";
 
-  public static ImmutableSet<Character> DELIMITERS = ImmutableSet.<Character>builder()
-      .add(SPACE)
-      .add(TAB)
-      .add(NEWLINE)
-      .add(CARBACK)
-      .add(COMMA)
-      .add(COMMA_COLON)
-      .add(PLUS)
-      .add(MINUS)
-      .add(ASTERISK)
-      .add(DIV)
-      .add(MOD)
-      .add(EQ)
-      .add(LESS)
-      .add(GREATER)
-      .add(PARENT_OPEN)
-      .add(PARENT_CLOSED)
-      .build();
+  public static boolean isDelimiter(char c) {
+    return c == SPACE ||
+        c == TAB ||
+        c == NEWLINE ||
+        c == CARBACK ||
+        c == COMMA ||
+        c == COMMA_COLON ||
+        c == PLUS ||
+        c == MINUS ||
+        c == ASTERISK ||
+        c == DIV ||
+        c == MOD ||
+        c == EQ ||
+        c == LESS ||
+        c == GREATER ||
+        c == PARENT_CLOSED ||
+        c == PARENT_OPEN;
+  }
 
   public static ImmutableSet<String> KEYWORDS = ImmutableSet.of(
       SELECT,
@@ -206,11 +206,21 @@ public class Tokens {
   }
   public static ImmutableSet<String> BINARY_OPERATORS = binOpsBuilder.build();
 
-  public static ImmutableSet<Character> WHITESPACE = ImmutableSet.of(
-      SPACE,
-      TAB,
-      NEWLINE,
-      CARBACK);
+  public static boolean isWhitespace(char c) {
+    return c == SPACE || c == TAB || c == NEWLINE || c == CARBACK;
+  }
+
+  public static boolean isDigit(char c) {
+    return c >= '0' && c <= '9';
+  }
+
+  public static boolean isLowerCaseLetter(char c) {
+    return c >= 'a' && c <= 'z';
+  }
+
+  public static boolean isUpperCaseLetter(char c) {
+    return c >= 'A' && c <= 'Z';
+  }
 
   @Data
   public static class Token {
@@ -222,7 +232,7 @@ public class Tokens {
     }
 
     public boolean is(char c) {
-      return string.equals(String.valueOf(c));
+      return string.length() == 1 && string.charAt(0) == c;
     }
 
     public boolean is(String s) {

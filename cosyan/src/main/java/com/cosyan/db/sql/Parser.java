@@ -102,18 +102,28 @@ public class Parser {
       columns = Optional.empty();
     }
     assertNext(tokens, Tokens.VALUES);
-    assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
-    ImmutableList.Builder<Literal> values = ImmutableList.builder();
+
+    ImmutableList.Builder<ImmutableList<Literal>> valuess = ImmutableList.builder();
     while (true) {
-      values.add(parseLiteral(tokens));
+      assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+      ImmutableList.Builder<Literal> values = ImmutableList.builder();
+      while (true) {
+        values.add(parseLiteral(tokens));
+        if (tokens.peek().is(Tokens.COMMA)) {
+          tokens.next();
+        } else {
+          assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+          break;
+        }
+      }
+      valuess.add(values.build());
       if (tokens.peek().is(Tokens.COMMA)) {
         tokens.next();
       } else {
-        assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
         break;
       }
     }
-    return new InsertInto(ident, columns, values.build());
+    return new InsertInto(ident, columns, valuess.build());
   }
 
   private Literal parseLiteral(PeekingIterator<Token> tokens) throws ParserException {

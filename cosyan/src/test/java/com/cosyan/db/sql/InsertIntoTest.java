@@ -148,4 +148,14 @@ public class InsertIntoTest {
     TableMultiIndex t10b = metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t10"))).get("b");
     org.junit.Assert.assertArrayEquals(new long[] { 0L, 19L }, t10b.get("x"));
   }
+
+  @Test
+  public void testInsertIntoTableMultipleRows() throws Exception {
+    compiler.statement(parser.parse("create table t11 (a varchar, b integer, c float);"));
+    compiler.statement(parser.parse("insert into t11 values ('x', 1, 2.0), ('y', 3, 4.0);"));
+    ExposedTableReader reader = compiler.query(parser.parse("select * from t11;")).reader();
+    assertEquals(ImmutableMap.of("a", "x", "b", 1L, "c", 2.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "y", "b", 3L, "c", 4.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
 }

@@ -1,5 +1,7 @@
 package com.cosyan.db.sql;
 
+import java.util.ArrayList;
+
 import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.Tokens.FloatToken;
 import com.cosyan.db.sql.Tokens.IdentToken;
@@ -19,81 +21,86 @@ public class Lexer {
 
   public ImmutableList<Token> tokenize(String sql) throws ParserException {
     int state = STATE_DEFAULT;
-    ImmutableList.Builder<Token> builder = ImmutableList.builder();
-    String literal = "";
+    ArrayList<Token> builder = new ArrayList<>();
+    int literalStartIndex = 0;
     for (int i = 0; i < sql.length(); i++) {
       char c = sql.charAt(i);
       if (state == STATE_IN_SINGLE_QUOTE) {
         if (c == Tokens.SINGLE_QUOTE) {
-          builder.add(new StringToken(literal));
+          builder.add(new StringToken(sql.substring(literalStartIndex + 1, i)));
           state = STATE_DEFAULT;
-          literal = "";
-        } else {
-          literal = literal + c;
+          literalStartIndex = i;
         }
       } else if (state == STATE_IN_DOUBLE_QUOTE) {
         if (c == Tokens.DOUBLE_QUOTE) {
-          builder.add(new StringToken(literal));
+          builder.add(new StringToken(sql.substring(literalStartIndex + 1, i)));
           state = STATE_DEFAULT;
-          literal = "";
-        } else {
-          literal = literal + c;
+          literalStartIndex = i;
         }
       } else if (state == STATE_NUMBER_LITERAL) {
         if (c == Tokens.DOT) {
           state = STATE_FLOAT_LITERAL;
-          literal = literal + c;
-        } else if (Tokens.DELIMITERS.contains(c)) {
-          builder.add(new IntToken(Long.valueOf(literal).toString()));
+        } else if (Tokens.isDelimiter(c)) {
+          builder.add(new IntToken(sql.substring(literalStartIndex, i)));
           state = STATE_DEFAULT;
-          literal = "";
+          literalStartIndex = i;
           i--;
         } else {
-          literal = literal + c;
+          if (!Tokens.isDigit(c)) {
+            throw new ParserException("Wrong number.");
+          }
         }
       } else if (state == STATE_FLOAT_LITERAL) {
-        if (Tokens.DELIMITERS.contains(c)) {
-          builder.add(new FloatToken(Double.valueOf(literal).toString()));
+        if (Tokens.isDelimiter(c)) {
+          builder.add(new FloatToken(sql.substring(literalStartIndex, i)));
           state = STATE_DEFAULT;
-          literal = "";
+          literalStartIndex = i;
           i--;
         } else {
-          literal = literal + c;
+          if (!Tokens.isDigit(c)) {
+            throw new ParserException("Wrong number.");
+          }
         }
       } else if (state == STATE_IDENT) {
-        if (Tokens.DELIMITERS.contains(c)) {
-          builder.add(new IdentToken(literal));
+        if (Tokens.isDelimiter(c)) {
+          builder.add(new IdentToken(sql.substring(literalStartIndex, i)));
           state = STATE_DEFAULT;
-          literal = "";
+          literalStartIndex = i;
           i--;
         } else {
-          literal = literal + c;
+          if (!(Tokens.isDigit(c) || Tokens.isLowerCaseLetter(c) || Tokens.isUpperCaseLetter(c) || c == '_' || c == '.')) {
+            throw new ParserException("Wrong ident.");
+          }
         }
       } else if (state == STATE_DEFAULT) {
-        if (Tokens.DELIMITERS.contains(c)) {
+        if (Tokens.isDelimiter(c)) {
           if (c == Tokens.LESS && i < sql.length() - 1 && sql.charAt(i + 1) == Tokens.EQ) {
             builder.add(new Token(Tokens.LEQ));
             i++;
           } else if (c == Tokens.GREATER && i < sql.length() - 1 && sql.charAt(i + 1) == Tokens.EQ) {
             builder.add(new Token(Tokens.GEQ));
             i++;
-          } else if (!Tokens.WHITESPACE.contains(c)) {
+          } else if (!Tokens.isWhitespace(c)) {
             builder.add(new Token(String.valueOf(c)));
           }
+          literalStartIndex = i;
         } else if (c == Tokens.SINGLE_QUOTE) {
           state = STATE_IN_SINGLE_QUOTE;
+          literalStartIndex = i;
         } else if (c == Tokens.DOUBLE_QUOTE) {
           state = STATE_IN_DOUBLE_QUOTE;
+          literalStartIndex = i;
+        } else if (Tokens.isDigit(c)) {
+          state = STATE_NUMBER_LITERAL;
+          literalStartIndex = i;
+        } else if (Tokens.isLowerCaseLetter(c)) {
+          state = STATE_IDENT;
+          literalStartIndex = i;
         } else {
-          if (c >= '0' && c <= '9') {
-            state = STATE_NUMBER_LITERAL;
-          } else if (c >= 'a' && c <= 'z') {
-            state = STATE_IDENT;
-          }
-          literal = literal + c;
+          throw new ParserException("Syntax error.");
         }
       }
     }
-    return builder.build();
+    return ImmutableList.copyOf(builder);
   }
 }

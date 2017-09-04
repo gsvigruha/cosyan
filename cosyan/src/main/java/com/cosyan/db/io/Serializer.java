@@ -1,12 +1,14 @@
 package com.cosyan.db.io;
 
-import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Date;
+
+import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
@@ -97,5 +99,13 @@ public class Serializer {
       Serializer.writeColumn(values[i], columns.get(i).getType(), stream);
     }
     return b.toByteArray();
+  }
+
+  public static void serialize(Object[] values, ImmutableList<? extends ColumnMeta> columns, OutputStream out) throws IOException {
+    DataOutputStream stream = new DataOutputStream(out);
+    stream.writeByte(1);
+    for (int i = 0; i < columns.size(); i++) {
+      Serializer.writeColumn(values[i], columns.get(i).getType(), stream);
+    }
   }
 }

@@ -1,12 +1,13 @@
 package com.cosyan.db.io;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
@@ -66,7 +67,7 @@ public class TableWriter {
           throw new ModelException("Constraint check " + constraint.getKey() + " failed.");
         }
       }
-      bos.write(Serializer.serialize(values, columns));
+      Serializer.serialize(values, columns, bos);
     }
 
     public void commit() throws IOException {
