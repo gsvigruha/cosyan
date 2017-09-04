@@ -56,8 +56,8 @@ public class BuiltinFunctionsTest {
     assertResult("contains(a, 'bc')", true);
     assertResult("a.contains('BC')", true);
     assertResult("a.contains('XY')", false);
-    // assertResult("matches(a, 'abc')", true);
-    // assertResult("matches(a, 'xyz')", false);
+    assertResult("matches(a, '.*')", true);
+    assertResult("matches(a, '[0-9]*')", false);
     assertResult("replace(a, 'b', 'x')", "axcABC");
     assertResult("a.replace('c', 'x')", "abxABC");
   }
