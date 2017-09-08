@@ -1,0 +1,16 @@
+<textarea class="form-control" rows="5" ng-model="query"></textarea>
+
+<div>
+  <button ng-click="run()">Run query</button>
+</div>
+
+<table class="table table-striped">
+  <th ng-repeat="column in data.columns">
+    {{ column }}
+  </th>
+  <tr ng-repeat="row in data.result">
+    <td ng-repeat="element in row">
+    {{ element }}
+    </td>
+  </tr>
+</table>

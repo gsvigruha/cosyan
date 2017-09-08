@@ -37,6 +37,18 @@ public class Config {
     return props.getProperty(DATA_DIR);
   }
 
+  public String metaDir() {
+    return props.getProperty(DATA_DIR) + File.separator + "meta";
+  }
+
+  public String tableDir() {
+    return props.getProperty(DATA_DIR) + File.separator + "table";
+  }
+
+  public String indexDir() {
+    return props.getProperty(DATA_DIR) + File.separator + "index";
+  }
+
   public static class ConfigException extends Exception {
     private static final long serialVersionUID = 1L;
 

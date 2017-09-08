@@ -5,8 +5,6 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.Properties;
 
@@ -33,13 +31,12 @@ public class InsertIntoTest {
 
   @BeforeClass
   public static void setUp() throws IOException, ModelException, ParseException {
+    FileUtils.cleanDirectory(new File("/tmp/data"));
     Properties props = new Properties();
     props.setProperty(Config.DATA_DIR, "/tmp/data");
     metaRepo = new MetaRepo(new Config(props));
     parser = new Parser();
     compiler = new Compiler(metaRepo);
-    FileUtils.cleanDirectory(new File("/tmp/data"));
-    Files.createDirectories(Paths.get("/tmp/data"));
   }
 
   @Test
@@ -156,6 +153,13 @@ public class InsertIntoTest {
     ExposedTableReader reader = compiler.query(parser.parse("select * from t11;")).reader();
     assertEquals(ImmutableMap.of("a", "x", "b", 1L, "c", 2.0), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "y", "b", 3L, "c", 4.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testReadFromEmptyTable() throws Exception {
+    compiler.statement(parser.parse("create table t12 (a varchar);"));
+    ExposedTableReader reader = compiler.query(parser.parse("select * from t12;")).reader();
     assertEquals(null, reader.readColumns());
   }
 }

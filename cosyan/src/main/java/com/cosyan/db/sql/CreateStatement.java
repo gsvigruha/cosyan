@@ -1,6 +1,7 @@
 package com.cosyan.db.sql;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
@@ -71,7 +72,7 @@ public class CreateStatement {
             keyColumn.setNullable(false);
             keyColumn.setUnique(true);
             metaRepo.registerUniqueIndex(name + "." + keyColumn.getName(), keyColumn);
-            tableMeta.setPrimaryKey(new PrimaryKey(primaryKey.getName(), keyColumn));
+            tableMeta.setPrimaryKey(Optional.of(new PrimaryKey(primaryKey.getName(), keyColumn)));
           } else {
             throw new ModelException("There can only be one primary key.");
           }

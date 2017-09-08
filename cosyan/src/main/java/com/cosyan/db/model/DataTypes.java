@@ -42,4 +42,20 @@ public class DataTypes {
   }
 
   public static final NullType NULL = new NullType();
+
+  public static DataType<?> fromString(String name) {
+    if (name.equals("varchar")) {
+      return StringType;
+    } else if (name.equals("float")) {
+      return DoubleType;
+    } else if (name.equals("integer")) {
+      return LongType;
+    } else if (name.equals("boolean")) {
+      return BoolType;
+    } else if (name.equals("timestamp")) {
+      return DateType;
+    } else {
+      throw new IllegalArgumentException();
+    }
+  }
 }

@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.cosyan.db.conf.Config;
@@ -15,6 +17,7 @@ import com.cosyan.db.index.ByteMultiTrie.LongMultiIndex;
 import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
 import com.cosyan.db.index.ByteTrie.LongIndex;
 import com.cosyan.db.index.ByteTrie.StringIndex;
+import com.cosyan.db.io.Serializer;
 import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
@@ -27,6 +30,7 @@ import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 import com.cosyan.db.model.TableMultiIndex.LongTableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.StringTableMultiIndex;
 import com.cosyan.db.sql.SyntaxTree.Ident;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 
@@ -40,7 +44,7 @@ public class MetaRepo {
   private final ConcurrentHashMap<String, SimpleFunction<?>> simpleFunctions;
   private final ConcurrentHashMap<String, AggrFunction> aggrFunctions;
 
-  public MetaRepo(Config config) {
+  public MetaRepo(Config config) throws IOException, ModelException {
     this.config = config;
     this.tables = new ConcurrentHashMap<>();
     this.uniqueIndexes = new ConcurrentHashMap<>();
@@ -52,6 +56,22 @@ public class MetaRepo {
     this.aggrFunctions = new ConcurrentHashMap<>();
     for (AggrFunction aggrFunction : BuiltinFunctions.AGGREGATIONS) {
       aggrFunctions.put(aggrFunction.getIdent(), aggrFunction);
+    }
+    Files.createDirectories(Paths.get(config.dataDir()));
+    Files.createDirectories(Paths.get(config.metaDir()));
+    Files.createDirectories(Paths.get(config.tableDir()));
+    Files.createDirectories(Paths.get(config.indexDir()));
+    ImmutableList<String> tableNames = ImmutableList.copyOf(Files.list(Paths.get(config.metaDir()))
+        .map(path -> path.getFileName().toString())
+        .filter(path -> !path.contains("#"))
+        .iterator());
+    for (String tableName : tableNames) {
+      FileInputStream tableIn = new FileInputStream(config.metaDir() + File.separator + tableName);
+      tables.put(tableName, Serializer.readTableMeta(tableName, tableIn, this));
+    }
+    for (String tableName : tableNames) {
+      FileInputStream refIn = new FileInputStream(config.metaDir() + File.separator + tableName + "#ref");
+      Serializer.readTableReferences(tables.get(tableName), refIn, this);
     }
   }
 
@@ -66,7 +86,7 @@ public class MetaRepo {
   }
 
   public InputStream open(MaterializedTableMeta table) throws ModelException {
-    String path = config.dataDir() + File.separator + table.getTableName();
+    String path = config.tableDir() + File.separator + table.getTableName();
     try {
       return new FileInputStream(path);
     } catch (FileNotFoundException e) {
@@ -75,7 +95,7 @@ public class MetaRepo {
   }
 
   public FileOutputStream append(MaterializedTableMeta table) throws ModelException {
-    String path = config.dataDir() + File.separator + table.getTableName();
+    String path = config.tableDir() + File.separator + table.getTableName();
     try {
       return new FileOutputStream(path, true);
     } catch (FileNotFoundException e) {
@@ -84,7 +104,7 @@ public class MetaRepo {
   }
 
   public RandomAccessFile update(MaterializedTableMeta table) throws ModelException {
-    String path = config.dataDir() + File.separator + table.getTableName();
+    String path = config.tableDir() + File.separator + table.getTableName();
     try {
       return new RandomAccessFile(path, "rw");
     } catch (FileNotFoundException e) {
@@ -120,7 +140,8 @@ public class MetaRepo {
     for (ForeignKey reverseForeignKey : table.getReverseForeignKeys().values()) {
       builder.put(
           reverseForeignKey.getColumn().getName(),
-          multiIndexes.get(reverseForeignKey.getRefTable().getTableName() + "." + reverseForeignKey.getRefColumn().getName()));
+          multiIndexes
+              .get(reverseForeignKey.getRefTable().getTableName() + "." + reverseForeignKey.getRefColumn().getName()));
     }
     return builder.build();
   }
@@ -136,12 +157,19 @@ public class MetaRepo {
     return builder.build();
   }
 
-  public void registerTable(String tableName, MaterializedTableMeta tableMeta) {
+  public void registerTable(String tableName, MaterializedTableMeta tableMeta) throws IOException {
+    File file = new File(config.tableDir() + File.separator + tableName);
+    file.createNewFile();
+    FileOutputStream tableOut = new FileOutputStream(config.metaDir() + File.separator + tableName);
+    FileOutputStream referencesOut = new FileOutputStream(config.metaDir() + File.separator + tableName + "#ref");
+    Serializer.writeTableMeta(tableMeta, tableOut, referencesOut);
+    tableOut.close();
+    referencesOut.close();
     tables.put(tableName, tableMeta);
   }
 
   public void registerUniqueIndex(String indexName, BasicColumn column) throws ModelException, IOException {
-    String path = config.dataDir() + File.separator + indexName;
+    String path = config.indexDir() + File.separator + indexName;
     if (column.isUnique()) {
       if (column.getType() == DataTypes.StringType) {
         if (!uniqueIndexes.containsKey(indexName)) {
@@ -161,7 +189,7 @@ public class MetaRepo {
   }
 
   public void registerMultiIndex(String indexName, BasicColumn column) throws ModelException, IOException {
-    String path = config.dataDir() + File.separator + indexName;
+    String path = config.indexDir() + File.separator + indexName;
     if (column.getType() == DataTypes.StringType) {
       if (!multiIndexes.containsKey(indexName)) {
         multiIndexes.put(indexName, new StringTableMultiIndex(new StringMultiIndex(path)));
@@ -179,7 +207,7 @@ public class MetaRepo {
   public OutputStream openForWrite(
       String tableName, ImmutableMap<String, BasicColumn> columns) throws ModelException, FileNotFoundException {
     tables.put(tableName, new MaterializedTableMeta(tableName, columns, this));
-    return new FileOutputStream(config.dataDir() + File.separator + tableName);
+    return new FileOutputStream(config.tableDir() + File.separator + tableName);
   }
 
   public SimpleFunction<?> simpleFunction(Ident ident) throws ModelException {
@@ -202,11 +230,23 @@ public class MetaRepo {
     return aggrFunctions.get(ident.getString()).forType(argType);
   }
 
+  public ImmutableMap<String, MaterializedTableMeta> getTables() {
+    return ImmutableMap.copyOf(tables);
+  }
+
   public static class ModelException extends Exception {
     private static final long serialVersionUID = 1L;
 
     public ModelException(String msg) {
       super(msg);
+    }
+  }
+
+  public static class ModelRuntimeException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
+
+    public ModelRuntimeException(Exception e) {
+      super(e);
     }
   }
 }

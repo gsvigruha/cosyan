@@ -1,0 +1,17 @@
+Tables
+
+<div>
+  <button ng-click="loadTables()">Reload</button>
+</div>
+
+<ul>
+<li ng-repeat="table in data.tables">
+  {{ table.name }}<br>
+  Columns:
+  <ul>
+  <li ng-repeat="column in table.columns">
+    {{ column.name }} {{ column.type }} {{ column.nullable ? '' : 'not null' }} {{ column.unique ? 'unique' : '' }}
+  </li>
+  </ul>
+</li>
+</ul>

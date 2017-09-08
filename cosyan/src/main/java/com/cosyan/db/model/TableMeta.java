@@ -1,6 +1,7 @@
 package com.cosyan.db.model;
 
 import java.io.DataInputStream;
+import java.util.Optional;
 
 import com.cosyan.db.io.TableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
@@ -71,7 +72,7 @@ public abstract class TableMeta {
     private final MetaRepo metaRepo;
 
     private ImmutableMap<String, DerivedColumn> simpleChecks = ImmutableMap.of();
-    private PrimaryKey primaryKey;
+    private Optional<PrimaryKey> primaryKey = Optional.empty();
     private ImmutableMap<String, ForeignKey> foreignKeys = ImmutableMap.of();
     private ImmutableMap<String, ForeignKey> reverseForeignKeys = ImmutableMap.of();
 
