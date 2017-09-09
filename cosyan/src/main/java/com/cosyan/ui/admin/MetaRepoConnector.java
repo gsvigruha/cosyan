@@ -6,6 +6,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
@@ -37,16 +38,37 @@ public class MetaRepoConnector {
         columns.add(columnObj);
       }
       tableObj.put("columns", columns);
-      
+
       if (tableMeta.getPrimaryKey().isPresent()) {
-        tableObj.put("pk", tableMeta.getPrimaryKey().get().getName());
+        tableObj.put("primaryKeys", tableMeta.getPrimaryKey().get().getName());
       }
-      
-      
+
+      JSONArray foreignKeys = new JSONArray();
+      for (ForeignKey foreignKey : tableMeta.getForeignKeys().values()) {
+        JSONObject fkObj = new JSONObject();
+        fkObj.put("name", foreignKey.getName());
+        fkObj.put("column", foreignKey.getColumn().getName());
+        fkObj.put("refTable", foreignKey.getRefTable().getTableName());
+        fkObj.put("refColumn", foreignKey.getRefColumn().getName());
+        foreignKeys.add(fkObj);
+      }
+      tableObj.put("foreignKeys", foreignKeys);
+
+      JSONArray reverseForeignKeys = new JSONArray();
+      for (ForeignKey foreignKey : tableMeta.getReverseForeignKeys().values()) {
+        JSONObject fkObj = new JSONObject();
+        fkObj.put("name", foreignKey.getName());
+        fkObj.put("column", foreignKey.getColumn().getName());
+        fkObj.put("refTable", foreignKey.getRefTable().getTableName());
+        fkObj.put("refColumn", foreignKey.getRefColumn().getName());
+        reverseForeignKeys.add(fkObj);
+      }
+      tableObj.put("reverseForeignKeys", reverseForeignKeys);
+
       list.add(tableObj);
     }
     obj.put("tables", list);
-    
+
     return obj;
   }
 

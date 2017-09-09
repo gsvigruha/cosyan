@@ -16,6 +16,18 @@ Tables:
     {{ column.indexed ? 'indexed' : '' }}
   </li>
   </ul>
+  Foreign keys:
+  <ul>
+  <li ng-repeat="fk in table.foreignKeys">
+    {{ fk.name }}: {{ fk.column }} -> {{ fk.refTable }}({{ fk.refColumn }})
+  </li>
+  </ul>
+  Reverse foreign keys:
+  <ul>
+  <li ng-repeat="fk in table.reverseForeignKeys">
+    {{ fk.name }}: {{ fk.refTable }}({{ fk.refColumn }}) -> {{ fk.column }}
+  </li>
+  </ul>
 </li>
 </ul>
 

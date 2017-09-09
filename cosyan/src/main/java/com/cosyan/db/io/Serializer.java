@@ -148,13 +148,6 @@ public class Serializer {
       referencesStream.writeUTF(foreignKey.getRefTable().getTableName());
       referencesStream.writeUTF(foreignKey.getRefColumn().getName());
     }
-    referencesStream.writeInt(tableMeta.getReverseForeignKeys().size());
-    for (ForeignKey reverseForeignKey : tableMeta.getReverseForeignKeys().values()) {
-      referencesStream.writeUTF(reverseForeignKey.getName());
-      referencesStream.writeUTF(reverseForeignKey.getColumn().getName());
-      referencesStream.writeUTF(reverseForeignKey.getRefTable().getTableName());
-      referencesStream.writeUTF(reverseForeignKey.getRefColumn().getName());
-    }
   }
 
   public static MaterializedTableMeta readTableMeta(
@@ -186,8 +179,19 @@ public class Serializer {
   public static void readTableReferences(
       MaterializedTableMeta tableMeta, InputStream referencesIn, MetaRepo metaRepo) throws IOException, ModelException {
     DataInputStream referencesStream = new DataInputStream(referencesIn);
-    tableMeta.setForeignKeys(readForeignKeys(tableMeta, referencesStream, metaRepo));
-    tableMeta.setReverseForeignKeys(readForeignKeys(tableMeta, referencesStream, metaRepo));
+    ImmutableMap<String, ForeignKey> foreignKeys = readForeignKeys(tableMeta, referencesStream, metaRepo);
+    tableMeta.setForeignKeys(foreignKeys);
+    for (ForeignKey foreignKey : foreignKeys.values()) {
+      MaterializedTableMeta refTable = foreignKey.getRefTable();
+      refTable.setReverseForeignKeys(ImmutableMap.<String, ForeignKey>builder()
+          .putAll(refTable.getForeignKeys())
+          .put(foreignKey.getName(), new ForeignKey(
+              foreignKey.getName(),
+              foreignKey.getRefColumn(),
+              tableMeta,
+              foreignKey.getColumn()))
+          .build());
+    }
   }
 
   private static ImmutableMap<String, ForeignKey> readForeignKeys(
