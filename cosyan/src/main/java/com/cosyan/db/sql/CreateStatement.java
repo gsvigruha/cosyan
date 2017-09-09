@@ -77,6 +77,7 @@ public class CreateStatement {
             BasicColumn keyColumn = (BasicColumn) tableMeta.column(primaryKey.getKeyColumn());
             keyColumn.setNullable(false);
             keyColumn.setUnique(true);
+            keyColumn.setIndexed(true);
             metaRepo.registerUniqueIndex(tableMeta, keyColumn);
             tableMeta.setPrimaryKey(Optional.of(new PrimaryKey(primaryKey.getName(), keyColumn)));
           } else {

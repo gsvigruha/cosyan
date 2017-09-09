@@ -11,7 +11,6 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.json.simple.JSONObject;
 
 import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.model.MetaRepo.ModelException;
 
 public class AdminServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
@@ -28,7 +27,10 @@ public class AdminServlet extends HttpServlet {
       throws ServletException, IOException {
     resp.setStatus(HttpStatus.OK_200);
     try {
-      resp.getWriter().println(metaRepoConnector.tables());
+      JSONObject obj = new JSONObject();
+      obj.putAll(metaRepoConnector.tables());
+      obj.putAll(metaRepoConnector.indexes());
+      resp.getWriter().println(obj);
     } catch(Exception e) {
       e.printStackTrace();
       resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);

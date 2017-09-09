@@ -162,4 +162,20 @@ public class InsertIntoTest {
     ExposedTableReader reader = compiler.query(parser.parse("select * from t12;")).reader();
     assertEquals(null, reader.readColumns());
   }
+
+  @Test
+  public void testPrimaryKeys() throws Exception {
+    compiler.statement(parser.parse("create table t13 (a varchar, constraint pk_a primary key (a));"));
+    compiler.statement(parser.parse("insert into t13 values ('x');"));
+    try {
+      compiler.statement(parser.parse("insert into t13 values ('x');"));
+      fail();
+    } catch (IndexException e) {
+    }
+    compiler.statement(parser.parse("insert into t13 values ('y');"));
+    ExposedTableReader reader = compiler.query(parser.parse("select * from t13;")).reader();
+    assertEquals(ImmutableMap.of("a", "x"), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "y"), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
 }

@@ -8,7 +8,6 @@ import org.json.simple.JSONObject;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
-import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 
 public class MetaRepoConnector {
@@ -48,6 +47,14 @@ public class MetaRepoConnector {
     }
     obj.put("tables", list);
     
+    return obj;
+  }
+
+  @SuppressWarnings("unchecked")
+  public JSONObject indexes() throws ModelException {
+    JSONObject obj = new JSONObject();
+    obj.put("uniqueIndexes", metaRepo.uniqueIndexNames());
+    obj.put("multiIndexes", metaRepo.multiIndexNames());
     return obj;
   }
 }

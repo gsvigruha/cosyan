@@ -2,10 +2,12 @@ package com.cosyan.db.sql;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Properties;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -28,6 +30,7 @@ public class CreateStatementTest {
 
   @BeforeClass
   public static void setUp() throws IOException, ModelException, ParseException {
+    FileUtils.cleanDirectory(new File("/tmp/data"));
     Properties props = new Properties();
     props.setProperty(Config.DATA_DIR, "/tmp/data");
     metaRepo = new MetaRepo(new Config(props));
@@ -54,9 +57,9 @@ public class CreateStatementTest {
 
   @Test
   public void testCreateTableUniqueColumns() throws Exception {
-    SyntaxTree tree = parser.parse("create table t1 (a varchar unique not null, b integer unique);");
+    SyntaxTree tree = parser.parse("create table t2 (a varchar unique not null, b integer unique);");
     compiler.statement(tree);
-    ExposedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
+    ExposedTableMeta tableMeta = metaRepo.table(new Ident("t2"));
     assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true),
         tableMeta.column(new Ident("a")));
     assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, true),
@@ -65,34 +68,34 @@ public class CreateStatementTest {
 
   @Test
   public void testCreateTablePrimaryKey() throws Exception {
-    SyntaxTree tree = parser.parse("create table t1 (a varchar, constraint pk_a primary key (a));");
+    SyntaxTree tree = parser.parse("create table t3 (a varchar, constraint pk_a primary key (a));");
     compiler.statement(tree);
-    ExposedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true),
+    ExposedTableMeta tableMeta = metaRepo.table(new Ident("t3"));
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true, true),
         tableMeta.column(new Ident("a")));
   }
 
   @Test
   public void testCreateTableForeignKey() throws Exception {
-    compiler.statement(parser.parse("create table t1 (a varchar, constraint pk_a primary key (a));"));
-    compiler.statement(parser.parse("create table t2 (a varchar, b varchar, constraint fk_b foreign key (b) references t1(a));"));
-    MaterializedTableMeta t2 = metaRepo.table(new Ident("t2"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false),
-        t2.column(new Ident("a")));
-    assertEquals(new BasicColumn(1, "b", DataTypes.StringType, true, false),
-        t2.column(new Ident("b")));
-    MaterializedTableMeta t1 = metaRepo.table(new Ident("t1"));
+    compiler.statement(parser.parse("create table t4 (a varchar, constraint pk_a primary key (a));"));
+    compiler.statement(parser.parse("create table t5 (a varchar, b varchar, constraint fk_b foreign key (b) references t4(a));"));
+    MaterializedTableMeta t5 = metaRepo.table(new Ident("t5"));
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false, false),
+        t5.column(new Ident("a")));
+    assertEquals(new BasicColumn(1, "b", DataTypes.StringType, true, false, true),
+        t5.column(new Ident("b")));
+    MaterializedTableMeta t4 = metaRepo.table(new Ident("t4"));
     assertEquals(ImmutableMap.of("fk_b", new ForeignKey(
         "fk_b",
-        (BasicColumn) t2.column(new Ident("b")),
-        t1,
-        (BasicColumn) t1.column(new Ident("a")))),
-        t2.getForeignKeys());
+        (BasicColumn) t5.column(new Ident("b")),
+        t4,
+        (BasicColumn) t4.column(new Ident("a")))),
+        t5.getForeignKeys());
     assertEquals(ImmutableMap.of("fk_b", new ForeignKey(
         "fk_b",
-        (BasicColumn) t1.column(new Ident("a")),
-        t2,
-        (BasicColumn) t2.column(new Ident("b")))),
-        t1.getReverseForeignKeys());
+        (BasicColumn) t4.column(new Ident("a")),
+        t5,
+        (BasicColumn) t5.column(new Ident("b")))),
+        t4.getReverseForeignKeys());
   }
 }

@@ -67,7 +67,7 @@ public class MetaRepo {
         .filter(path -> !path.contains("#"))
         .iterator());
     for (String tableName : tableNames) {
-        FileInputStream tableIn = new FileInputStream(config.metaDir() + File.separator + tableName);
+      FileInputStream tableIn = new FileInputStream(config.metaDir() + File.separator + tableName);
       tables.put(tableName, Serializer.readTableMeta(tableName, tableIn, this));
     }
     // Load table references (foreign keys).
@@ -186,15 +186,12 @@ public class MetaRepo {
   public void registerUniqueIndex(MaterializedTableMeta table, BasicColumn column) throws ModelException, IOException {
     String indexName = table.getTableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
+    assert !uniqueIndexes.containsKey(indexName);
     if (column.isUnique()) {
       if (column.getType() == DataTypes.StringType) {
-        if (!uniqueIndexes.containsKey(indexName)) {
-          uniqueIndexes.put(indexName, new StringTableIndex(new StringIndex(path)));
-        }
+        uniqueIndexes.put(indexName, new StringTableIndex(new StringIndex(path)));
       } else if (column.getType() == DataTypes.LongType) {
-        if (!uniqueIndexes.containsKey(indexName)) {
-          uniqueIndexes.put(indexName, new LongTableIndex(new LongIndex(path)));
-        }
+        uniqueIndexes.put(indexName, new LongTableIndex(new LongIndex(path)));
       } else {
         throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
             " and " + DataTypes.LongType + " types, not " + column.getType() + ".");
@@ -207,14 +204,11 @@ public class MetaRepo {
   public void registerMultiIndex(MaterializedTableMeta table, BasicColumn column) throws ModelException, IOException {
     String indexName = table.getTableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
+    assert !multiIndexes.containsKey(indexName);
     if (column.getType() == DataTypes.StringType) {
-      if (!multiIndexes.containsKey(indexName)) {
-        multiIndexes.put(indexName, new StringTableMultiIndex(new StringMultiIndex(path)));
-      }
+      multiIndexes.put(indexName, new StringTableMultiIndex(new StringMultiIndex(path)));
     } else if (column.getType() == DataTypes.LongType) {
-      if (!multiIndexes.containsKey(indexName)) {
-        multiIndexes.put(indexName, new LongTableMultiIndex(new LongMultiIndex(path)));
-      }
+      multiIndexes.put(indexName, new LongTableMultiIndex(new LongMultiIndex(path)));
     } else {
       throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
           " and " + DataTypes.LongType + " types, not " + column.getType() + ".");
@@ -245,6 +239,14 @@ public class MetaRepo {
       throw new ModelException("Function " + ident.getString() + " does not exist.");
     }
     return aggrFunctions.get(ident.getString()).forType(argType);
+  }
+
+  public ImmutableList<String> uniqueIndexNames() {
+    return ImmutableList.copyOf(uniqueIndexes.keySet());
+  }
+
+  public ImmutableList<String> multiIndexNames() {
+    return ImmutableList.copyOf(multiIndexes.keySet());
   }
 
   public ImmutableMap<String, MaterializedTableMeta> getTables() {

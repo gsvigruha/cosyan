@@ -1,9 +1,8 @@
-Tables
-
 <div>
   <button ng-click="loadTables()">Reload</button>
 </div>
 
+Tables:
 <ul>
 <li ng-repeat="table in data.tables">
   {{ table.name }}<br>
@@ -17,5 +16,19 @@ Tables
     {{ column.indexed ? 'indexed' : '' }}
   </li>
   </ul>
+</li>
+</ul>
+
+Unique indexes:
+<ul>
+<li ng-repeat="index in data.uniqueIndexes">
+  {{ index }}
+</li>
+</ul>
+
+Multi-indexes:
+<ul>
+<li ng-repeat="index in data.multiIndexes">
+  {{ index }}
 </li>
 </ul>
