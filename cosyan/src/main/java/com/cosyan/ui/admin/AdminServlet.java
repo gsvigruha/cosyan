@@ -8,8 +8,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.http.HttpStatus;
+import org.json.simple.JSONObject;
 
 import com.cosyan.db.model.MetaRepo;
+import com.cosyan.db.model.MetaRepo.ModelException;
 
 public class AdminServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
@@ -20,10 +22,19 @@ public class AdminServlet extends HttpServlet {
     this.metaRepoConnector = new MetaRepoConnector(metaRepo);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     resp.setStatus(HttpStatus.OK_200);
-    resp.getWriter().println(metaRepoConnector.tables());
+    try {
+      resp.getWriter().println(metaRepoConnector.tables());
+    } catch(Exception e) {
+      e.printStackTrace();
+      resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+      JSONObject error = new JSONObject();
+      error.put("error", e.getMessage());
+      resp.getWriter().println(error);
+    }
   }
 }

@@ -10,7 +10,11 @@ Tables
   Columns:
   <ul>
   <li ng-repeat="column in table.columns">
-    {{ column.name }} {{ column.type }} {{ column.nullable ? '' : 'not null' }} {{ column.unique ? 'unique' : '' }}
+    {{ column.name }}
+    {{ column.type }}
+    {{ column.nullable ? '' : 'not null' }}
+    {{ column.unique ? 'unique' : '' }}
+    {{ column.indexed ? 'indexed' : '' }}
   </li>
   </ul>
 </li>

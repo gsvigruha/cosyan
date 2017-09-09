@@ -5,8 +5,12 @@ angular.module('cosyan')
   $scope.run = function() {
     $http.get("/cosyan/sql", {
       params: { sql: $scope.query }
-    }).then(function(response) {
+    }).then(function success(response) {
       $scope.data = response.data;
+      $scope.$error = undefined;
+    }, function error(response) {
+      $scope.data = undefined;
+      $scope.$error = response.data.error;
     });
   };
 });

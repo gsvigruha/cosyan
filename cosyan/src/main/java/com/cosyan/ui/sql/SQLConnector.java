@@ -1,12 +1,10 @@
 package com.cosyan.ui.sql;
 
-import java.io.IOException;
 import java.util.Map.Entry;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.model.MetaRepo.ModelException;
@@ -27,30 +25,39 @@ public class SQLConnector {
   }
 
   @SuppressWarnings("unchecked")
-  public JSONObject run(String sql)
-      throws ModelException, ConfigException, ParserException, IOException, IndexException {
+  public JSONObject run(String sql) throws Exception {
     SyntaxTree tree = parser.parse(sql);
     JSONObject obj = new JSONObject();
     if (tree.isSelect()) {
-      ExposedTableReader reader = compiler.query(tree).reader();
-      JSONArray list = new JSONArray();
-      ImmutableMap<String, Object> row = reader.readColumns();
-      obj.put("columns", row.keySet().asList());
-      while (row != null) {
-        JSONObject rowObj = new JSONObject();
-        for (Entry<String, Object> value : row.entrySet()) {
-          rowObj.put(value.getKey(), value.getValue());
+      try {
+        ExposedTableReader reader = compiler.query(tree).reader();
+        JSONArray list = new JSONArray();
+        ImmutableMap<String, Object> row = reader.readColumns();
+        obj.put("columns", row.keySet().asList());
+        while (row != null) {
+          JSONObject rowObj = new JSONObject();
+          for (Entry<String, Object> value : row.entrySet()) {
+            rowObj.put(value.getKey(), value.getValue());
+          }
+          list.add(rowObj);
+          row = reader.readColumns();
         }
-        list.add(rowObj);
-        row = reader.readColumns();
+        obj.put("result", list);
+      } catch (ParserException | ModelException e) {
+        throw e;
+      } catch (Exception e) {
+        e.printStackTrace();
+        throw e;
       }
-      obj.put("result", list);
     } else if (tree.isStatement()) {
       try {
         boolean success = compiler.statement(tree);
         obj.put("result", success);
+      } catch (ParserException | ModelException | IndexException e) {
+        throw e;
       } catch (Exception e) {
         e.printStackTrace();
+        throw e;
       }
     }
     return obj;

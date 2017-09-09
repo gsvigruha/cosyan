@@ -2,6 +2,7 @@ package com.cosyan.db.index;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -79,8 +80,10 @@ public abstract class ByteMultiTrie<T> {
     this.fileName = fileName;
     this.raf = new RandomAccessFile(fileName, "rw");
     this.trie = trie;
-    // Let's not start indexing from 0, since that is the null file pointer.
-    raf.write(0);
+    if (!new File(fileName).exists() || raf.length() == 0) {
+      // Let's not start indexing from 0, since that is the null file pointer.
+      raf.write(0);
+    }
     this.filePointer = raf.length();
   }
 

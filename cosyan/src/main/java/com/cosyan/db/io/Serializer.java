@@ -130,6 +130,7 @@ public class Serializer {
       tableStream.writeUTF(column.getType().toString());
       tableStream.writeBoolean(column.isNullable());
       tableStream.writeBoolean(column.isUnique());
+      tableStream.writeBoolean(column.isIndexed());
     }
     if (tableMeta.getPrimaryKey().isPresent()) {
       PrimaryKey primaryKey = tableMeta.getPrimaryKey().get();
@@ -167,6 +168,7 @@ public class Serializer {
           i,
           columnName,
           DataTypes.fromString(tableStream.readUTF()),
+          tableStream.readBoolean(),
           tableStream.readBoolean(),
           tableStream.readBoolean()));
     }

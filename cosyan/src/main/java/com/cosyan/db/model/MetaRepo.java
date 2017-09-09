@@ -61,17 +61,32 @@ public class MetaRepo {
     Files.createDirectories(Paths.get(config.metaDir()));
     Files.createDirectories(Paths.get(config.tableDir()));
     Files.createDirectories(Paths.get(config.indexDir()));
+    // Load tables.
     ImmutableList<String> tableNames = ImmutableList.copyOf(Files.list(Paths.get(config.metaDir()))
         .map(path -> path.getFileName().toString())
         .filter(path -> !path.contains("#"))
         .iterator());
     for (String tableName : tableNames) {
-      FileInputStream tableIn = new FileInputStream(config.metaDir() + File.separator + tableName);
+        FileInputStream tableIn = new FileInputStream(config.metaDir() + File.separator + tableName);
       tables.put(tableName, Serializer.readTableMeta(tableName, tableIn, this));
     }
+    // Load table references (foreign keys).
     for (String tableName : tableNames) {
       FileInputStream refIn = new FileInputStream(config.metaDir() + File.separator + tableName + "#ref");
       Serializer.readTableReferences(tables.get(tableName), refIn, this);
+    }
+    // Load indexes.
+    for (String tableName : tableNames) {
+      MaterializedTableMeta tableMeta = tables.get(tableName);
+      for (BasicColumn column : tableMeta.columns().values()) {
+        if (column.isIndexed()) {
+          if (column.isUnique()) {
+            registerUniqueIndex(tableMeta, column);
+          } else {
+            registerMultiIndex(tableMeta, column);
+          }
+        }
+      }
     }
   }
 
@@ -168,7 +183,8 @@ public class MetaRepo {
     tables.put(tableName, tableMeta);
   }
 
-  public void registerUniqueIndex(String indexName, BasicColumn column) throws ModelException, IOException {
+  public void registerUniqueIndex(MaterializedTableMeta table, BasicColumn column) throws ModelException, IOException {
+    String indexName = table.getTableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
     if (column.isUnique()) {
       if (column.getType() == DataTypes.StringType) {
@@ -188,7 +204,8 @@ public class MetaRepo {
     }
   }
 
-  public void registerMultiIndex(String indexName, BasicColumn column) throws ModelException, IOException {
+  public void registerMultiIndex(MaterializedTableMeta table, BasicColumn column) throws ModelException, IOException {
+    String indexName = table.getTableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
     if (column.getType() == DataTypes.StringType) {
       if (!multiIndexes.containsKey(indexName)) {

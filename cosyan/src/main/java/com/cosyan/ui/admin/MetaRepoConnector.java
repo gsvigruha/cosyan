@@ -7,6 +7,8 @@ import org.json.simple.JSONObject;
 
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.MetaRepo;
+import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 
 public class MetaRepoConnector {
@@ -18,7 +20,7 @@ public class MetaRepoConnector {
   }
 
   @SuppressWarnings("unchecked")
-  public JSONObject tables() {
+  public JSONObject tables() throws ModelException {
     JSONObject obj = new JSONObject();
     JSONArray list = new JSONArray();
     for (Map.Entry<String, MaterializedTableMeta> table : metaRepo.getTables().entrySet()) {
@@ -32,12 +34,20 @@ public class MetaRepoConnector {
         columnObj.put("type", column.getType().getName());
         columnObj.put("nullable", column.isNullable());
         columnObj.put("unique", column.isUnique());
+        columnObj.put("indexed", column.isIndexed());
         columns.add(columnObj);
       }
       tableObj.put("columns", columns);
+      
+      if (tableMeta.getPrimaryKey().isPresent()) {
+        tableObj.put("pk", tableMeta.getPrimaryKey().get().getName());
+      }
+      
+      
       list.add(tableObj);
     }
     obj.put("tables", list);
+    
     return obj;
   }
 }

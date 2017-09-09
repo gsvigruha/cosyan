@@ -21,17 +21,35 @@ public abstract class ColumnMeta {
     private final String name;
     private boolean nullable;
     private boolean unique;
+    private boolean indexed;
 
     public BasicColumn(int index, String name, DataType<?> type) {
-      this(index, name, type, true, false);
+      this(index, name, type, true, false, false);
     }
 
-    public BasicColumn(int index, String name, DataType<?> type, boolean nullable, boolean unique) {
+    public BasicColumn(
+        int index,
+        String name,
+        DataType<?> type,
+        boolean nullable,
+        boolean unique) {
+      this(index, name, type, nullable, unique, /* indexed= */unique);
+    }
+
+    public BasicColumn(
+        int index,
+        String name,
+        DataType<?> type,
+        boolean nullable,
+        boolean unique,
+        boolean indexed) {
       super(type);
       this.index = index;
       this.name = name;
       this.nullable = nullable;
       this.unique = unique;
+      this.indexed = indexed;
+      assert !unique || indexed;
     }
 
     @Override

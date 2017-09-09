@@ -21,6 +21,7 @@ public class SQLServlet extends HttpServlet {
     this.sqlConnector = new SQLConnector(compiler);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
@@ -31,9 +32,9 @@ public class SQLServlet extends HttpServlet {
       resp.getWriter().println(result);
     } catch(Exception e) {
       resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-    } catch (OutOfMemoryError e) {
-      e.printStackTrace();
-      resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+      JSONObject error = new JSONObject();
+      error.put("error", e.getMessage());
+      resp.getWriter().println(error);
     }
   }
 }

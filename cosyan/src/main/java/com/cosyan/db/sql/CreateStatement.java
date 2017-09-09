@@ -36,20 +36,26 @@ public class CreateStatement {
       ImmutableMap.Builder<String, BasicColumn> columnsBuilder = ImmutableMap.builder();
       int i = 0;
       for (ColumnDefinition column : columns) {
-        BasicColumn basicColumn = new BasicColumn(i++, column.getName(), column.getType(), column.isNullable(),
+        BasicColumn basicColumn = new BasicColumn(
+            i++,
+            column.getName(),
+            column.getType(),
+            column.isNullable(),
             column.isUnique());
+        columnsBuilder.put(column.getName(), basicColumn);
+      }
+      MaterializedTableMeta tableMeta = new MaterializedTableMeta(
+          name, columnsBuilder.build(), metaRepo);
+      for (BasicColumn column : tableMeta.columns().values()) {
         if (column.isUnique()) {
           if (column.getType() != DataTypes.StringType && column.getType() != DataTypes.LongType) {
             throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
                 " and " + DataTypes.LongType + " types, not " + column.getType() + ".");
           } else {
-            metaRepo.registerUniqueIndex(name + "." + column.getName(), basicColumn);
+            metaRepo.registerUniqueIndex(tableMeta, column);
           }
         }
-        columnsBuilder.put(column.getName(), basicColumn);
       }
-      MaterializedTableMeta tableMeta = new MaterializedTableMeta(
-          name, columnsBuilder.build(), metaRepo);
 
       ImmutableMap.Builder<String, DerivedColumn> simpleChecksBuilder = ImmutableMap.builder();
       PrimaryKeyDefinition primaryKey = null;
@@ -71,7 +77,7 @@ public class CreateStatement {
             BasicColumn keyColumn = (BasicColumn) tableMeta.column(primaryKey.getKeyColumn());
             keyColumn.setNullable(false);
             keyColumn.setUnique(true);
-            metaRepo.registerUniqueIndex(name + "." + keyColumn.getName(), keyColumn);
+            metaRepo.registerUniqueIndex(tableMeta, keyColumn);
             tableMeta.setPrimaryKey(Optional.of(new PrimaryKey(primaryKey.getName(), keyColumn)));
           } else {
             throw new ModelException("There can only be one primary key.");
@@ -84,7 +90,11 @@ public class CreateStatement {
           if (!refColumn.isUnique()) {
             throw new ModelException("Foreign key reference column has to be unique.");
           }
-          metaRepo.registerMultiIndex(name + "." + keyColumn.getName(), keyColumn);
+          keyColumn.setIndexed(true);
+          if (!keyColumn.isUnique()) {
+            // Unique keys have an index by default.
+            metaRepo.registerMultiIndex(tableMeta, keyColumn);
+          }
           foreignKeysBuilder.put(foreignKey.getName(),
               new ForeignKey(foreignKey.getName(), keyColumn, refTable, refColumn));
           refTable.setReverseForeignKeys(ImmutableMap.<String, ForeignKey>builder()
