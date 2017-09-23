@@ -74,6 +74,7 @@ public class UpdateStatement {
     @Override
     public void commit() throws IOException {
       if (updater != null) {
+        updater.commit();
         updater.close();
       }
     }

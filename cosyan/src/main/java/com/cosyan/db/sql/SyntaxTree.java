@@ -1,40 +1,28 @@
 package com.cosyan.db.sql;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.lock.ResourceLock;
 import com.cosyan.db.model.BuiltinFunctions;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
-import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.cosyan.db.model.DerivedTables.AggrTableMeta;
-import com.cosyan.db.model.DerivedTables.AliasedTableMeta;
-import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
-import com.cosyan.db.model.DerivedTables.JoinTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
-import com.cosyan.db.model.DerivedTables.SortedTableMeta;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta;
-import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.sql.Parser.ParserException;
-import com.cosyan.db.sql.Result.QueryResult;
 import com.cosyan.db.sql.Tokens.Token;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 
 import lombok.Data;
@@ -125,193 +113,6 @@ public class SyntaxTree {
     }
 
     public abstract AggregationExpression isAggregation();
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class Select extends Node implements Statement {
-    private final ImmutableList<Expression> columns;
-    private final Table table;
-    private final Optional<Expression> where;
-    private final Optional<ImmutableList<Expression>> groupBy;
-    private final Optional<Expression> having;
-    private final Optional<ImmutableList<Expression>> orderBy;
-
-    public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
-      ExposedTableMeta sourceTable = table.compile(metaRepo);
-      ExposedTableMeta filteredTable = Compiler.filteredTable(metaRepo, sourceTable, where);
-      DerivedTableMeta fullTable;
-      if (Compiler.isAggregation(columns) || groupBy.isPresent()) {
-        KeyValueTableMeta intermediateTable = Compiler.keyValueTable(metaRepo, filteredTable, groupBy);
-        List<AggrColumn> aggrColumns = new LinkedList<>();
-        ImmutableMap<String, ColumnMeta> tableColumns = Compiler.tableColumns(metaRepo, intermediateTable, columns,
-            aggrColumns);
-        DerivedColumn havingColumn = Compiler.havingExpression(metaRepo, intermediateTable, having,
-            aggrColumns);
-        fullTable = new DerivedTableMeta(new AggrTableMeta(
-            intermediateTable,
-            ImmutableList.copyOf(aggrColumns),
-            havingColumn), tableColumns);
-      } else {
-        ImmutableMap<String, ColumnMeta> tableColumns = Compiler.tableColumns(metaRepo, filteredTable, columns);
-        fullTable = new DerivedTableMeta(filteredTable, tableColumns);
-      }
-      if (orderBy.isPresent()) {
-        ImmutableList<OrderColumn> orderColumns = Compiler.orderColumns(metaRepo, fullTable, orderBy.get());
-        return new SortedTableMeta(fullTable, orderColumns);
-      } else {
-        return fullTable;
-      }
-    }
-
-    @Override
-    public void collectLocks(List<ResourceLock> locks) {
-      table.collectLocks(locks);
-    }
-
-    @Override
-    public Result execute(MetaRepo metaRepo) throws ModelException, IOException, IndexException {
-      ExposedTableReader reader = compile(metaRepo).reader();
-      String[] header = new String[reader.getColumns().size()];
-      reader.getColumns().keySet().asList().toArray(header);
-      List<Object[]> values = new ArrayList<>();
-      Object[] row = reader.read();
-      while (row != null) {
-        values.add(row);
-        row = reader.read();
-      }
-      return new QueryResult(header, values);
-    }
-
-    @Override
-    public void rollback() {
-    }
-
-    @Override
-    public void commit() throws IOException {
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static abstract class Table extends Node implements ResourceHolder {
-    public abstract ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException;
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class TableRef extends Table {
-    private final Ident ident;
-
-    public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
-      return metaRepo.table(ident);
-    }
-
-    @Override
-    public void collectLocks(List<ResourceLock> locks) {
-      locks.add(ResourceLock.read(ident));
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class TableExpr extends Table {
-    private final Select select;
-
-    public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
-      return select.compile(metaRepo);
-    }
-
-    @Override
-    public void collectLocks(List<ResourceLock> locks) {
-      select.collectLocks(locks);
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class JoinExpr extends Table {
-    private final Token joinType;
-    private final Table left;
-    private final Table right;
-    private final Expression onExpr;
-
-    public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
-      ExposedTableMeta leftTable = left.compile(metaRepo);
-      ExposedTableMeta rightTable = right.compile(metaRepo);
-      ImmutableList.Builder<ColumnMeta> leftJoinColumns = ImmutableList.builder();
-      ImmutableList.Builder<ColumnMeta> rightJoinColumns = ImmutableList.builder();
-      ImmutableList<BinaryExpression> exprs = ImmutableList
-          .copyOf(decompose(onExpr, new LinkedList<BinaryExpression>()));
-      for (BinaryExpression expr : exprs) {
-        leftJoinColumns.add(expr.getLeft().compile(leftTable, metaRepo));
-        rightJoinColumns.add(expr.getRight().compile(rightTable, metaRepo));
-      }
-      return new JoinTableMeta(joinType, leftTable, rightTable, leftJoinColumns.build(), rightJoinColumns.build());
-    }
-
-    private List<BinaryExpression> decompose(Expression expr, LinkedList<BinaryExpression> collector)
-        throws ModelException {
-      if (expr instanceof BinaryExpression) {
-        BinaryExpression binaryExpr = (BinaryExpression) expr;
-        if (binaryExpr.getToken().is(Tokens.AND)) {
-          decompose(binaryExpr.getLeft(), collector);
-          decompose(binaryExpr.getRight(), collector);
-        } else if (binaryExpr.getToken().is(Tokens.EQ)) {
-          collector.add(binaryExpr);
-        } else {
-          throw new ModelException(
-              "Only 'and' and '=' binary expressions are allowed in the 'on' expression of joins.");
-        }
-      }
-      return collector;
-    }
-
-    @Override
-    public void collectLocks(List<ResourceLock> locks) {
-      left.collectLocks(locks);
-      right.collectLocks(locks);
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class AsExpression extends Expression {
-    private final Ident ident;
-    private final Expression expr;
-
-    @Override
-    public DerivedColumn compile(
-        TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) throws ModelException {
-      return expr.compile(sourceTable, metaRepo, aggrColumns);
-    }
-
-    @Override
-    public AggregationExpression isAggregation() {
-      return expr.isAggregation();
-    }
-
-    @Override
-    public String getName(String def) {
-      return ident.getString();
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class AsTable extends Table {
-    private final Ident ident;
-    private final Table table;
-
-    @Override
-    public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
-      return new AliasedTableMeta(ident, table.compile(metaRepo));
-    }
-
-    @Override
-    public void collectLocks(List<ResourceLock> locks) {
-      table.collectLocks(locks);
-    }
   }
 
   @Data
@@ -563,26 +364,6 @@ public class SyntaxTree {
     @Override
     public AggregationExpression isAggregation() {
       return aggregation;
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class AsteriskExpression extends Expression {
-
-    @Override
-    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String getName(String def) {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public AggregationExpression isAggregation() {
-      return AggregationExpression.NO;
     }
   }
 

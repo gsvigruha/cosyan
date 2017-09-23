@@ -47,6 +47,7 @@ public class DeleteStatement {
     public void commit() throws IOException {
       if (deleter != null) {
         deleter.commit();
+        deleter.close();
       }
     }
 

@@ -1,8 +1,5 @@
 package com.cosyan.ui.sql;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -14,7 +11,6 @@ import com.cosyan.db.sql.Result.ErrorResult;
 import com.cosyan.db.sql.Result.QueryResult;
 import com.cosyan.db.sql.Result.StatementResult;
 import com.cosyan.db.sql.Result.TransactionResult;
-import com.google.common.collect.ImmutableList;
 
 public class SQLConnector {
 
@@ -38,12 +34,8 @@ public class SQLConnector {
         if (partialResult instanceof QueryResult) {
           QueryResult queryResult = (QueryResult) partialResult;
           partialResultObj.put("type", "query");
-          partialResultObj.put("header", ImmutableList.copyOf(queryResult.getHeader()));
-          List<ImmutableList<Object>> valuess = new ArrayList<>();
-          for (Object[] values : queryResult.getValues()) {
-            valuess.add(ImmutableList.copyOf(values));
-          }
-          partialResultObj.put("values", valuess);
+          partialResultObj.put("header", queryResult.getHeader());
+          partialResultObj.put("values", queryResult.getValues());
         } else if (partialResult instanceof StatementResult) {
           StatementResult statementResult = (StatementResult) partialResult;
           partialResultObj.put("type", "statement");

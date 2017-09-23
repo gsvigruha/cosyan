@@ -15,15 +15,17 @@ import com.cosyan.db.io.IOTestUtil.DummyMaterializedTableMeta;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.MetaRepo.ModelException;
-import com.cosyan.db.sql.Compiler;
+import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.sql.Parser;
 import com.cosyan.db.sql.Parser.ParserException;
+import com.cosyan.db.sql.SelectStatement.Select;
+import com.cosyan.db.sql.SyntaxTree;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 
 public class BuiltinFunctionsTest {
   private static MetaRepo metaRepo;
   private static Parser parser;
-  private static Compiler compiler;
 
   @BeforeClass
   public static void setUp() throws IOException, ModelException, ParseException {
@@ -31,7 +33,6 @@ public class BuiltinFunctionsTest {
     props.setProperty(Config.DATA_DIR, "/tmp/data");
     metaRepo = new MetaRepo(new Config(props));
     parser = new Parser();
-    compiler = new Compiler(metaRepo);
     metaRepo.registerTable("table", new DummyMaterializedTableMeta(
         ImmutableMap.of(
             "a", new BasicColumn(0, "a", DataTypes.StringType)),
@@ -39,9 +40,13 @@ public class BuiltinFunctionsTest {
             new Object[] { "abcABC" } }));
   }
 
+  private ExposedTableMeta query(SyntaxTree tree) throws ModelException {
+    return ((Select) Iterables.getOnlyElement(tree.getRoots())).compile(metaRepo);
+  }
+
   private void assertResult(String expr, Object result)
       throws ModelException, ConfigException, ParserException, IOException {
-    ExposedTableReader reader = compiler.query(parser.parse("select " + expr + " as r from table;")).reader();
+    ExposedTableReader reader = query(parser.parse("select " + expr + " as r from table;")).reader();
     assertEquals(ImmutableMap.of("r", result), reader.readColumns());
   }
 

@@ -72,6 +72,7 @@ public class InsertIntoStatement {
     public void commit() throws IOException {
       if (appender != null) {
         appender.commit();
+        appender.close();
       }
     }
 

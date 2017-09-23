@@ -14,12 +14,12 @@ public abstract class Result {
   @EqualsAndHashCode(callSuper = true)
   public static class QueryResult extends Result {
 
-    private final String[] header;
-    private final ImmutableList<Object[]> values;
+    private final ImmutableList<String> header;
+    private final ImmutableList<ImmutableList<Object>> values;
 
-    public QueryResult(String[] header, Iterable<Object[]> values) {
+    public QueryResult(Iterable<String> header, Iterable<ImmutableList<Object>> values) {
       super(true);
-      this.header = header;
+      this.header = ImmutableList.copyOf(header);
       this.values = ImmutableList.copyOf(values);
     }
   }
