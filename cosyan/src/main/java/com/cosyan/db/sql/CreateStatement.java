@@ -1,8 +1,10 @@
 package com.cosyan.db.sql;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
+import com.cosyan.db.lock.ResourceLock;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
@@ -12,6 +14,7 @@ import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
+import com.cosyan.db.sql.Result.MetaStatementResult;
 import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.sql.SyntaxTree.Node;
@@ -32,7 +35,7 @@ public class CreateStatement {
     private final ImmutableList<ConstraintDefinition> constraints;
 
     @Override
-    public boolean execute(MetaRepo metaRepo) throws ModelException, IOException {
+    public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
       ImmutableMap.Builder<String, BasicColumn> columnsBuilder = ImmutableMap.builder();
       int i = 0;
       for (ColumnDefinition column : columns) {
@@ -109,7 +112,25 @@ public class CreateStatement {
       tableMeta.setSimpleChecks(simpleChecksBuilder.build());
       tableMeta.setForeignKeys(foreignKeysBuilder.build());
       metaRepo.registerTable(name, tableMeta);
-      return true;
+      return new MetaStatementResult();
+    }
+
+    @Override
+    public void rollback() {
+      // TODO Auto-generated method stub
+      
+    }
+
+    @Override
+    public void commit() throws IOException {
+      // TODO Auto-generated method stub
+      
+    }
+
+    @Override
+    public void collectLocks(List<ResourceLock> locks) {
+      // TODO Auto-generated method stub
+      
     }
   }
 

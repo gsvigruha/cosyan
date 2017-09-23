@@ -30,6 +30,7 @@ import com.cosyan.db.sql.SyntaxTree.Select;
 import com.cosyan.db.sql.SyntaxTree.Statement;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 
 import lombok.Data;
 
@@ -39,17 +40,18 @@ public class Compiler {
   private final MetaRepo metaRepo;
 
   public ExposedTableMeta query(SyntaxTree tree) throws ModelException, ConfigException, ParserException {
-    if (!tree.isSelect()) {
-      throw new ModelException("Expected select.");
-    }
-    return ((Select) tree.getRoot()).compile(metaRepo);
+    Statement root = Iterables.getOnlyElement(tree.getRoots());
+    return ((Select) root).compile(metaRepo);
   }
 
-  public boolean statement(SyntaxTree tree) throws ModelException, ConfigException, ParserException, IOException, IndexException {
-    if (!tree.isStatement()) {
-      throw new ModelException("Expected statement.");
+  public Result statement(SyntaxTree tree)
+      throws ModelException, ConfigException, ParserException, IOException, IndexException {
+    Statement root = Iterables.getOnlyElement(tree.getRoots());
+    try {
+      return root.execute(metaRepo);
+    } catch (ModelException | IndexException | IOException e) {
+      throw e;
     }
-    return ((Statement) tree.getRoot()).execute(metaRepo);
   }
 
   public static ImmutableMap<String, ColumnMeta> tableColumns(

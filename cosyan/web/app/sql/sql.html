@@ -4,16 +4,21 @@
   <button ng-click="run()">Run query</button>
 </div>
 
-<table class="table table-striped">
-  <th ng-repeat="column in data.columns">
-    {{ column }}
-  </th>
-  <tr ng-repeat="row in data.result">
-    <td ng-repeat="element in row">
-    {{ element }}
-    </td>
-  </tr>
-</table>
+<div ng-repeat="r in data.result">
+  <table class="table table-striped" ng-show="r.type == 'query'">
+    <th ng-repeat="column in r.header">
+      {{ column }}
+    </th>
+    <tr ng-repeat="row in r.values">
+      <td ng-repeat="element in row">
+      {{ element }}
+      </td>
+    </tr>
+  </table>
+  <p ng-show="r.type == 'statement'">
+    {{ r.lines }}
+  </p>
+</div>
 <div ng-show="$error">
   {{ $error }}
 </div>

@@ -25,8 +25,8 @@ import com.cosyan.db.sql.SyntaxTree.IdentExpression;
 import com.cosyan.db.sql.SyntaxTree.JoinExpr;
 import com.cosyan.db.sql.SyntaxTree.Literal;
 import com.cosyan.db.sql.SyntaxTree.LongLiteral;
-import com.cosyan.db.sql.SyntaxTree.Node;
 import com.cosyan.db.sql.SyntaxTree.Select;
+import com.cosyan.db.sql.SyntaxTree.Statement;
 import com.cosyan.db.sql.SyntaxTree.StringLiteral;
 import com.cosyan.db.sql.SyntaxTree.Table;
 import com.cosyan.db.sql.SyntaxTree.TableExpr;
@@ -56,7 +56,17 @@ public class Parser {
     return new SyntaxTree(parseTokens(Iterators.peekingIterator(tokens.iterator())));
   }
 
-  private Node parseTokens(PeekingIterator<Token> tokens) throws ParserException {
+  private ImmutableList<Statement> parseTokens(PeekingIterator<Token> tokens) throws ParserException {
+    ImmutableList.Builder<Statement> roots = ImmutableList.builder();
+    while(tokens.hasNext()) {
+      Statement root = parseRoot(tokens);
+      roots.add(root);
+      assertNext(tokens, String.valueOf(Tokens.COMMA_COLON));
+    }
+    return roots.build();
+  }
+
+  private Statement parseRoot(PeekingIterator<Token> tokens) throws ParserException {
     if (tokens.peek().is(Tokens.SELECT)) {
       return parseSelect(tokens);
     } else if (tokens.peek().is(Tokens.CREATE)) {

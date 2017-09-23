@@ -17,10 +17,20 @@ public abstract class TableMultiIndex {
 
   public abstract void commit() throws IOException;
 
-  public abstract void rollback() throws IOException;
+  public abstract void rollback();
   
   public abstract boolean contains(Object key) throws IOException;
 
+  private boolean valid = true;
+
+  public void invalidate() {
+    valid = false;  
+  }
+  
+  public boolean isValid() {
+    return valid;
+  }
+  
   public static class LongTableMultiIndex extends TableMultiIndex {
 
     private LongMultiIndex index;
@@ -55,7 +65,7 @@ public abstract class TableMultiIndex {
     }
 
     @Override
-    public void rollback() throws IOException {
+    public void rollback() {
       index.rollback();
     }
 
@@ -99,7 +109,7 @@ public abstract class TableMultiIndex {
     }
 
     @Override
-    public void rollback() throws IOException {
+    public void rollback() {
       index.rollback();
     }
     

@@ -1,12 +1,15 @@
 package com.cosyan.db.sql;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
+import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.lock.ResourceLock;
 import com.cosyan.db.model.BuiltinFunctions;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
@@ -27,6 +30,7 @@ import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.sql.Parser.ParserException;
+import com.cosyan.db.sql.Result.QueryResult;
 import com.cosyan.db.sql.Tokens.Token;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -50,8 +54,16 @@ public class SyntaxTree {
 
   }
 
-  public static interface Statement {
-    public boolean execute(MetaRepo metaRepo) throws ModelException, IOException, IndexException;
+  public static interface ResourceHolder {
+    public void collectLocks(List<ResourceLock> locks);
+  }
+
+  public static interface Statement extends ResourceHolder {
+    public Result execute(MetaRepo metaRepo) throws ModelException, IndexException, IOException;
+
+    public void rollback();
+
+    public void commit() throws IOException;
   }
 
   public static interface Literal {
@@ -117,7 +129,7 @@ public class SyntaxTree {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class Select extends Node {
+  public static class Select extends Node implements Statement {
     private final ImmutableList<Expression> columns;
     private final Table table;
     private final Optional<Expression> where;
@@ -151,11 +163,38 @@ public class SyntaxTree {
         return fullTable;
       }
     }
+
+    @Override
+    public void collectLocks(List<ResourceLock> locks) {
+      table.collectLocks(locks);
+    }
+
+    @Override
+    public Result execute(MetaRepo metaRepo) throws ModelException, IOException, IndexException {
+      ExposedTableReader reader = compile(metaRepo).reader();
+      String[] header = new String[reader.getColumns().size()];
+      reader.getColumns().keySet().asList().toArray(header);
+      List<Object[]> values = new ArrayList<>();
+      Object[] row = reader.read();
+      while (row != null) {
+        values.add(row);
+        row = reader.read();
+      }
+      return new QueryResult(header, values);
+    }
+
+    @Override
+    public void rollback() {
+    }
+
+    @Override
+    public void commit() throws IOException {
+    }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static abstract class Table extends Node {
+  public static abstract class Table extends Node implements ResourceHolder {
     public abstract ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException;
   }
 
@@ -167,6 +206,11 @@ public class SyntaxTree {
     public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
       return metaRepo.table(ident);
     }
+
+    @Override
+    public void collectLocks(List<ResourceLock> locks) {
+      locks.add(ResourceLock.read(ident));
+    }
   }
 
   @Data
@@ -176,6 +220,11 @@ public class SyntaxTree {
 
     public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
       return select.compile(metaRepo);
+    }
+
+    @Override
+    public void collectLocks(List<ResourceLock> locks) {
+      select.collectLocks(locks);
     }
   }
 
@@ -217,6 +266,12 @@ public class SyntaxTree {
       }
       return collector;
     }
+
+    @Override
+    public void collectLocks(List<ResourceLock> locks) {
+      left.collectLocks(locks);
+      right.collectLocks(locks);
+    }
   }
 
   @Data
@@ -251,6 +306,11 @@ public class SyntaxTree {
     @Override
     public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
       return new AliasedTableMeta(ident, table.compile(metaRepo));
+    }
+
+    @Override
+    public void collectLocks(List<ResourceLock> locks) {
+      table.collectLocks(locks);
     }
   }
 
@@ -526,14 +586,14 @@ public class SyntaxTree {
     }
   }
 
-  private final Node root;
+  private final ImmutableList<Statement> roots;
 
-  public boolean isSelect() {
-    return root instanceof Select;
+  public SyntaxTree(Statement root) {
+    this.roots = ImmutableList.of(root);
   }
 
-  public boolean isStatement() {
-    return root instanceof Statement;
+  public SyntaxTree(ImmutableList<Statement> roots) {
+    this.roots = roots;
   }
 
   public static void assertType(DataType<?> expectedType, DataType<?> dataType) throws ModelException {

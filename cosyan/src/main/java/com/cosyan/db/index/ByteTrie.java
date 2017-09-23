@@ -98,6 +98,7 @@ public abstract class ByteTrie<K, V> {
   private final String fileName;
   protected RandomAccessFile raf;
   private long filePointer;
+  private long stableFilePointer;
 
   private final HashMap<Long, Node<K, V>> trie = new HashMap<>();
   private final LinkedHashMap<Long, Node<K, V>> pendingNodes = new LinkedHashMap<>();
@@ -109,6 +110,7 @@ public abstract class ByteTrie<K, V> {
       saveIndex(0, new long[KEYS_SIZE]);
     }
     filePointer = raf.length();
+    stableFilePointer = filePointer;
   }
 
   public void close() throws IOException {
@@ -140,15 +142,16 @@ public abstract class ByteTrie<K, V> {
         saveLeaf(node.getKey(), ((Leaf<K, V>) node.getValue()));
       }
     }
-    trie.putAll(pendingNodes);
-    pendingNodes.clear();
     if (filePointer != raf.length()) {
       throw new RuntimeIndexException("Inconsistent state.");
     }
+    trie.putAll(pendingNodes);
+    pendingNodes.clear();
+    stableFilePointer = filePointer;
   }
 
-  public void rollback() throws IOException {
-    filePointer = raf.length();
+  public void rollback() {
+    filePointer = stableFilePointer;
     pendingNodes.clear();
   }
 

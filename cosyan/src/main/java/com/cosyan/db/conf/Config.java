@@ -49,6 +49,10 @@ public class Config {
     return props.getProperty(DATA_DIR) + File.separator + "index";
   }
 
+  public String journalDir() {
+    return props.getProperty(DATA_DIR) + File.separator + "journal";
+  }
+
   public static class ConfigException extends Exception {
     private static final long serialVersionUID = 1L;
 

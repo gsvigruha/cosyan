@@ -76,6 +76,16 @@ public abstract class TableMeta {
     private ImmutableMap<String, ForeignKey> foreignKeys = ImmutableMap.of();
     private ImmutableMap<String, ForeignKey> reverseForeignKeys = ImmutableMap.of();
 
+    private boolean valid = true;
+
+    public void invalidate() {
+      valid = false;
+    }
+
+    public boolean isValid() {
+      return valid;
+    }
+
     @Override
     public ImmutableMap<String, BasicColumn> columns() {
       return columns;

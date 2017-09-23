@@ -1,15 +1,18 @@
 package com.cosyan.db.sql;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.TableWriter.TableUpdater;
+import com.cosyan.db.lock.ResourceLock;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
+import com.cosyan.db.sql.Result.StatementResult;
 import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.sql.SyntaxTree.Node;
@@ -36,8 +39,10 @@ public class UpdateStatement {
     private final ImmutableList<SetExpression> updates;
     private final Optional<Expression> where;
 
+    private TableUpdater updater;
+
     @Override
-    public boolean execute(MetaRepo metaRepo) throws ModelException, IOException, IndexException {
+    public Result execute(MetaRepo metaRepo) throws ModelException, IOException, IndexException {
       MaterializedTableMeta tableMeta = (MaterializedTableMeta) metaRepo.table(table);
       ImmutableMap.Builder<Integer, DerivedColumn> columnExprs = ImmutableMap.builder();
       for (SetExpression update : updates) {
@@ -54,11 +59,28 @@ public class UpdateStatement {
       } else {
         whereColumn = ColumnMeta.TRUE_COLUMN;
       }
-      TableUpdater updater = tableMeta.updater(columnExprs.build(), whereColumn);
+      updater = tableMeta.updater(columnExprs.build(), whereColumn);
       updater.init();
-      updater.update();
-      updater.commit();
-      return true;
+      return new StatementResult(updater.update());
+    }
+
+    @Override
+    public void rollback() {
+      if (updater != null) {
+        updater.rollback();
+      }
+    }
+
+    @Override
+    public void commit() throws IOException {
+      if (updater != null) {
+        updater.close();
+      }
+    }
+
+    @Override
+    public void collectLocks(List<ResourceLock> locks) {
+      locks.add(ResourceLock.readWrite(table));
     }
   }
 }

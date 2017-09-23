@@ -2,14 +2,17 @@ package com.cosyan.db.sql;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.TableWriter.TableAppender;
+import com.cosyan.db.lock.ResourceLock;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
+import com.cosyan.db.sql.Result.StatementResult;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.sql.SyntaxTree.Literal;
 import com.cosyan.db.sql.SyntaxTree.Node;
@@ -27,12 +30,14 @@ public class InsertIntoStatement {
     private final Ident table;
     private final Optional<ImmutableList<Ident>> columns;
     private final ImmutableList<ImmutableList<Literal>> valuess;
+    
+    private TableAppender appender;
 
     @Override
-    public boolean execute(MetaRepo metaRepo) throws ModelException, IOException, IndexException {
+    public Result execute(MetaRepo metaRepo) throws ModelException, IOException, IndexException {
       MaterializedTableMeta tableMeta = (MaterializedTableMeta) metaRepo.table(table);
       Object[] fullValues = new Object[tableMeta.columns().size()];
-      TableAppender appender = tableMeta.appender();
+      appender = tableMeta.appender();
       appender.init();
       for (ImmutableList<Literal> values : valuess) {
         if (columns.isPresent()) {
@@ -53,8 +58,26 @@ public class InsertIntoStatement {
         }
         appender.write(fullValues);
       }
-      appender.commit();
-      return true;
+      return new StatementResult(valuess.size());
+    }
+
+    @Override
+    public void rollback() {
+      if (appender != null) {
+        appender.rollback();
+      }
+    }
+
+    @Override
+    public void commit() throws IOException {
+      if (appender != null) {
+        appender.commit();
+      }
+    }
+
+    @Override
+    public void collectLocks(List<ResourceLock> locks) {
+      locks.add(ResourceLock.readWrite(table));
     }
   }
 }

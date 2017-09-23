@@ -73,6 +73,7 @@ public abstract class ByteMultiTrie<T> {
   private final String fileName;
   protected RandomAccessFile raf;
   private long filePointer;
+  private long stableFilePointer;
 
   private final LinkedHashMap<Long, PendingNode> pendingNodes = new LinkedHashMap<>();
 
@@ -84,7 +85,8 @@ public abstract class ByteMultiTrie<T> {
       // Let's not start indexing from 0, since that is the null file pointer.
       raf.write(0);
     }
-    this.filePointer = raf.length();
+    filePointer = raf.length();
+    stableFilePointer = filePointer;
   }
 
   public void close() throws IOException {
@@ -100,10 +102,11 @@ public abstract class ByteMultiTrie<T> {
     for (Map.Entry<Long, PendingNode> node : pendingNodes.entrySet()) {
       saveNode(node.getKey(), node.getValue());
     }
-    pendingNodes.clear();
     if (filePointer != raf.length()) {
       throw new RuntimeIndexException("Inconsistent state.");
     }
+    pendingNodes.clear();
+    stableFilePointer = filePointer;
   }
 
   private void saveNode(long filePointer, PendingNode node) throws IOException {
@@ -115,9 +118,9 @@ public abstract class ByteMultiTrie<T> {
     raf.write(bb.array());
   }
 
-  public void rollback() throws IOException {
+  public void rollback() {
     trie.rollback();
-    filePointer = raf.length();
+    filePointer = stableFilePointer;
     pendingNodes.clear();
   }
 

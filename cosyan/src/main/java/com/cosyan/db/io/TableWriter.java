@@ -57,7 +57,8 @@ public class TableWriter {
         if (foreignIndexes.containsKey(column.getName())) {
           for (TableIndex foreignIndex : foreignIndexes.get(column.getName())) {
             if (!foreignIndex.contains(value)) {
-              throw new ModelException("Foreign key violation.");
+              throw new ModelException(String.format(
+                  "Foreign key violation, value '%s' not present.", value));
             }
           }
         }
@@ -71,24 +72,37 @@ public class TableWriter {
     }
 
     public void commit() throws IOException {
+      try {
+        fos.write(bos.toByteArray());
+      } catch (IOException e) {
+        rollback();
+        fos.getChannel().truncate(fileIndex0);
+        throw e;
+      }
       for (TableIndex index : indexes.values()) {
-        index.commit();
+        try {
+          index.commit();
+        } catch (IOException e) {
+          index.invalidate();
+        }
       }
       for (TableMultiIndex index : multiIndexes.values()) {
-        index.commit();
+        try {
+          index.commit();
+        } catch (IOException e) {
+          index.invalidate();
+        }
       }
-      fos.write(bos.toByteArray());
       close();
     }
 
-    public void rollback() throws IOException {
+    public void rollback() {
       for (TableIndex index : indexes.values()) {
         index.rollback();
       }
       for (TableMultiIndex index : multiIndexes.values()) {
         index.rollback();
       }
-      close();
     }
 
     public void close() throws IOException {
@@ -108,12 +122,13 @@ public class TableWriter {
     private final ImmutableMultimap<String, TableMultiIndex> reversedForeignIndexes;
     private List<Long> recordsToDelete = new LinkedList<>();
 
-    public void delete() throws IOException, ModelException {
+    public long delete() throws IOException, ModelException {
+      long deletedLines = 0L;
       do {
         long pos = file.getFilePointer();
         Object[] values = Serializer.read(columns, file);
         if (values == null) {
-          return;
+          return deletedLines;
         }
         if ((boolean) whereColumn.getValue(values)) {
           recordsToDelete.add(pos);
@@ -128,37 +143,51 @@ public class TableWriter {
             if (reversedForeignIndexes.containsKey(column.getName())) {
               for (TableMultiIndex reverseForeignIndex : reversedForeignIndexes.get(column.getName())) {
                 if (reverseForeignIndex.contains(value)) {
-                  throw new ModelException("Foreign key violation.");
+                  throw new ModelException(String.format(
+                      "Foreign key violation, key value '%s' has references.", value));
                 }
               }
             }
           }
+          deletedLines++;
         }
       } while (true);
     }
 
     public void commit() throws IOException {
+      try {
+        for (Long pos : recordsToDelete) {
+          file.seek(pos);
+          file.writeByte(0);
+        }
+      } catch (IOException e) {
+        rollback();
+        throw e;
+      }
       for (TableIndex index : indexes.values()) {
-        index.commit();
+        try {
+          index.commit();
+        } catch (IOException e) {
+          index.invalidate();
+        }
       }
       for (TableMultiIndex index : multiIndexes.values()) {
-        index.commit();
-      }
-      for (Long pos : recordsToDelete) {
-        file.seek(pos);
-        file.writeByte(0);
+        try {
+          index.commit();
+        } catch (IOException e) {
+          index.invalidate();
+        }
       }
       close();
     }
 
-    public void rollback() throws IOException {
+    public void rollback() {
       for (TableIndex index : indexes.values()) {
         index.rollback();
       }
       for (TableMultiIndex index : multiIndexes.values()) {
         index.rollback();
       }
-      close();
     }
 
     public void close() throws IOException {
@@ -199,7 +228,8 @@ public class TableWriter {
             if (reversedForeignIndexes.containsKey(column.getName())) {
               for (TableMultiIndex reverseForeignIndex : reversedForeignIndexes.get(column.getName())) {
                 if (reverseForeignIndex.contains(value)) {
-                  throw new ModelException("Foreign key violation.");
+                  throw new ModelException(String.format(
+                      "Foreign key violation, key value '%s' has references.", value));
                 }
               }
             }
@@ -215,27 +245,26 @@ public class TableWriter {
     }
 
     public void commit() throws IOException {
-      for (TableIndex index : indexes.values()) {
-        index.commit();
-      }
-      for (TableMultiIndex index : multiIndexes.values()) {
-        index.commit();
-      }
       for (Long pos : recordsToDelete) {
         file.seek(pos);
         file.writeByte(0);
       }
+      for (TableIndex index : indexes.values()) {
+        index.commit();
+      }
+      for (TableMultiIndex index : multiIndexes.values()) {
+        index.commit();
+      }
       close();
     }
 
-    public void rollback() throws IOException {
+    public void rollback() {
       for (TableIndex index : indexes.values()) {
         index.rollback();
       }
       for (TableMultiIndex index : multiIndexes.values()) {
         index.rollback();
       }
-      close();
     }
 
     public void close() throws IOException {
@@ -252,12 +281,12 @@ public class TableWriter {
       appender.init();
     }
 
-    public boolean update() throws IOException, ModelException, IndexException {
+    public long update() throws IOException, ModelException, IndexException {
       ImmutableList<Object[]> valuess = deleter.deleteAndCollect();
       for (Object[] values : valuess) {
         appender.write(values);
       }
-      return true;
+      return valuess.size();
     }
 
     public void commit() throws IOException {
@@ -265,15 +294,17 @@ public class TableWriter {
       appender.commit();
     }
 
-    public void rollback() throws IOException {
+    public void rollback() {
       deleter.rollback();
       appender.rollback();
-      close();
     }
 
     public void close() throws IOException {
-      deleter.close();
-      appender.close();
+      try {
+        deleter.close();
+      } finally {
+        appender.close();
+      }
     }
   }
 }

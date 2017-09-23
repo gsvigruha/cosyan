@@ -18,8 +18,18 @@ public abstract class TableIndex {
 
   public abstract void commit() throws IOException;
 
-  public abstract void rollback() throws IOException;
+  public abstract void rollback();
 
+  private boolean valid = true;
+
+  public void invalidate() {
+    valid = false;  
+  }
+  
+  public boolean isValid() {
+    return valid;
+  }
+  
   public static class LongTableIndex extends TableIndex {
 
     private LongIndex index;
@@ -49,7 +59,7 @@ public abstract class TableIndex {
     }
 
     @Override
-    public void rollback() throws IOException {
+    public void rollback() {
       index.rollback();
     }
 
@@ -88,7 +98,7 @@ public abstract class TableIndex {
     }
 
     @Override
-    public void rollback() throws IOException {
+    public void rollback() {
       index.rollback();
     }
 

@@ -10,31 +10,27 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.json.simple.JSONObject;
 
-import com.cosyan.db.sql.Compiler;
+import com.cosyan.db.DBApi;
 
 public class SQLServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
 
   private final SQLConnector sqlConnector;
 
-  public SQLServlet(Compiler compiler) {
-    this.sqlConnector = new SQLConnector(compiler);
+  public SQLServlet(DBApi dbApi) {
+    this.sqlConnector = new SQLConnector(dbApi);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     String sql = req.getParameter("sql");
-    try {
-      JSONObject result = sqlConnector.run(sql);
-      resp.setStatus(HttpStatus.OK_200);
-      resp.getWriter().println(result);
-    } catch(Exception e) {
-      resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-      JSONObject error = new JSONObject();
-      error.put("error", e.getMessage());
-      resp.getWriter().println(error);
+    JSONObject result = sqlConnector.run(sql);
+    if (result.containsKey("error")) {
+      resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);  
+    } else {
+      resp.setStatus(HttpStatus.OK_200);  
     }
+    resp.getWriter().println(result);
   }
 }
