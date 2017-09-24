@@ -11,6 +11,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.lock.LockManager;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
@@ -24,9 +25,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
 public abstract class UnitTestBase {
-  private static DBApi dbApi;
   private static Session session;
 
+  protected static DBApi dbApi;
   protected static MetaRepo metaRepo;
 
   @BeforeClass
@@ -35,7 +36,8 @@ public abstract class UnitTestBase {
     Properties props = new Properties();
     props.setProperty(Config.DATA_DIR, "/tmp/data");
     Config config = new Config(props);
-    metaRepo = new MetaRepo(config);
+    LockManager lockManager = new LockManager();
+    metaRepo = new MetaRepo(config, lockManager);
     TransactionHandler transactionHandler = new TransactionHandler();
     TransactionJournal transactionJournal = new TransactionJournal(config);
     dbApi = new DBApi(metaRepo, transactionHandler, transactionJournal);
@@ -54,10 +56,14 @@ public abstract class UnitTestBase {
     return (ErrorResult) session.execute(sql);
   }
 
-  protected QueryResult query(String sql) {
+  public static QueryResult query(String sql, Session session) {
     return (QueryResult) Iterables.getOnlyElement(((TransactionResult) session.execute(sql)).getResults());
   }
 
+  protected QueryResult query(String sql) {
+    return query(sql, session);
+  }
+  
   protected void assertHeader(String[] expected, QueryResult result) {
     assertEquals(ImmutableList.copyOf(expected), result.getHeader());
   }

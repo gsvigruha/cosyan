@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import com.cosyan.db.io.RecordReader.Record;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
@@ -52,11 +53,13 @@ public abstract class TableReader {
   public static class MaterializedTableReader extends ExposedTableReader {
 
     private final DataInputStream inputStream;
+    private final RecordReader reader;
 
     public MaterializedTableReader(
         DataInputStream inputStream, ImmutableMap<String, ? extends ColumnMeta> columns) {
       super(columns);
       this.inputStream = inputStream;
+      this.reader = new RecordReader(columns.values().asList(), inputStream);
     }
 
     @Override
@@ -66,11 +69,11 @@ public abstract class TableReader {
 
     @Override
     public Object[] read() throws IOException {
-      Object[] values = Serializer.read(columns.values().asList(), inputStream);
-      if (values == null) {
+      Record record = reader.read();
+      if (record == RecordReader.EMPTY) {
         close();
       }
-      return values;
+      return record.getValues();
     }
   }
 

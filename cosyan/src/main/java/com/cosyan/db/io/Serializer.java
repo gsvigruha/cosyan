@@ -4,7 +4,6 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,26 +26,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 public class Serializer {
-
-  public static Object[] read(ImmutableList<? extends ColumnMeta> columns, DataInput inputStream)
-      throws IOException {
-    do {
-      final byte desc;
-      try {
-        desc = inputStream.readByte();
-      } catch (EOFException e) {
-        return null;
-      }
-      Object[] values = new Object[columns.size()];
-      int i = 0; // ImmutableMap.entrySet() keeps iteration order.
-      for (ColumnMeta column : columns) {
-        values[i++] = readColumn(column.getType(), inputStream);
-      }
-      if (desc == 1) {
-        return values;
-      }
-    } while (true);
-  }
 
   public static Object readColumn(DataType<?> type, DataInput inputStream) throws IOException {
     final Object value;
@@ -78,6 +57,25 @@ public class Serializer {
     return value;
   }
 
+  public static int size(DataType<?> type, Object value) {
+    if (value == DataTypes.NULL) {
+      return 1;
+    }
+    if (type == DataTypes.BoolType) {
+      return 2;
+    } else if (type == DataTypes.LongType) {
+      return 9;
+    } else if (type == DataTypes.DoubleType) {
+      return 9;
+    } else if (type == DataTypes.StringType) {
+      return 5 + ((String) value).length() * 2;
+    } else if (type == DataTypes.DateType) {
+      return 9;
+    } else {
+      throw new UnsupportedOperationException();
+    } 
+  }
+  
   public static void writeColumn(Object value, DataType<?> dataType, DataOutput stream) throws IOException {
     if (value == DataTypes.NULL) {
       stream.writeByte(0);

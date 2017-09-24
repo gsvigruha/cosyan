@@ -93,4 +93,29 @@ public class DeleteTest extends UnitTestBase {
     assertEquals(8L, t5a.get("y"));
     org.junit.Assert.assertArrayEquals(new long[0], t6b.get("x"));
   }
+
+  @Test
+  public void testMultipleDeletes() throws Exception {
+    execute("create table t7 (a varchar, b integer, c float);");
+    execute("insert into t7 values ('x', 1, 2.0);");
+    execute("insert into t7 values ('y', 3, 4.0);");
+    execute("insert into t7 values ('z', 5, 6.0);");
+    execute("insert into t7 values ('w', 7, 8.0);");
+    QueryResult r1 = query("select * from t7;");
+    assertHeader(new String[] { "a", "b", "c" }, r1);
+    assertValues(new Object[][] {
+        { "x", 1L, 2.0 },
+        { "y", 3L, 4.0 },
+        { "z", 5L, 6.0 },
+        { "w", 7L, 8.0 }
+    }, r1);
+
+    execute("delete from t7 where a = 'z';");
+    execute("delete from t7 where b = 3;");
+    execute("delete from t7 where a = 'x';");
+    QueryResult r2 = query("select * from t7;");
+    assertValues(new Object[][] {
+        { "w", 7L, 8.0 }
+    }, r2);
+  }
 }

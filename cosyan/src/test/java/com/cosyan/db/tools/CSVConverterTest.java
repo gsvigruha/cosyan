@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.lock.LockManager;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo;
@@ -33,7 +34,7 @@ public class CSVConverterTest {
   public static void setUp() throws IOException, ModelException, ParseException {
     Properties props = new Properties();
     props.setProperty(Config.DATA_DIR, "/tmp");
-    metaRepo = new MetaRepo(new Config(props));
+    metaRepo = new MetaRepo(new Config(props), new LockManager());
     parser = new Parser();
   }
 

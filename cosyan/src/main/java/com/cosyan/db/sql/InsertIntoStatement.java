@@ -30,7 +30,7 @@ public class InsertIntoStatement {
     private final Ident table;
     private final Optional<ImmutableList<Ident>> columns;
     private final ImmutableList<ImmutableList<Literal>> valuess;
-    
+
     private TableAppender appender;
 
     @Override
@@ -74,6 +74,11 @@ public class InsertIntoStatement {
         appender.commit();
         appender.close();
       }
+    }
+
+    @Override
+    public void cancel() {
+
     }
 
     @Override

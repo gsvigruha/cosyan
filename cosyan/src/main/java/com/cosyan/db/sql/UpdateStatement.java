@@ -80,6 +80,11 @@ public class UpdateStatement {
     }
 
     @Override
+    public void cancel() {
+
+    }
+
+    @Override
     public void collectLocks(List<ResourceLock> locks) {
       locks.add(ResourceLock.readWrite(table));
     }

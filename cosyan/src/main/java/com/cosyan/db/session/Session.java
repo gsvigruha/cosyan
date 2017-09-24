@@ -10,9 +10,6 @@ import com.cosyan.db.sql.SyntaxTree;
 import com.cosyan.db.transaction.Transaction;
 import com.cosyan.db.transaction.TransactionHandler;
 
-import lombok.Data;
-
-@Data
 public class Session {
 
   private final Parser parser;
@@ -20,6 +17,16 @@ public class Session {
   private final MetaRepo metaRepo;
   private final TransactionHandler transactionHandler;
   private final TransactionJournal transactionJournal;
+
+  public Session(
+      MetaRepo metaRepo,
+      TransactionHandler transactionHandler,
+      TransactionJournal transactionJournal) {
+    this.metaRepo = metaRepo;
+    this.transactionHandler = transactionHandler;
+    this.transactionJournal = transactionJournal;
+    this.parser = new Parser();
+  }
 
   public Result execute(String sql) {
     try {

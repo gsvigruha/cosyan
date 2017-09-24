@@ -105,6 +105,11 @@ public class SelectStatement {
     public void commit() throws IOException {
     }
 
+    @Override
+    public void cancel() {
+
+    }
+
     private ImmutableMap<String, ColumnMeta> tableColumns(
         MetaRepo metaRepo,
         TableMeta sourceTable,

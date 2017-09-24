@@ -13,6 +13,7 @@ import com.cosyan.db.conf.Config;
 import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.io.IOTestUtil.DummyMaterializedTableMeta;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.lock.LockManager;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
@@ -31,7 +32,7 @@ public class BuiltinFunctionsTest {
   public static void setUp() throws IOException, ModelException, ParseException {
     Properties props = new Properties();
     props.setProperty(Config.DATA_DIR, "/tmp/data");
-    metaRepo = new MetaRepo(new Config(props));
+    metaRepo = new MetaRepo(new Config(props), new LockManager());
     parser = new Parser();
     metaRepo.registerTable("table", new DummyMaterializedTableMeta(
         ImmutableMap.of(

@@ -111,4 +111,19 @@ public class UpdateTest extends UnitTestBase {
     assertEquals(false, t7b.contains("x"));
     org.junit.Assert.assertArrayEquals(new long[] { 19L }, t7b.get("y"));
   }
+
+  @Test
+  public void testUpdateMultipleTimes() throws Exception {
+    execute("create table t8 (a integer, b float);");
+    execute("insert into t8 values (1, 1.0);");
+    QueryResult r1 = query("select * from t8;");
+    assertHeader(new String[] { "a", "b" }, r1);
+    assertValues(new Object[][] { { 1L, 1.0 } }, r1);
+
+    for (int i = 0; i < 10; i++) {
+      execute("update t8 set a = a + 1, b = b + 1.0;");
+    }
+    QueryResult r2 = query("select * from t8;");
+    assertValues(new Object[][] { { 11L, 11.0 } }, r2);
+  }
 }

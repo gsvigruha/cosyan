@@ -10,6 +10,7 @@ import java.util.Map;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
+import com.cosyan.db.io.RecordReader.Record;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
@@ -121,17 +122,22 @@ public class TableWriter {
     private final ImmutableMap<String, TableMultiIndex> multiIndexes;
     private final ImmutableMultimap<String, TableMultiIndex> reversedForeignIndexes;
     private List<Long> recordsToDelete = new LinkedList<>();
+    private RecordReader reader;
+
+    public void init() {
+      reader = new RecordReader(columns, file);
+    }
 
     public long delete() throws IOException, ModelException {
       long deletedLines = 0L;
       do {
-        long pos = file.getFilePointer();
-        Object[] values = Serializer.read(columns, file);
-        if (values == null) {
+        Record record = reader.read();
+        if (record == RecordReader.EMPTY) {
           return deletedLines;
         }
+        Object[] values = record.getValues();
         if ((boolean) whereColumn.getValue(values)) {
-          recordsToDelete.add(pos);
+          recordsToDelete.add(record.getFilePointer());
           for (BasicColumn column : columns) {
             Object value = values[column.getIndex()];
             if (indexes.containsKey(column.getName())) {
@@ -206,17 +212,22 @@ public class TableWriter {
     private final ImmutableMap<String, TableMultiIndex> multiIndexes;
     private final ImmutableMultimap<String, TableMultiIndex> reversedForeignIndexes;
     private List<Long> recordsToDelete = new LinkedList<>();
+    private RecordReader reader;
+
+    public void init() {
+      reader = new RecordReader(columns, file);
+    }
 
     public ImmutableList<Object[]> deleteAndCollect() throws IOException, ModelException {
       ImmutableList.Builder<Object[]> updatedRecords = ImmutableList.builder();
       do {
-        long pos = file.getFilePointer();
-        Object[] values = Serializer.read(columns, file);
-        if (values == null) {
+        Record record = reader.read();
+        if (record == RecordReader.EMPTY) {
           return updatedRecords.build();
         }
+        Object[] values = record.getValues();
         if ((boolean) whereColumn.getValue(values)) {
-          recordsToDelete.add(pos);
+          recordsToDelete.add(record.getFilePointer());
           for (BasicColumn column : columns) {
             Object value = values[column.getIndex()];
             if (indexes.containsKey(column.getName())) {
@@ -278,6 +289,7 @@ public class TableWriter {
     private final TableAppender appender;
 
     public void init() throws IOException {
+      deleter.init();
       appender.init();
     }
 

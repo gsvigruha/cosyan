@@ -3,7 +3,6 @@ package com.cosyan.db;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.session.Session;
-import com.cosyan.db.sql.Parser;
 import com.cosyan.db.transaction.TransactionHandler;
 
 import lombok.Data;
@@ -16,6 +15,6 @@ public class DBApi {
   private final TransactionJournal transactionJournal;
 
   public Session getSession() {
-    return new Session(new Parser(), metaRepo, transactionHandler, transactionJournal);
+    return new Session(metaRepo, transactionHandler, transactionJournal);
   }
 }

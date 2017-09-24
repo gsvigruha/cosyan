@@ -18,6 +18,8 @@ import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
 import com.cosyan.db.index.ByteTrie.LongIndex;
 import com.cosyan.db.index.ByteTrie.StringIndex;
 import com.cosyan.db.io.Serializer;
+import com.cosyan.db.lock.LockManager;
+import com.cosyan.db.lock.ResourceLock;
 import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
@@ -43,9 +45,12 @@ public class MetaRepo {
 
   private final ConcurrentHashMap<String, SimpleFunction<?>> simpleFunctions;
   private final ConcurrentHashMap<String, AggrFunction> aggrFunctions;
+  
+  private final LockManager lockManager;
 
-  public MetaRepo(Config config) throws IOException, ModelException {
+  public MetaRepo(Config config, LockManager lockManager) throws IOException, ModelException {
     this.config = config;
+    this.lockManager = lockManager;
     this.tables = new ConcurrentHashMap<>();
     this.uniqueIndexes = new ConcurrentHashMap<>();
     this.multiIndexes = new ConcurrentHashMap<>();
@@ -181,6 +186,7 @@ public class MetaRepo {
     tableOut.close();
     referencesOut.close();
     tables.put(tableName, tableMeta);
+    lockManager.registerLock(tableName);
   }
 
   public void registerUniqueIndex(MaterializedTableMeta table, BasicColumn column) throws ModelException, IOException {
@@ -267,5 +273,13 @@ public class MetaRepo {
     public ModelRuntimeException(Exception e) {
       super(e);
     }
+  }
+
+  public boolean tryLock(ImmutableList<ResourceLock> locks) {
+    return lockManager.tryLock(locks);
+  }
+
+  public void unlock(ImmutableList<ResourceLock> locks) {
+    lockManager.unlock(locks);
   }
 }

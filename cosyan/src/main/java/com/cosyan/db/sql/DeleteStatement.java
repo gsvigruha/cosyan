@@ -33,6 +33,7 @@ public class DeleteStatement {
       MaterializedTableMeta tableMeta = (MaterializedTableMeta) metaRepo.table(table);
       DerivedColumn whereColumn = where.compile(tableMeta, metaRepo);
       deleter = tableMeta.deleter(whereColumn);
+      deleter.init();
       return new StatementResult(deleter.delete());
     }
 
@@ -54,6 +55,11 @@ public class DeleteStatement {
     @Override
     public void collectLocks(List<ResourceLock> locks) {
       locks.add(ResourceLock.readWrite(table));
+    }
+
+    @Override
+    public void cancel() {
+      
     }
   }
 }

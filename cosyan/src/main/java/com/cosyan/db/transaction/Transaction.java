@@ -3,6 +3,8 @@ package com.cosyan.db.transaction;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.lock.ResourceLock;
@@ -20,6 +22,8 @@ public class Transaction {
 
   private final long trxNumber;
   private final ImmutableList<Statement> statements;
+
+  private AtomicBoolean cancelled = new AtomicBoolean(false);
 
   public Transaction(long trxNumber, Iterable<Statement> statements) {
     this.trxNumber = trxNumber;
@@ -42,8 +46,26 @@ public class Transaction {
     return ImmutableList.copyOf(locks);
   }
 
+  public void lock(ImmutableList<ResourceLock> locks, MetaRepo metaRepo) {
+    boolean locked = false;
+    Random random = new Random();
+    while (!locked && !cancelled.get()) {
+      if (metaRepo.tryLock(locks)) {
+        locked = true;
+      } else {
+        try {
+          Thread.sleep(random.nextInt(100));
+        } catch (InterruptedException e) {
+          cancelled.set(true);
+        }
+      }
+    }
+  }
+
   public Result execute(MetaRepo metaRepo, TransactionJournal journal) {
+    ImmutableList<ResourceLock> locks = collectLocks();
     try {
+      lock(locks, metaRepo);
       journal.start(trxNumber);
       List<Result> results = new ArrayList<>();
       try {
@@ -80,6 +102,15 @@ public class Transaction {
       journal.crash(trxNumber);
       e.printStackTrace();
       return new CrashResult(e);
+    } finally {
+      metaRepo.unlock(locks);
+    }
+  }
+
+  public void cancel() {
+    cancelled.set(true);
+    for (Statement statement : statements) {
+      statement.cancel();
     }
   }
 }

@@ -52,6 +52,8 @@ public class SyntaxTree {
     public void rollback();
 
     public void commit() throws IOException;
+
+    public void cancel();
   }
 
   public static interface Literal {
