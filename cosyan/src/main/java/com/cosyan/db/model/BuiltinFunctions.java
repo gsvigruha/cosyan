@@ -76,7 +76,7 @@ public class BuiltinFunctions {
 
     public abstract Object aggregateImpl(Object a, Object x);
 
-    public abstract T finish(Object x);
+    public abstract Object finish(Object x);
   }
 
   @Data

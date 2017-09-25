@@ -1,7 +1,7 @@
 package com.cosyan.db.model;
 
-import com.cosyan.db.io.Aggregation.GlobalAggrTableReader;
-import com.cosyan.db.io.Aggregation.KeyValueAggrTableReader;
+import com.cosyan.db.io.AggrReader.GlobalAggrTableReader;
+import com.cosyan.db.io.AggrReader.KeyValueAggrTableReader;
 import com.cosyan.db.io.TableReader;
 import com.cosyan.db.io.TableReader.DerivedTableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;

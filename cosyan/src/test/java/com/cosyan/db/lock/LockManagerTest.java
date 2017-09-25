@@ -129,6 +129,7 @@ public class LockManagerTest extends UnitTestBase {
     }
     {
       QueryResult result = query("select min(x), max(x) from t4;", s);
+      System.out.println("  min, max: " + result.getValues().get(0));
       assert((Long) result.getValues().get(0).get(0) < (Long) result.getValues().get(0).get(1));
     }
   }

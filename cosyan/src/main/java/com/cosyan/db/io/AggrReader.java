@@ -11,7 +11,7 @@ import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-public abstract class Aggregation extends TableReader {
+public abstract class AggrReader extends TableReader {
 
   protected final TableReader sourceReader;
   protected final ColumnMeta havingColumn;
@@ -21,7 +21,7 @@ public abstract class Aggregation extends TableReader {
   protected Iterator<Object[]> iterator;
   protected boolean aggregated;
 
-  protected Aggregation(
+  protected AggrReader(
       TableReader sourceReader,
       ImmutableList<AggrColumn> aggrColumns,
       ColumnMeta havingColumn,
@@ -60,7 +60,7 @@ public abstract class Aggregation extends TableReader {
     return values;
   }
 
-  public static class KeyValueAggrTableReader extends Aggregation {
+  public static class KeyValueAggrTableReader extends AggrReader {
 
     private final ImmutableMap<String, ? extends ColumnMeta> keyColumns;
 
@@ -133,7 +133,7 @@ public abstract class Aggregation extends TableReader {
     }
   }
 
-  public static class GlobalAggrTableReader extends Aggregation {
+  public static class GlobalAggrTableReader extends AggrReader {
 
     public GlobalAggrTableReader(
         TableReader sourceReader,
