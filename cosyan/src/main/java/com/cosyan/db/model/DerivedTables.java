@@ -1,7 +1,8 @@
 package com.cosyan.db.model;
 
+import com.cosyan.db.io.Aggregation.GlobalAggrTableReader;
+import com.cosyan.db.io.Aggregation.KeyValueAggrTableReader;
 import com.cosyan.db.io.TableReader;
-import com.cosyan.db.io.TableReader.AggrTableReader;
 import com.cosyan.db.io.TableReader.DerivedTableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.io.TableReader.FilteredTableReader;
@@ -99,14 +100,14 @@ public class DerivedTables {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class AggrTableMeta extends TableMeta {
+  public static class KeyValueAggrTableMeta extends TableMeta {
     private final KeyValueTableMeta sourceTable;
     private final ImmutableList<AggrColumn> aggrColumns;
     private final ColumnMeta havingColumn;
 
     @Override
     public TableReader reader() throws ModelException {
-      return new AggrTableReader(sourceTable.reader(), sourceTable.keyColumns, aggrColumns, havingColumn);
+      return new KeyValueAggrTableReader(sourceTable.reader(), sourceTable.keyColumns, aggrColumns, havingColumn);
     }
 
     @Override
@@ -120,6 +121,29 @@ public class DerivedTables {
     }
   }
 
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class GlobalAggrTableMeta extends TableMeta {
+    private final KeyValueTableMeta sourceTable;
+    private final ImmutableList<AggrColumn> aggrColumns;
+    private final ColumnMeta havingColumn;
+
+    @Override
+    public TableReader reader() throws ModelException {
+      return new GlobalAggrTableReader(sourceTable.reader(), aggrColumns, havingColumn);
+    }
+
+    @Override
+    public int indexOf(Ident ident) {
+      return sourceTable.keyColumns.size() + sourceTable.indexOf(ident);
+    }
+
+    @Override
+    public ColumnMeta column(Ident ident) throws ModelException {
+      return sourceTable.column(ident);
+    }
+  }
+  
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class SortedTableMeta extends ExposedTableMeta {

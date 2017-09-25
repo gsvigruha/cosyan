@@ -16,11 +16,12 @@ import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.DerivedTables.AggrTableMeta;
 import com.cosyan.db.model.DerivedTables.AliasedTableMeta;
 import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
 import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
+import com.cosyan.db.model.DerivedTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.DerivedTables.JoinTableMeta;
+import com.cosyan.db.model.DerivedTables.KeyValueAggrTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.DerivedTables.SortedTableMeta;
 import com.cosyan.db.model.MetaRepo;
@@ -64,10 +65,17 @@ public class SelectStatement {
             aggrColumns);
         DerivedColumn havingColumn = havingExpression(metaRepo, intermediateTable, having,
             aggrColumns);
-        fullTable = new DerivedTableMeta(new AggrTableMeta(
-            intermediateTable,
-            ImmutableList.copyOf(aggrColumns),
-            havingColumn), tableColumns);
+        if (groupBy.isPresent()) {
+          fullTable = new DerivedTableMeta(new KeyValueAggrTableMeta(
+              intermediateTable,
+              ImmutableList.copyOf(aggrColumns),
+              havingColumn), tableColumns);
+        } else {
+          fullTable = new DerivedTableMeta(new GlobalAggrTableMeta(
+              intermediateTable,
+              ImmutableList.copyOf(aggrColumns),
+              havingColumn), tableColumns);
+        }
       } else {
         ImmutableMap<String, ColumnMeta> tableColumns = tableColumns(metaRepo, filteredTable, columns);
         fullTable = new DerivedTableMeta(filteredTable, tableColumns);

@@ -144,4 +144,12 @@ public class InsertIntoTest extends UnitTestBase {
     assertHeader(new String[] { "a" }, r2);
     assertValues(new Object[][] { { "x" }, { "y" } }, r2);
   }
+
+  @Test
+  public void testAggregateFromEmptyTable() throws Exception {
+    execute("create table t14 (a varchar);");
+    QueryResult result = query("select count(1) as c from t14;");
+    assertHeader(new String[] { "c" }, result);
+    assertValues(new Object[][] { { 0L } }, result);
+  }
 }
