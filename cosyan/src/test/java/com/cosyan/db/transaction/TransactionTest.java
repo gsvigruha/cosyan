@@ -64,11 +64,11 @@ public class TransactionTest extends UnitTestBase {
         { "a" },
         { "b" } }, (QueryResult) result.getResults().get(3));
 
-    QueryResult r2 = query("select * from t3;");
-    assertHeader(new String[] { "a" }, r2);
+    QueryResult resultAfterCommit = query("select * from t3;");
+    assertHeader(new String[] { "a" }, resultAfterCommit);
     assertValues(new Object[][] {
         { "a" },
-        { "b" } }, r2);
+        { "b" } }, resultAfterCommit);
   }
 
   @Test
@@ -86,8 +86,8 @@ public class TransactionTest extends UnitTestBase {
     assertHeader(new String[] { "a" }, (QueryResult) result.getResults().get(6));
     assertValues(new Object[][] { { "b" } }, (QueryResult) result.getResults().get(6));
 
-    QueryResult r2 = query("select * from t4;");
-    assertHeader(new String[] { "a" }, r2);
-    assertValues(new Object[][] { { "b" } }, r2);
+    QueryResult resultAfterCommit = query("select * from t4;");
+    assertHeader(new String[] { "a" }, resultAfterCommit);
+    assertValues(new Object[][] { { "b" } }, resultAfterCommit);
   }
 }

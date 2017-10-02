@@ -155,7 +155,7 @@ public class TableWriter implements TableIO {
   public long delete(DerivedColumn whereColumn) throws IOException, ModelException {
     long deletedLines = 0L;
     DataInputStream input = new DataInputStream(new SequenceInputStream(
-        new PendingFile(file),
+        new RAFBufferedInputStream(file),
         new ByteArrayInputStream(bos.toByteArray())));
     RecordReader reader = new RecordReader(columns.values().asList(), input);
     do {
@@ -174,7 +174,7 @@ public class TableWriter implements TableIO {
       ImmutableMap<Integer, DerivedColumn> updateExprs,
       DerivedColumn whereColumn) throws IOException, ModelException {
     DataInput input = new DataInputStream(new SequenceInputStream(
-        new PendingFile(file),
+        new RAFBufferedInputStream(file),
         new ByteArrayInputStream(bos.toByteArray())));
     RecordReader reader = new RecordReader(columns.values().asList(), input);
     ImmutableList.Builder<Object[]> updatedRecords = ImmutableList.builder();
@@ -211,7 +211,7 @@ public class TableWriter implements TableIO {
       private RecordReader reader = new RecordReader(
           columns.values().asList(),
           new DataInputStream(new SequenceInputStream(
-              new PendingFile(file),
+              new RAFBufferedInputStream(file),
               new ByteArrayInputStream(bos.toByteArray()))));
 
       @Override

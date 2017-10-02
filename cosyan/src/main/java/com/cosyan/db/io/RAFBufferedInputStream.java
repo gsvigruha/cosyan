@@ -4,21 +4,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 
-public class PendingFile extends InputStream {
-
-  private final RandomAccessFile file;
+public class RAFBufferedInputStream extends InputStream {
 
   public static final int DEFAULT_BUFFER_SIZE = 65536;
 
+  private final RandomAccessFile file;
+
   private final byte[] buffer;
-  
+
   private final long length;
-  
+
   private int pointer;
-  
+
   private long totalPointer;
 
-  public PendingFile(RandomAccessFile file) throws IOException {
+  public RAFBufferedInputStream(RandomAccessFile file) throws IOException {
     this.file = file;
     this.buffer = new byte[DEFAULT_BUFFER_SIZE];
     this.pointer = DEFAULT_BUFFER_SIZE;
@@ -33,9 +33,12 @@ public class PendingFile extends InputStream {
       return -1;
     }
     if (pointer == buffer.length) {
+      // End of buffer, reload.
       if (totalPointer + buffer.length <= length) {
-        file.read(buffer);  
+        // Read the whole buffer.
+        file.read(buffer);
       } else {
+        // Read the end of the file.
         file.read(buffer, 0, (int) (length - totalPointer));
       }
       pointer = 0;
