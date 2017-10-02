@@ -4,11 +4,11 @@ import java.io.IOException;
 
 import com.cosyan.db.io.AggrReader.GlobalAggrTableReader;
 import com.cosyan.db.io.AggrReader.KeyValueAggrTableReader;
+import com.cosyan.db.io.JoinTableReader.HashJoinTableReader;
 import com.cosyan.db.io.TableReader;
 import com.cosyan.db.io.TableReader.DerivedTableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.io.TableReader.FilteredTableReader;
-import com.cosyan.db.io.TableReader.HashJoinTableReader;
 import com.cosyan.db.io.TableReader.SortedTableReader;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
@@ -234,7 +234,24 @@ public class DerivedTables {
             rightTable.reader(resources),
             leftTableJoinColumns,
             rightTableJoinColumns,
-            /* mainTableFirst= */true);
+            /* mainTableFirst= */true,
+            /* innerJoin= */true);
+      } else if (joinType.is(Tokens.LEFT)) {
+        return new HashJoinTableReader(
+            leftTable.reader(resources),
+            rightTable.reader(resources),
+            leftTableJoinColumns,
+            rightTableJoinColumns,
+            /* mainTableFirst= */true,
+            /* innerJoin= */false);
+      } else if (joinType.is(Tokens.RIGHT)) {
+        return new HashJoinTableReader(
+            rightTable.reader(resources),
+            leftTable.reader(resources),
+            rightTableJoinColumns,
+            leftTableJoinColumns,
+            /* mainTableFirst= */false,
+            /* innerJoin= */false);
       } else {
         // TODO remove this and resolve in compilation time.
         throw new RuntimeException("Unknown join type '" + joinType.getString() + "'.");

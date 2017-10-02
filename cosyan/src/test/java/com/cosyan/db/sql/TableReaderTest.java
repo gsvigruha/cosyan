@@ -315,6 +315,24 @@ public class TableReaderTest extends DummyTestBase {
   }
 
   @Test
+  public void testLeftJoin() throws Exception {
+    ExposedTableReader reader = query("select * from left left join right on a = x;");
+    assertEquals(ImmutableMap.of("a", "a", "b", 1L, "x", "a", "y", 2L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "b", "b", 1L, "x", DataTypes.NULL, "y", DataTypes.NULL), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "c", "b", 5L, "x", "c", "y", 6L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testRightJoin() throws Exception {
+    ExposedTableReader reader = query("select * from right right join left on x = a;");
+    assertEquals(ImmutableMap.of("x", "a", "y", 2L, "a", "a", "b", 1L), reader.readColumns());
+    assertEquals(ImmutableMap.of("x", DataTypes.NULL, "y", DataTypes.NULL, "a", "b", "b", 1L), reader.readColumns());
+    assertEquals(ImmutableMap.of("x", "c", "y", 6L, "a", "c", "b", 5L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+  
+  @Test
   public void testReadLinesWithNull() throws Exception {
     ExposedTableReader reader = query("select * from null;");
     assertEquals(ImmutableMap.of("a", DataTypes.NULL, "b", 1L, "c", 2.0), reader.readColumns());

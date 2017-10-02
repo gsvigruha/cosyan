@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
@@ -112,7 +111,7 @@ public class MetaRepo {
     return tables.get(ident.getString());
   }
 
-  public InputStream open(MaterializedTableMeta table) throws ModelException {
+  private FileInputStream fileInputStream(MaterializedTableMeta table) throws ModelException {
     String path = config.tableDir() + File.separator + table.getTableName();
     try {
       return new FileInputStream(path);
@@ -121,16 +120,7 @@ public class MetaRepo {
     }
   }
 
-  public FileOutputStream append(MaterializedTableMeta table) throws ModelException {
-    String path = config.tableDir() + File.separator + table.getTableName();
-    try {
-      return new FileOutputStream(path, true);
-    } catch (FileNotFoundException e) {
-      throw new ModelException("Table file not found: " + path + ".");
-    }
-  }
-
-  public RandomAccessFile update(MaterializedTableMeta table) throws ModelException {
+  private RandomAccessFile randomAccessFile(MaterializedTableMeta table) throws ModelException {
     String path = config.tableDir() + File.separator + table.getTableName();
     try {
       return new RandomAccessFile(path, "rw");
@@ -241,7 +231,7 @@ public class MetaRepo {
       if (resource.isWrite()) {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
         writers.put(resource.getResourceId(), new TableWriter(
-            update(tableMeta),
+            randomAccessFile(tableMeta),
             tableMeta.columns(),
             collectUniqueIndexes(tableMeta),
             collectMultiIndexes(tableMeta),
@@ -251,7 +241,7 @@ public class MetaRepo {
       } else {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
         readers.put(resource.getResourceId(), new MaterializedTableReader(
-            new DataInputStream(open(tableMeta)),
+            new DataInputStream(fileInputStream(tableMeta)),
             tableMeta.columns()));
       }
     }
