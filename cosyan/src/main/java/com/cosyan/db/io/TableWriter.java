@@ -90,12 +90,12 @@ public class TableWriter implements TableIO {
 
   public void commit() throws IOException {
     try {
+      file.seek(fileIndex0);
+      file.write(bos.toByteArray());
       for (Long pos : recordsToDelete) {
         file.seek(pos);
         file.writeByte(0);
       }
-      file.seek(fileIndex0);
-      file.write(bos.toByteArray());
     } catch (IOException e) {
       rollback();
       file.getChannel().truncate(fileIndex0);

@@ -63,5 +63,31 @@ public class TransactionTest extends UnitTestBase {
     assertValues(new Object[][] {
         { "a" },
         { "b" } }, (QueryResult) result.getResults().get(3));
+
+    QueryResult r2 = query("select * from t3;");
+    assertHeader(new String[] { "a" }, r2);
+    assertValues(new Object[][] {
+        { "a" },
+        { "b" } }, r2);
+  }
+
+  @Test
+  public void testInsertAndDelete() throws InterruptedException, ModelException, IOException {
+    execute("create table t4 (a varchar);");
+    TransactionResult result = transaction("insert into t4 values('a');" +
+        "insert into t4 values('b');" +
+        "delete from t4 where a = 'a';" +
+        "select * from t4;" +
+        "insert into t4 values('c');" +
+        "delete from t4 where a = 'c';" +
+        "select * from t4;");
+    assertHeader(new String[] { "a" }, (QueryResult) result.getResults().get(3));
+    assertValues(new Object[][] { { "b" } }, (QueryResult) result.getResults().get(3));
+    assertHeader(new String[] { "a" }, (QueryResult) result.getResults().get(6));
+    assertValues(new Object[][] { { "b" } }, (QueryResult) result.getResults().get(6));
+
+    QueryResult r2 = query("select * from t4;");
+    assertHeader(new String[] { "a" }, r2);
+    assertValues(new Object[][] { { "b" } }, r2);
   }
 }
