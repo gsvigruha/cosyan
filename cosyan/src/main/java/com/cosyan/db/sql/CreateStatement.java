@@ -1,10 +1,8 @@
 package com.cosyan.db.sql;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 
-import com.cosyan.db.lock.ResourceLock;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
@@ -17,8 +15,8 @@ import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 import com.cosyan.db.sql.Result.MetaStatementResult;
 import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
+import com.cosyan.db.sql.SyntaxTree.MetaStatement;
 import com.cosyan.db.sql.SyntaxTree.Node;
-import com.cosyan.db.sql.SyntaxTree.Statement;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -29,7 +27,7 @@ public class CreateStatement {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class Create extends Node implements Statement {
+  public static class Create extends Node implements MetaStatement {
     private final String name;
     private final ImmutableList<ColumnDefinition> columns;
     private final ImmutableList<ConstraintDefinition> constraints;
@@ -48,7 +46,7 @@ public class CreateStatement {
         columnsBuilder.put(column.getName(), basicColumn);
       }
       MaterializedTableMeta tableMeta = new MaterializedTableMeta(
-          name, columnsBuilder.build(), metaRepo);
+          name, columnsBuilder.build());
       for (BasicColumn column : tableMeta.columns().values()) {
         if (column.isUnique()) {
           if (column.getType() != DataTypes.StringType && column.getType() != DataTypes.LongType) {
@@ -113,29 +111,6 @@ public class CreateStatement {
       tableMeta.setForeignKeys(foreignKeysBuilder.build());
       metaRepo.registerTable(name, tableMeta);
       return new MetaStatementResult();
-    }
-
-    @Override
-    public void rollback() {
-      // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void commit() throws IOException {
-      // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void collectLocks(List<ResourceLock> locks) {
-      // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void cancel() {
-
     }
   }
 

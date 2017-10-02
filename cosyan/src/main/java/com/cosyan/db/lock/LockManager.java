@@ -1,32 +1,35 @@
 package com.cosyan.db.lock;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import com.google.common.collect.ImmutableList;
+import com.cosyan.db.transaction.MetaResources;
+import com.cosyan.db.transaction.MetaResources.Resource;
 
 public class LockManager {
 
   private final Map<String, ReentrantReadWriteLock> lockMap = new HashMap<>();
 
-  public synchronized boolean tryLock(ImmutableList<ResourceLock> locks) {
-    for (int i = 0; i < locks.size(); i++) {
-      ReentrantReadWriteLock lock = lockMap.get(locks.get(i).getResourceId());
-      boolean gotLock;
-      if (locks.get(i).isWrite()) {
-        gotLock = lock.writeLock().tryLock();
+  public synchronized boolean tryLock(MetaResources resources) {
+    List<Lock> locks = new ArrayList<>();
+    for (Resource resource : resources.all()) {
+      ReentrantReadWriteLock rwlock = lockMap.get(resource.getResourceId());
+      Lock lock;
+      if (resource.isWrite()) {
+        lock = rwlock.writeLock();
       } else {
-        gotLock = lock.readLock().tryLock();
+        lock = rwlock.readLock();
       }
-      if (!gotLock) {
-        for (int j = 0; j < i; j++) {
-          ReentrantReadWriteLock acquiredLock = lockMap.get(locks.get(j).getResourceId());
-          if (locks.get(j).isWrite()) {
-            acquiredLock.writeLock().unlock();
-          } else {
-            acquiredLock.readLock().unlock();
-          }
+      boolean gotLock = lock.tryLock();
+      if (gotLock) {
+        locks.add(lock);
+      } else {
+        for (Lock acquiredLock : locks) {
+          acquiredLock.unlock();
         }
         return false;
       }
@@ -34,13 +37,13 @@ public class LockManager {
     return true;
   }
 
-  public synchronized void unlock(ImmutableList<ResourceLock> locks) {
-    for (ResourceLock lock : locks) {
-      ReentrantReadWriteLock l = lockMap.get(lock.getResourceId());
-      if (lock.isWrite()) {
-        l.writeLock().unlock();
+  public synchronized void unlock(MetaResources metaResources) {
+    for (Resource resource : metaResources.all()) {
+      ReentrantReadWriteLock lock = lockMap.get(resource.getResourceId());
+      if (resource.isWrite()) {
+        lock.writeLock().unlock();
       } else {
-        l.readLock().unlock();
+        lock.readLock().unlock();
       }
     }
   }

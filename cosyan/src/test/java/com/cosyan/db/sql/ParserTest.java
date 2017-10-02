@@ -16,6 +16,7 @@ import com.cosyan.db.sql.SyntaxTree.FuncCallExpression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.sql.SyntaxTree.IdentExpression;
 import com.cosyan.db.sql.SyntaxTree.LongLiteral;
+import com.cosyan.db.sql.SyntaxTree.Statement;
 import com.cosyan.db.sql.SyntaxTree.StringLiteral;
 import com.cosyan.db.sql.SyntaxTree.UnaryExpression;
 import com.cosyan.db.sql.Tokens.Token;
@@ -23,12 +24,17 @@ import com.google.common.collect.ImmutableList;
 
 public class ParserTest {
 
+  private Lexer lexer = new Lexer();
   private Parser parser = new Parser();
+
+  private ImmutableList<Statement> parse(String sql) throws ParserException {
+    return parser.parseStatements(lexer.tokenize(sql));
+  }
 
   @Test
   public void testSelect() throws ParserException {
-    SyntaxTree tree = parser.parse("select * from table;");
-    assertEquals(tree, new SyntaxTree(new Select(
+    ImmutableList<Statement> tree = parse("select * from table;");
+    assertEquals(tree, ImmutableList.of(new Select(
         ImmutableList.of(new AsteriskExpression()),
         new TableRef(new Ident("table")),
         Optional.empty(),
@@ -39,8 +45,8 @@ public class ParserTest {
 
   @Test
   public void testSelectColmns() throws ParserException {
-    SyntaxTree tree = parser.parse("select a, b from table;");
-    assertEquals(tree, new SyntaxTree(new Select(
+    ImmutableList<Statement> tree = parse("select a, b from table;");
+    assertEquals(tree, ImmutableList.of(new Select(
         ImmutableList.of(new IdentExpression(new Ident("a")), new IdentExpression(new Ident("b"))),
         new TableRef(new Ident("table")),
         Optional.empty(),
@@ -51,8 +57,8 @@ public class ParserTest {
 
   @Test
   public void testSelectAggr() throws ParserException {
-    SyntaxTree tree = parser.parse("select sum(a) from table;");
-    assertEquals(tree, new SyntaxTree(new Select(
+    ImmutableList<Statement> tree = parse("select sum(a) from table;");
+    assertEquals(tree, ImmutableList.of(new Select(
         ImmutableList.of(new FuncCallExpression(
             new Ident("sum"),
             ImmutableList.of(new IdentExpression(new Ident("a"))))),
@@ -65,8 +71,8 @@ public class ParserTest {
 
   @Test
   public void testSelectWhere() throws ParserException {
-    SyntaxTree tree = parser.parse("select * from table where a = 1;");
-    assertEquals(tree, new SyntaxTree(new Select(
+    ImmutableList<Statement> tree = parse("select * from table where a = 1;");
+    assertEquals(tree, ImmutableList.of(new Select(
         ImmutableList.of(new AsteriskExpression()),
         new TableRef(new Ident("table")),
         Optional.of(new BinaryExpression(
@@ -80,8 +86,8 @@ public class ParserTest {
 
   @Test
   public void testSelectGroupBy() throws ParserException {
-    SyntaxTree tree = parser.parse("select sum(b) from table group by a;");
-    assertEquals(tree, new SyntaxTree(new Select(
+    ImmutableList<Statement> tree = parse("select sum(b) from table group by a;");
+    assertEquals(tree, ImmutableList.of(new Select(
         ImmutableList.of(new FuncCallExpression(
             new Ident("sum"),
             ImmutableList.of(new IdentExpression(new Ident("b"))))),
@@ -94,8 +100,8 @@ public class ParserTest {
 
   @Test
   public void testSelectComplex() throws ParserException {
-    SyntaxTree tree = parser.parse("select a, b + 1, c * 2.0 > 3.0 from table;");
-    assertEquals(tree, new SyntaxTree(new Select(
+    ImmutableList<Statement> tree = parse("select a, b + 1, c * 2.0 > 3.0 from table;");
+    assertEquals(tree, ImmutableList.of(new Select(
         ImmutableList.of(
             new IdentExpression(new Ident("a")),
             new BinaryExpression(
@@ -116,9 +122,13 @@ public class ParserTest {
         Optional.empty())));
   }
 
+  private Expression parseExpression(String sql) throws ParserException {
+    return parser.parseExpression(lexer.tokenize(sql), 0);
+  }
+
   @Test
   public void testExpr() throws ParserException {
-    Expression expr = parser.parseExpression("a = 1;");
+    Expression expr = parseExpression("a = 1;");
     assertEquals(expr, new BinaryExpression(
         new Token("="),
         new IdentExpression(new Ident("a")),
@@ -127,7 +137,7 @@ public class ParserTest {
 
   @Test
   public void testExprPrecedence1() throws ParserException {
-    Expression expr = parser.parseExpression("a and b or c;");
+    Expression expr = parseExpression("a and b or c;");
     assertEquals(expr, new BinaryExpression(
         new Token("or"),
         new BinaryExpression(
@@ -139,7 +149,7 @@ public class ParserTest {
 
   @Test
   public void testExprPrecedence2() throws ParserException {
-    Expression expr = parser.parseExpression("a or b and c;");
+    Expression expr = parseExpression("a or b and c;");
     assertEquals(expr, new BinaryExpression(
         new Token("or"),
         new IdentExpression(new Ident("a")),
@@ -151,7 +161,7 @@ public class ParserTest {
 
   @Test
   public void testExprParentheses1() throws ParserException {
-    Expression expr = parser.parseExpression("(a or b) and c;");
+    Expression expr = parseExpression("(a or b) and c;");
     assertEquals(expr, new BinaryExpression(
         new Token("and"),
         new BinaryExpression(
@@ -163,7 +173,7 @@ public class ParserTest {
 
   @Test
   public void testExprParentheses2() throws ParserException {
-    Expression expr = parser.parseExpression("a and (b or c);");
+    Expression expr = parseExpression("a and (b or c);");
     assertEquals(expr, new BinaryExpression(
         new Token("and"),
         new IdentExpression(new Ident("a")),
@@ -175,7 +185,7 @@ public class ParserTest {
 
   @Test
   public void testExprLogical() throws ParserException {
-    Expression expr = parser.parseExpression("a > 1 or c;");
+    Expression expr = parseExpression("a > 1 or c;");
     assertEquals(expr, new BinaryExpression(
         new Token("or"),
         new BinaryExpression(
@@ -187,7 +197,7 @@ public class ParserTest {
 
   @Test
   public void testExprFuncCall() throws ParserException {
-    Expression expr = parser.parseExpression("a and f(b);");
+    Expression expr = parseExpression("a and f(b);");
     assertEquals(expr, new BinaryExpression(
         new Token("and"),
         new IdentExpression(new Ident("a")),
@@ -196,7 +206,7 @@ public class ParserTest {
 
   @Test
   public void testExprNot() throws ParserException {
-    Expression expr = parser.parseExpression("not a;");
+    Expression expr = parseExpression("not a;");
     assertEquals(expr, new UnaryExpression(
         new Token(Tokens.NOT),
         new IdentExpression(new Ident("a"))));
@@ -204,7 +214,7 @@ public class ParserTest {
 
   @Test
   public void testExprNotInBinary() throws ParserException {
-    Expression expr = parser.parseExpression("not a and not b;");
+    Expression expr = parseExpression("not a and not b;");
     assertEquals(expr, new BinaryExpression(
         new Token("and"),
         new UnaryExpression(new Token(Tokens.NOT), new IdentExpression(new Ident("a"))),
@@ -213,7 +223,7 @@ public class ParserTest {
 
   @Test
   public void testExprNotWithLogical() throws ParserException {
-    Expression expr = parser.parseExpression("not a = 'x';");
+    Expression expr = parseExpression("not a = 'x';");
     assertEquals(expr, new UnaryExpression(
         new Token(Tokens.NOT),
         new BinaryExpression(
@@ -224,6 +234,6 @@ public class ParserTest {
 
   @Test(expected = ParserException.class)
   public void testGroupByInconsistentAggr() throws Exception {
-    parser.parse("select sum(b) + b from large group by a;");
+    parse("select sum(b) + b from large group by a;");
   }
 }

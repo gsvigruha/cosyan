@@ -19,13 +19,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
-public abstract class TableReader {
+public abstract class TableReader implements TableIO {
 
   protected boolean cancelled = false;
 
   public abstract Object[] read() throws IOException;
-
-  public abstract void close() throws IOException;
 
   @Data
   @EqualsAndHashCode(callSuper = true)

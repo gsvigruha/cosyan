@@ -2,12 +2,10 @@ package com.cosyan.db.sql;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.io.TableWriter.TableAppender;
-import com.cosyan.db.lock.ResourceLock;
+import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
@@ -17,6 +15,8 @@ import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.sql.SyntaxTree.Literal;
 import com.cosyan.db.sql.SyntaxTree.Node;
 import com.cosyan.db.sql.SyntaxTree.Statement;
+import com.cosyan.db.transaction.MetaResources;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
@@ -31,14 +31,18 @@ public class InsertIntoStatement {
     private final Optional<ImmutableList<Ident>> columns;
     private final ImmutableList<ImmutableList<Literal>> valuess;
 
-    private TableAppender appender;
+    private MaterializedTableMeta tableMeta;
 
     @Override
-    public Result execute(MetaRepo metaRepo) throws ModelException, IOException, IndexException {
-      MaterializedTableMeta tableMeta = (MaterializedTableMeta) metaRepo.table(table);
+    public MetaResources compile(MetaRepo metaRepo) throws ModelException {
+      tableMeta = (MaterializedTableMeta) metaRepo.table(table);
+      return MetaResources.writeTable(tableMeta);
+    }
+
+    @Override
+    public Result execute(Resources resources) throws ModelException, IOException, IndexException {
       Object[] fullValues = new Object[tableMeta.columns().size()];
-      appender = tableMeta.appender();
-      appender.init();
+      TableWriter writer = resources.writer(table);
       for (ImmutableList<Literal> values : valuess) {
         if (columns.isPresent()) {
           Arrays.fill(fullValues, DataTypes.NULL);
@@ -56,34 +60,14 @@ public class InsertIntoStatement {
             fullValues[i] = values.get(i).getValue();
           }
         }
-        appender.write(fullValues);
+        writer.insert(fullValues);
       }
       return new StatementResult(valuess.size());
     }
 
     @Override
-    public void rollback() {
-      if (appender != null) {
-        appender.rollback();
-      }
-    }
-
-    @Override
-    public void commit() throws IOException {
-      if (appender != null) {
-        appender.commit();
-        appender.close();
-      }
-    }
-
-    @Override
     public void cancel() {
 
-    }
-
-    @Override
-    public void collectLocks(List<ResourceLock> locks) {
-      locks.add(ResourceLock.readWrite(table));
     }
   }
 }

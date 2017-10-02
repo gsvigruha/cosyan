@@ -10,6 +10,7 @@ import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.sql.Result.QueryResult;
+import com.cosyan.db.sql.Result.TransactionResult;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 
 public class TransactionTest extends UnitTestBase {
@@ -43,8 +44,24 @@ public class TransactionTest extends UnitTestBase {
     }, result);
 
     TableIndex t2a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t2"))).get("a");
+    // Record length: 1 + (1 + 8) + (1 + 8) + (1 + 4 + 6) = 30.
     assertEquals(0L, t2a.get(1L));
-    assertEquals(8L, t2a.get(2L));
-    assertEquals(16L, t2a.get(3L));
+    assertEquals(30L, t2a.get(2L));
+    assertEquals(60L, t2a.get(3L));
+  }
+
+  @Test
+  public void testInsertAndSelect() throws InterruptedException, ModelException, IOException {
+    execute("create table t3 (a varchar);");
+    TransactionResult result = transaction("insert into t3 values('a');" +
+        "select * from t3;" +
+        "insert into t3 values('b');" +
+        "select * from t3;");
+    assertHeader(new String[] { "a" }, (QueryResult) result.getResults().get(1));
+    assertValues(new Object[][] { { "a" } }, (QueryResult) result.getResults().get(1));
+    assertHeader(new String[] { "a" }, (QueryResult) result.getResults().get(3));
+    assertValues(new Object[][] {
+        { "a" },
+        { "b" } }, (QueryResult) result.getResults().get(3));
   }
 }

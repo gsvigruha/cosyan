@@ -29,6 +29,7 @@ import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.sql.SyntaxTree.IdentExpression;
 import com.cosyan.db.sql.SyntaxTree.Literal;
 import com.cosyan.db.sql.SyntaxTree.LongLiteral;
+import com.cosyan.db.sql.SyntaxTree.MetaStatement;
 import com.cosyan.db.sql.SyntaxTree.Statement;
 import com.cosyan.db.sql.SyntaxTree.StringLiteral;
 import com.cosyan.db.sql.SyntaxTree.UnaryExpression;
@@ -37,40 +38,37 @@ import com.cosyan.db.sql.UpdateStatement.SetExpression;
 import com.cosyan.db.sql.UpdateStatement.Update;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
 
 public class Parser {
 
-  private Lexer lexer = new Lexer();
-
-  public SyntaxTree parse(String sql) throws ParserException {
-    return parse(lexer.tokenize(sql));
+  public boolean isMeta(PeekingIterator<Token> tokens) {
+    if (tokens.peek().is(Tokens.CREATE)) {
+      return true;
+    }
+    return false;
   }
 
-  Expression parseExpression(String sql) throws ParserException {
-    return parseExpression(Iterators.peekingIterator(lexer.tokenize(sql).iterator()), 0);
-  }
-
-  public SyntaxTree parse(ImmutableList<Token> tokens) throws ParserException {
-    return new SyntaxTree(parseTokens(Iterators.peekingIterator(tokens.iterator())));
-  }
-
-  private ImmutableList<Statement> parseTokens(PeekingIterator<Token> tokens) throws ParserException {
+  public ImmutableList<Statement> parseStatements(PeekingIterator<Token> tokens) throws ParserException {
     ImmutableList.Builder<Statement> roots = ImmutableList.builder();
-    while(tokens.hasNext()) {
-      Statement root = parseRoot(tokens);
+    while (tokens.hasNext()) {
+      Statement root = parseStatement(tokens);
       roots.add(root);
       assertNext(tokens, String.valueOf(Tokens.COMMA_COLON));
     }
     return roots.build();
   }
 
-  private Statement parseRoot(PeekingIterator<Token> tokens) throws ParserException {
+  public MetaStatement parseMetaStatement(PeekingIterator<Token> tokens) throws ParserException {
+    if (tokens.peek().is(Tokens.CREATE)) {
+      return parseCreate(tokens);
+    }
+    throw new ParserException("Syntax error.");
+  }
+
+  private Statement parseStatement(PeekingIterator<Token> tokens) throws ParserException {
     if (tokens.peek().is(Tokens.SELECT)) {
       return parseSelect(tokens);
-    } else if (tokens.peek().is(Tokens.CREATE)) {
-      return parseCreate(tokens);
     } else if (tokens.peek().is(Tokens.INSERT)) {
       return parseInsert(tokens);
     } else if (tokens.peek().is(Tokens.DELETE)) {

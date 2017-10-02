@@ -165,7 +165,7 @@ public class Serializer {
     }
     ImmutableMap<String, BasicColumn> columns = columnsBuilder.build();
     byte hasPrimaryKey = tableStream.readByte();
-    MaterializedTableMeta tableMeta = new MaterializedTableMeta(tableName, columns, metaRepo);
+    MaterializedTableMeta tableMeta = new MaterializedTableMeta(tableName, columns);
     if (hasPrimaryKey == 1) {
       tableMeta.setPrimaryKey(Optional.of(new PrimaryKey(
           tableStream.readUTF(),

@@ -19,9 +19,12 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
+import com.cosyan.db.sql.Lexer;
 import com.cosyan.db.sql.Parser;
-import com.cosyan.db.sql.SyntaxTree;
+import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.SelectStatement.Select;
+import com.cosyan.db.sql.SyntaxTree.Statement;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 
@@ -29,6 +32,7 @@ public class CSVConverterTest {
 
   private static MetaRepo metaRepo;
   private static Parser parser;
+  private static Lexer lexer;
 
   @BeforeClass
   public static void setUp() throws IOException, ModelException, ParseException {
@@ -36,12 +40,15 @@ public class CSVConverterTest {
     props.setProperty(Config.DATA_DIR, "/tmp");
     metaRepo = new MetaRepo(new Config(props), new LockManager());
     parser = new Parser();
+    lexer = new Lexer();
   }
 
-  private ExposedTableMeta query(SyntaxTree tree) throws ModelException {
-    return ((Select) Iterables.getOnlyElement(tree.getRoots())).compile(metaRepo);
+  private ExposedTableMeta query(String sql) throws ModelException, ParserException {
+    ImmutableList<Statement> tree = parser.parseStatements(lexer.tokenize(sql));
+    return ((Select) Iterables.getOnlyElement(tree)).compileTable(metaRepo);
   }
 
+  /*
   @Test
   @Ignore
   public void testReadFromCSV() throws Exception {
@@ -55,9 +62,9 @@ public class CSVConverterTest {
             "c", new BasicColumn(2, "c", DataTypes.DoubleType)),
         Optional.empty(),
         Optional.empty());
-    SyntaxTree tree = parser.parse("select * from table;");
-    ExposedTableMeta ExposedTableMeta = query(tree);
+    ExposedTableMeta ExposedTableMeta = query("select * from table;");
     ExposedTableReader reader = ExposedTableMeta.reader();
     assertEquals(ImmutableMap.of("a", "abc", "b", 1L, "c", 1.0), reader.readColumns());
   }
+  */
 }

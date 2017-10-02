@@ -16,6 +16,8 @@ import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.session.Session;
+import com.cosyan.db.sql.Result;
+import com.cosyan.db.sql.Result.CrashResult;
 import com.cosyan.db.sql.Result.ErrorResult;
 import com.cosyan.db.sql.Result.QueryResult;
 import com.cosyan.db.sql.Result.StatementResult;
@@ -45,7 +47,9 @@ public abstract class UnitTestBase {
   }
 
   protected void execute(String sql) {
-    session.execute(sql);
+    Result result = session.execute(sql);
+    assert(!(result instanceof ErrorResult));
+    assert(!(result instanceof CrashResult));
   }
 
   protected StatementResult statement(String sql) {
@@ -60,6 +64,10 @@ public abstract class UnitTestBase {
     return (QueryResult) Iterables.getOnlyElement(((TransactionResult) session.execute(sql)).getResults());
   }
 
+  public static TransactionResult transaction(String sql) {
+    return (TransactionResult) session.execute(sql);
+  }
+  
   protected QueryResult query(String sql) {
     return query(sql, session);
   }

@@ -3,11 +3,8 @@ package com.cosyan.db.io;
 import java.io.DataInput;
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.Date;
 
 import com.cosyan.db.model.ColumnMeta;
-import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.DataTypes.DataType;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;

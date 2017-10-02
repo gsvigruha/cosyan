@@ -1,21 +1,18 @@
 package com.cosyan.db.model;
 
-import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.Optional;
 
 import com.cosyan.db.io.TableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
-import com.cosyan.db.io.TableReader.MaterializedTableReader;
-import com.cosyan.db.io.TableWriter.TableAppender;
-import com.cosyan.db.io.TableWriter.TableDeleteAndCollector;
-import com.cosyan.db.io.TableWriter.TableDeleter;
-import com.cosyan.db.io.TableWriter.TableUpdater;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.sql.SyntaxTree.Ident;
+import com.cosyan.db.transaction.MetaResources;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
@@ -43,7 +40,9 @@ public abstract class TableMeta {
     return column;
   }
 
-  protected abstract TableReader reader() throws ModelException;
+  protected abstract TableReader reader(Resources resources) throws IOException;
+
+  public abstract MetaResources readResources();
 
   /**
    * @param ident
@@ -61,7 +60,7 @@ public abstract class TableMeta {
     public abstract ImmutableMap<String, ? extends ColumnMeta> columns();
 
     @Override
-    public abstract ExposedTableReader reader() throws ModelException;
+    public abstract ExposedTableReader reader(Resources resources) throws IOException;
   }
 
   @Data
@@ -69,7 +68,6 @@ public abstract class TableMeta {
   public static class MaterializedTableMeta extends ExposedTableMeta {
     private final String tableName;
     private final ImmutableMap<String, BasicColumn> columns;
-    private final MetaRepo metaRepo;
 
     private ImmutableMap<String, DerivedColumn> simpleChecks = ImmutableMap.of();
     private Optional<PrimaryKey> primaryKey = Optional.empty();
@@ -92,50 +90,8 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ExposedTableReader reader() throws ModelException {
-      return new MaterializedTableReader(
-          new DataInputStream(metaRepo.open(this)),
-          columns());
-    }
-
-    public TableAppender appender() throws ModelException {
-      return new TableAppender(
-          metaRepo.append(this),
-          columns.values().asList(),
-          metaRepo.collectUniqueIndexes(this),
-          metaRepo.collectMultiIndexes(this),
-          metaRepo.collectForeignIndexes(this),
-          simpleChecks);
-    }
-
-    public TableDeleter deleter(DerivedColumn whereColumn) throws ModelException {
-      return new TableDeleter(
-          metaRepo.update(this),
-          columns.values().asList(),
-          whereColumn,
-          metaRepo.collectUniqueIndexes(this),
-          metaRepo.collectMultiIndexes(this),
-          metaRepo.collectReverseForeignIndexes(this));
-    }
-
-    public TableUpdater updater(ImmutableMap<Integer, DerivedColumn> updateExprs, DerivedColumn whereColumn)
-        throws ModelException {
-      return new TableUpdater(
-          new TableDeleteAndCollector(
-              metaRepo.update(this),
-              columns.values().asList(),
-              updateExprs,
-              whereColumn,
-              metaRepo.collectUniqueIndexes(this),
-              metaRepo.collectMultiIndexes(this),
-              metaRepo.collectReverseForeignIndexes(this)),
-          new TableAppender(
-              metaRepo.append(this),
-              columns.values().asList(),
-              metaRepo.collectUniqueIndexes(this),
-              metaRepo.collectMultiIndexes(this),
-              metaRepo.collectForeignIndexes(this),
-              simpleChecks));
+    public ExposedTableReader reader(Resources resources) throws IOException {
+      return resources.reader(new Ident(tableName));
     }
 
     @Override
@@ -162,6 +118,11 @@ public abstract class TableMeta {
           throw new ModelException("Table mismatch '" + ident.head() + "' instead of '" + tableName + "'.");
         }
       }
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return MetaResources.readTable(this);
     }
   }
 }

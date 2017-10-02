@@ -1,5 +1,6 @@
 package com.cosyan.db.model;
 
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -18,8 +19,10 @@ import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
 import com.cosyan.db.index.ByteTrie.LongIndex;
 import com.cosyan.db.index.ByteTrie.StringIndex;
 import com.cosyan.db.io.Serializer;
+import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.io.TableReader.MaterializedTableReader;
+import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lock.LockManager;
-import com.cosyan.db.lock.ResourceLock;
 import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
@@ -32,6 +35,9 @@ import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 import com.cosyan.db.model.TableMultiIndex.LongTableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.StringTableMultiIndex;
 import com.cosyan.db.sql.SyntaxTree.Ident;
+import com.cosyan.db.transaction.MetaResources;
+import com.cosyan.db.transaction.MetaResources.TableMetaResource;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -45,7 +51,7 @@ public class MetaRepo {
 
   private final ConcurrentHashMap<String, SimpleFunction<?>> simpleFunctions;
   private final ConcurrentHashMap<String, AggrFunction> aggrFunctions;
-  
+
   private final LockManager lockManager;
 
   public MetaRepo(Config config, LockManager lockManager) throws IOException, ModelException {
@@ -74,6 +80,7 @@ public class MetaRepo {
     for (String tableName : tableNames) {
       FileInputStream tableIn = new FileInputStream(config.metaDir() + File.separator + tableName);
       tables.put(tableName, Serializer.readTableMeta(tableName, tableIn, this));
+      lockManager.registerLock(tableName);
     }
     // Load table references (foreign keys).
     for (String tableName : tableNames) {
@@ -223,8 +230,32 @@ public class MetaRepo {
 
   public OutputStream openForWrite(
       String tableName, ImmutableMap<String, BasicColumn> columns) throws ModelException, FileNotFoundException {
-    tables.put(tableName, new MaterializedTableMeta(tableName, columns, this));
+    tables.put(tableName, new MaterializedTableMeta(tableName, columns));
     return new FileOutputStream(config.tableDir() + File.separator + tableName);
+  }
+
+  public Resources resources(MetaResources metaResources) throws ModelException, IOException {
+    ImmutableMap.Builder<String, ExposedTableReader> readers = ImmutableMap.builder();
+    ImmutableMap.Builder<String, TableWriter> writers = ImmutableMap.builder();
+    for (TableMetaResource resource : metaResources.tables()) {
+      if (resource.isWrite()) {
+        MaterializedTableMeta tableMeta = resource.getTableMeta();
+        writers.put(resource.getResourceId(), new TableWriter(
+            update(tableMeta),
+            tableMeta.columns(),
+            collectUniqueIndexes(tableMeta),
+            collectMultiIndexes(tableMeta),
+            collectForeignIndexes(tableMeta),
+            collectReverseForeignIndexes(tableMeta),
+            tableMeta.getSimpleChecks()));
+      } else {
+        MaterializedTableMeta tableMeta = resource.getTableMeta();
+        readers.put(resource.getResourceId(), new MaterializedTableReader(
+            new DataInputStream(open(tableMeta)),
+            tableMeta.columns()));
+      }
+    }
+    return new Resources(readers.build(), writers.build());
   }
 
   public SimpleFunction<?> simpleFunction(Ident ident) throws ModelException {
@@ -275,11 +306,11 @@ public class MetaRepo {
     }
   }
 
-  public boolean tryLock(ImmutableList<ResourceLock> locks) {
-    return lockManager.tryLock(locks);
+  public boolean tryLock(MetaResources metaResources) {
+    return lockManager.tryLock(metaResources);
   }
 
-  public void unlock(ImmutableList<ResourceLock> locks) {
-    lockManager.unlock(locks);
+  public void unlock(MetaResources metaResources) {
+    lockManager.unlock(metaResources);
   }
 }

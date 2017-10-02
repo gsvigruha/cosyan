@@ -10,7 +10,6 @@ import java.util.Optional;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
-import com.cosyan.db.lock.ResourceLock;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
@@ -34,9 +33,10 @@ import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.sql.SyntaxTree.IdentExpression;
 import com.cosyan.db.sql.SyntaxTree.Node;
-import com.cosyan.db.sql.SyntaxTree.ResourceHolder;
 import com.cosyan.db.sql.SyntaxTree.Statement;
 import com.cosyan.db.sql.Tokens.Token;
+import com.cosyan.db.transaction.MetaResources;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -54,7 +54,9 @@ public class SelectStatement {
     private final Optional<Expression> having;
     private final Optional<ImmutableList<Expression>> orderBy;
 
-    public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
+    private ExposedTableMeta tableMeta;
+
+    public ExposedTableMeta compileTable(MetaRepo metaRepo) throws ModelException {
       ExposedTableMeta sourceTable = table.compile(metaRepo);
       ExposedTableMeta filteredTable = filteredTable(metaRepo, sourceTable, where);
       DerivedTableMeta fullTable;
@@ -80,6 +82,7 @@ public class SelectStatement {
         ImmutableMap<String, ColumnMeta> tableColumns = tableColumns(metaRepo, filteredTable, columns);
         fullTable = new DerivedTableMeta(filteredTable, tableColumns);
       }
+
       if (orderBy.isPresent()) {
         ImmutableList<OrderColumn> orderColumns = orderColumns(metaRepo, fullTable, orderBy.get());
         return new SortedTableMeta(fullTable, orderColumns);
@@ -89,13 +92,14 @@ public class SelectStatement {
     }
 
     @Override
-    public void collectLocks(List<ResourceLock> locks) {
-      table.collectLocks(locks);
+    public MetaResources compile(MetaRepo metaRepo) throws ModelException {
+      tableMeta = compileTable(metaRepo);
+      return tableMeta.readResources();
     }
 
     @Override
-    public Result execute(MetaRepo metaRepo) throws ModelException, IOException, IndexException {
-      ExposedTableReader reader = compile(metaRepo).reader();
+    public Result execute(Resources resources) throws ModelException, IOException, IndexException {
+      ExposedTableReader reader = tableMeta.reader(resources);
       List<ImmutableList<Object>> values = new ArrayList<>();
       Object[] row = reader.read();
       while (row != null) {
@@ -103,14 +107,6 @@ public class SelectStatement {
         row = reader.read();
       }
       return new QueryResult(reader.getColumns().keySet().asList(), values);
-    }
-
-    @Override
-    public void rollback() {
-    }
-
-    @Override
-    public void commit() throws IOException {
     }
 
     @Override
@@ -218,7 +214,7 @@ public class SelectStatement {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static abstract class Table extends Node implements ResourceHolder {
+  public static abstract class Table extends Node {
     public abstract ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException;
   }
 
@@ -230,11 +226,6 @@ public class SelectStatement {
     public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
       return metaRepo.table(ident);
     }
-
-    @Override
-    public void collectLocks(List<ResourceLock> locks) {
-      locks.add(ResourceLock.read(ident));
-    }
   }
 
   @Data
@@ -243,12 +234,7 @@ public class SelectStatement {
     private final Select select;
 
     public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
-      return select.compile(metaRepo);
-    }
-
-    @Override
-    public void collectLocks(List<ResourceLock> locks) {
-      select.collectLocks(locks);
+      return select.compileTable(metaRepo);
     }
   }
 
@@ -290,12 +276,6 @@ public class SelectStatement {
       }
       return collector;
     }
-
-    @Override
-    public void collectLocks(List<ResourceLock> locks) {
-      left.collectLocks(locks);
-      right.collectLocks(locks);
-    }
   }
 
   @Data
@@ -330,11 +310,6 @@ public class SelectStatement {
     @Override
     public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
       return new AliasedTableMeta(ident, table.compile(metaRepo));
-    }
-
-    @Override
-    public void collectLocks(List<ResourceLock> locks) {
-      table.collectLocks(locks);
     }
   }
 

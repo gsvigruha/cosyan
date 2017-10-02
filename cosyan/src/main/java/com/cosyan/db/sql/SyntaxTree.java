@@ -6,7 +6,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.lock.ResourceLock;
 import com.cosyan.db.model.BuiltinFunctions;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
@@ -21,6 +20,8 @@ import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.Tokens.Token;
+import com.cosyan.db.transaction.MetaResources;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -28,8 +29,6 @@ import com.google.common.collect.Iterables;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-@Data
-@EqualsAndHashCode(callSuper = false)
 public class SyntaxTree {
 
   public static enum AggregationExpression {
@@ -42,18 +41,17 @@ public class SyntaxTree {
 
   }
 
-  public static interface ResourceHolder {
-    public void collectLocks(List<ResourceLock> locks);
-  }
-
-  public static interface Statement extends ResourceHolder {
-    public Result execute(MetaRepo metaRepo) throws ModelException, IndexException, IOException;
-
-    public void rollback();
-
-    public void commit() throws IOException;
+  public static interface Statement {
+    public MetaResources compile(MetaRepo metaRepo) throws ModelException;
+        
+    public Result execute(Resources resources) throws ModelException, IndexException, IOException;
 
     public void cancel();
+  }
+
+  public static interface MetaStatement {
+        
+    public Result execute(MetaRepo metaRepo) throws ModelException, IndexException, IOException;
   }
 
   public static interface Literal {
@@ -367,16 +365,6 @@ public class SyntaxTree {
     public AggregationExpression isAggregation() {
       return aggregation;
     }
-  }
-
-  private final ImmutableList<Statement> roots;
-
-  public SyntaxTree(Statement root) {
-    this.roots = ImmutableList.of(root);
-  }
-
-  public SyntaxTree(ImmutableList<Statement> roots) {
-    this.roots = roots;
   }
 
   public static void assertType(DataType<?> expectedType, DataType<?> dataType) throws ModelException {

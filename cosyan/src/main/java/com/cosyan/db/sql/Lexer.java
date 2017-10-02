@@ -9,6 +9,8 @@ import com.cosyan.db.sql.Tokens.IntToken;
 import com.cosyan.db.sql.Tokens.StringToken;
 import com.cosyan.db.sql.Tokens.Token;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.PeekingIterator;
 
 public class Lexer {
 
@@ -19,7 +21,11 @@ public class Lexer {
   private static final int STATE_FLOAT_LITERAL = 4;
   private static final int STATE_IDENT = 5;
 
-  public ImmutableList<Token> tokenize(String sql) throws ParserException {
+  public PeekingIterator<Token> tokenize(String sql) throws ParserException {
+    return Iterators.peekingIterator(tokens(sql).iterator());
+  }
+  
+  ImmutableList<Token> tokens(String sql) throws ParserException {
     int state = STATE_DEFAULT;
     ArrayList<Token> builder = new ArrayList<>();
     int literalStartIndex = 0;

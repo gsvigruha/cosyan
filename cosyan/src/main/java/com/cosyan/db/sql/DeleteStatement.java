@@ -1,10 +1,8 @@
 package com.cosyan.db.sql;
 
 import java.io.IOException;
-import java.util.List;
 
-import com.cosyan.db.io.TableWriter.TableDeleter;
-import com.cosyan.db.lock.ResourceLock;
+import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
@@ -14,6 +12,8 @@ import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.sql.SyntaxTree.Node;
 import com.cosyan.db.sql.SyntaxTree.Statement;
+import com.cosyan.db.transaction.MetaResources;
+import com.cosyan.db.transaction.Resources;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -26,40 +26,24 @@ public class DeleteStatement {
     private final Ident table;
     private final Expression where;
 
-    private TableDeleter deleter;
+    private DerivedColumn whereColumn;
 
     @Override
-    public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
-      MaterializedTableMeta tableMeta = (MaterializedTableMeta) metaRepo.table(table);
-      DerivedColumn whereColumn = where.compile(tableMeta, metaRepo);
-      deleter = tableMeta.deleter(whereColumn);
-      deleter.init();
-      return new StatementResult(deleter.delete());
-    }
-
-    @Override
-    public void rollback() {
-      if (deleter != null) {
-        deleter.rollback();
-      }
-    }
-
-    @Override
-    public void commit() throws IOException {
-      if (deleter != null) {
-        deleter.commit();
-        deleter.close();
-      }
-    }
-
-    @Override
-    public void collectLocks(List<ResourceLock> locks) {
-      locks.add(ResourceLock.readWrite(table));
+    public Result execute(Resources resources) throws ModelException, IOException {
+      TableWriter writer = resources.writer(table);
+      return new StatementResult(writer.delete(whereColumn));
     }
 
     @Override
     public void cancel() {
-      
+
+    }
+
+    @Override
+    public MetaResources compile(MetaRepo metaRepo) throws ModelException {
+      MaterializedTableMeta tableMeta = (MaterializedTableMeta) metaRepo.table(table);
+      whereColumn = where.compile(tableMeta, metaRepo);
+      return MetaResources.writeTable(tableMeta);
     }
   }
 }

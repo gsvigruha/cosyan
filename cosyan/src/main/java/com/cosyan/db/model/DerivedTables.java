@@ -1,5 +1,7 @@
 package com.cosyan.db.model;
 
+import java.io.IOException;
+
 import com.cosyan.db.io.AggrReader.GlobalAggrTableReader;
 import com.cosyan.db.io.AggrReader.KeyValueAggrTableReader;
 import com.cosyan.db.io.TableReader;
@@ -15,6 +17,8 @@ import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.sql.Tokens;
 import com.cosyan.db.sql.Tokens.Token;
+import com.cosyan.db.transaction.MetaResources;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -34,8 +38,8 @@ public class DerivedTables {
     }
 
     @Override
-    public ExposedTableReader reader() throws ModelException {
-      return new DerivedTableReader(sourceTable.reader(), columns());
+    public ExposedTableReader reader(Resources resources) throws IOException {
+      return new DerivedTableReader(sourceTable.reader(resources), columns());
     }
 
     @Override
@@ -46,6 +50,11 @@ public class DerivedTables {
     @Override
     public ColumnMeta column(Ident ident) throws ModelException {
       return column(ident, columns);
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources();
     }
   }
 
@@ -61,8 +70,8 @@ public class DerivedTables {
     }
 
     @Override
-    public ExposedTableReader reader() throws ModelException {
-      return new FilteredTableReader(sourceTable.reader(), whereColumn);
+    public ExposedTableReader reader(Resources resources) throws IOException {
+      return new FilteredTableReader(sourceTable.reader(resources), whereColumn);
     }
 
     @Override
@@ -74,6 +83,11 @@ public class DerivedTables {
     public ColumnMeta column(Ident ident) throws ModelException {
       return sourceTable.column(ident);
     }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources();
+    }
   }
 
   @Data
@@ -83,8 +97,8 @@ public class DerivedTables {
     private final ImmutableMap<String, ColumnMeta> keyColumns;
 
     @Override
-    public TableReader reader() throws ModelException {
-      return sourceTable.reader();
+    public TableReader reader(Resources resources) throws IOException {
+      return sourceTable.reader(resources);
     }
 
     @Override
@@ -96,6 +110,11 @@ public class DerivedTables {
     public ColumnMeta column(Ident ident) throws ModelException {
       return sourceTable.column(ident);
     }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources();
+    }
   }
 
   @Data
@@ -106,8 +125,12 @@ public class DerivedTables {
     private final ColumnMeta havingColumn;
 
     @Override
-    public TableReader reader() throws ModelException {
-      return new KeyValueAggrTableReader(sourceTable.reader(), sourceTable.keyColumns, aggrColumns, havingColumn);
+    public TableReader reader(Resources resources) throws IOException {
+      return new KeyValueAggrTableReader(
+          sourceTable.reader(resources),
+          sourceTable.keyColumns,
+          aggrColumns,
+          havingColumn);
     }
 
     @Override
@@ -118,6 +141,11 @@ public class DerivedTables {
     @Override
     public ColumnMeta column(Ident ident) throws ModelException {
       return sourceTable.column(ident);
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources();
     }
   }
 
@@ -129,8 +157,8 @@ public class DerivedTables {
     private final ColumnMeta havingColumn;
 
     @Override
-    public TableReader reader() throws ModelException {
-      return new GlobalAggrTableReader(sourceTable.reader(), aggrColumns, havingColumn);
+    public TableReader reader(Resources resources) throws IOException {
+      return new GlobalAggrTableReader(sourceTable.reader(resources), aggrColumns, havingColumn);
     }
 
     @Override
@@ -142,8 +170,13 @@ public class DerivedTables {
     public ColumnMeta column(Ident ident) throws ModelException {
       return sourceTable.column(ident);
     }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources();
+    }
   }
-  
+
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class SortedTableMeta extends ExposedTableMeta {
@@ -156,8 +189,8 @@ public class DerivedTables {
     }
 
     @Override
-    public ExposedTableReader reader() throws ModelException {
-      return new SortedTableReader(sourceTable.reader(), orderColumns);
+    public ExposedTableReader reader(Resources resources) throws IOException {
+      return new SortedTableReader(sourceTable.reader(resources), orderColumns);
     }
 
     @Override
@@ -168,6 +201,11 @@ public class DerivedTables {
     @Override
     public ColumnMeta column(Ident ident) throws ModelException {
       return sourceTable.column(ident);
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources();
     }
   }
 
@@ -189,12 +227,17 @@ public class DerivedTables {
     }
 
     @Override
-    public ExposedTableReader reader() throws ModelException {
+    public ExposedTableReader reader(Resources resources) throws IOException {
       if (joinType.is(Tokens.INNER)) {
-        return new HashJoinTableReader(leftTable.reader(), rightTable.reader(), leftTableJoinColumns,
-            rightTableJoinColumns, true);
+        return new HashJoinTableReader(
+            leftTable.reader(resources),
+            rightTable.reader(resources),
+            leftTableJoinColumns,
+            rightTableJoinColumns,
+            /* mainTableFirst= */true);
       } else {
-        throw new ModelException("Unknown join type '" + joinType.getString() + "'.");
+        // TODO remove this and resolve in compilation time.
+        throw new RuntimeException("Unknown join type '" + joinType.getString() + "'.");
       }
     }
 
@@ -229,6 +272,11 @@ public class DerivedTables {
       }
       throw new ModelException("Column '" + ident + "' not found in table.");
     }
+
+    @Override
+    public MetaResources readResources() {
+      return leftTable.readResources().merge(rightTable.readResources());
+    }
   }
 
   @Data
@@ -243,8 +291,8 @@ public class DerivedTables {
     }
 
     @Override
-    public ExposedTableReader reader() throws ModelException {
-      return sourceTable.reader();
+    public ExposedTableReader reader(Resources resources) throws IOException {
+      return sourceTable.reader(resources);
     }
 
     @Override
@@ -276,6 +324,11 @@ public class DerivedTables {
           throw new ModelException("Column '" + ident + "' not found in table.");
         }
       }
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources();
     }
   }
 }

@@ -7,9 +7,9 @@ import java.util.Iterator;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
-import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 import com.cosyan.db.sql.SyntaxTree.Ident;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableMap;
 
 import lombok.Data;
@@ -50,7 +50,7 @@ public class IOTestUtil {
     private final Object[][] data;
 
     public DummyMaterializedTableMeta(ImmutableMap<String, BasicColumn> columns, Object[][] data) {
-      super(null, columns, null);
+      super(null, columns);
       this.columns = columns;
       this.data = data;
     }
@@ -61,7 +61,7 @@ public class IOTestUtil {
     }
 
     @Override
-    public ExposedTableReader reader() throws ModelException {
+    public ExposedTableReader reader(Resources resources) throws IOException {
       return new DummyTableReader(columns, data);
     }
 

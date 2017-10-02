@@ -7,7 +7,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.lock.ResourceLock;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
@@ -38,19 +37,11 @@ public class Transaction {
     return statements;
   }
 
-  public ImmutableList<ResourceLock> collectLocks() {
-    ArrayList<ResourceLock> locks = new ArrayList<>();
-    for (Statement statement : statements) {
-      statement.collectLocks(locks);
-    }
-    return ImmutableList.copyOf(locks);
-  }
-
-  public void lock(ImmutableList<ResourceLock> locks, MetaRepo metaRepo) {
+  public void lock(MetaResources metaResources, MetaRepo metaRepo) {
     boolean locked = false;
     Random random = new Random();
     while (!locked && !cancelled.get()) {
-      if (metaRepo.tryLock(locks)) {
+      if (metaRepo.tryLock(metaResources)) {
         locked = true;
       } else {
         try {
@@ -63,32 +54,34 @@ public class Transaction {
   }
 
   public Result execute(MetaRepo metaRepo, TransactionJournal journal) {
-    ImmutableList<ResourceLock> locks = collectLocks();
+    MetaResources metaResources = MetaResources.empty();
     try {
-      lock(locks, metaRepo);
+      for (Statement statement : statements) {
+        metaResources = metaResources.merge(statement.compile(metaRepo));
+      }
+    } catch (ModelException e) {
+      return new ErrorResult(e);
+    }
+    try {
+      lock(metaResources, metaRepo);
       journal.start(trxNumber);
       List<Result> results = new ArrayList<>();
+      Resources resources = metaRepo.resources(metaResources);
       try {
         for (Statement statement : statements) {
-          results.add(statement.execute(metaRepo));
+          results.add(statement.execute(resources));
         }
       } catch (ModelException | IndexException e) {
-        for (Statement statement : statements) {
-          statement.rollback();
-        }
+        resources.rollback();
         journal.userError(trxNumber);
         return new ErrorResult(e);
       } catch (IOException e) {
-        for (Statement statement : statements) {
-          statement.rollback();
-        }
+        resources.rollback();
         journal.ioReadError(trxNumber);
         return new CrashResult(e);
       }
       try {
-        for (Statement statement : statements) {
-          statement.commit();
-        }
+        resources.commit();
         journal.success(trxNumber);
         return new TransactionResult(results);
       } catch (IOException e) {
@@ -103,7 +96,7 @@ public class Transaction {
       e.printStackTrace();
       return new CrashResult(e);
     } finally {
-      metaRepo.unlock(locks);
+      metaRepo.unlock(metaResources);
     }
   }
 

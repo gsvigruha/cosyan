@@ -1,5 +1,6 @@
 package com.cosyan.db.transaction;
 
+import com.cosyan.db.sql.SyntaxTree.MetaStatement;
 import com.cosyan.db.sql.SyntaxTree.Statement;
 
 public class TransactionHandler {
@@ -8,6 +9,10 @@ public class TransactionHandler {
 
   public synchronized Transaction begin(Iterable<Statement> statements) {
     return new Transaction(trxCntr++, statements);
+  }
+
+  public synchronized MetaTransaction begin(MetaStatement metaStatement) {
+    return new MetaTransaction(trxCntr++, metaStatement);
   }
 
   public static void end() {
