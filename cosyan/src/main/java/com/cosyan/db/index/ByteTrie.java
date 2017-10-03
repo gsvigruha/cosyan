@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Serializer;
 import com.cosyan.db.model.DataTypes;
 
@@ -28,8 +29,8 @@ import com.cosyan.db.model.DataTypes;
  * 
  * @author gsvigruha
  *
- * @param <K, V>
- *          type of the index.
+ * @param <K,
+ *          V> type of the index.
  */
 public abstract class ByteTrie<K, V> {
 
@@ -377,6 +378,10 @@ public abstract class ByteTrie<K, V> {
         return false;
       }
     }
+  }
+
+  public ByteTrieStat stats() throws IOException {
+    return new ByteTrieStat(raf.length(), trie.size(), pendingNodes.size());
   }
 
   public static class LongIndex extends ByteTrie<Long, Long> {

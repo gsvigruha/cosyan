@@ -5,6 +5,7 @@ import java.io.IOException;
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.index.ByteTrie.LongIndex;
 import com.cosyan.db.index.ByteTrie.StringIndex;
+import com.cosyan.db.index.IndexStat.ByteTrieStat;
 
 public abstract class TableIndex {
 
@@ -19,6 +20,8 @@ public abstract class TableIndex {
   public abstract void commit() throws IOException;
 
   public abstract void rollback();
+  
+  public abstract ByteTrieStat stats() throws IOException;
 
   private boolean valid = true;
 
@@ -67,6 +70,11 @@ public abstract class TableIndex {
     public boolean contains(Object key) throws IOException {
       return index.get((Long) key) != null;
     }
+
+    @Override
+    public ByteTrieStat stats() throws IOException {
+      return index.stats();
+    }
   }
 
   public static class StringTableIndex extends TableIndex {
@@ -105,6 +113,11 @@ public abstract class TableIndex {
     @Override
     public boolean contains(Object key) throws IOException {
       return index.get((String) key) != null;
+    }
+    
+    @Override
+    public ByteTrieStat stats() throws IOException {
+      return index.stats();
     }
   }
 }

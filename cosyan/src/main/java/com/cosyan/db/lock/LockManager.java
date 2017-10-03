@@ -12,7 +12,24 @@ import com.cosyan.db.transaction.MetaResources.Resource;
 
 public class LockManager {
 
+  private final ReentrantReadWriteLock metaRepoLock = new ReentrantReadWriteLock();
   private final Map<String, ReentrantReadWriteLock> lockMap = new HashMap<>();
+
+  public synchronized void metaRepoReadLock() {
+    metaRepoLock.readLock().lock();
+  }
+
+  public synchronized void metaRepoWriteLock() {
+    metaRepoLock.writeLock().lock();
+  }
+
+  public synchronized void metaRepoReadUnlock() {
+    metaRepoLock.readLock().unlock();
+  }
+
+  public synchronized void metaRepoWriteUnlock() {
+    metaRepoLock.writeLock().unlock();
+  }
 
   public synchronized boolean tryLock(MetaResources resources) {
     List<Lock> locks = new ArrayList<>();

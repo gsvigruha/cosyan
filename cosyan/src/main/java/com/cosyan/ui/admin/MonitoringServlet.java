@@ -12,13 +12,13 @@ import org.json.simple.JSONObject;
 
 import com.cosyan.db.model.MetaRepo;
 
-public class AdminServlet extends HttpServlet {
+public class MonitoringServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
 
-  private final MetaRepoConnector metaRepoConnector;
+  private final SystemMonitoring systemMonitoring;
 
-  public AdminServlet(MetaRepo metaRepo) {
-    this.metaRepoConnector = new MetaRepoConnector(metaRepo);
+  public MonitoringServlet(MetaRepo metaRepo) {
+    this.systemMonitoring = new SystemMonitoring(metaRepo);
   }
 
   @SuppressWarnings("unchecked")
@@ -26,12 +26,9 @@ public class AdminServlet extends HttpServlet {
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     try {
-      JSONObject obj = new JSONObject();
-      obj.putAll(metaRepoConnector.tables());
-      obj.putAll(metaRepoConnector.indexes());
       resp.setStatus(HttpStatus.OK_200);
-      resp.getWriter().println(obj);
-    } catch(Exception e) {
+      resp.getWriter().println(systemMonitoring.usage());
+    } catch (IOException e) {
       e.printStackTrace();
       JSONObject error = new JSONObject();
       error.put("error", e.getMessage());
@@ -39,4 +36,5 @@ public class AdminServlet extends HttpServlet {
       resp.getWriter().println(error);
     }
   }
+
 }

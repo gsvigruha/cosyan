@@ -29,7 +29,7 @@ public class TableWriter implements TableIO {
 
   private final RandomAccessFile file;
   private final ImmutableMap<String, BasicColumn> columns;
-  private final ImmutableMap<String, TableIndex> indexes;
+  private final ImmutableMap<String, TableIndex> uniqueIndexes;
   private final ImmutableMap<String, TableMultiIndex> multiIndexes;
   private final ImmutableMultimap<String, TableIndex> foreignIndexes;
   private final ImmutableMultimap<String, TableMultiIndex> reversedForeignIndexes;
@@ -42,14 +42,14 @@ public class TableWriter implements TableIO {
   public TableWriter(
       RandomAccessFile file,
       ImmutableMap<String, BasicColumn> columns,
-      ImmutableMap<String, TableIndex> indexes,
+      ImmutableMap<String, TableIndex> uniqueIndexes,
       ImmutableMap<String, TableMultiIndex> multiIndexes,
       ImmutableMultimap<String, TableIndex> foreignIndexes,
       ImmutableMultimap<String, TableMultiIndex> reversedForeignIndexes,
       ImmutableMap<String, DerivedColumn> simpleChecks) throws IOException {
     this.file = file;
     this.columns = columns;
-    this.indexes = indexes;
+    this.uniqueIndexes = uniqueIndexes;
     this.multiIndexes = multiIndexes;
     this.foreignIndexes = foreignIndexes;
     this.reversedForeignIndexes = reversedForeignIndexes;
@@ -66,7 +66,7 @@ public class TableWriter implements TableIO {
         throw new ModelException("Column is not nullable (mandatory).");
       }
       if (column.isUnique() && value != DataTypes.NULL) {
-        indexes.get(column.getName()).put(value, fileIndex);
+        uniqueIndexes.get(column.getName()).put(value, fileIndex);
       }
       if (multiIndexes.containsKey(column.getName())) {
         multiIndexes.get(column.getName()).put(value, fileIndex);
@@ -101,7 +101,7 @@ public class TableWriter implements TableIO {
       file.getChannel().truncate(fileIndex0);
       throw e;
     }
-    for (TableIndex index : indexes.values()) {
+    for (TableIndex index : uniqueIndexes.values()) {
       try {
         index.commit();
       } catch (IOException e) {
@@ -118,7 +118,7 @@ public class TableWriter implements TableIO {
   }
 
   public void rollback() {
-    for (TableIndex index : indexes.values()) {
+    for (TableIndex index : uniqueIndexes.values()) {
       index.rollback();
     }
     for (TableMultiIndex index : multiIndexes.values()) {
@@ -135,8 +135,8 @@ public class TableWriter implements TableIO {
     recordsToDelete.add(record.getFilePointer());
     for (BasicColumn column : columns.values()) {
       Object value = record.getValues()[column.getIndex()];
-      if (indexes.containsKey(column.getName())) {
-        indexes.get(column.getName()).delete(value);
+      if (uniqueIndexes.containsKey(column.getName())) {
+        uniqueIndexes.get(column.getName()).delete(value);
       }
       if (multiIndexes.containsKey(column.getName())) {
         multiIndexes.get(column.getName()).delete(value);

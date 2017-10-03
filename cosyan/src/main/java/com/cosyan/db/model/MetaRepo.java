@@ -17,6 +17,8 @@ import com.cosyan.db.index.ByteMultiTrie.LongMultiIndex;
 import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
 import com.cosyan.db.index.ByteTrie.LongIndex;
 import com.cosyan.db.index.ByteTrie.StringIndex;
+import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
+import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Serializer;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
@@ -37,6 +39,7 @@ import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 import com.cosyan.db.transaction.Resources;
+import com.cosyan.db.util.Util;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -193,8 +196,10 @@ public class MetaRepo {
     if (column.isUnique()) {
       if (column.getType() == DataTypes.StringType) {
         uniqueIndexes.put(indexName, new StringTableIndex(new StringIndex(path)));
+        lockManager.registerLock(indexName);
       } else if (column.getType() == DataTypes.LongType) {
         uniqueIndexes.put(indexName, new LongTableIndex(new LongIndex(path)));
+        lockManager.registerLock(indexName);
       } else {
         throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
             " and " + DataTypes.LongType + " types, not " + column.getType() + ".");
@@ -210,8 +215,10 @@ public class MetaRepo {
     assert !multiIndexes.containsKey(indexName);
     if (column.getType() == DataTypes.StringType) {
       multiIndexes.put(indexName, new StringTableMultiIndex(new StringMultiIndex(path)));
+      lockManager.registerLock(indexName);
     } else if (column.getType() == DataTypes.LongType) {
       multiIndexes.put(indexName, new LongTableMultiIndex(new LongMultiIndex(path)));
+      lockManager.registerLock(indexName);
     } else {
       throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
           " and " + DataTypes.LongType + " types, not " + column.getType() + ".");
@@ -296,11 +303,35 @@ public class MetaRepo {
     }
   }
 
+  public void metaRepoReadLock() {
+    lockManager.metaRepoReadLock();
+  }
+
+  public void metaRepoWriteLock() {
+    lockManager.metaRepoWriteLock();
+  }
+
+  public void metaRepoReadUnlock() {
+    lockManager.metaRepoReadUnlock();
+  }
+
+  public void metaRepoWriteUnlock() {
+    lockManager.metaRepoWriteUnlock();
+  }
+
   public boolean tryLock(MetaResources metaResources) {
     return lockManager.tryLock(metaResources);
   }
 
   public void unlock(MetaResources metaResources) {
     lockManager.unlock(metaResources);
+  }
+
+  public ImmutableMap<String, ByteTrieStat> uniqueIndexStats() throws IOException {
+    return Util.<String, TableIndex, ByteTrieStat>mapValues(uniqueIndexes, TableIndex::stats);
+  }
+
+  public ImmutableMap<String, ByteMultiTrieStat> multiIndexStats() throws IOException {
+    return Util.<String, TableMultiIndex, ByteMultiTrieStat>mapValues(multiIndexes, TableMultiIndex::stats);
   }
 }

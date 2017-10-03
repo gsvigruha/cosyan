@@ -27,12 +27,13 @@ public class MetaTransaction {
 
   public Result execute(MetaRepo metaRepo, TransactionJournal journal) {
     try {
+      metaRepo.metaRepoWriteLock();
       metaStatement.execute(metaRepo);
       return new MetaStatementResult();
     } catch (ModelException | IndexException | IOException e) {
       return new ErrorResult(e);
     } finally {
-      
+      metaRepo.metaRepoWriteUnlock();
     }
   }
 }

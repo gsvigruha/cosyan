@@ -16,6 +16,7 @@ import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.transaction.TransactionHandler;
 import com.cosyan.ui.admin.AdminServlet;
+import com.cosyan.ui.admin.MonitoringServlet;
 import com.cosyan.ui.sql.SQLServlet;
 
 public class WebServer {
@@ -32,6 +33,7 @@ public class WebServer {
     DBApi dbApi = new DBApi(metaRepo, transactionHandler, transactionJournal);
 
     handler.addServlet(new ServletHolder(new AdminServlet(metaRepo)), "/admin");
+    handler.addServlet(new ServletHolder(new MonitoringServlet(metaRepo)), "/monitoring");
     handler.addServlet(new ServletHolder(new SQLServlet(dbApi)), "/sql");
 
     ResourceHandler resourceHandler = new ResourceHandler();

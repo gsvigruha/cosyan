@@ -5,12 +5,13 @@ import java.io.IOException;
 import com.cosyan.db.index.ByteMultiTrie.LongMultiIndex;
 import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
 import com.cosyan.db.index.ByteTrie.IndexException;
+import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 
 public abstract class TableMultiIndex {
   public abstract void put(Object key, long fileIndex) throws IOException, IndexException;
 
   public abstract boolean delete(Object key) throws IOException;
-  
+
   public abstract boolean delete(Object key, long fileIndex) throws IOException;
 
   public abstract long[] get(Object key) throws IOException;
@@ -18,19 +19,21 @@ public abstract class TableMultiIndex {
   public abstract void commit() throws IOException;
 
   public abstract void rollback();
-  
+
   public abstract boolean contains(Object key) throws IOException;
+
+  public abstract ByteMultiTrieStat stats() throws IOException;
 
   private boolean valid = true;
 
   public void invalidate() {
-    valid = false;  
+    valid = false;
   }
-  
+
   public boolean isValid() {
     return valid;
   }
-  
+
   public static class LongTableMultiIndex extends TableMultiIndex {
 
     private LongMultiIndex index;
@@ -53,7 +56,7 @@ public abstract class TableMultiIndex {
     public boolean delete(Object key, long fileIndex) throws IOException {
       return index.delete((Long) key, fileIndex);
     }
-    
+
     @Override
     public long[] get(Object key) throws IOException {
       return index.get((Long) key);
@@ -72,6 +75,11 @@ public abstract class TableMultiIndex {
     @Override
     public boolean contains(Object key) throws IOException {
       return index.get((Long) key).length > 0;
+    }
+
+    @Override
+    public ByteMultiTrieStat stats() throws IOException {
+      return index.stats();
     }
   }
 
@@ -97,7 +105,7 @@ public abstract class TableMultiIndex {
     public boolean delete(Object key, long fileIndex) throws IOException {
       return index.delete((String) key, fileIndex);
     }
-    
+
     @Override
     public long[] get(Object key) throws IOException {
       return index.get((String) key);
@@ -112,10 +120,15 @@ public abstract class TableMultiIndex {
     public void rollback() {
       index.rollback();
     }
-    
+
     @Override
     public boolean contains(Object key) throws IOException {
       return index.get((String) key).length > 0;
+    }
+
+    @Override
+    public ByteMultiTrieStat stats() throws IOException {
+      return index.stats();
     }
   }
 }

@@ -90,4 +90,32 @@ public class TransactionTest extends UnitTestBase {
     assertHeader(new String[] { "a" }, resultAfterCommit);
     assertValues(new Object[][] { { "b" } }, resultAfterCommit);
   }
+
+  @Test
+  public void testInsertAndUpdate() throws InterruptedException, ModelException, IOException {
+    execute("create table t5 (a varchar);");
+    TransactionResult result = transaction("insert into t5 values('a');" +
+        "insert into t5 values('b');" +
+        "update t5 set a = 'c' where a = 'a';" +
+        "select * from t5;" +
+        "insert into t5 values('d');" +
+        "update t5 set a = 'e' where a = 'c';" +
+        "select * from t5;");
+    assertHeader(new String[] { "a" }, (QueryResult) result.getResults().get(3));
+    assertValues(new Object[][] {
+        { "b" },
+        { "c" } }, (QueryResult) result.getResults().get(3));
+    assertHeader(new String[] { "a" }, (QueryResult) result.getResults().get(6));
+    assertValues(new Object[][] {
+        { "b" },
+        { "d" },
+        { "e" } }, (QueryResult) result.getResults().get(6));
+
+    QueryResult resultAfterCommit = query("select * from t5;");
+    assertHeader(new String[] { "a" }, resultAfterCommit);
+    assertValues(new Object[][] {
+      { "b" },
+      { "d" },
+      { "e" } }, (QueryResult) result.getResults().get(6));
+  }
 }

@@ -1,0 +1,30 @@
+<div>
+  <button ng-click="loadMonitoring()">Reload</button>
+</div>
+
+Load: {{ data.load }}<br/>
+Free memory: {{ data.freeMemory }}<br/>
+Total memory: {{ data.totalMemory }}<br/>
+Max memory: {{ data.maxMemory }}<br/>
+
+Unique indexes:
+<ul>
+  <li ng-repeat="index in data.uniqueIndexes">
+    Name: {{ index.name }}<br/>
+    File size: {{ index.indexFileSize }}<br/>
+    Nodes in memory: {{ index.inMemNodes }}<br/>
+    Pending nodes: {{ index.pendingNodes }}<br/>
+  </li>
+</ul>
+
+Multi indexes:
+<ul>
+  <li ng-repeat="index in data.multiIndexes">
+    Name: {{ index.name }}<br/>
+    Trie file size: {{ index.trieFileSize }}<br/>
+    Index file size: {{ index.indexFileSize }}<br/>
+    Nodes in memory: {{ index.trieInMemNodes }}<br/>
+    Trie pending nodes: {{ index.triePendingNodes }}<br/>
+    Pending nodes: {{ index.pendingNodes }}<br/>
+  </li>
+</ul>

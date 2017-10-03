@@ -54,6 +54,7 @@ public class Transaction {
   }
 
   public Result execute(MetaRepo metaRepo, TransactionJournal journal) {
+    metaRepo.metaRepoReadLock();
     MetaResources metaResources = MetaResources.empty();
     try {
       for (Statement statement : statements) {
@@ -61,6 +62,8 @@ public class Transaction {
       }
     } catch (ModelException e) {
       return new ErrorResult(e);
+    } finally {
+      metaRepo.metaRepoReadUnlock();
     }
     try {
       lock(metaResources, metaRepo);

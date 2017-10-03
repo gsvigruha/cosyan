@@ -16,6 +16,8 @@ import java.util.Map;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.index.ByteTrie.RuntimeIndexException;
+import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
+import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Serializer;
 import com.cosyan.db.model.DataTypes;
 
@@ -244,6 +246,16 @@ public abstract class ByteMultiTrie<T> {
       nextPointer = node.getNextPointer();
     }
     return false;
+  }
+
+  public ByteMultiTrieStat stats() throws IOException {
+    ByteTrieStat trieStat = trie.stats();
+    return new ByteMultiTrieStat(
+        trieStat.getIndexFileSize(),
+        raf.length(),
+        trieStat.getInMemNodes(),
+        trieStat.getPendingNodes(),
+        pendingNodes.size());
   }
 
   private static class LongMultiLeafIndex extends ByteTrie<Long, MultiLeaf> {

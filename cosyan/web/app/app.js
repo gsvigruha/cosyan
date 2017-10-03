@@ -17,5 +17,9 @@ angular.module('cosyan', [
       .when('/admin', {
         templateUrl: 'admin/admin.html',
         controller: 'AdminCtrl',
+      })
+      .when('/monitoring', {
+        templateUrl: 'admin/monitoring.html',
+        controller: 'MonitoringCtrl',
       });
 });
