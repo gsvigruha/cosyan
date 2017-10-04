@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.model.MetaRepo.RuleException;
 import com.cosyan.db.sql.Result;
 import com.cosyan.db.sql.Result.CrashResult;
 import com.cosyan.db.sql.Result.ErrorResult;
@@ -74,7 +74,7 @@ public class Transaction {
         for (Statement statement : statements) {
           results.add(statement.execute(resources));
         }
-      } catch (ModelException | IndexException e) {
+      } catch (RuleException e) {
         resources.rollback();
         journal.userError(trxNumber);
         return new ErrorResult(e);

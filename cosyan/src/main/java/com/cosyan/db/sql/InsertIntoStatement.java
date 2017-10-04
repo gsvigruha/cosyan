@@ -4,11 +4,11 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Optional;
 
-import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.model.MetaRepo.RuleException;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 import com.cosyan.db.sql.Result.StatementResult;
 import com.cosyan.db.sql.SyntaxTree.Ident;
@@ -40,7 +40,7 @@ public class InsertIntoStatement {
     }
 
     @Override
-    public Result execute(Resources resources) throws ModelException, IOException, IndexException {
+    public Result execute(Resources resources) throws RuleException, IOException {
       Object[] fullValues = new Object[tableMeta.columns().size()];
       TableWriter writer = resources.writer(table);
       for (ImmutableList<Literal> values : valuess) {
@@ -54,7 +54,7 @@ public class InsertIntoStatement {
           }
         } else {
           if (values.size() != fullValues.length) {
-            throw new ModelException("Expected '" + fullValues.length + "' values but got '" + values.size() + "'.");
+            throw new RuleException("Expected '" + fullValues.length + "' values but got '" + values.size() + "'.");
           }
           for (int i = 0; i < values.size(); i++) {
             fullValues[i] = values.get(i).getValue();

@@ -6,6 +6,7 @@ import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.model.MetaRepo.RuleException;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 import com.cosyan.db.sql.Result.StatementResult;
 import com.cosyan.db.sql.SyntaxTree.Expression;
@@ -29,7 +30,7 @@ public class DeleteStatement {
     private DerivedColumn whereColumn;
 
     @Override
-    public Result execute(Resources resources) throws ModelException, IOException {
+    public Result execute(Resources resources) throws RuleException, IOException {
       TableWriter writer = resources.writer(table);
       return new StatementResult(writer.delete(whereColumn));
     }

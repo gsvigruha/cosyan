@@ -5,8 +5,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
-import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.model.MetaRepo.RuleException;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.sql.Result.ErrorResult;
@@ -40,7 +39,7 @@ public class DeleteTest extends UnitTestBase {
     execute("insert into t2 values ('x', 1);");
     execute("insert into t2 values ('y', 2);");
     ErrorResult r1 = error("insert into t2 values ('x', 3);");
-    assertError(IndexException.class, "Key 'x' already present in index.", r1);
+    assertError(RuleException.class, "Key 'x' already present in index.", r1);
 
     execute("delete from t2 where a = 'x';");
     execute("insert into t2 values ('x', 3);");
@@ -62,7 +61,7 @@ public class DeleteTest extends UnitTestBase {
     execute("insert into t4 values ('123', 'x');");
 
     ErrorResult r1 = error("delete from t3 where a = 'x';");
-    assertError(ModelException.class, "Foreign key violation, key value 'x' has references.", r1);
+    assertError(RuleException.class, "Foreign key violation, key value 'x' has references.", r1);
 
     execute("delete from t4 where b = 'x';");
     execute("delete from t3 where a = 'x';");

@@ -5,8 +5,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
-import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.model.MetaRepo.RuleException;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.sql.Result.ErrorResult;
@@ -58,7 +57,7 @@ public class UpdateTest extends UnitTestBase {
     execute("insert into t3 values ('y', 2);");
 
     ErrorResult r1 = error("update t3 set a = 'y' where a = 'x';");
-    assertError(IndexException.class, "Key 'y' already present in index.", r1);
+    assertError(RuleException.class, "Key 'y' already present in index.", r1);
 
     execute("update t3 set a = 'z' where a = 'x';");
     QueryResult r2 = query("select * from t3;");
@@ -77,10 +76,10 @@ public class UpdateTest extends UnitTestBase {
     execute("insert into t5 values ('123', 'x');");
 
     ErrorResult r1 = error("update t4 set a = 'z' where a = 'x';");
-    assertError(ModelException.class, "Foreign key violation, key value 'x' has references.", r1);
+    assertError(RuleException.class, "Foreign key violation, key value 'x' has references.", r1);
 
     ErrorResult r2 = error("update t5 set b = 'z' where b = 'x';");
-    assertError(ModelException.class, "Foreign key violation, value 'z' not present.", r2);
+    assertError(RuleException.class, "Foreign key violation, value 'z' not present.", r2);
 
     execute("update t5 set b = 'y' where b = 'x';");
     QueryResult r3 = query("select * from t5;");

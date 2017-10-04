@@ -15,10 +15,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.index.ByteMultiTrie.LongMultiIndex;
 import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
+import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.index.ByteTrie.LongIndex;
 import com.cosyan.db.index.ByteTrie.StringIndex;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
+import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.Serializer;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
@@ -154,14 +156,17 @@ public class MetaRepo {
     return builder.build();
   }
 
-  public ImmutableMultimap<String, TableMultiIndex> collectReverseForeignIndexes(MaterializedTableMeta table)
+  public ImmutableMultimap<String, IndexReader> collectReverseForeignIndexes(MaterializedTableMeta table)
       throws ModelException {
-    ImmutableMultimap.Builder<String, TableMultiIndex> builder = ImmutableMultimap.builder();
+    ImmutableMultimap.Builder<String, IndexReader> builder = ImmutableMultimap.builder();
     for (ForeignKey reverseForeignKey : table.getReverseForeignKeys().values()) {
-      builder.put(
-          reverseForeignKey.getColumn().getName(),
-          multiIndexes
-              .get(reverseForeignKey.getRefTable().getTableName() + "." + reverseForeignKey.getRefColumn().getName()));
+      String indexName = reverseForeignKey.getRefTable().getTableName() + "."
+          + reverseForeignKey.getRefColumn().getName();
+      if (reverseForeignKey.getRefColumn().isUnique()) {
+        builder.put(reverseForeignKey.getColumn().getName(), uniqueIndexes.get(indexName));
+      } else {
+        builder.put(reverseForeignKey.getColumn().getName(), multiIndexes.get(indexName));
+      }
     }
     return builder.build();
   }
@@ -295,14 +300,18 @@ public class MetaRepo {
     }
   }
 
-  public static class ModelRuntimeException extends RuntimeException {
+  public static class RuleException extends Exception {
     private static final long serialVersionUID = 1L;
 
-    public ModelRuntimeException(Exception e) {
-      super(e);
+    public RuleException(String msg) {
+      super(msg);
+    }
+    
+    public RuleException(IndexException e) {
+      super(e.getMessage());
     }
   }
-
+  
   public void metaRepoReadLock() {
     lockManager.metaRepoReadLock();
   }

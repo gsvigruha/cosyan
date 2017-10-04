@@ -5,9 +5,8 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
-import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.model.MetaRepo.RuleException;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.sql.Result.ErrorResult;
@@ -39,18 +38,20 @@ public class InsertIntoTest extends UnitTestBase {
         { DataTypes.NULL, 5L, 4.0 } }, result);
   }
 
+  @Test
   public void testNotNullable() throws Exception {
     execute("create table t3 (a varchar not null, b integer);");
     execute("insert into t3 values ('x', 1);");
     ErrorResult result = error("insert into t3 (b) values (2);");
-    assertError(ModelException.class, "xy", result);
+    assertError(RuleException.class, "Column is not nullable (mandatory).", result);
   }
 
+  @Test
   public void testUniqueNotNull() throws Exception {
     execute("create table t4 (a varchar unique not null);");
     execute("insert into t4 values ('x');");
     ErrorResult result = error("insert into t4 values ('x');");
-    assertError(IndexException.class, "xy", result);
+    assertError(RuleException.class, "Key 'x' already present in index.", result);
   }
 
   @Test
@@ -67,11 +68,12 @@ public class InsertIntoTest extends UnitTestBase {
         { DataTypes.NULL, 1L } }, result);
   }
 
+  @Test
   public void testConstraint() throws Exception {
     execute("create table t6 (a integer, b integer, constraint c check(a + b > 1));");
     execute("insert into t6 values (1, 1);");
     ErrorResult result = error("insert into t6 values (0, 0);");
-    assertError(ModelException.class, "xy", result);
+    assertError(RuleException.class, "Constraint check c failed.", result);
   }
 
   @Test
@@ -79,7 +81,7 @@ public class InsertIntoTest extends UnitTestBase {
     execute("create table t7 (a varchar, constraint pk_a primary key (a));");
     execute("create table t8 (a varchar, b varchar, constraint fk_b foreign key (b) references t7(a));");
     ErrorResult r1 = error("insert into t8 values ('123', 'x');");
-    assertError(ModelException.class, "Foreign key violation, value 'x' not present.", r1);
+    assertError(RuleException.class, "Foreign key violation, value 'x' not present.", r1);
 
     execute("insert into t7 values ('x');");
     execute("insert into t8 values ('123', 'x');");
@@ -137,7 +139,7 @@ public class InsertIntoTest extends UnitTestBase {
     execute("create table t13 (a varchar, constraint pk_a primary key (a));");
     execute("insert into t13 values ('x');");
     ErrorResult r1 = error("insert into t13 values ('x');");
-    assertError(IndexException.class, "Key 'x' already present in index.", r1);
+    assertError(RuleException.class, "Key 'x' already present in index.", r1);
 
     execute("insert into t13 values ('y');");
     QueryResult r2 = query("select * from t13;");
@@ -151,5 +153,18 @@ public class InsertIntoTest extends UnitTestBase {
     QueryResult result = query("select count(1) as c from t14;");
     assertHeader(new String[] { "c" }, result);
     assertValues(new Object[][] { { 0L } }, result);
+  }
+
+  @Test
+  public void testReverseForeignKeyIsUnique() throws Exception {
+    execute("create table t15 (a varchar, constraint pk_a primary key (a));");
+    execute("create table t16 (a varchar, "
+        + "constraint pk_a primary key (a),"
+        + "constraint fk_a foreign key (a) references t15(a));");
+    execute("insert into t15 values ('x');");
+    execute("insert into t16 values ('x');");
+    QueryResult result = query("select * from t16;");
+    assertHeader(new String[] { "a" }, result);
+    assertValues(new Object[][] { { "x" } }, result);
   }
 }

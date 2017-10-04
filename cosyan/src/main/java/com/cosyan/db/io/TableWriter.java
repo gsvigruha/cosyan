@@ -13,12 +13,13 @@ import java.util.Set;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
+import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.model.MetaRepo.RuleException;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableMultiIndex;
 import com.google.common.collect.ImmutableList;
@@ -32,7 +33,7 @@ public class TableWriter implements TableIO {
   private final ImmutableMap<String, TableIndex> uniqueIndexes;
   private final ImmutableMap<String, TableMultiIndex> multiIndexes;
   private final ImmutableMultimap<String, TableIndex> foreignIndexes;
-  private final ImmutableMultimap<String, TableMultiIndex> reversedForeignIndexes;
+  private final ImmutableMultimap<String, IndexReader> reversedForeignIndexes;
   private final ImmutableMap<String, DerivedColumn> simpleChecks;
 
   private final long fileIndex0;
@@ -45,7 +46,7 @@ public class TableWriter implements TableIO {
       ImmutableMap<String, TableIndex> uniqueIndexes,
       ImmutableMap<String, TableMultiIndex> multiIndexes,
       ImmutableMultimap<String, TableIndex> foreignIndexes,
-      ImmutableMultimap<String, TableMultiIndex> reversedForeignIndexes,
+      ImmutableMultimap<String, IndexReader> reversedForeignIndexes,
       ImmutableMap<String, DerivedColumn> simpleChecks) throws IOException {
     this.file = file;
     this.columns = columns;
@@ -57,24 +58,32 @@ public class TableWriter implements TableIO {
     this.fileIndex0 = file.length();
   }
 
-  public void insert(Object[] values) throws IOException, ModelException, IndexException {
+  public void insert(Object[] values) throws IOException, RuleException {
     for (int i = 0; i < values.length; i++) {
       Object value = values[i];
       long fileIndex = fileIndex0 + bos.size();
       BasicColumn column = columns.values().asList().get(i);
       if (!column.isNullable() && value == DataTypes.NULL) {
-        throw new ModelException("Column is not nullable (mandatory).");
+        throw new RuleException("Column is not nullable (mandatory).");
       }
       if (column.isUnique() && value != DataTypes.NULL) {
-        uniqueIndexes.get(column.getName()).put(value, fileIndex);
+        try {
+          uniqueIndexes.get(column.getName()).put(value, fileIndex);
+        } catch (IndexException e) {
+          throw new RuleException(e);
+        }
       }
       if (multiIndexes.containsKey(column.getName())) {
-        multiIndexes.get(column.getName()).put(value, fileIndex);
+        try {
+          multiIndexes.get(column.getName()).put(value, fileIndex);
+        } catch (IndexException e) {
+          throw new RuleException(e);
+        }
       }
       if (foreignIndexes.containsKey(column.getName())) {
         for (TableIndex foreignIndex : foreignIndexes.get(column.getName())) {
           if (!foreignIndex.contains(value)) {
-            throw new ModelException(String.format(
+            throw new RuleException(String.format(
                 "Foreign key violation, value '%s' not present.", value));
           }
         }
@@ -82,7 +91,7 @@ public class TableWriter implements TableIO {
     }
     for (Map.Entry<String, DerivedColumn> constraint : simpleChecks.entrySet()) {
       if (!(boolean) constraint.getValue().getValue(values)) {
-        throw new ModelException("Constraint check " + constraint.getKey() + " failed.");
+        throw new RuleException("Constraint check " + constraint.getKey() + " failed.");
       }
     }
     Serializer.serialize(values, columns.values().asList(), bos);
@@ -131,7 +140,7 @@ public class TableWriter implements TableIO {
     file.close();
   }
 
-  private void delete(Record record) throws IOException, ModelException {
+  private void delete(Record record) throws IOException, RuleException {
     recordsToDelete.add(record.getFilePointer());
     for (BasicColumn column : columns.values()) {
       Object value = record.getValues()[column.getIndex()];
@@ -142,9 +151,9 @@ public class TableWriter implements TableIO {
         multiIndexes.get(column.getName()).delete(value);
       }
       if (reversedForeignIndexes.containsKey(column.getName())) {
-        for (TableMultiIndex reverseForeignIndex : reversedForeignIndexes.get(column.getName())) {
+        for (IndexReader reverseForeignIndex : reversedForeignIndexes.get(column.getName())) {
           if (reverseForeignIndex.contains(value)) {
-            throw new ModelException(String.format(
+            throw new RuleException(String.format(
                 "Foreign key violation, key value '%s' has references.", value));
           }
         }
@@ -152,7 +161,7 @@ public class TableWriter implements TableIO {
     }
   }
 
-  public long delete(DerivedColumn whereColumn) throws IOException, ModelException {
+  public long delete(DerivedColumn whereColumn) throws IOException, RuleException {
     long deletedLines = 0L;
     DataInputStream input = new DataInputStream(new SequenceInputStream(
         new RAFBufferedInputStream(file),
@@ -172,7 +181,7 @@ public class TableWriter implements TableIO {
 
   private ImmutableList<Object[]> deleteAndCollectUpdated(
       ImmutableMap<Integer, DerivedColumn> updateExprs,
-      DerivedColumn whereColumn) throws IOException, ModelException {
+      DerivedColumn whereColumn) throws IOException, RuleException {
     DataInput input = new DataInputStream(new SequenceInputStream(
         new RAFBufferedInputStream(file),
         new ByteArrayInputStream(bos.toByteArray())));
@@ -197,7 +206,7 @@ public class TableWriter implements TableIO {
   }
 
   public long update(ImmutableMap<Integer, DerivedColumn> columnExprs, DerivedColumn whereColumn)
-      throws IOException, ModelException, IndexException {
+      throws IOException, RuleException {
     ImmutableList<Object[]> valuess = deleteAndCollectUpdated(columnExprs, whereColumn);
     for (Object[] values : valuess) {
       insert(values);

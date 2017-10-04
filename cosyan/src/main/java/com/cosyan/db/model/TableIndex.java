@@ -6,8 +6,9 @@ import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.index.ByteTrie.LongIndex;
 import com.cosyan.db.index.ByteTrie.StringIndex;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
+import com.cosyan.db.io.Indexes.IndexReader;
 
-public abstract class TableIndex {
+public abstract class TableIndex implements IndexReader {
 
   public abstract void put(Object key, long fileIndex) throws IOException, IndexException;
 

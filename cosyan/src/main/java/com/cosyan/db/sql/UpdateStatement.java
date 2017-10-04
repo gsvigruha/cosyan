@@ -3,12 +3,12 @@ package com.cosyan.db.sql;
 import java.io.IOException;
 import java.util.Optional;
 
-import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.model.MetaRepo.RuleException;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 import com.cosyan.db.sql.Result.StatementResult;
 import com.cosyan.db.sql.SyntaxTree.Expression;
@@ -64,7 +64,7 @@ public class UpdateStatement {
     }
 
     @Override
-    public Result execute(Resources resources) throws ModelException, IOException, IndexException {
+    public Result execute(Resources resources) throws RuleException, IOException {
       TableWriter writer = resources.writer(table);
       return new StatementResult(writer.update(columnExprs, whereColumn));
     }

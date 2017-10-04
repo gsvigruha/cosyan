@@ -8,7 +8,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
@@ -25,6 +24,7 @@ import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.DerivedTables.SortedTableMeta;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.model.MetaRepo.RuleException;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.sql.Result.QueryResult;
@@ -98,7 +98,7 @@ public class SelectStatement {
     }
 
     @Override
-    public Result execute(Resources resources) throws ModelException, IOException, IndexException {
+    public Result execute(Resources resources) throws RuleException, IOException {
       ExposedTableReader reader = tableMeta.reader(resources);
       List<ImmutableList<Object>> values = new ArrayList<>();
       Object[] row = reader.read();

@@ -17,6 +17,7 @@ import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.MetaRepo;
 import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.model.MetaRepo.RuleException;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.Tokens.Token;
@@ -44,7 +45,7 @@ public class SyntaxTree {
   public static interface Statement {
     public MetaResources compile(MetaRepo metaRepo) throws ModelException;
         
-    public Result execute(Resources resources) throws ModelException, IndexException, IOException;
+    public Result execute(Resources resources) throws RuleException, IOException;
 
     public void cancel();
   }
