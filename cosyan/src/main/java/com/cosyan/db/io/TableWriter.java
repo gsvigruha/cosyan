@@ -32,7 +32,7 @@ public class TableWriter implements TableIO {
   private final ImmutableMap<String, BasicColumn> columns;
   private final ImmutableMap<String, TableIndex> uniqueIndexes;
   private final ImmutableMap<String, TableMultiIndex> multiIndexes;
-  private final ImmutableMultimap<String, TableIndex> foreignIndexes;
+  private final ImmutableMultimap<String, IndexReader> foreignIndexes;
   private final ImmutableMultimap<String, IndexReader> reversedForeignIndexes;
   private final ImmutableMap<String, DerivedColumn> simpleChecks;
 
@@ -45,7 +45,7 @@ public class TableWriter implements TableIO {
       ImmutableMap<String, BasicColumn> columns,
       ImmutableMap<String, TableIndex> uniqueIndexes,
       ImmutableMap<String, TableMultiIndex> multiIndexes,
-      ImmutableMultimap<String, TableIndex> foreignIndexes,
+      ImmutableMultimap<String, IndexReader> foreignIndexes,
       ImmutableMultimap<String, IndexReader> reversedForeignIndexes,
       ImmutableMap<String, DerivedColumn> simpleChecks) throws IOException {
     this.file = file;
@@ -81,7 +81,7 @@ public class TableWriter implements TableIO {
         }
       }
       if (foreignIndexes.containsKey(column.getName())) {
-        for (TableIndex foreignIndex : foreignIndexes.get(column.getName())) {
+        for (IndexReader foreignIndex : foreignIndexes.get(column.getName())) {
           if (!foreignIndex.contains(value)) {
             throw new RuleException(String.format(
                 "Foreign key violation, value '%s' not present.", value));

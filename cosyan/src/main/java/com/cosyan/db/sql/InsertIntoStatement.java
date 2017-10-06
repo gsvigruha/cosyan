@@ -36,7 +36,7 @@ public class InsertIntoStatement {
     @Override
     public MetaResources compile(MetaRepo metaRepo) throws ModelException {
       tableMeta = (MaterializedTableMeta) metaRepo.table(table);
-      return MetaResources.writeTable(tableMeta);
+      return MetaResources.insertIntoTable(tableMeta);
     }
 
     @Override

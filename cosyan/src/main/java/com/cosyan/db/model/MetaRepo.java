@@ -116,25 +116,25 @@ public class MetaRepo {
     return tables.get(ident.getString());
   }
 
-  private FileInputStream fileInputStream(MaterializedTableMeta table) throws ModelException {
+  private FileInputStream fileInputStream(MaterializedTableMeta table) throws IOException {
     String path = config.tableDir() + File.separator + table.getTableName();
     try {
       return new FileInputStream(path);
     } catch (FileNotFoundException e) {
-      throw new ModelException("Table file not found: " + path + ".");
+      throw new IOException("Table file not found: " + path + ".");
     }
   }
 
-  private RandomAccessFile randomAccessFile(MaterializedTableMeta table) throws ModelException {
+  private RandomAccessFile randomAccessFile(MaterializedTableMeta table) throws IOException {
     String path = config.tableDir() + File.separator + table.getTableName();
     try {
       return new RandomAccessFile(path, "rw");
     } catch (FileNotFoundException e) {
-      throw new ModelException("Table file not found: " + path + ".");
+      throw new IOException("Table file not found: " + path + ".");
     }
   }
 
-  public ImmutableMap<String, TableIndex> collectUniqueIndexes(MaterializedTableMeta table) throws ModelException {
+  public ImmutableMap<String, TableIndex> collectUniqueIndexes(MaterializedTableMeta table) {
     ImmutableMap.Builder<String, TableIndex> builder = ImmutableMap.builder();
     for (BasicColumn column : table.columns().values()) {
       String indexName = table.getTableName() + "." + column.getName();
@@ -145,9 +145,8 @@ public class MetaRepo {
     return builder.build();
   }
 
-  public ImmutableMultimap<String, TableIndex> collectForeignIndexes(MaterializedTableMeta table)
-      throws ModelException {
-    ImmutableMultimap.Builder<String, TableIndex> builder = ImmutableMultimap.builder();
+  public ImmutableMultimap<String, IndexReader> collectForeignIndexes(MaterializedTableMeta table) {
+    ImmutableMultimap.Builder<String, IndexReader> builder = ImmutableMultimap.builder();
     for (ForeignKey foreignKey : table.getForeignKeys().values()) {
       builder.put(
           foreignKey.getColumn().getName(),
@@ -156,8 +155,7 @@ public class MetaRepo {
     return builder.build();
   }
 
-  public ImmutableMultimap<String, IndexReader> collectReverseForeignIndexes(MaterializedTableMeta table)
-      throws ModelException {
+  public ImmutableMultimap<String, IndexReader> collectReverseForeignIndexes(MaterializedTableMeta table) {
     ImmutableMultimap.Builder<String, IndexReader> builder = ImmutableMultimap.builder();
     for (ForeignKey reverseForeignKey : table.getReverseForeignKeys().values()) {
       String indexName = reverseForeignKey.getRefTable().getTableName() + "."
@@ -171,7 +169,7 @@ public class MetaRepo {
     return builder.build();
   }
 
-  public ImmutableMap<String, TableMultiIndex> collectMultiIndexes(MaterializedTableMeta table) throws ModelException {
+  public ImmutableMap<String, TableMultiIndex> collectMultiIndexes(MaterializedTableMeta table) {
     ImmutableMap.Builder<String, TableMultiIndex> builder = ImmutableMap.builder();
     for (BasicColumn column : table.columns().values()) {
       String indexName = table.getTableName() + "." + column.getName();
@@ -236,23 +234,23 @@ public class MetaRepo {
     return new FileOutputStream(config.tableDir() + File.separator + tableName);
   }
 
-  public Resources resources(MetaResources metaResources) throws ModelException, IOException {
+  public Resources resources(MetaResources metaResources) throws IOException {
     ImmutableMap.Builder<String, ExposedTableReader> readers = ImmutableMap.builder();
     ImmutableMap.Builder<String, TableWriter> writers = ImmutableMap.builder();
     for (TableMetaResource resource : metaResources.tables()) {
       if (resource.isWrite()) {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
-        writers.put(resource.getResourceId(), new TableWriter(
+        writers.put(resource.getTableMeta().getTableName(), new TableWriter(
             randomAccessFile(tableMeta),
             tableMeta.columns(),
             collectUniqueIndexes(tableMeta),
             collectMultiIndexes(tableMeta),
-            collectForeignIndexes(tableMeta),
-            collectReverseForeignIndexes(tableMeta),
+            resource.isForeignIndexes() ? collectForeignIndexes(tableMeta) : ImmutableMultimap.of(),
+            resource.isReverseForeignIndexes() ? collectReverseForeignIndexes(tableMeta) : ImmutableMultimap.of(),
             tableMeta.getSimpleChecks()));
       } else {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
-        readers.put(resource.getResourceId(), new MaterializedTableReader(
+        readers.put(resource.getTableMeta().getTableName(), new MaterializedTableReader(
             new DataInputStream(fileInputStream(tableMeta)),
             tableMeta.columns()));
       }
@@ -306,12 +304,12 @@ public class MetaRepo {
     public RuleException(String msg) {
       super(msg);
     }
-    
+
     public RuleException(IndexException e) {
       super(e.getMessage());
     }
   }
-  
+
   public void metaRepoReadLock() {
     lockManager.metaRepoReadLock();
   }
@@ -337,10 +335,10 @@ public class MetaRepo {
   }
 
   public ImmutableMap<String, ByteTrieStat> uniqueIndexStats() throws IOException {
-    return Util.<String, TableIndex, ByteTrieStat>mapValues(uniqueIndexes, TableIndex::stats);
+    return Util.<String, TableIndex, ByteTrieStat>mapValuesIOException(uniqueIndexes, TableIndex::stats);
   }
 
   public ImmutableMap<String, ByteMultiTrieStat> multiIndexStats() throws IOException {
-    return Util.<String, TableMultiIndex, ByteMultiTrieStat>mapValues(multiIndexes, TableMultiIndex::stats);
+    return Util.<String, TableMultiIndex, ByteMultiTrieStat>mapValuesIOException(multiIndexes, TableMultiIndex::stats);
   }
 }

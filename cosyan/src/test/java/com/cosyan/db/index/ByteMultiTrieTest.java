@@ -112,4 +112,34 @@ public class ByteMultiTrieTest {
 
     assertEquals(false, index.delete("x"));
   }
+
+  @Test
+  public void testLongByteTrieFrequentCommit() throws Exception {
+    Files.deleteIfExists(Paths.get("/tmp/longindex2#chain"));
+    Files.deleteIfExists(Paths.get("/tmp/longindex2#index"));
+    LongMultiIndex index = new LongMultiIndex("/tmp/longindex2");
+    LinkedList<Long> v10L = new LinkedList<>();
+    for (int i = 2; i < 100; i++) {
+      long value = i * 100;
+      index.put(10L, value);
+      index.commit();
+      v10L.add(value);
+    }
+    assertEquals(v10L.stream().mapToLong(Long::longValue).toArray(), index.get(10L));
+  }
+
+  @Test
+  public void testStringByteTrieFrequentCommit() throws Exception {
+    Files.deleteIfExists(Paths.get("/tmp/stringindex2#chain"));
+    Files.deleteIfExists(Paths.get("/tmp/stringindex2#index"));
+    StringMultiIndex index = new StringMultiIndex("/tmp/stringindex2");
+    LinkedList<Long> v10L = new LinkedList<>();
+    for (int i = 2; i < 100; i++) {
+      long value = i * 100;
+      index.put("a", value);
+      index.commit();
+      v10L.add(value);
+    }
+    assertEquals(v10L.stream().mapToLong(Long::longValue).toArray(), index.get("a"));
+  }
 }

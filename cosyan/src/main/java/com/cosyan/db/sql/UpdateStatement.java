@@ -60,7 +60,7 @@ public class UpdateStatement {
       } else {
         whereColumn = ColumnMeta.TRUE_COLUMN;
       }
-      return MetaResources.writeTable(tableMeta);
+      return MetaResources.updateTable(tableMeta);
     }
 
     @Override

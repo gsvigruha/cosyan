@@ -44,7 +44,7 @@ public class DeleteStatement {
     public MetaResources compile(MetaRepo metaRepo) throws ModelException {
       MaterializedTableMeta tableMeta = (MaterializedTableMeta) metaRepo.table(table);
       whereColumn = where.compile(tableMeta, metaRepo);
-      return MetaResources.writeTable(tableMeta);
+      return MetaResources.deleteFromTable(tableMeta);
     }
   }
 }

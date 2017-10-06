@@ -204,9 +204,9 @@ public abstract class ByteMultiTrie<T> {
         ((PendingNode) node).setNextPointer(newNodePointer);
       } else {
         PendingNode newParentNode = new PendingNode();
-        System.arraycopy(((ImmutableNode) node), 0, newParentNode.getValues(), 0, POINTERS_PER_NODE);
+        System.arraycopy(((ImmutableNode) node).getValues(), 0, newParentNode.getValues(), 0, POINTERS_PER_NODE);
         newParentNode.setNextPointer(newNodePointer);
-        pendingNodes.put(leaf.getLastIndex(), newNode);
+        pendingNodes.put(leaf.getLastIndex(), newParentNode);
       }
 
       // Modify the last index of the key in the trie.

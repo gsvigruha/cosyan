@@ -130,7 +130,62 @@ public class LockManagerTest extends UnitTestBase {
     {
       QueryResult result = query("select min(x), max(x) from t4;", s);
       System.out.println("  min, max: " + result.getValues().get(0));
-      assert((Long) result.getValues().get(0).get(0) < (Long) result.getValues().get(0).get(1));
+      assert ((Long) result.getValues().get(0).get(0) < (Long) result.getValues().get(0).get(1));
     }
   }
+
+  @Test
+  public void testParallelInsertWithIndex1() throws InterruptedException {
+    Session s = dbApi.getSession();
+    s.execute("create table t5 (a integer, constraint pk_a primary key (a));");
+    s.execute("create table t6 (a integer, constraint fk_a foreign key (a) references t5(a));");
+
+    Thread t1 = runXTimes("insert into t5 values ($x);insert into t6 values ($x);", 100);
+    Thread t2 = runXTimes("insert into t5 values ($x);insert into t6 values ($x);", 100);
+    Thread t3 = runXTimes("insert into t5 values ($x);insert into t6 values ($x);", 100);
+
+    t1.start();
+    t2.start();
+    t3.start();
+    t1.join();
+    t2.join();
+    t3.join();
+
+    // Only 100 inserts are expected to succeed. 200 fails due to index violations.
+    {
+      QueryResult result = query("select count(1) from t5;", s);
+      assertValues(new Object[][] { { 100L } }, result);
+    }
+    {
+      QueryResult result = query("select count(1) from t6;", s);
+      assertValues(new Object[][] { { 100L } }, result);
+    }
+  }
+
+  @Test
+  public void testParallelInsertWithIndex2() throws InterruptedException {
+    Session s = dbApi.getSession();
+    s.execute("create table t7 (a integer, constraint pk_a primary key (a));");
+    s.execute("create table t8 (a integer, constraint fk_a foreign key (a) references t7(a));");
+    s.execute("insert into t7 values(1000);");
+
+    Thread t2 = runXTimes("insert into t8 values (1000);", 100);
+    Thread t3 = runXTimes("insert into t7 values ($x);", 100);
+
+    t2.start();
+    t3.start();
+    t2.join();
+    t3.join();
+
+    // Only 100 inserts are expected to succeed. 200 fails due to index violations.
+    {
+      QueryResult result = query("select count(1) from t7;", s);
+      assertValues(new Object[][] { { 101L } }, result);
+    }
+    {
+      QueryResult result = query("select count(1) from t8;", s);
+      assertValues(new Object[][] { { 100L } }, result);
+    }
+  }
+
 }
