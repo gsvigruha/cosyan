@@ -17,42 +17,42 @@ import com.cosyan.db.sql.SyntaxTree.LongLiteral;
 import com.cosyan.db.sql.SyntaxTree.StringLiteral;
 import com.cosyan.db.sql.SyntaxTree.UnaryExpression;
 
-public class WhereClause {
+public class PredicateHelper {
 
   @Data
-  public static class IndexLookup {
+  public static class VariableEquals {
     private final Ident ident;
     private final Object value;
   }
 
-  public static ImmutableList<IndexLookup> getIndex(Expression whereClause) {
-    List<IndexLookup> indexLookups = new ArrayList<>();
-    get(whereClause, indexLookups);
-    return ImmutableList.copyOf(indexLookups);
+  public static ImmutableList<VariableEquals> extractClauses(Expression expression) {
+    List<VariableEquals> predicates = new ArrayList<>();
+    extractClauses(expression, predicates);
+    return ImmutableList.copyOf(predicates);
   }
 
-  private static void get(Expression node, List<IndexLookup> lookupsToCollect) {
+  private static void extractClauses(Expression node, List<VariableEquals> predicates) {
     if (node instanceof BinaryExpression) {
       BinaryExpression binaryExpression = (BinaryExpression) node;
       if (binaryExpression.getToken().is(Tokens.AND)) {
-        get(binaryExpression.getLeft(), lookupsToCollect);
-        get(binaryExpression.getRight(), lookupsToCollect);
+        extractClauses(binaryExpression.getLeft(), predicates);
+        extractClauses(binaryExpression.getRight(), predicates);
       } else if (binaryExpression.getToken().is(Tokens.EQ)) {
-        collect(binaryExpression.getLeft(), binaryExpression.getRight(), lookupsToCollect);
-        collect(binaryExpression.getRight(), binaryExpression.getLeft(), lookupsToCollect);
+        collectClause(binaryExpression.getLeft(), binaryExpression.getRight(), predicates);
+        collectClause(binaryExpression.getRight(), binaryExpression.getLeft(), predicates);
       }
     } else if (node instanceof UnaryExpression) {
       // TODO
     }
   }
 
-  private static void collect(Expression first, Expression second, List<IndexLookup> lookupsToCollect) {
+  private static void collectClause(Expression first, Expression second, List<VariableEquals> lookupsToCollect) {
     if (first instanceof IdentExpression && second instanceof Literal) {
       Ident ident = ((IdentExpression) first).getIdent();
       if (second instanceof StringLiteral) {
-        lookupsToCollect.add(new IndexLookup(ident, ((StringLiteral) second).getValue()));
+        lookupsToCollect.add(new VariableEquals(ident, ((StringLiteral) second).getValue()));
       } else if (second instanceof LongLiteral) {
-        lookupsToCollect.add(new IndexLookup(ident, ((LongLiteral) second).getValue()));
+        lookupsToCollect.add(new VariableEquals(ident, ((LongLiteral) second).getValue()));
       } 
     }
   }

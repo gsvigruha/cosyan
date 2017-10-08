@@ -9,7 +9,7 @@ import java.util.TreeMap;
 
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
-import com.cosyan.db.logic.WhereClause.IndexLookup;
+import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.sql.SyntaxTree.Ident;
@@ -55,7 +55,7 @@ public abstract class TableReader implements TableIO {
 
     public abstract void seek(long position) throws IOException;
 
-    public abstract IndexReader getIndex(Ident ident);
+    public abstract IndexReader indexReader(Ident ident);
   }
 
   public static class MaterializedTableReader extends SeekableTableReader {
@@ -96,7 +96,7 @@ public abstract class TableReader implements TableIO {
     }
 
     @Override
-    public IndexReader getIndex(Ident ident) {
+    public IndexReader indexReader(Ident ident) {
       return indexes.get(ident.getString());
     }
   }
@@ -175,7 +175,7 @@ public abstract class TableReader implements TableIO {
 
     private final SeekableTableReader sourceReader;
     private final ColumnMeta whereColumn;
-    private final IndexLookup indexLookup;
+    private final VariableEquals clause;
     private final IndexReader index;
 
     private long[] positions;
@@ -184,12 +184,12 @@ public abstract class TableReader implements TableIO {
     public IndexFilteredTableReader(
         SeekableTableReader sourceReader,
         ColumnMeta whereColumn,
-        IndexLookup indexLookup) {
+        VariableEquals clause) {
       super(sourceReader.columns);
       this.sourceReader = sourceReader;
       this.whereColumn = whereColumn;
-      this.indexLookup = indexLookup;
-      this.index = sourceReader.getIndex(indexLookup.getIdent());
+      this.clause = clause;
+      this.index = sourceReader.indexReader(clause.getIdent());
     }
 
     @Override
@@ -225,7 +225,7 @@ public abstract class TableReader implements TableIO {
     }
 
     private void readPositions() throws IOException {
-      positions = index.get(indexLookup.getValue());
+      positions = index.get(clause.getValue());
       pointer = 0;
     }
   }

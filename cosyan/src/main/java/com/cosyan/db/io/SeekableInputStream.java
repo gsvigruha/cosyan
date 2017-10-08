@@ -64,7 +64,7 @@ public abstract class SeekableInputStream extends InputStream {
       actStream = streams.get(0);
       while (position >= actStream.length()) {
         position -= actStream.length();
-        actStream = streams.get(i++);
+        actStream = streams.get(++i);
       }
       actStream.seek(position);
     }
@@ -77,17 +77,16 @@ public abstract class SeekableInputStream extends InputStream {
     @Override
     public int read() throws IOException {
       int value = actStream.read();
-      if (value == -1) {
+      while (value == -1) {
         if (actStreamPointer < streams.size() - 1) {
           actStreamPointer++;
           actStream = streams.get(actStreamPointer);
-          return actStream.read();
+          value = actStream.read();
         } else {
           return -1;
         }
-      } else {
-        return value;
       }
+      return value;
     }
   }
 }

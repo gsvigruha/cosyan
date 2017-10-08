@@ -242,7 +242,7 @@ public class TableWriter implements TableIO {
       }
 
       @Override
-      public IndexReader getIndex(Ident ident) {
+      public IndexReader indexReader(Ident ident) {
         if (uniqueIndexes.containsKey(ident.getString())) {
           return uniqueIndexes.get(ident.getString());
         } else {

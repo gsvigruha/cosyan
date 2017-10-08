@@ -36,6 +36,7 @@ import com.cosyan.db.sql.SyntaxTree.UnaryExpression;
 import com.cosyan.db.sql.Tokens.Token;
 import com.cosyan.db.sql.UpdateStatement.SetExpression;
 import com.cosyan.db.sql.UpdateStatement.Update;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.PeekingIterator;
@@ -408,7 +409,8 @@ public class Parser {
     }
   }
 
-  Expression parseExpression(PeekingIterator<Token> tokens, int precedence) throws ParserException {
+  @VisibleForTesting
+  public Expression parseExpression(PeekingIterator<Token> tokens, int precedence) throws ParserException {
     if (precedence >= Tokens.BINARY_OPERATORS_PRECEDENCE.size()) {
       return parsePrimary(tokens);
     } else if (tokens.peek().is(Tokens.NOT)

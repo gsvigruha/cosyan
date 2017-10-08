@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 import com.cosyan.db.io.TableReader.ExposedTableReader;
-import com.cosyan.db.logic.WhereClause;
-import com.cosyan.db.logic.WhereClause.IndexLookup;
+import com.cosyan.db.logic.PredicateHelper;
+import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
@@ -157,17 +157,17 @@ public class SelectStatement {
         DerivedColumn whereColumn = where.get().compile(sourceTable, metaRepo);
         assertType(DataTypes.BoolType, whereColumn.getType());
         if (sourceTable instanceof MaterializedTableMeta) {
-          ImmutableList<IndexLookup> indexes = WhereClause.getIndex(where.get());
+          ImmutableList<VariableEquals> clauses = PredicateHelper.extractClauses(where.get());
           MaterializedTableMeta materializedTableMeta = (MaterializedTableMeta) sourceTable;
-          IndexLookup indexLookup = null;
-          for (IndexLookup indexLookupCandidate : indexes) {
-            BasicColumn column = (BasicColumn) materializedTableMeta.column(indexLookupCandidate.getIdent());
-            if ((indexLookup == null && column.isIndexed()) || column.isUnique()) {
-              indexLookup = indexLookupCandidate;
+          VariableEquals clause = null;
+          for (VariableEquals clauseCandidate : clauses) {
+            BasicColumn column = (BasicColumn) materializedTableMeta.column(clauseCandidate.getIdent());
+            if ((clause == null && column.isIndexed()) || column.isUnique()) {
+              clause = clauseCandidate;
             }
           }
-          if (indexLookup != null) {
-            return new IndexFilteredTableMeta(materializedTableMeta, whereColumn, indexLookup);
+          if (clause != null) {
+            return new IndexFilteredTableMeta(materializedTableMeta, whereColumn, clause);
           } else {
             return new FilteredTableMeta(sourceTable, whereColumn);
           }

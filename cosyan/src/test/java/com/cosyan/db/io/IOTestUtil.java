@@ -48,7 +48,7 @@ public class IOTestUtil {
     }
 
     @Override
-    public IndexReader getIndex(Ident ident) {
+    public IndexReader indexReader(Ident ident) {
       throw new UnsupportedOperationException();
     }
   }

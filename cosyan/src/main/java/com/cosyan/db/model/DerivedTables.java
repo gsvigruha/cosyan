@@ -11,7 +11,7 @@ import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.io.TableReader.FilteredTableReader;
 import com.cosyan.db.io.TableReader.IndexFilteredTableReader;
 import com.cosyan.db.io.TableReader.SortedTableReader;
-import com.cosyan.db.logic.WhereClause.IndexLookup;
+import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.MetaRepo.ModelException;
@@ -97,7 +97,7 @@ public class DerivedTables {
   public static class IndexFilteredTableMeta extends ExposedTableMeta {
     private final MaterializedTableMeta sourceTable;
     private final ColumnMeta whereColumn;
-    private final IndexLookup indexLookup;
+    private final VariableEquals clause;
 
     @Override
     public ImmutableMap<String, ? extends ColumnMeta> columns() {
@@ -109,7 +109,7 @@ public class DerivedTables {
       return new IndexFilteredTableReader(
           sourceTable.reader(resources),
           whereColumn,
-          indexLookup);
+          clause);
     }
 
     @Override
