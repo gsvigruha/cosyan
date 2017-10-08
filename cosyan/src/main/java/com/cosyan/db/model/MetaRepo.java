@@ -1,6 +1,5 @@
 package com.cosyan.db.model;
 
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -22,8 +21,8 @@ import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.Serializer;
-import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
+import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lock.LockManager;
 import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
@@ -116,15 +115,6 @@ public class MetaRepo {
     return tables.get(ident.getString());
   }
 
-  private FileInputStream fileInputStream(MaterializedTableMeta table) throws IOException {
-    String path = config.tableDir() + File.separator + table.getTableName();
-    try {
-      return new FileInputStream(path);
-    } catch (FileNotFoundException e) {
-      throw new IOException("Table file not found: " + path + ".");
-    }
-  }
-
   private RandomAccessFile randomAccessFile(MaterializedTableMeta table) throws IOException {
     String path = config.tableDir() + File.separator + table.getTableName();
     try {
@@ -132,6 +122,21 @@ public class MetaRepo {
     } catch (FileNotFoundException e) {
       throw new IOException("Table file not found: " + path + ".");
     }
+  }
+
+  public ImmutableMap<String, IndexReader> collectIndexReaders(MaterializedTableMeta table) {
+    ImmutableMap.Builder<String, IndexReader> builder = ImmutableMap.builder();
+    for (BasicColumn column : table.columns().values()) {
+      if (column.isIndexed()) {
+        String indexName = table.getTableName() + "." + column.getName();
+        if (column.isUnique()) {
+          builder.put(column.getName(), uniqueIndexes.get(indexName));
+        } else {
+          builder.put(column.getName(), multiIndexes.get(indexName));
+        }
+      }
+    }
+    return builder.build();
   }
 
   public ImmutableMap<String, TableIndex> collectUniqueIndexes(MaterializedTableMeta table) {
@@ -235,7 +240,7 @@ public class MetaRepo {
   }
 
   public Resources resources(MetaResources metaResources) throws IOException {
-    ImmutableMap.Builder<String, ExposedTableReader> readers = ImmutableMap.builder();
+    ImmutableMap.Builder<String, SeekableTableReader> readers = ImmutableMap.builder();
     ImmutableMap.Builder<String, TableWriter> writers = ImmutableMap.builder();
     for (TableMetaResource resource : metaResources.tables()) {
       if (resource.isWrite()) {
@@ -251,8 +256,9 @@ public class MetaRepo {
       } else {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
         readers.put(resource.getTableMeta().getTableName(), new MaterializedTableReader(
-            new DataInputStream(fileInputStream(tableMeta)),
-            tableMeta.columns()));
+            randomAccessFile(tableMeta),
+            tableMeta.columns(),
+            collectIndexReaders(tableMeta)));
       }
     }
     return new Resources(readers.build(), writers.build());

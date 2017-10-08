@@ -9,8 +9,11 @@ import java.util.List;
 import java.util.Optional;
 
 import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.logic.WhereClause;
+import com.cosyan.db.logic.WhereClause.IndexLookup;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
+import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.DataTypes;
@@ -18,6 +21,7 @@ import com.cosyan.db.model.DerivedTables.AliasedTableMeta;
 import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
 import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.GlobalAggrTableMeta;
+import com.cosyan.db.model.DerivedTables.IndexFilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.JoinTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueAggrTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
@@ -27,6 +31,7 @@ import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.MetaRepo.RuleException;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
+import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 import com.cosyan.db.sql.Result.QueryResult;
 import com.cosyan.db.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.sql.SyntaxTree.Expression;
@@ -151,7 +156,24 @@ public class SelectStatement {
       if (where.isPresent()) {
         DerivedColumn whereColumn = where.get().compile(sourceTable, metaRepo);
         assertType(DataTypes.BoolType, whereColumn.getType());
-        return new FilteredTableMeta(sourceTable, whereColumn);
+        if (sourceTable instanceof MaterializedTableMeta) {
+          ImmutableList<IndexLookup> indexes = WhereClause.getIndex(where.get());
+          MaterializedTableMeta materializedTableMeta = (MaterializedTableMeta) sourceTable;
+          IndexLookup indexLookup = null;
+          for (IndexLookup indexLookupCandidate : indexes) {
+            BasicColumn column = (BasicColumn) materializedTableMeta.column(indexLookupCandidate.getIdent());
+            if ((indexLookup == null && column.isIndexed()) || column.isUnique()) {
+              indexLookup = indexLookupCandidate;
+            }
+          }
+          if (indexLookup != null) {
+            return new IndexFilteredTableMeta(materializedTableMeta, whereColumn, indexLookup);
+          } else {
+            return new FilteredTableMeta(sourceTable, whereColumn);
+          }
+        } else {
+          return new FilteredTableMeta(sourceTable, whereColumn);
+        }
       } else {
         return sourceTable;
       }

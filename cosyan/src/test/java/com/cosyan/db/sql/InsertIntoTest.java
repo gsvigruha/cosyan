@@ -109,8 +109,8 @@ public class InsertIntoTest extends UnitTestBase {
       assertValues(new Object[][] { { "123", "x" }, { "456", "x" } }, result);
     }
     TableIndex t9a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t9"))).get("a");
-    assertEquals(0L, t9a.get("x"));
-    assertEquals(8L, t9a.get("y"));
+    assertEquals(0L, t9a.get("x")[0]);
+    assertEquals(8L, t9a.get("y")[0]);
     TableMultiIndex t10b = metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t10"))).get("b");
     org.junit.Assert.assertArrayEquals(new long[] { 0L, 19L }, t10b.get("x"));
   }

@@ -1,11 +1,7 @@
 package com.cosyan.db.io;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.io.SequenceInputStream;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -15,13 +11,16 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
-import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.io.SeekableInputStream.SeekableByteArrayInputStream;
+import com.cosyan.db.io.SeekableInputStream.SeekableSequenceInputStream;
+import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MetaRepo.RuleException;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableMultiIndex;
+import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -163,9 +162,9 @@ public class TableWriter implements TableIO {
 
   public long delete(DerivedColumn whereColumn) throws IOException, RuleException {
     long deletedLines = 0L;
-    DataInputStream input = new DataInputStream(new SequenceInputStream(
+    SeekableSequenceInputStream input = new SeekableSequenceInputStream(
         new RAFBufferedInputStream(file),
-        new ByteArrayInputStream(bos.toByteArray())));
+        new SeekableByteArrayInputStream(bos.toByteArray()));
     RecordReader reader = new RecordReader(columns.values().asList(), input);
     do {
       Record record = reader.read();
@@ -182,9 +181,9 @@ public class TableWriter implements TableIO {
   private ImmutableList<Object[]> deleteAndCollectUpdated(
       ImmutableMap<Integer, DerivedColumn> updateExprs,
       DerivedColumn whereColumn) throws IOException, RuleException {
-    DataInput input = new DataInputStream(new SequenceInputStream(
+    SeekableSequenceInputStream input = new SeekableSequenceInputStream(
         new RAFBufferedInputStream(file),
-        new ByteArrayInputStream(bos.toByteArray())));
+        new SeekableByteArrayInputStream(bos.toByteArray()));
     RecordReader reader = new RecordReader(columns.values().asList(), input);
     ImmutableList.Builder<Object[]> updatedRecords = ImmutableList.builder();
     do {
@@ -214,18 +213,17 @@ public class TableWriter implements TableIO {
     return valuess.size();
   }
 
-  public ExposedTableReader reader() throws IOException {
-    return new ExposedTableReader(columns) {
+  public SeekableTableReader reader() throws IOException {
+    return new SeekableTableReader(columns) {
 
-      private RecordReader reader = new RecordReader(
+      private final RecordReader reader = new RecordReader(
           columns.values().asList(),
-          new DataInputStream(new SequenceInputStream(
+          new SeekableSequenceInputStream(
               new RAFBufferedInputStream(file),
-              new ByteArrayInputStream(bos.toByteArray()))));
+              new SeekableByteArrayInputStream(bos.toByteArray())));
 
       @Override
       public void close() throws IOException {
-
       }
 
       @Override
@@ -236,6 +234,20 @@ public class TableWriter implements TableIO {
             return record.getValues();
           }
         } while (true);
+      }
+
+      @Override
+      public void seek(long position) throws IOException {
+        reader.seek(position);
+      }
+
+      @Override
+      public IndexReader getIndex(Ident ident) {
+        if (uniqueIndexes.containsKey(ident.getString())) {
+          return uniqueIndexes.get(ident.getString());
+        } else {
+          return multiIndexes.get(ident.getString());
+        }
       }
     };
   }

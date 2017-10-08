@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import com.cosyan.db.io.TableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
@@ -90,7 +91,7 @@ public abstract class TableMeta {
     }
 
     @Override
-    public ExposedTableReader reader(Resources resources) throws IOException {
+    public SeekableTableReader reader(Resources resources) throws IOException {
       return resources.reader(new Ident(tableName));
     }
 

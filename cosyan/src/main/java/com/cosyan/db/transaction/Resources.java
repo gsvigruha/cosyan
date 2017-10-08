@@ -2,18 +2,18 @@ package com.cosyan.db.transaction;
 
 import java.io.IOException;
 
-import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableMap;
 
 public class Resources {
 
-  private final ImmutableMap<String, ExposedTableReader> readers;
+  private final ImmutableMap<String, SeekableTableReader> readers;
   private final ImmutableMap<String, TableWriter> writers;
 
   public Resources(
-      ImmutableMap<String, ExposedTableReader> readers,
+      ImmutableMap<String, SeekableTableReader> readers,
       ImmutableMap<String, TableWriter> writers) {
     this.readers = readers;
     this.writers = writers;
@@ -35,7 +35,7 @@ public class Resources {
     return writers.get(table.getString());
   }
 
-  public ExposedTableReader reader(Ident table) throws IOException {
+  public SeekableTableReader reader(Ident table) throws IOException {
     if (readers.containsKey(table.getString())) {
       return readers.get(table.getString());
     } else {

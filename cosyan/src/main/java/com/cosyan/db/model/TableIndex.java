@@ -14,26 +14,22 @@ public abstract class TableIndex implements IndexReader {
 
   public abstract boolean delete(Object key) throws IOException;
 
-  public abstract long get(Object key) throws IOException;
-
-  public abstract boolean contains(Object key) throws IOException;
-
   public abstract void commit() throws IOException;
 
   public abstract void rollback();
-  
+
   public abstract ByteTrieStat stats() throws IOException;
 
   private boolean valid = true;
 
   public void invalidate() {
-    valid = false;  
+    valid = false;
   }
-  
+
   public boolean isValid() {
     return valid;
   }
-  
+
   public static class LongTableIndex extends TableIndex {
 
     private LongIndex index;
@@ -53,8 +49,8 @@ public abstract class TableIndex implements IndexReader {
     }
 
     @Override
-    public long get(Object key) throws IOException {
-      return index.get((Long) key);
+    public long[] get(Object key) throws IOException {
+      return new long[] { index.get((Long) key) };
     }
 
     @Override
@@ -97,8 +93,8 @@ public abstract class TableIndex implements IndexReader {
     }
 
     @Override
-    public long get(Object key) throws IOException {
-      return index.get((String) key);
+    public long[] get(Object key) throws IOException {
+      return new long[] { index.get((String) key) };
     }
 
     @Override
@@ -115,7 +111,7 @@ public abstract class TableIndex implements IndexReader {
     public boolean contains(Object key) throws IOException {
       return index.get((String) key) != null;
     }
-    
+
     @Override
     public ByteTrieStat stats() throws IOException {
       return index.stats();

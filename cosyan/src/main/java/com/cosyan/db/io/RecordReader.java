@@ -1,6 +1,7 @@
 package com.cosyan.db.io;
 
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 
@@ -20,12 +21,14 @@ public class RecordReader {
   public static final Record EMPTY = new Record(-1, null);
 
   private final ImmutableList<? extends ColumnMeta> columns;
-  private final DataInput inputStream;
+  private final SeekableInputStream inputStream;
+  private final DataInput dataInput;
   private long pointer;
 
-  public RecordReader(ImmutableList<? extends ColumnMeta> columns, DataInput inputStream) {
+  public RecordReader(ImmutableList<? extends ColumnMeta> columns, SeekableInputStream inputStream) {
     this.columns = columns;
     this.inputStream = inputStream;
+    this.dataInput = new DataInputStream(inputStream);
     this.pointer = 0L;
   }
 
@@ -34,7 +37,7 @@ public class RecordReader {
       long recordPointer = pointer;
       final byte desc;
       try {
-        desc = inputStream.readByte();
+        desc = dataInput.readByte();
         pointer++;
       } catch (EOFException e) {
         return EMPTY;
@@ -42,7 +45,7 @@ public class RecordReader {
       Object[] values = new Object[columns.size()];
       int i = 0; // ImmutableMap.entrySet() keeps iteration order.
       for (ColumnMeta column : columns) {
-        Object value = Serializer.readColumn(column.getType(), inputStream); 
+        Object value = Serializer.readColumn(column.getType(), dataInput);
         values[i++] = value;
         pointer += Serializer.size(column.getType(), value);
       }
@@ -50,5 +53,10 @@ public class RecordReader {
         return new Record(recordPointer, values);
       }
     } while (true);
+  }
+
+  public void seek(long position) throws IOException {
+    inputStream.seek(position);
+    pointer = position;
   }
 }

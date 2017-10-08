@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 
-public class RAFBufferedInputStream extends InputStream {
+public class RAFBufferedInputStream extends SeekableInputStream {
 
   public static final int DEFAULT_BUFFER_SIZE = 65536;
 
@@ -45,5 +45,22 @@ public class RAFBufferedInputStream extends InputStream {
     }
     totalPointer++;
     return buffer[pointer++] & 0xff;
+  }
+
+  @Override
+  public void close() throws IOException {
+    file.close();
+  }
+
+  @Override
+  public long length() {
+    return length;
+  }
+
+  @Override
+  public void seek(long position) throws IOException {
+    pointer = buffer.length;
+    totalPointer = position;
+    file.seek(position);
   }
 }

@@ -1,6 +1,7 @@
 package com.cosyan.db;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -48,8 +49,11 @@ public abstract class UnitTestBase {
 
   protected void execute(String sql) {
     Result result = session.execute(sql);
-    assert(!(result instanceof ErrorResult));
-    assert(!(result instanceof CrashResult));
+    if (result instanceof ErrorResult) {
+      ((ErrorResult) result).getError().printStackTrace();
+      fail();
+    }
+    assert (!(result instanceof CrashResult));
   }
 
   protected StatementResult statement(String sql) {
@@ -67,11 +71,11 @@ public abstract class UnitTestBase {
   public static TransactionResult transaction(String sql) {
     return (TransactionResult) session.execute(sql);
   }
-  
+
   protected QueryResult query(String sql) {
     return query(sql, session);
   }
-  
+
   protected void assertHeader(String[] expected, QueryResult result) {
     assertEquals(ImmutableList.copyOf(expected), result.getHeader());
   }

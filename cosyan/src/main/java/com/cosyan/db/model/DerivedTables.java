@@ -9,7 +9,9 @@ import com.cosyan.db.io.TableReader;
 import com.cosyan.db.io.TableReader.DerivedTableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.io.TableReader.FilteredTableReader;
+import com.cosyan.db.io.TableReader.IndexFilteredTableReader;
 import com.cosyan.db.io.TableReader.SortedTableReader;
+import com.cosyan.db.logic.WhereClause.IndexLookup;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.MetaRepo.ModelException;
@@ -72,6 +74,42 @@ public class DerivedTables {
     @Override
     public ExposedTableReader reader(Resources resources) throws IOException {
       return new FilteredTableReader(sourceTable.reader(resources), whereColumn);
+    }
+
+    @Override
+    public int indexOf(Ident ident) throws ModelException {
+      return sourceTable.indexOf(ident);
+    }
+
+    @Override
+    public ColumnMeta column(Ident ident) throws ModelException {
+      return sourceTable.column(ident);
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources();
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class IndexFilteredTableMeta extends ExposedTableMeta {
+    private final MaterializedTableMeta sourceTable;
+    private final ColumnMeta whereColumn;
+    private final IndexLookup indexLookup;
+
+    @Override
+    public ImmutableMap<String, ? extends ColumnMeta> columns() {
+      return sourceTable.columns();
+    }
+
+    @Override
+    public ExposedTableReader reader(Resources resources) throws IOException {
+      return new IndexFilteredTableReader(
+          sourceTable.reader(resources),
+          whereColumn,
+          indexLookup);
     }
 
     @Override

@@ -1,15 +1,18 @@
 package com.cosyan.db.io;
 
-import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
+import com.cosyan.db.logic.WhereClause.IndexLookup;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
+import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -43,21 +46,44 @@ public abstract class TableReader implements TableIO {
     }
   }
 
-  public static class MaterializedTableReader extends ExposedTableReader {
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static abstract class SeekableTableReader extends ExposedTableReader {
+    public SeekableTableReader(ImmutableMap<String, ? extends ColumnMeta> columns) {
+      super(columns);
+    }
 
-    private final DataInputStream inputStream;
+    public abstract void seek(long position) throws IOException;
+
+    public abstract IndexReader getIndex(Ident ident);
+  }
+
+  public static class MaterializedTableReader extends SeekableTableReader {
+
     private final RecordReader reader;
+    private final RAFBufferedInputStream bufferedRAF;
+    private final ImmutableMap<String, IndexReader> indexes;
 
     public MaterializedTableReader(
-        DataInputStream inputStream, ImmutableMap<String, ? extends ColumnMeta> columns) {
+        RandomAccessFile raf,
+        ImmutableMap<String, ? extends ColumnMeta> columns,
+        ImmutableMap<String, IndexReader> indexes) throws IOException {
       super(columns);
-      this.inputStream = inputStream;
-      this.reader = new RecordReader(columns.values().asList(), inputStream);
+      this.indexes = indexes;
+      this.bufferedRAF = new RAFBufferedInputStream(raf);
+      this.reader = new RecordReader(
+          columns.values().asList(),
+          bufferedRAF);
     }
 
     @Override
     public void close() throws IOException {
-      inputStream.close();
+      bufferedRAF.close();
+    }
+
+    @Override
+    public void seek(long position) throws IOException {
+      bufferedRAF.seek(position);
     }
 
     @Override
@@ -67,6 +93,11 @@ public abstract class TableReader implements TableIO {
         close();
       }
       return record.getValues();
+    }
+
+    @Override
+    public IndexReader getIndex(Ident ident) {
+      return indexes.get(ident.getString());
     }
   }
 
@@ -137,6 +168,65 @@ public abstract class TableReader implements TableIO {
         }
       } while (values == null && !cancelled);
       return values;
+    }
+  }
+
+  public static class IndexFilteredTableReader extends ExposedTableReader {
+
+    private final SeekableTableReader sourceReader;
+    private final ColumnMeta whereColumn;
+    private final IndexLookup indexLookup;
+    private final IndexReader index;
+
+    private long[] positions;
+    private int pointer;
+
+    public IndexFilteredTableReader(
+        SeekableTableReader sourceReader,
+        ColumnMeta whereColumn,
+        IndexLookup indexLookup) {
+      super(sourceReader.columns);
+      this.sourceReader = sourceReader;
+      this.whereColumn = whereColumn;
+      this.indexLookup = indexLookup;
+      this.index = sourceReader.getIndex(indexLookup.getIdent());
+    }
+
+    @Override
+    public void close() throws IOException {
+      sourceReader.close();
+    }
+
+    @Override
+    public Object[] read() throws IOException {
+      if (positions == null) {
+        readPositions();
+      }
+      Object[] values = null;
+      do {
+        if (pointer < positions.length) {
+          sourceReader.seek(positions[pointer]);
+          Object[] sourceValues = sourceReader.read();
+          if (sourceValues == null) {
+            return null;
+          } else {
+            if (!(boolean) whereColumn.getValue(sourceValues)) {
+              values = null;
+            } else {
+              values = sourceValues;
+            }
+          }
+          pointer++;
+        } else {
+          return null;
+        }
+      } while (values == null && !cancelled);
+      return values;
+    }
+
+    private void readPositions() throws IOException {
+      positions = index.get(indexLookup.getValue());
+      pointer = 0;
     }
   }
 

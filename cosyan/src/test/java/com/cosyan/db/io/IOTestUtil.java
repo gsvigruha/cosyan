@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.io.Indexes.IndexReader;
+import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
@@ -17,13 +18,13 @@ import lombok.EqualsAndHashCode;
 
 public class IOTestUtil {
 
-  public static class DummyTableReader extends ExposedTableReader {
+  public static class DummyTableReader extends SeekableTableReader {
 
     private final Iterator<Object[]> iterator;
 
     public DummyTableReader(
         ImmutableMap<String, ? extends ColumnMeta> columns,
-        Object[][] data) {
+        Object[][] data) throws IOException {
       super(columns);
       this.iterator = Arrays.asList(data).iterator();
     }
@@ -39,6 +40,16 @@ public class IOTestUtil {
     @Override
     public void close() throws IOException {
 
+    }
+
+    @Override
+    public void seek(long position) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IndexReader getIndex(Ident ident) {
+      throw new UnsupportedOperationException();
     }
   }
 
@@ -61,7 +72,7 @@ public class IOTestUtil {
     }
 
     @Override
-    public ExposedTableReader reader(Resources resources) throws IOException {
+    public SeekableTableReader reader(Resources resources) throws IOException {
       return new DummyTableReader(columns, data);
     }
 

@@ -80,8 +80,8 @@ public class DeleteTest extends UnitTestBase {
     execute("insert into t6 values ('123', 'x');");
 
     TableIndex t5a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t5"))).get("a");
-    assertEquals(0L, t5a.get("x"));
-    assertEquals(8L, t5a.get("y"));
+    assertEquals(0L, t5a.get("x")[0]);
+    assertEquals(8L, t5a.get("y")[0]);
     TableMultiIndex t6b = metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t6"))).get("b");
     org.junit.Assert.assertArrayEquals(new long[] { 0L }, t6b.get("x"));
 
@@ -89,7 +89,7 @@ public class DeleteTest extends UnitTestBase {
     execute("delete from t5 where a = 'x';");
 
     assertEquals(false, t5a.contains("x"));
-    assertEquals(8L, t5a.get("y"));
+    assertEquals(8L, t5a.get("y")[0]);
     org.junit.Assert.assertArrayEquals(new long[0], t6b.get("x"));
   }
 
