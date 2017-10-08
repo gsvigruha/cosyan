@@ -114,8 +114,30 @@ public class TransactionTest extends UnitTestBase {
     QueryResult resultAfterCommit = query("select * from t5;");
     assertHeader(new String[] { "a" }, resultAfterCommit);
     assertValues(new Object[][] {
-      { "b" },
-      { "d" },
-      { "e" } }, (QueryResult) result.getResults().get(6));
+        { "b" },
+        { "d" },
+        { "e" } }, resultAfterCommit);
+  }
+
+  @Test
+  public void testSelectWithIndex() throws InterruptedException, ModelException, IOException {
+    execute("create table t6 (a varchar unique);");
+    execute("insert into t6 values('a');");
+    TransactionResult result = transaction("insert into t6 values('b');" +
+        "insert into t6 values('c');" +
+        "select * from t6 where a = 'a';" +
+        "select * from t6 where a = 'b';" +
+        "insert into t6 values('d');" +
+        "select * from t6 where a = 'd';");
+    assertHeader(new String[] { "a" }, (QueryResult) result.getResults().get(2));
+    assertValues(new Object[][] { { "a" } }, (QueryResult) result.getResults().get(2));
+    assertHeader(new String[] { "a" }, (QueryResult) result.getResults().get(3));
+    assertValues(new Object[][] { { "b" } }, (QueryResult) result.getResults().get(3));
+    assertHeader(new String[] { "a" }, (QueryResult) result.getResults().get(5));
+    assertValues(new Object[][] { { "d" } }, (QueryResult) result.getResults().get(5));
+
+    QueryResult resultAfterCommit = query("select * from t6 where a = 'b';");
+    assertHeader(new String[] { "a" }, resultAfterCommit);
+    assertValues(new Object[][] { { "b" } }, resultAfterCommit);
   }
 }
