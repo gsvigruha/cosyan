@@ -1,5 +1,8 @@
 package com.cosyan.db.model;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
@@ -80,6 +83,33 @@ public class Aggregators {
     }
   }
 
+  public static class CountDistinct extends AggrFunction {
+    public CountDistinct() {
+      super("count$distinct");
+    }
+
+    @Override
+    public TypedAggrFunction<?> forType(DataType<?> argType) throws ModelException {
+      return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
+        @Override
+        public Object aggregateImpl(Object a, Object x) {
+          ((HashSet<Object>) a).add(x);
+          return a;
+        }
+
+        @Override
+        public Set<Object> init() {
+          return new HashSet<>();
+        }
+
+        @Override
+        public Long finish(Object x) {
+          return (long) ((HashSet<?>) x).size();
+        }
+      };
+    }
+  }
+
   public static class Max extends AggrFunction {
     public Max() {
       super("max");
@@ -143,7 +173,7 @@ public class Aggregators {
       }
     }
   }
-  
+
   public static class Min extends AggrFunction {
     public Min() {
       super("min");

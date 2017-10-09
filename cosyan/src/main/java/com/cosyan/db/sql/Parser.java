@@ -332,9 +332,16 @@ public class Parser {
       Ident ident = new Ident(tokens.next().getString());
       if (tokens.peek().is(Tokens.PARENT_OPEN)) {
         tokens.next();
-        ImmutableList<Expression> argExprs = parseExprs(tokens, false, String.valueOf(Tokens.PARENT_CLOSED));
-        tokens.next();
-        return new FuncCallExpression(ident, argExprs);
+        if (ident.is(Tokens.COUNT) && tokens.peek().is(Tokens.DISTINCT)) {
+          tokens.next();
+          ImmutableList<Expression> argExprs = parseExprs(tokens, false, String.valueOf(Tokens.PARENT_CLOSED));
+          tokens.next();
+          return new FuncCallExpression(new Ident("count$distinct"), argExprs);
+        } else {
+          ImmutableList<Expression> argExprs = parseExprs(tokens, false, String.valueOf(Tokens.PARENT_CLOSED));
+          tokens.next();
+          return new FuncCallExpression(ident, argExprs);
+        }
       } else {
         return new IdentExpression(ident);
       }

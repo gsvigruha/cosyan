@@ -95,6 +95,7 @@ public class BuiltinFunctions {
   public static final ImmutableList<AggrFunction> AGGREGATIONS = ImmutableList.<AggrFunction>builder()
       .add(new Aggregators.Sum())
       .add(new Aggregators.Count())
+      .add(new Aggregators.CountDistinct())
       .add(new Aggregators.Max())
       .add(new Aggregators.Min())
       .build();

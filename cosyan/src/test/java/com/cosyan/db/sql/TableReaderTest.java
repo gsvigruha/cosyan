@@ -443,6 +443,21 @@ public class TableReaderTest extends DummyTestBase {
     assertEquals(null, reader.readColumns());
   }
 
+  @Test
+  public void testCountDistinctGlobal() throws Exception {
+    ExposedTableReader reader = query("select count(distinct a) as a, count(distinct b) as b from large;");
+    assertEquals(ImmutableMap.of("a", 2L, "b", 4L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testCountDistinctGroupBy() throws Exception {
+    ExposedTableReader reader = query("select a, count(distinct b) as b from large group by a;");
+    assertEquals(ImmutableMap.of("a", "a", "b", 2L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "b", "b", 2L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
   @Test(expected = ModelException.class)
   public void testAggrInAggr() throws Exception {
     query("select sum(sum(b)) from large;");
