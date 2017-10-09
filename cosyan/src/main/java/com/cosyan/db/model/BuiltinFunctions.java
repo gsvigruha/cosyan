@@ -2,6 +2,7 @@ package com.cosyan.db.model;
 
 import java.util.Spliterator;
 
+import com.cosyan.db.model.Aggregators.Aggregator;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.MathFunctions.Ceil;
 import com.cosyan.db.model.MathFunctions.Exp;
@@ -64,19 +65,7 @@ public class BuiltinFunctions {
       this.returnType = returnType;
     }
 
-    public abstract Object init();
-
-    public Object aggregate(Object a, Object x) {
-      if (x != DataTypes.NULL) {
-        return aggregateImpl(a, x);
-      } else {
-        return a;
-      }
-    }
-
-    public abstract Object aggregateImpl(Object a, Object x);
-
-    public abstract Object finish(Object x);
+    public abstract Aggregator<T, ?> create();
   }
 
   @Data
@@ -89,7 +78,7 @@ public class BuiltinFunctions {
       super(ident, false);
     }
 
-    public abstract TypedAggrFunction<?> forType(DataType<?> argType) throws ModelException;
+    public abstract TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException;
   }
 
   public static final ImmutableList<AggrFunction> AGGREGATIONS = ImmutableList.<AggrFunction>builder()

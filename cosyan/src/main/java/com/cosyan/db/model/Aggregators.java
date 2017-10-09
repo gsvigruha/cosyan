@@ -1,7 +1,6 @@
 package com.cosyan.db.model;
 
 import java.util.HashSet;
-import java.util.Set;
 
 import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
@@ -10,45 +9,95 @@ import com.cosyan.db.model.MetaRepo.ModelException;
 
 public class Aggregators {
 
+  public static abstract class Aggregator<T, U> {
+
+    @SuppressWarnings("unchecked")
+    public void add(Object x) {
+      if (x != DataTypes.NULL) {
+        addImpl((U) x);
+      }
+    }
+
+    public abstract void addImpl(U x);
+
+    public Object finish() {
+      if (isNull()) {
+        return DataTypes.NULL;
+      } else {
+        return finishImpl();
+      }
+    }
+
+    public abstract T finishImpl();
+
+    public abstract boolean isNull();
+  }
+
   public static class Sum extends AggrFunction {
     public Sum() {
       super("sum");
     }
 
     @Override
-    public TypedAggrFunction<?> forType(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
       if (argType == DataTypes.DoubleType) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
-          @Override
-          public Double aggregateImpl(Object a, Object x) {
-            return (Double) a + (Double) x;
-          }
 
           @Override
-          public Double init() {
-            return 0.0;
-          }
+          public Aggregator<Double, Double> create() {
+            return new Aggregator<Double, Double>() {
 
-          @Override
-          public Double finish(Object x) {
-            return (Double) x;
+              private Double sum = null;
+
+              @Override
+              public void addImpl(Double x) {
+                if (sum == null) {
+                  sum = x;
+                } else {
+                  sum += x;
+                }
+              }
+
+              @Override
+              public Double finishImpl() {
+                return sum;
+              }
+
+              @Override
+              public boolean isNull() {
+                return sum == null;
+              }
+            };
           }
         };
       } else if (argType == DataTypes.LongType) {
         return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
-          @Override
-          public Long aggregateImpl(Object a, Object x) {
-            return (Long) a + (Long) x;
-          }
 
           @Override
-          public Long init() {
-            return 0L;
-          }
+          public Aggregator<Long, Long> create() {
+            return new Aggregator<Long, Long>() {
 
-          @Override
-          public Long finish(Object x) {
-            return (Long) x;
+              private Long sum = null;
+
+              @Override
+              public void addImpl(Long x) {
+                if (sum == null) {
+                  sum = x;
+                } else {
+                  sum += x;
+                }
+              }
+
+              @Override
+              public Long finishImpl() {
+                return sum;
+              }
+
+              @Override
+              public boolean isNull() {
+                return sum == null;
+              }
+            };
           }
         };
       } else {
@@ -63,21 +112,30 @@ public class Aggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> forType(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
       return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
-        @Override
-        public Long aggregateImpl(Object a, Object x) {
-          return (Long) a + 1L;
-        }
 
         @Override
-        public Long init() {
-          return 0L;
-        }
+        public Aggregator<Long, Object> create() {
+          return new Aggregator<Long, Object>() {
 
-        @Override
-        public Long finish(Object x) {
-          return (Long) x;
+            private long sum = 0L;
+
+            @Override
+            public void addImpl(Object x) {
+              sum++;
+            }
+
+            @Override
+            public Long finishImpl() {
+              return sum;
+            }
+
+            @Override
+            public boolean isNull() {
+              return false;
+            }
+          };
         }
       };
     }
@@ -89,22 +147,30 @@ public class Aggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> forType(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
       return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
-        @Override
-        public Object aggregateImpl(Object a, Object x) {
-          ((HashSet<Object>) a).add(x);
-          return a;
-        }
 
         @Override
-        public Set<Object> init() {
-          return new HashSet<>();
-        }
+        public Aggregator<Long, Object> create() {
+          return new Aggregator<Long, Object>() {
 
-        @Override
-        public Long finish(Object x) {
-          return (long) ((HashSet<?>) x).size();
+            private HashSet<Object> set = new HashSet<>();
+
+            @Override
+            public void addImpl(Object x) {
+              set.add(x);
+            }
+
+            @Override
+            public Long finishImpl() {
+              return (long) set.size();
+            }
+
+            @Override
+            public boolean isNull() {
+              return false;
+            }
+          };
         }
       };
     }
@@ -116,56 +182,95 @@ public class Aggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> forType(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
       if (argType == DataTypes.DoubleType) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
-          @Override
-          public Double aggregateImpl(Object a, Object x) {
-            return Math.max((Double) a, (Double) x);
-          }
 
           @Override
-          public Double init() {
-            return Double.MIN_VALUE;
-          }
+          public Aggregator<Double, Double> create() {
+            return new Aggregator<Double, Double>() {
 
-          @Override
-          public Double finish(Object x) {
-            return (Double) x;
+              private Double max = null;
+
+              @Override
+              public void addImpl(Double x) {
+                if (max == null) {
+                  max = x;
+                } else {
+                  max = Math.max(max, x);
+                }
+              }
+
+              @Override
+              public Double finishImpl() {
+                return max;
+              }
+
+              @Override
+              public boolean isNull() {
+                return max == null;
+              }
+            };
           }
         };
       } else if (argType == DataTypes.LongType) {
         return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
-          @Override
-          public Long aggregateImpl(Object a, Object x) {
-            return Math.max((Long) a, (Long) x);
-          }
 
           @Override
-          public Long init() {
-            return Long.MIN_VALUE;
-          }
+          public Aggregator<Long, Long> create() {
+            return new Aggregator<Long, Long>() {
 
-          @Override
-          public Long finish(Object x) {
-            return (Long) x;
+              private Long max = null;
+
+              @Override
+              public void addImpl(Long x) {
+                if (max == null) {
+                  max = x;
+                } else {
+                  max = Math.max(max, x);
+                }
+              }
+
+              @Override
+              public Long finishImpl() {
+                return max;
+              }
+
+              @Override
+              public boolean isNull() {
+                return max == null;
+              }
+            };
           }
         };
       } else if (argType == DataTypes.StringType) {
         return new TypedAggrFunction<String>(ident, DataTypes.StringType) {
-          @Override
-          public String aggregateImpl(Object a, Object x) {
-            return a == null ? (String) x : ((String) a).compareTo((String) x) > 0 ? (String) a : (String) x;
-          }
 
           @Override
-          public String init() {
-            return null;
-          }
+          public Aggregator<String, String> create() {
+            return new Aggregator<String, String>() {
 
-          @Override
-          public String finish(Object x) {
-            return (String) x;
+              private String max = null;
+
+              @Override
+              public void addImpl(String x) {
+                if (max == null) {
+                  max = x;
+                } else {
+                  max = max.compareTo(x) < 0 ? x : max;
+                }
+              }
+
+              @Override
+              public String finishImpl() {
+                return max;
+              }
+
+              @Override
+              public boolean isNull() {
+                return max == null;
+              }
+            };
           }
         };
       } else {
@@ -180,56 +285,95 @@ public class Aggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> forType(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
       if (argType == DataTypes.DoubleType) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
-          @Override
-          public Double aggregateImpl(Object a, Object x) {
-            return Math.min((Double) a, (Double) x);
-          }
 
           @Override
-          public Double init() {
-            return Double.MAX_VALUE;
-          }
+          public Aggregator<Double, Double> create() {
+            return new Aggregator<Double, Double>() {
 
-          @Override
-          public Double finish(Object x) {
-            return (Double) x;
+              private Double min = null;
+
+              @Override
+              public void addImpl(Double x) {
+                if (min == null) {
+                  min = x;
+                } else {
+                  min = Math.min(min, x);
+                }
+              }
+
+              @Override
+              public Double finishImpl() {
+                return min;
+              }
+
+              @Override
+              public boolean isNull() {
+                return min == null;
+              }
+            };
           }
         };
       } else if (argType == DataTypes.LongType) {
         return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
-          @Override
-          public Long aggregateImpl(Object a, Object x) {
-            return Math.min((Long) a, (Long) x);
-          }
 
           @Override
-          public Long init() {
-            return Long.MAX_VALUE;
-          }
+          public Aggregator<Long, Long> create() {
+            return new Aggregator<Long, Long>() {
 
-          @Override
-          public Long finish(Object x) {
-            return (Long) x;
+              private Long min = null;
+
+              @Override
+              public void addImpl(Long x) {
+                if (min == null) {
+                  min = x;
+                } else {
+                  min = Math.min(min, x);
+                }
+              }
+
+              @Override
+              public Long finishImpl() {
+                return min;
+              }
+
+              @Override
+              public boolean isNull() {
+                return min == null;
+              }
+            };
           }
         };
       } else if (argType == DataTypes.StringType) {
         return new TypedAggrFunction<String>(ident, DataTypes.StringType) {
-          @Override
-          public String aggregateImpl(Object a, Object x) {
-            return a == null ? (String) x : ((String) a).compareTo((String) x) < 0 ? (String) a : (String) x;
-          }
 
           @Override
-          public String init() {
-            return null;
-          }
+          public Aggregator<String, String> create() {
+            return new Aggregator<String, String>() {
 
-          @Override
-          public String finish(Object x) {
-            return (String) x;
+              private String min = null;
+
+              @Override
+              public void addImpl(String x) {
+                if (min == null) {
+                  min = x;
+                } else {
+                  min = min.compareTo(x) > 0 ? x : min;
+                }
+              }
+
+              @Override
+              public String finishImpl() {
+                return min;
+              }
+
+              @Override
+              public boolean isNull() {
+                return min == null;
+              }
+            };
           }
         };
       } else {

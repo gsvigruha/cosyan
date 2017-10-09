@@ -281,7 +281,7 @@ public class MetaRepo {
     if (!aggrFunctions.containsKey(ident.getString())) {
       throw new ModelException("Function " + ident.getString() + " does not exist.");
     }
-    return aggrFunctions.get(ident.getString()).forType(argType);
+    return aggrFunctions.get(ident.getString()).compile(argType);
   }
 
   public ImmutableList<String> uniqueIndexNames() {

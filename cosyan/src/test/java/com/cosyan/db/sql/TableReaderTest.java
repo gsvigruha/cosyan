@@ -389,7 +389,7 @@ public class TableReaderTest extends DummyTestBase {
   @Test
   public void testNullAsAggregationKey() throws Exception {
     ExposedTableReader reader = query("select a, sum(b) as b from null group by a;");
-    assertEquals(ImmutableMap.of("a", "b", "b", 0L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "b", "b", DataTypes.NULL), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "c", "b", 5L), reader.readColumns());
     assertEquals(ImmutableMap.of("a", DataTypes.NULL, "b", 1L), reader.readColumns());
     assertEquals(null, reader.readColumns());

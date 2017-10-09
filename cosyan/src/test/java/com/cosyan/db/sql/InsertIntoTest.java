@@ -149,10 +149,10 @@ public class InsertIntoTest extends UnitTestBase {
 
   @Test
   public void testAggregateFromEmptyTable() throws Exception {
-    execute("create table t14 (a varchar);");
-    QueryResult result = query("select count(1) as c from t14;");
-    assertHeader(new String[] { "c" }, result);
-    assertValues(new Object[][] { { 0L } }, result);
+    execute("create table t14 (a varchar, b integer);");
+    QueryResult result = query("select count(1) as c, max(a) as max, min(a) as min, sum(b) as s from t14;");
+    assertHeader(new String[] { "c", "max", "min", "s" }, result);
+    assertValues(new Object[][] { { 0L, DataTypes.NULL, DataTypes.NULL, DataTypes.NULL } }, result);
   }
 
   @Test
