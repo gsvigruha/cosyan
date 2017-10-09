@@ -265,6 +265,11 @@ public class Parser {
 
   private Select parseSelect(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.SELECT);
+    boolean distinct = false;
+    if (tokens.peek().is(Tokens.DISTINCT)) {
+      tokens.next();
+      distinct = true;
+    }
     ImmutableList<Expression> columns = parseExprs(tokens, true, Tokens.FROM);
     tokens.next();
     Table table = parseTable(tokens);
@@ -310,7 +315,7 @@ public class Parser {
       orderBy = Optional.empty();
     }
     assertPeek(tokens, String.valueOf(Tokens.COMMA_COLON), String.valueOf(Tokens.PARENT_CLOSED));
-    return new Select(columns, table, where, groupBy, having, orderBy);
+    return new Select(columns, table, where, groupBy, having, orderBy, distinct);
   }
 
   private Expression parsePrimary(PeekingIterator<Token> tokens) throws ParserException {

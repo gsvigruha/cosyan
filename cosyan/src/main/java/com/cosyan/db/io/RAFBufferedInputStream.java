@@ -1,7 +1,6 @@
 package com.cosyan.db.io;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.RandomAccessFile;
 
 public class RAFBufferedInputStream extends SeekableInputStream {

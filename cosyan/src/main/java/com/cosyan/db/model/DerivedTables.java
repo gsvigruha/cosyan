@@ -7,6 +7,7 @@ import com.cosyan.db.io.AggrReader.KeyValueAggrTableReader;
 import com.cosyan.db.io.JoinTableReader.HashJoinTableReader;
 import com.cosyan.db.io.TableReader;
 import com.cosyan.db.io.TableReader.DerivedTableReader;
+import com.cosyan.db.io.TableReader.DistinctTableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.io.TableReader.FilteredTableReader;
 import com.cosyan.db.io.TableReader.IndexFilteredTableReader;
@@ -229,6 +230,37 @@ public class DerivedTables {
     @Override
     public ExposedTableReader reader(Resources resources) throws IOException {
       return new SortedTableReader(sourceTable.reader(resources), orderColumns);
+    }
+
+    @Override
+    public int indexOf(Ident ident) throws ModelException {
+      return sourceTable.indexOf(ident);
+    }
+
+    @Override
+    public ColumnMeta column(Ident ident) throws ModelException {
+      return sourceTable.column(ident);
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources();
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class DistinctTableMeta extends ExposedTableMeta {
+    private final ExposedTableMeta sourceTable;
+
+    @Override
+    public ImmutableMap<String, ? extends ColumnMeta> columns() {
+      return sourceTable.columns();
+    }
+
+    @Override
+    public ExposedTableReader reader(Resources resources) throws IOException {
+      return new DistinctTableReader(sourceTable.reader(resources));
     }
 
     @Override

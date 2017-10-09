@@ -19,6 +19,7 @@ import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DerivedTables.AliasedTableMeta;
 import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
+import com.cosyan.db.model.DerivedTables.DistinctTableMeta;
 import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.DerivedTables.IndexFilteredTableMeta;
@@ -58,6 +59,7 @@ public class SelectStatement {
     private final Optional<ImmutableList<Expression>> groupBy;
     private final Optional<Expression> having;
     private final Optional<ImmutableList<Expression>> orderBy;
+    private final boolean distinct;
 
     private ExposedTableMeta tableMeta;
 
@@ -88,11 +90,17 @@ public class SelectStatement {
         fullTable = new DerivedTableMeta(filteredTable, tableColumns);
       }
 
-      if (orderBy.isPresent()) {
-        ImmutableList<OrderColumn> orderColumns = orderColumns(metaRepo, fullTable, orderBy.get());
-        return new SortedTableMeta(fullTable, orderColumns);
+      ExposedTableMeta distinctTable;      
+      if (distinct) {
+        distinctTable = new DistinctTableMeta(fullTable);
       } else {
-        return fullTable;
+        distinctTable = fullTable;
+      }
+      if (orderBy.isPresent()) {
+        ImmutableList<OrderColumn> orderColumns = orderColumns(metaRepo, distinctTable, orderBy.get());
+        return new SortedTableMeta(distinctTable, orderColumns);
+      } else {
+        return distinctTable;
       }
     }
 
@@ -219,7 +227,7 @@ public class SelectStatement {
       }
     }
 
-    private ImmutableList<OrderColumn> orderColumns(MetaRepo metaRepo, DerivedTableMeta sourceTable,
+    private ImmutableList<OrderColumn> orderColumns(MetaRepo metaRepo, ExposedTableMeta sourceTable,
         ImmutableList<Expression> orderBy) throws ModelException {
       ImmutableList.Builder<OrderColumn> orderColumnsBuilder = ImmutableList.builder();
       for (Expression expr : orderBy) {

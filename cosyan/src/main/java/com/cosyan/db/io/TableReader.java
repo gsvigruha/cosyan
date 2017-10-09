@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -289,6 +290,49 @@ public abstract class TableReader implements TableIO {
       }
       iterator = values.values().iterator();
       sorted = true;
+    }
+  }
+
+  public static class DistinctTableReader extends ExposedTableReader {
+
+    private final ExposedTableReader sourceReader;
+    private boolean distinct;
+    private Iterator<Object[]> iterator;
+
+    public DistinctTableReader(
+        ExposedTableReader sourceReader) {
+      super(sourceReader.columns);
+      this.sourceReader = sourceReader;
+      this.distinct = false;
+    }
+
+    @Override
+    public void close() throws IOException {
+      sourceReader.close();
+    }
+
+    @Override
+    public Object[] read() throws IOException {
+      if (!distinct) {
+        distinct();
+      }
+      if (!iterator.hasNext()) {
+        return null;
+      }
+      return iterator.next();
+    }
+
+    private void distinct() throws IOException {
+      LinkedHashSet<ImmutableList<Object>> values = new LinkedHashSet<>();
+      while (!cancelled) {
+        Object[] sourceValues = sourceReader.read();
+        if (sourceValues == null) {
+          break;
+        }
+        values.add(ImmutableList.copyOf(sourceValues));
+      }
+      iterator = values.stream().map(list -> list.toArray()).iterator();
+      distinct = true;
     }
   }
 }

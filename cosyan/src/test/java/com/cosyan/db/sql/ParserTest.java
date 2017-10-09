@@ -40,7 +40,8 @@ public class ParserTest {
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
-        Optional.empty())));
+        Optional.empty(),
+        /* distinct= */false)));
   }
 
   @Test
@@ -52,7 +53,8 @@ public class ParserTest {
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
-        Optional.empty())));
+        Optional.empty(),
+        /* distinct= */false)));
   }
 
   @Test
@@ -66,7 +68,8 @@ public class ParserTest {
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
-        Optional.empty())));
+        Optional.empty(),
+        /* distinct= */false)));
   }
 
   @Test
@@ -81,7 +84,8 @@ public class ParserTest {
             new LongLiteral(1L))),
         Optional.empty(),
         Optional.empty(),
-        Optional.empty())));
+        Optional.empty(),
+        /* distinct= */false)));
   }
 
   @Test
@@ -95,7 +99,8 @@ public class ParserTest {
         Optional.empty(),
         Optional.of(ImmutableList.of(new IdentExpression(new Ident("a")))),
         Optional.empty(),
-        Optional.empty())));
+        Optional.empty(),
+        /* distinct= */false)));
   }
 
   @Test
@@ -119,7 +124,8 @@ public class ParserTest {
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
-        Optional.empty())));
+        Optional.empty(),
+        /* distinct= */false)));
   }
 
   private Expression parseExpression(String sql) throws ParserException {

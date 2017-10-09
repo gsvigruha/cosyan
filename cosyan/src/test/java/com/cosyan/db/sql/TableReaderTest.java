@@ -425,6 +425,24 @@ public class TableReaderTest extends DummyTestBase {
     assertEquals(null, reader.readColumns());
   }
 
+  @Test
+  public void testDistinctSame() throws Exception {
+    ExposedTableReader reader = query("select distinct * from large;");
+    assertEquals(ImmutableMap.of("a", "a", "b", 1L, "c", 2.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "a", "b", 3L, "c", 4.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "b", "b", 5L, "c", 6.0), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "b", "b", 7L, "c", 8.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testDistinctDifferent() throws Exception {
+    ExposedTableReader reader = query("select distinct a from large;");
+    assertEquals(ImmutableMap.of("a", "a"), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", "b"), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
   @Test(expected = ModelException.class)
   public void testAggrInAggr() throws Exception {
     query("select sum(sum(b)) from large;");
