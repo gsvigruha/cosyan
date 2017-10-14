@@ -44,10 +44,10 @@ public class TransactionTest extends UnitTestBase {
     }, result);
 
     TableIndex t2a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t2"))).get("a");
-    // Record length: 1 + (1 + 8) + (1 + 8) + (1 + 4 + 6) = 30.
+    // Record length: 1 + 4 + (1 + 8) + (1 + 8) + (1 + 4 + 6) + 4 = 38.
     assertEquals(0L, t2a.get(1L)[0]);
-    assertEquals(30L, t2a.get(2L)[0]);
-    assertEquals(60L, t2a.get(3L)[0]);
+    assertEquals(38L, t2a.get(2L)[0]);
+    assertEquals(76L, t2a.get(3L)[0]);
   }
 
   @Test

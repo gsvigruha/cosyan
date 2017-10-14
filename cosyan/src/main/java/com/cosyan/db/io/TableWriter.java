@@ -5,6 +5,7 @@ import java.io.RandomAccessFile;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
@@ -217,7 +218,7 @@ public class TableWriter implements TableIO {
     return new SeekableTableReader(columns) {
 
       private final RecordReader reader = new RecordReader(
-          columns.values().asList(),
+          ImmutableList.copyOf(columns.values().stream().map(column -> (BasicColumn) column).collect(Collectors.toList())),
           new SeekableSequenceInputStream(
               new RAFBufferedInputStream(file),
               new SeekableByteArrayInputStream(bos.toByteArray())));

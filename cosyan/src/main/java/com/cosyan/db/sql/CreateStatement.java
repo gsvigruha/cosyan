@@ -74,7 +74,7 @@ public class CreateStatement {
         if (constraint instanceof SimpleCheckDefinition) {
           SimpleCheckDefinition simpleCheck = (SimpleCheckDefinition) constraint;
           DerivedColumn constraintColumn = simpleCheck.getExpr().compile(
-              MaterializedTableMeta.simpleTable(name, columns));
+              MaterializedTableMeta.simpleTable(name, columns.values()));
           if (constraintColumn.getType() != DataTypes.BoolType) {
             throw new ModelException("Constraint expression has to be boolean.");
           }
@@ -108,7 +108,7 @@ public class CreateStatement {
 
       MaterializedTableMeta tableMeta = new MaterializedTableMeta(
           name,
-          columns,
+          columns.values(),
           simpleCheckDefinition,
           simpleChecks,
           primaryKey,

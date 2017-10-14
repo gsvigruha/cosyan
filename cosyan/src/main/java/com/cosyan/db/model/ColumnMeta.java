@@ -22,6 +22,7 @@ public abstract class ColumnMeta {
     private boolean nullable;
     private boolean unique;
     private boolean indexed;
+    private boolean deleted;
 
     public BasicColumn(int index, String name, DataType<?> type) {
       this(index, name, type, true, false, false);
@@ -49,6 +50,7 @@ public abstract class ColumnMeta {
       this.nullable = nullable;
       this.unique = unique;
       this.indexed = indexed;
+      this.deleted = false;
       assert !unique || indexed;
     }
 

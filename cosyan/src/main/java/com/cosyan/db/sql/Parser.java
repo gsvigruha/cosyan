@@ -216,13 +216,13 @@ public class Parser {
     Ident ident = parseSimpleIdent(tokens);
     if (tokens.peek().is(Tokens.ADD)) {
       ColumnDefinition column = parseColumnDefinition(tokens);
-      return new AlterTableAddColumn(ident.getString(), column);
+      return new AlterTableAddColumn(ident, column);
     } else if (tokens.peek().is(Tokens.DROP)) {
       Ident columnName = parseSimpleIdent(tokens);
-      return new AlterTableDropColumn(ident.getString(), columnName.getString());
+      return new AlterTableDropColumn(ident, columnName);
     } else if (tokens.peek().is(Tokens.ALTER) || tokens.peek().is(Tokens.MODIFY)) {
       ColumnDefinition column = parseColumnDefinition(tokens);
-      return new AlterTableAlterColumn(ident.getString(), column);
+      return new AlterTableAlterColumn(ident, column);
     } else {
       throw new ParserException("Unsupported alter operation '" + tokens.peek() + "'.");
     }

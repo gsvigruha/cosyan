@@ -5,7 +5,8 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 
-import com.cosyan.db.model.ColumnMeta;
+import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.DataTypes;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
@@ -20,12 +21,12 @@ public class RecordReader {
 
   public static final Record EMPTY = new Record(-1, null);
 
-  private final ImmutableList<? extends ColumnMeta> columns;
+  private final ImmutableList<BasicColumn> columns;
   private final SeekableInputStream inputStream;
   private final DataInput dataInput;
   private long pointer;
 
-  public RecordReader(ImmutableList<? extends ColumnMeta> columns, SeekableInputStream inputStream) {
+  public RecordReader(ImmutableList<BasicColumn> columns, SeekableInputStream inputStream) {
     this.columns = columns;
     this.inputStream = inputStream;
     this.dataInput = new DataInputStream(inputStream);
@@ -42,13 +43,27 @@ public class RecordReader {
       } catch (EOFException e) {
         return EMPTY;
       }
+      int recordSize = dataInput.readInt();
+      pointer += 4;
       Object[] values = new Object[columns.size()];
       int i = 0; // ImmutableMap.entrySet() keeps iteration order.
-      for (ColumnMeta column : columns) {
+      for (BasicColumn column : columns) {
         Object value = Serializer.readColumn(column.getType(), dataInput);
-        values[i++] = value;
+        if (!column.isDeleted()) {
+          values[i++] = value;
+        } else {
+          values[i++] = DataTypes.NULL;
+        }
         pointer += Serializer.size(column.getType(), value);
+        if (pointer - recordPointer == recordSize) {
+          break;
+        }
       }
+      for (int j = i; j < columns.size(); j++) {
+        values[j] = DataTypes.NULL;
+      }
+      dataInput.readInt(); // CRC;
+      pointer += 4;
       if (desc == 1) {
         return new Record(recordPointer, values);
       }

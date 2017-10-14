@@ -12,6 +12,7 @@ import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.model.ColumnMeta;
+import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableList;
@@ -50,7 +51,7 @@ public abstract class TableReader implements TableIO {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static abstract class SeekableTableReader extends ExposedTableReader {
-    public SeekableTableReader(ImmutableMap<String, ? extends ColumnMeta> columns) {
+    public SeekableTableReader(ImmutableMap<String, BasicColumn> columns) {
       super(columns);
     }
 
@@ -67,7 +68,7 @@ public abstract class TableReader implements TableIO {
 
     public MaterializedTableReader(
         RandomAccessFile raf,
-        ImmutableMap<String, ? extends ColumnMeta> columns,
+        ImmutableMap<String, BasicColumn> columns,
         ImmutableMap<String, IndexReader> indexes) throws IOException {
       super(columns);
       this.indexes = indexes;

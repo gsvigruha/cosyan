@@ -99,16 +99,16 @@ public class UpdateTest extends UnitTestBase {
 
     TableIndex t6a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t6"))).get("a");
     assertEquals(0L, t6a.get("x")[0]);
-    assertEquals(8L, t6a.get("y")[0]);
+    assertEquals(16L, t6a.get("y")[0]);
     TableMultiIndex t7b = metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t7"))).get("b");
     org.junit.Assert.assertArrayEquals(new long[] { 0L }, t7b.get("x"));
     assertEquals(false, t7b.contains("y"));
 
     execute("update t7 set b = 'y' where b = 'x';");
     assertEquals(0L, t6a.get("x")[0]);
-    assertEquals(8L, t6a.get("y")[0]);
+    assertEquals(16L, t6a.get("y")[0]);
     assertEquals(false, t7b.contains("x"));
-    org.junit.Assert.assertArrayEquals(new long[] { 19L }, t7b.get("y"));
+    org.junit.Assert.assertArrayEquals(new long[] { 27L }, t7b.get("y"));
   }
 
   @Test

@@ -7,14 +7,12 @@ import java.util.Optional;
 
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
-import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -26,7 +24,7 @@ public class IOTestUtil {
     private final Iterator<Object[]> iterator;
 
     public DummyTableReader(
-        ImmutableMap<String, ? extends ColumnMeta> columns,
+        ImmutableMap<String, BasicColumn> columns,
         Object[][] data) throws IOException {
       super(columns);
       this.iterator = Arrays.asList(data).iterator();
@@ -63,7 +61,7 @@ public class IOTestUtil {
     private final Object[][] data;
 
     public DummyMaterializedTableMeta(ImmutableMap<String, BasicColumn> columns, Object[][] data) {
-      super("dummy", Maps.newLinkedHashMap(columns), ImmutableList.of(), ImmutableMap.of(), Optional.empty());
+      super("dummy", columns.values(), ImmutableList.of(), ImmutableMap.of(), Optional.empty());
       this.data = data;
     }
 
@@ -78,7 +76,7 @@ public class IOTestUtil {
     }
 
     @Override
-    public ColumnMeta column(Ident ident) {
+    public BasicColumn column(Ident ident) {
       return columns().get(ident.getString());
     }
   }

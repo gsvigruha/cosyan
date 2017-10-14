@@ -3,10 +3,10 @@ package com.cosyan.db.model;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -26,7 +26,7 @@ import com.google.common.collect.Maps;
 public class MaterializedTableMeta extends ExposedTableMeta {
 
   private final String tableName;
-  private final LinkedHashMap<String, BasicColumn> columns;
+  private final List<BasicColumn> columns;
   private final List<SimpleCheckDefinition> simpleCheckDefinitions;
   private final Map<String, DerivedColumn> simpleChecks;
   private Optional<PrimaryKey> primaryKey;
@@ -35,13 +35,13 @@ public class MaterializedTableMeta extends ExposedTableMeta {
 
   public MaterializedTableMeta(
       String tableName,
-      LinkedHashMap<String, BasicColumn> columns,
+      Iterable<BasicColumn> columns,
       List<SimpleCheckDefinition> simpleCheckDefinitions,
       Map<String, DerivedColumn> simpleChecks,
       Optional<PrimaryKey> primaryKey,
       Map<String, ForeignKey> foreignKeys) {
     this.tableName = tableName;
-    this.columns = columns;
+    this.columns = Lists.newArrayList(columns);
     this.simpleCheckDefinitions = simpleCheckDefinitions;
     this.simpleChecks = simpleChecks;
     this.primaryKey = primaryKey;
@@ -51,7 +51,7 @@ public class MaterializedTableMeta extends ExposedTableMeta {
 
   public MaterializedTableMeta(
       String tableName,
-      LinkedHashMap<String, BasicColumn> columns,
+      Iterable<BasicColumn> columns,
       List<SimpleCheckDefinition> simpleCheckDefinitions,
       Map<String, DerivedColumn> simpleChecks,
       Optional<PrimaryKey> primaryKey) {
@@ -60,7 +60,10 @@ public class MaterializedTableMeta extends ExposedTableMeta {
 
   @Override
   public ImmutableMap<String, BasicColumn> columns() {
-    return ImmutableMap.copyOf(columns);
+    return ImmutableMap.copyOf(columns
+        .stream()
+        .filter(column -> !column.isDeleted())
+        .collect(Collectors.toMap(BasicColumn::getName, column -> column)));
   }
 
   @Override
@@ -82,12 +85,12 @@ public class MaterializedTableMeta extends ExposedTableMeta {
   }
 
   @Override
-  public ColumnMeta column(Ident ident) throws ModelException {
+  public BasicColumn column(Ident ident) throws ModelException {
     if (ident.isSimple()) {
-      return column(ident, columns);
+      return (BasicColumn) column(ident, columns());
     } else {
       if (ident.head().equals(tableName)) {
-        return column(ident.tail(), columns);
+        return (BasicColumn) column(ident.tail(), columns());
       } else {
         throw new ModelException("Table mismatch '" + ident.head() + "' instead of '" + tableName + "'.");
       }
@@ -124,7 +127,7 @@ public class MaterializedTableMeta extends ExposedTableMeta {
   }
 
   public static MaterializedTableMeta simpleTable(
-      String name, LinkedHashMap<String, BasicColumn> columns) {
+      String name, Iterable<BasicColumn> columns) {
     return new MaterializedTableMeta(
         name,
         columns,
@@ -139,5 +142,9 @@ public class MaterializedTableMeta extends ExposedTableMeta {
 
   public void addReverseForeignKey(ForeignKey foreignKey) {
     reverseForeignKeys.put(foreignKey.getName(), foreignKey);
+  }
+
+  public void addColumn(BasicColumn basicColumn) {
+    columns.add(basicColumn);
   }
 }

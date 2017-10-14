@@ -1,5 +1,6 @@
 package com.cosyan.db.io;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
@@ -10,12 +11,10 @@ import java.io.OutputStream;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Optional;
-
-import org.apache.commons.io.output.ByteArrayOutputStream;
+import java.util.zip.CRC32;
 
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
@@ -107,23 +106,26 @@ public class Serializer {
     }
   }
 
-  public static byte[] serialize(Object[] values, ImmutableList<? extends ColumnMeta> columns) throws IOException {
-    ByteArrayOutputStream b = new ByteArrayOutputStream();
-    DataOutputStream stream = new DataOutputStream(b);
-    stream.writeByte(1);
-    for (int i = 0; i < columns.size(); i++) {
-      Serializer.writeColumn(values[i], columns.get(i).getType(), stream);
-    }
-    return b.toByteArray();
-  }
-
-  public static void serialize(Object[] values, ImmutableList<? extends ColumnMeta> columns, OutputStream out)
+  public static void serialize(Object[] values, ImmutableList<BasicColumn> columns, OutputStream out)
       throws IOException {
     DataOutputStream stream = new DataOutputStream(out);
     stream.writeByte(1);
+    ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
+    DataOutputStream recordStream = new DataOutputStream(bos);
     for (int i = 0; i < columns.size(); i++) {
-      Serializer.writeColumn(values[i], columns.get(i).getType(), stream);
+      BasicColumn column = columns.get(i);
+      if (!column.isDeleted()) {
+        Serializer.writeColumn(values[i], column.getType(), recordStream);  
+      } else {
+        recordStream.writeInt(0);
+      }
     }
+    stream.writeInt(bos.size());
+    byte[] record = bos.toByteArray();
+    stream.write(record);
+    CRC32 checksum = new CRC32();
+    checksum.update(record);
+    stream.writeInt((int) checksum.getValue());
   }
 
   public static void writeTableMeta(
@@ -181,7 +183,7 @@ public class Serializer {
           tableStream.readBoolean()));
     }
 
-    MaterializedTableMeta simpleTable = MaterializedTableMeta.simpleTable(tableName, columns);
+    MaterializedTableMeta simpleTable = MaterializedTableMeta.simpleTable(tableName, columns.values());
     int numSimpleChecks = tableStream.readInt();
     ImmutableList.Builder<SimpleCheckDefinition> simpleCheckDefinitionsBuilder = ImmutableList.builder();
     ImmutableMap.Builder<String, DerivedColumn> simpleChecksBuilder = ImmutableMap.builder();
@@ -205,7 +207,7 @@ public class Serializer {
     }
     return new MaterializedTableMeta(
         tableName,
-        columns,
+        columns.values(),
         simpleCheckDefinitionsBuilder.build(),
         simpleChecksBuilder.build(),
         primaryKey);
