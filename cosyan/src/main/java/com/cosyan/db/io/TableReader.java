@@ -8,7 +8,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
@@ -16,6 +15,7 @@ import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
+import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -54,7 +54,7 @@ public abstract class TableReader implements TableIO {
   @EqualsAndHashCode(callSuper = true)
   public static abstract class SeekableTableReader extends ExposedTableReader {
     public SeekableTableReader(List<BasicColumn> columns) {
-      super(ImmutableMap.copyOf(columns.stream().collect(Collectors.toMap(BasicColumn::getName, column -> column))));
+      super(MaterializedTableMeta.columnsMap(columns));
     }
 
     public abstract void seek(long position) throws IOException;

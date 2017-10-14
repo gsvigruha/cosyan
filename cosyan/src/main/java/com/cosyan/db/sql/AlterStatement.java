@@ -29,9 +29,14 @@ public class AlterStatement {
     @Override
     public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
       if (!column.isNullable()) {
-        throw new ModelException("New columns have to be nullable.");
+        throw new ModelException(
+            String.format("Cannot add column '%s', new columns have to be nullable.", column.getName()));
       }
       MaterializedTableMeta tableMeta = metaRepo.table(table);
+      if (tableMeta.indexOf(new Ident(column.getName())) >= 0) {
+        throw new ModelException(
+            String.format("Cannot add column '%s', column with the same name already exists.", column.getName()));
+      }
       BasicColumn basicColumn = new BasicColumn(
           tableMeta.columns().size(),
           column.getName(),
@@ -86,6 +91,7 @@ public class AlterStatement {
         basicColumn.setDeleted(false);
       }
       basicColumn.setDeleted(true);
+      // TODO kill index.
       return new MetaStatementResult();
     }
   }

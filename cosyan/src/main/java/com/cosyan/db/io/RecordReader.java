@@ -55,7 +55,8 @@ public class RecordReader {
           values[i++] = value;
         }
         pointer += Serializer.size(column.getType(), value);
-        if (pointer - recordPointer == recordSize) {
+        if (pointer - recordPointer == recordSize + 5) {
+          // Pointer is at the end of the supposed length of the record.
           break;
         }
       }

@@ -62,16 +62,20 @@ public class MaterializedTableMeta extends ExposedTableMeta {
 
   @Override
   public ImmutableMap<String, BasicColumn> columns() {
+    return columnsMap(columns);
+  }
+
+  public static ImmutableMap<String, BasicColumn> columnsMap(List<BasicColumn> columns){
     return ImmutableMap.copyOf(columns
         .stream()
         .filter(column -> !column.isDeleted())
         .collect(Collectors.toMap(BasicColumn::getName, column -> column)));
   }
-
+  
   public ImmutableList<BasicColumn> allColumns() {
     return ImmutableList.copyOf(columns);
   }
-  
+
   @Override
   public SeekableTableReader reader(Resources resources) throws IOException {
     return resources.reader(new Ident(tableName));
