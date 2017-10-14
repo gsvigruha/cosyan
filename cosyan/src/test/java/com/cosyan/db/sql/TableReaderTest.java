@@ -3,7 +3,6 @@ package com.cosyan.db.sql;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.text.ParseException;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -11,15 +10,16 @@ import org.junit.Test;
 import com.cosyan.db.DummyTestBase;
 import com.cosyan.db.io.IOTestUtil.DummyMaterializedTableMeta;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.sql.Parser.ParserException;
 import com.google.common.collect.ImmutableMap;
 
 public class TableReaderTest extends DummyTestBase {
 
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParseException {
+  public static void setUp() throws IOException, ModelException, ParserException {
     DummyTestBase.setUp();
 
     register("table", new DummyMaterializedTableMeta(

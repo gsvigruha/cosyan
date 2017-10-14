@@ -5,11 +5,11 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import com.cosyan.db.io.TableWriter;
+import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.model.MetaRepo.ModelException;
-import com.cosyan.db.model.MetaRepo.RuleException;
-import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
+import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.sql.Result.StatementResult;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.sql.SyntaxTree.Literal;

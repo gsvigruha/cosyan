@@ -4,8 +4,12 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
+import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BuiltinFunctions;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
@@ -15,9 +19,6 @@ import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
-import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.model.MetaRepo.ModelException;
-import com.cosyan.db.model.MetaRepo.RuleException;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.Tokens.Token;
@@ -44,14 +45,14 @@ public class SyntaxTree {
 
   public static interface Statement {
     public MetaResources compile(MetaRepo metaRepo) throws ModelException;
-        
+
     public Result execute(Resources resources) throws RuleException, IOException;
 
     public void cancel();
   }
 
   public static interface MetaStatement {
-        
+
     public Result execute(MetaRepo metaRepo) throws ModelException, IndexException, IOException;
   }
 
@@ -94,10 +95,9 @@ public class SyntaxTree {
   public static abstract class Expression extends Node {
 
     public DerivedColumn compile(
-        TableMeta sourceTable,
-        MetaRepo metaRepo) throws ModelException {
+        TableMeta sourceTable) throws ModelException {
       List<AggrColumn> aggrColumns = new LinkedList<>();
-      DerivedColumn column = compile(sourceTable, metaRepo, aggrColumns);
+      DerivedColumn column = compile(sourceTable, aggrColumns);
       if (!aggrColumns.isEmpty()) {
         throw new ModelException("Aggregators are not allowed here.");
       }
@@ -106,7 +106,6 @@ public class SyntaxTree {
 
     public abstract DerivedColumn compile(
         TableMeta sourceTable,
-        MetaRepo metaRepo,
         List<AggrColumn> aggrColumns) throws ModelException;
 
     public String getName(String def) {
@@ -114,6 +113,8 @@ public class SyntaxTree {
     }
 
     public abstract AggregationExpression isAggregation();
+
+    public abstract String print();
   }
 
   @Data
@@ -124,9 +125,9 @@ public class SyntaxTree {
 
     @Override
     public DerivedColumn compile(
-        TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) throws ModelException {
+        TableMeta sourceTable, List<AggrColumn> aggrColumns) throws ModelException {
       if (token.is(Tokens.NOT)) {
-        DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo, aggrColumns);
+        DerivedColumn exprColumn = expr.compile(sourceTable, aggrColumns);
         assertType(DataTypes.BoolType, exprColumn.getType());
         return new DerivedColumn(DataTypes.BoolType) {
 
@@ -136,13 +137,13 @@ public class SyntaxTree {
           }
         };
       } else if (token.is(Tokens.ASC)) {
-        DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo, aggrColumns);
+        DerivedColumn exprColumn = expr.compile(sourceTable, aggrColumns);
         return new OrderColumn(exprColumn, true);
       } else if (token.is(Tokens.DESC)) {
-        DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo, aggrColumns);
+        DerivedColumn exprColumn = expr.compile(sourceTable, aggrColumns);
         return new OrderColumn(exprColumn, false);
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NOT, Tokens.NULL).getString())) {
-        DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo, aggrColumns);
+        DerivedColumn exprColumn = expr.compile(sourceTable, aggrColumns);
         return new DerivedColumn(DataTypes.BoolType) {
 
           @Override
@@ -151,16 +152,13 @@ public class SyntaxTree {
           }
         };
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NULL).getString())) {
-
-        DerivedColumn exprColumn = expr.compile(sourceTable, metaRepo,
-            aggrColumns);
+        DerivedColumn exprColumn = expr.compile(sourceTable, aggrColumns);
         return new DerivedColumn(DataTypes.BoolType) {
 
           @Override
           public Object getValue(Object[] sourceValues) {
             return exprColumn.getValue(sourceValues) == DataTypes.NULL;
           }
-
         };
       } else {
         throw new UnsupportedOperationException();
@@ -171,6 +169,11 @@ public class SyntaxTree {
     public AggregationExpression isAggregation() {
       return expr.isAggregation();
     }
+
+    @Override
+    public String print() {
+      return token.getString() + " " + expr.print();
+    }
   }
 
   @Data
@@ -180,7 +183,7 @@ public class SyntaxTree {
 
     @Override
     public DerivedColumn compile(
-        TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) throws ModelException {
+        TableMeta sourceTable, List<AggrColumn> aggrColumns) throws ModelException {
       // Guava immutable collections keep iteration order;
       final int index = sourceTable.indexOf(ident);
       if (index < 0) {
@@ -209,6 +212,11 @@ public class SyntaxTree {
     public AggregationExpression isAggregation() {
       return AggregationExpression.NO;
     }
+
+    @Override
+    public String print() {
+      return ident.getString();
+    }
   }
 
   @Data
@@ -217,7 +225,7 @@ public class SyntaxTree {
     private final String value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) {
+    public DerivedColumn compile(TableMeta sourceTable, List<AggrColumn> aggrColumns) {
       return new DerivedColumn(DataTypes.StringType) {
 
         @Override
@@ -231,6 +239,11 @@ public class SyntaxTree {
     public AggregationExpression isAggregation() {
       return AggregationExpression.EITHER;
     }
+
+    @Override
+    public String print() {
+      return "'" + value + "'";
+    }
   }
 
   @Data
@@ -239,7 +252,7 @@ public class SyntaxTree {
     private final Long value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) {
+    public DerivedColumn compile(TableMeta sourceTable, List<AggrColumn> aggrColumns) {
       return new DerivedColumn(DataTypes.LongType) {
 
         @Override
@@ -253,6 +266,11 @@ public class SyntaxTree {
     public AggregationExpression isAggregation() {
       return AggregationExpression.EITHER;
     }
+
+    @Override
+    public String print() {
+      return String.valueOf(value);
+    }
   }
 
   @Data
@@ -261,7 +279,7 @@ public class SyntaxTree {
     private final Double value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) {
+    public DerivedColumn compile(TableMeta sourceTable, List<AggrColumn> aggrColumns) {
       return new DerivedColumn(DataTypes.DoubleType) {
 
         @Override
@@ -274,6 +292,11 @@ public class SyntaxTree {
     @Override
     public AggregationExpression isAggregation() {
       return AggregationExpression.EITHER;
+    }
+
+    @Override
+    public String print() {
+      return String.valueOf(value);
     }
   }
 
@@ -309,7 +332,7 @@ public class SyntaxTree {
     }
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns)
+    public DerivedColumn compile(TableMeta sourceTable, List<AggrColumn> aggrColumns)
         throws ModelException {
       if (isAggr()) {
         if (args.size() != 1) {
@@ -319,8 +342,8 @@ public class SyntaxTree {
           throw new ModelException("Aggregators are not allowed here.");
         }
         KeyValueTableMeta outerTable = (KeyValueTableMeta) sourceTable;
-        DerivedColumn argColumn = Iterables.getOnlyElement(args).compile(outerTable.getSourceTable(), metaRepo);
-        final TypedAggrFunction<?> function = metaRepo.aggrFunction(ident, argColumn.getType());
+        DerivedColumn argColumn = Iterables.getOnlyElement(args).compile(outerTable.getSourceTable());
+        final TypedAggrFunction<?> function = BuiltinFunctions.aggrFunction(ident, argColumn.getType());
 
         AggrColumn aggrColumn = new AggrColumn(
             function.getReturnType(), argColumn, outerTable.getKeyColumns().size() + aggrColumns.size(), function);
@@ -331,15 +354,15 @@ public class SyntaxTree {
         SimpleFunction<?> function;
         ImmutableList<Expression> allArgs;
         if (ident.isSimple()) {
-          function = metaRepo.simpleFunction(ident);
+          function = BuiltinFunctions.simpleFunction(ident);
           allArgs = args;
         } else {
-          function = metaRepo.simpleFunction(ident.tail());
+          function = BuiltinFunctions.simpleFunction(ident.tail());
           Expression objExpr = new IdentExpression(new Ident(ident.head()));
           allArgs = ImmutableList.<Expression>builder().add(objExpr).addAll(args).build();
         }
         for (int i = 0; i < function.getArgTypes().size(); i++) {
-          DerivedColumn col = allArgs.get(i).compile(sourceTable, metaRepo);
+          DerivedColumn col = allArgs.get(i).compile(sourceTable);
           assertType(function.getArgTypes().get(i), col.getType());
           argColumnsBuilder.add(col);
         }
@@ -365,6 +388,14 @@ public class SyntaxTree {
     @Override
     public AggregationExpression isAggregation() {
       return aggregation;
+    }
+
+    @Override
+    public String print() {
+      return ident.getString()
+          + "("
+          + args.stream().map(arg -> arg.print()).collect(Collectors.joining(", "))
+          + ")";
     }
   }
 

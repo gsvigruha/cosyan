@@ -68,4 +68,8 @@ public class LockManager {
   public synchronized void registerLock(String resourceId) {
     lockMap.put(resourceId, new ReentrantReadWriteLock());
   }
+
+  public synchronized void removeLock(String resourceId) {
+    lockMap.remove(resourceId);
+  }
 }

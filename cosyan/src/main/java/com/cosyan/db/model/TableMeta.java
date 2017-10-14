@@ -1,24 +1,16 @@
 package com.cosyan.db.model;
 
 import java.io.IOException;
-import java.util.Optional;
+import java.util.Map;
 
 import com.cosyan.db.io.TableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
-import com.cosyan.db.io.TableReader.SeekableTableReader;
-import com.cosyan.db.model.ColumnMeta.BasicColumn;
-import com.cosyan.db.model.ColumnMeta.DerivedColumn;
-import com.cosyan.db.model.Keys.ForeignKey;
-import com.cosyan.db.model.Keys.PrimaryKey;
-import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 public abstract class TableMeta {
 
@@ -33,7 +25,7 @@ public abstract class TableMeta {
    */
   public abstract ColumnMeta column(Ident ident) throws ModelException;
 
-  protected ColumnMeta column(Ident ident, ImmutableMap<String, ? extends ColumnMeta> columns) throws ModelException {
+  protected ColumnMeta column(Ident ident, Map<String, ? extends ColumnMeta> columns) throws ModelException {
     ColumnMeta column = columns.get(ident.getString());
     if (column == null) {
       throw new ModelException("Column '" + ident + "' not found in table.");
@@ -62,68 +54,5 @@ public abstract class TableMeta {
 
     @Override
     public abstract ExposedTableReader reader(Resources resources) throws IOException;
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class MaterializedTableMeta extends ExposedTableMeta {
-    private final String tableName;
-    private final ImmutableMap<String, BasicColumn> columns;
-
-    private ImmutableMap<String, DerivedColumn> simpleChecks = ImmutableMap.of();
-    private Optional<PrimaryKey> primaryKey = Optional.empty();
-    private ImmutableMap<String, ForeignKey> foreignKeys = ImmutableMap.of();
-    private ImmutableMap<String, ForeignKey> reverseForeignKeys = ImmutableMap.of();
-
-    private boolean valid = true;
-
-    public void invalidate() {
-      valid = false;
-    }
-
-    public boolean isValid() {
-      return valid;
-    }
-
-    @Override
-    public ImmutableMap<String, BasicColumn> columns() {
-      return columns;
-    }
-
-    @Override
-    public SeekableTableReader reader(Resources resources) throws IOException {
-      return resources.reader(new Ident(tableName));
-    }
-
-    @Override
-    public int indexOf(Ident ident) {
-      if (ident.isSimple()) {
-        return indexOf(columns().keySet(), ident);
-      } else {
-        if (ident.head().equals(tableName)) {
-          return indexOf(columns().keySet(), ident.tail());
-        } else {
-          return -1;
-        }
-      }
-    }
-
-    @Override
-    public ColumnMeta column(Ident ident) throws ModelException {
-      if (ident.isSimple()) {
-        return column(ident, columns);
-      } else {
-        if (ident.head().equals(tableName)) {
-          return column(ident.tail(), columns);
-        } else {
-          throw new ModelException("Table mismatch '" + ident.head() + "' instead of '" + tableName + "'.");
-        }
-      }
-    }
-
-    @Override
-    public MetaResources readResources() {
-      return MetaResources.readTable(this);
-    }
   }
 }

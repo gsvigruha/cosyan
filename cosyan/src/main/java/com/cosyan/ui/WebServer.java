@@ -11,10 +11,6 @@ import org.eclipse.jetty.servlet.ServletHolder;
 
 import com.cosyan.db.DBApi;
 import com.cosyan.db.conf.Config;
-import com.cosyan.db.lock.LockManager;
-import com.cosyan.db.logging.TransactionJournal;
-import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.transaction.TransactionHandler;
 import com.cosyan.ui.admin.AdminServlet;
 import com.cosyan.ui.admin.MonitoringServlet;
 import com.cosyan.ui.sql.SQLServlet;
@@ -26,14 +22,10 @@ public class WebServer {
     Properties props = new Properties();
     props.setProperty(Config.DATA_DIR, "/tmp/webserver");
     Config config = new Config(props);
-    LockManager lockManager = new LockManager();
-    MetaRepo metaRepo = new MetaRepo(config, lockManager);
-    TransactionHandler transactionHandler = new TransactionHandler();
-    TransactionJournal transactionJournal = new TransactionJournal(config);
-    DBApi dbApi = new DBApi(metaRepo, transactionHandler, transactionJournal);
+    DBApi dbApi = new DBApi(config);
 
-    handler.addServlet(new ServletHolder(new AdminServlet(metaRepo)), "/admin");
-    handler.addServlet(new ServletHolder(new MonitoringServlet(metaRepo)), "/monitoring");
+    handler.addServlet(new ServletHolder(new AdminServlet(dbApi.getMetaRepo())), "/admin");
+    handler.addServlet(new ServletHolder(new MonitoringServlet(dbApi.getMetaRepo())), "/monitoring");
     handler.addServlet(new ServletHolder(new SQLServlet(dbApi)), "/sql");
 
     ResourceHandler resourceHandler = new ResourceHandler();

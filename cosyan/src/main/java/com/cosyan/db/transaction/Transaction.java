@@ -7,9 +7,9 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.cosyan.db.logging.TransactionJournal;
-import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.model.MetaRepo.ModelException;
-import com.cosyan.db.model.MetaRepo.RuleException;
+import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.sql.Result;
 import com.cosyan.db.sql.Result.CrashResult;
 import com.cosyan.db.sql.Result.ErrorResult;

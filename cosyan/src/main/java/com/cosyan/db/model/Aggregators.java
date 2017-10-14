@@ -2,10 +2,10 @@ package com.cosyan.db.model;
 
 import java.util.HashSet;
 
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.cosyan.db.model.MetaRepo.ModelException;
 
 public class Aggregators {
 

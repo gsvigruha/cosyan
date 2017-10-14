@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.util.Optional;
 
 import com.cosyan.db.io.TableWriter;
+import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
-import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.model.MetaRepo.ModelException;
-import com.cosyan.db.model.MetaRepo.RuleException;
-import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
+import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.sql.Result.StatementResult;
 import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
@@ -51,12 +51,12 @@ public class UpdateStatement {
         if (idx < 0) {
           throw new ModelException("Identifier '" + update.getIdent() + "' not found.");
         }
-        DerivedColumn columnExpr = update.getValue().compile(tableMeta, metaRepo);
+        DerivedColumn columnExpr = update.getValue().compile(tableMeta);
         columnExprsBuilder.put(idx, columnExpr);
       }
       columnExprs = columnExprsBuilder.build();
       if (where.isPresent()) {
-        whereColumn = where.get().compile(tableMeta, metaRepo);
+        whereColumn = where.get().compile(tableMeta);
       } else {
         whereColumn = ColumnMeta.TRUE_COLUMN;
       }

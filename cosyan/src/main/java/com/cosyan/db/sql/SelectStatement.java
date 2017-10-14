@@ -11,6 +11,9 @@ import java.util.Optional;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.logic.PredicateHelper;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
+import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
@@ -27,12 +30,9 @@ import com.cosyan.db.model.DerivedTables.JoinTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueAggrTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.DerivedTables.SortedTableMeta;
-import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.model.MetaRepo.ModelException;
-import com.cosyan.db.model.MetaRepo.RuleException;
+import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
-import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
 import com.cosyan.db.sql.Result.QueryResult;
 import com.cosyan.db.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.sql.SyntaxTree.Expression;
@@ -90,7 +90,7 @@ public class SelectStatement {
         fullTable = new DerivedTableMeta(filteredTable, tableColumns);
       }
 
-      ExposedTableMeta distinctTable;      
+      ExposedTableMeta distinctTable;
       if (distinct) {
         distinctTable = new DistinctTableMeta(fullTable);
       } else {
@@ -135,7 +135,7 @@ public class SelectStatement {
       ImmutableMap.Builder<String, ColumnMeta> tableColumns = ImmutableMap.builder();
       int i = 0;
       for (Expression expr : columns) {
-        tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, metaRepo, aggrColumns));
+        tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, aggrColumns));
       }
       return tableColumns.build();
     }
@@ -150,10 +150,10 @@ public class SelectStatement {
         if (expr instanceof AsteriskExpression) {
           for (String columnName : sourceTable.columns().keySet()) {
             tableColumns.put(columnName,
-                new IdentExpression(new Ident(columnName)).compile(sourceTable, metaRepo));
+                new IdentExpression(new Ident(columnName)).compile(sourceTable));
           }
         } else {
-          tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, metaRepo));
+          tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable));
         }
       }
       return tableColumns.build();
@@ -162,7 +162,7 @@ public class SelectStatement {
     private ExposedTableMeta filteredTable(
         MetaRepo metaRepo, ExposedTableMeta sourceTable, Optional<Expression> where) throws ModelException {
       if (where.isPresent()) {
-        DerivedColumn whereColumn = where.get().compile(sourceTable, metaRepo);
+        DerivedColumn whereColumn = where.get().compile(sourceTable);
         assertType(DataTypes.BoolType, whereColumn.getType());
         if (sourceTable instanceof MaterializedTableMeta) {
           ImmutableList<VariableEquals> clauses = PredicateHelper.extractClauses(where.get());
@@ -190,7 +190,7 @@ public class SelectStatement {
     private DerivedColumn havingExpression(MetaRepo metaRepo, TableMeta sourceTable,
         Optional<Expression> having, List<AggrColumn> aggrColumns) throws ModelException {
       if (having.isPresent()) {
-        DerivedColumn havingColumn = having.get().compile(sourceTable, metaRepo, aggrColumns);
+        DerivedColumn havingColumn = having.get().compile(sourceTable, aggrColumns);
         assertType(DataTypes.BoolType, havingColumn.getType());
         return havingColumn;
       } else {
@@ -209,7 +209,7 @@ public class SelectStatement {
       if (groupBy.isPresent()) {
         ImmutableMap.Builder<String, ColumnMeta> keyColumnsBuilder = ImmutableMap.builder();
         for (Expression expr : groupBy.get()) {
-          DerivedColumn keyColumn = expr.compile(sourceTable, metaRepo);
+          DerivedColumn keyColumn = expr.compile(sourceTable);
           String name = expr.getName(null);
           if (name == null) {
             throw new ModelException("Expression in group by must be named: '" + expr + "'.");
@@ -231,7 +231,7 @@ public class SelectStatement {
         ImmutableList<Expression> orderBy) throws ModelException {
       ImmutableList.Builder<OrderColumn> orderColumnsBuilder = ImmutableList.builder();
       for (Expression expr : orderBy) {
-        DerivedColumn column = expr.compile(sourceTable, metaRepo);
+        DerivedColumn column = expr.compile(sourceTable);
         if (column instanceof OrderColumn) {
           orderColumnsBuilder.add((OrderColumn) column);
         } else {
@@ -284,8 +284,8 @@ public class SelectStatement {
       ImmutableList<BinaryExpression> exprs = ImmutableList
           .copyOf(decompose(onExpr, new LinkedList<BinaryExpression>()));
       for (BinaryExpression expr : exprs) {
-        leftJoinColumns.add(expr.getLeft().compile(leftTable, metaRepo));
-        rightJoinColumns.add(expr.getRight().compile(rightTable, metaRepo));
+        leftJoinColumns.add(expr.getLeft().compile(leftTable));
+        rightJoinColumns.add(expr.getRight().compile(rightTable));
       }
       return new JoinTableMeta(joinType, leftTable, rightTable, leftJoinColumns.build(), rightJoinColumns.build());
     }
@@ -316,8 +316,8 @@ public class SelectStatement {
 
     @Override
     public DerivedColumn compile(
-        TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) throws ModelException {
-      return expr.compile(sourceTable, metaRepo, aggrColumns);
+        TableMeta sourceTable, List<AggrColumn> aggrColumns) throws ModelException {
+      return expr.compile(sourceTable, aggrColumns);
     }
 
     @Override
@@ -328,6 +328,11 @@ public class SelectStatement {
     @Override
     public String getName(String def) {
       return ident.getString();
+    }
+
+    @Override
+    public String print() {
+      return expr.print() + " as " + ident.getString();
     }
   }
 
@@ -348,7 +353,7 @@ public class SelectStatement {
   public static class AsteriskExpression extends Expression {
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns) {
+    public DerivedColumn compile(TableMeta sourceTable, List<AggrColumn> aggrColumns) {
       throw new UnsupportedOperationException();
     }
 
@@ -360,6 +365,11 @@ public class SelectStatement {
     @Override
     public AggregationExpression isAggregation() {
       return AggregationExpression.NO;
+    }
+
+    @Override
+    public String print() {
+      return "*";
     }
   }
 }

@@ -2,7 +2,7 @@ package com.cosyan.db.transaction;
 
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
-import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
+import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.util.Util;
 import com.google.common.collect.ImmutableMap;
 
@@ -41,7 +41,7 @@ public class MetaResources {
 
     public ImmutableMap<String, Resource> resources() {
       ImmutableMap.Builder<String, Resource> builder = ImmutableMap.builder();
-      String tableName = tableMeta.getTableName();
+      String tableName = tableMeta.tableName();
       builder.put(tableName, new Resource(tableName, write));
       for (BasicColumn column : tableMeta.columns().values()) {
         if (column.isIndexed()) {
@@ -50,14 +50,14 @@ public class MetaResources {
         }
       }
       if (foreignIndexes) {
-        for (ForeignKey foreignKey : tableMeta.getForeignKeys().values()) {
-          String indexName = foreignKey.getRefTable().getTableName() + "." + foreignKey.getRefColumn().getName();
+        for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
+          String indexName = foreignKey.getRefTable().tableName() + "." + foreignKey.getRefColumn().getName();
           builder.put(indexName, new Resource(indexName, /* write= */false));
         }
       }
       if (reverseForeignIndexes) {
-        for (ForeignKey foreignKey : tableMeta.getReverseForeignKeys().values()) {
-          String indexName = foreignKey.getRefTable().getTableName() + "." + foreignKey.getRefColumn().getName();
+        for (ForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
+          String indexName = foreignKey.getRefTable().tableName() + "." + foreignKey.getRefColumn().getName();
           builder.put(indexName, new Resource(indexName, /* write= */false));
         }
       }
@@ -82,13 +82,13 @@ public class MetaResources {
 
   public static MetaResources readTable(MaterializedTableMeta tableMeta) {
     return new MetaResources(ImmutableMap.of(
-        tableMeta.getTableName(),
+        tableMeta.tableName(),
         new TableMetaResource(tableMeta, false, false, false)));
   }
 
   public static MetaResources updateTable(MaterializedTableMeta tableMeta) {
     return new MetaResources(ImmutableMap.of(
-        tableMeta.getTableName(),
+        tableMeta.tableName(),
         new TableMetaResource(
             tableMeta,
             /* write= */true,
@@ -98,7 +98,7 @@ public class MetaResources {
 
   public static MetaResources insertIntoTable(MaterializedTableMeta tableMeta) {
     return new MetaResources(ImmutableMap.of(
-        tableMeta.getTableName(),
+        tableMeta.tableName(),
         new TableMetaResource(
             tableMeta,
             /* write= */true,
@@ -108,7 +108,7 @@ public class MetaResources {
 
   public static MetaResources deleteFromTable(MaterializedTableMeta tableMeta) {
     return new MetaResources(ImmutableMap.of(
-        tableMeta.getTableName(),
+        tableMeta.tableName(),
         new TableMetaResource(
             tableMeta,
             /* write= */true,

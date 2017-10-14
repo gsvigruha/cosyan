@@ -5,25 +5,22 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 
 import com.cosyan.db.conf.Config;
-import com.cosyan.db.lock.LockManager;
-import com.cosyan.db.logging.TransactionJournal;
-import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.session.Session;
+import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.Result;
 import com.cosyan.db.sql.Result.CrashResult;
 import com.cosyan.db.sql.Result.ErrorResult;
 import com.cosyan.db.sql.Result.QueryResult;
 import com.cosyan.db.sql.Result.StatementResult;
 import com.cosyan.db.sql.Result.TransactionResult;
-import com.cosyan.db.transaction.TransactionHandler;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
@@ -34,16 +31,13 @@ public abstract class UnitTestBase {
   protected static MetaRepo metaRepo;
 
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParseException {
+  public static void setUp() throws IOException, ModelException, ParserException {
     FileUtils.cleanDirectory(new File("/tmp/data"));
     Properties props = new Properties();
     props.setProperty(Config.DATA_DIR, "/tmp/data");
     Config config = new Config(props);
-    LockManager lockManager = new LockManager();
-    metaRepo = new MetaRepo(config, lockManager);
-    TransactionHandler transactionHandler = new TransactionHandler();
-    TransactionJournal transactionJournal = new TransactionJournal(config);
-    dbApi = new DBApi(metaRepo, transactionHandler, transactionJournal);
+    dbApi = new DBApi(config);
+    metaRepo = dbApi.getMetaRepo();
     session = dbApi.getSession();
   }
 

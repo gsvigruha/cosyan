@@ -7,7 +7,7 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
-import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.sql.Result.QueryResult;
 import com.cosyan.db.sql.Result.TransactionResult;

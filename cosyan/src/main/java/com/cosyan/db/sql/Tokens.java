@@ -10,6 +10,14 @@ public class Tokens {
 
   public static String CREATE = "create";
 
+  public static String DROP = "drop";
+
+  public static String ALTER = "alter";
+
+  public static String ADD = "add";
+  
+  public static String MODIFY = "modify";
+  
   public static String TABLE = "table";
 
   public static String VARCHAR = "varchar";

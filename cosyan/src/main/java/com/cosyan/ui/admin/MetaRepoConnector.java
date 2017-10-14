@@ -5,11 +5,11 @@ import java.util.Map;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
-import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.model.MetaRepo.ModelException;
-import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
+import com.cosyan.db.model.MaterializedTableMeta;
 
 public class MetaRepoConnector {
 
@@ -28,7 +28,7 @@ public class MetaRepoConnector {
       tableObj.put("name", table.getKey());
       MaterializedTableMeta tableMeta = table.getValue();
       JSONArray columns = new JSONArray();
-      for (BasicColumn column : tableMeta.getColumns().values()) {
+      for (BasicColumn column : tableMeta.columns().values()) {
         JSONObject columnObj = new JSONObject();
         columnObj.put("name", column.getName());
         columnObj.put("type", column.getType().getName());
@@ -39,27 +39,27 @@ public class MetaRepoConnector {
       }
       tableObj.put("columns", columns);
 
-      if (tableMeta.getPrimaryKey().isPresent()) {
-        tableObj.put("primaryKeys", tableMeta.getPrimaryKey().get().getName());
+      if (tableMeta.primaryKey().isPresent()) {
+        tableObj.put("primaryKeys", tableMeta.primaryKey().get().getName());
       }
 
       JSONArray foreignKeys = new JSONArray();
-      for (ForeignKey foreignKey : tableMeta.getForeignKeys().values()) {
+      for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
         JSONObject fkObj = new JSONObject();
         fkObj.put("name", foreignKey.getName());
         fkObj.put("column", foreignKey.getColumn().getName());
-        fkObj.put("refTable", foreignKey.getRefTable().getTableName());
+        fkObj.put("refTable", foreignKey.getRefTable().tableName());
         fkObj.put("refColumn", foreignKey.getRefColumn().getName());
         foreignKeys.add(fkObj);
       }
       tableObj.put("foreignKeys", foreignKeys);
 
       JSONArray reverseForeignKeys = new JSONArray();
-      for (ForeignKey foreignKey : tableMeta.getReverseForeignKeys().values()) {
+      for (ForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
         JSONObject fkObj = new JSONObject();
         fkObj.put("name", foreignKey.getName());
         fkObj.put("column", foreignKey.getColumn().getName());
-        fkObj.put("refTable", foreignKey.getRefTable().getTableName());
+        fkObj.put("refTable", foreignKey.getRefTable().tableName());
         fkObj.put("refColumn", foreignKey.getRefColumn().getName());
         reverseForeignKeys.add(fkObj);
       }

@@ -1,7 +1,7 @@
 package com.cosyan.db.session;
 
 import com.cosyan.db.logging.TransactionJournal;
-import com.cosyan.db.model.MetaRepo;
+import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.sql.Lexer;
 import com.cosyan.db.sql.Parser;
 import com.cosyan.db.sql.Parser.ParserException;

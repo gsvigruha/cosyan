@@ -139,6 +139,7 @@ public class ParserTest {
         new Token("="),
         new IdentExpression(new Ident("a")),
         new LongLiteral(1L)));
+    assertEquals("(a = 1)", expr.print());
   }
 
   @Test
@@ -151,6 +152,7 @@ public class ParserTest {
             new IdentExpression(new Ident("a")),
             new IdentExpression(new Ident("b"))),
         new IdentExpression(new Ident("c"))));
+    assertEquals("((a and b) or c)", expr.print());
   }
 
   @Test
@@ -163,6 +165,7 @@ public class ParserTest {
             new Token("and"),
             new IdentExpression(new Ident("b")),
             new IdentExpression(new Ident("c")))));
+    assertEquals("(a or (b and c))", expr.print());
   }
 
   @Test
@@ -175,6 +178,7 @@ public class ParserTest {
             new IdentExpression(new Ident("a")),
             new IdentExpression(new Ident("b"))),
         new IdentExpression(new Ident("c"))));
+    assertEquals("((a or b) and c)", expr.print());
   }
 
   @Test
@@ -187,6 +191,7 @@ public class ParserTest {
             new Token("or"),
             new IdentExpression(new Ident("b")),
             new IdentExpression(new Ident("c")))));
+    assertEquals("(a and (b or c))", expr.print());
   }
 
   @Test
@@ -199,6 +204,7 @@ public class ParserTest {
             new IdentExpression(new Ident("a")),
             new LongLiteral(1L)),
         new IdentExpression(new Ident("c"))));
+    assertEquals("((a > 1) or c)", expr.print());
   }
 
   @Test
@@ -208,6 +214,25 @@ public class ParserTest {
         new Token("and"),
         new IdentExpression(new Ident("a")),
         new FuncCallExpression(new Ident("f"), ImmutableList.of(new IdentExpression(new Ident("b"))))));
+    assertEquals("(a and f(b))", expr.print());
+  }
+
+  @Test
+  public void testExprFuncCallMultipleArgs() throws ParserException {
+    Expression expr = parseExpression("f(a,b,c);");
+    assertEquals(expr, new FuncCallExpression(new Ident("f"), ImmutableList.of(
+        new IdentExpression(new Ident("a")),
+        new IdentExpression(new Ident("b")),
+        new IdentExpression(new Ident("c")))));
+    assertEquals("f(a, b, c)", expr.print());
+  }
+
+  @Test
+  public void testExprAggr() throws ParserException {
+    Expression expr = parseExpression("sum(a);");
+    assertEquals(expr, new FuncCallExpression(new Ident("sum"), ImmutableList.of(
+        new IdentExpression(new Ident("a")))));
+    assertEquals("sum(a)", expr.print());
   }
 
   @Test
@@ -216,6 +241,7 @@ public class ParserTest {
     assertEquals(expr, new UnaryExpression(
         new Token(Tokens.NOT),
         new IdentExpression(new Ident("a"))));
+    assertEquals("not a", expr.print());
   }
 
   @Test
@@ -225,6 +251,7 @@ public class ParserTest {
         new Token("and"),
         new UnaryExpression(new Token(Tokens.NOT), new IdentExpression(new Ident("a"))),
         new UnaryExpression(new Token(Tokens.NOT), new IdentExpression(new Ident("b")))));
+    assertEquals("(not a and not b)", expr.print());
   }
 
   @Test
@@ -236,6 +263,7 @@ public class ParserTest {
             new Token("="),
             new IdentExpression(new Ident("a")),
             new StringLiteral("x"))));
+    assertEquals("not (a = 'x')", expr.print());
   }
 
   @Test(expected = ParserException.class)

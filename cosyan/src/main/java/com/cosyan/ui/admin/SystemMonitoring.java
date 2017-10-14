@@ -10,7 +10,7 @@ import org.json.simple.JSONObject;
 
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
-import com.cosyan.db.model.MetaRepo;
+import com.cosyan.db.meta.MetaRepo;
 
 public class SystemMonitoring {
 

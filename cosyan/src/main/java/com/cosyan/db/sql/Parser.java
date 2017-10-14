@@ -6,6 +6,9 @@ import java.util.stream.Stream;
 
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.sql.AlterStatement.AlterTableAddColumn;
+import com.cosyan.db.sql.AlterStatement.AlterTableAlterColumn;
+import com.cosyan.db.sql.AlterStatement.AlterTableDropColumn;
 import com.cosyan.db.sql.CreateStatement.ColumnDefinition;
 import com.cosyan.db.sql.CreateStatement.ConstraintDefinition;
 import com.cosyan.db.sql.CreateStatement.Create;
@@ -13,6 +16,7 @@ import com.cosyan.db.sql.CreateStatement.ForeignKeyDefinition;
 import com.cosyan.db.sql.CreateStatement.PrimaryKeyDefinition;
 import com.cosyan.db.sql.CreateStatement.SimpleCheckDefinition;
 import com.cosyan.db.sql.DeleteStatement.Delete;
+import com.cosyan.db.sql.DropStatement.Drop;
 import com.cosyan.db.sql.InsertIntoStatement.InsertInto;
 import com.cosyan.db.sql.SelectStatement.AsExpression;
 import com.cosyan.db.sql.SelectStatement.AsTable;
@@ -44,7 +48,9 @@ import com.google.common.collect.PeekingIterator;
 public class Parser {
 
   public boolean isMeta(PeekingIterator<Token> tokens) {
-    if (tokens.peek().is(Tokens.CREATE)) {
+    if (tokens.peek().is(Tokens.CREATE) ||
+        tokens.peek().is(Tokens.ALTER) ||
+        tokens.peek().is(Tokens.DROP)) {
       return true;
     }
     return false;
@@ -63,8 +69,12 @@ public class Parser {
   public MetaStatement parseMetaStatement(PeekingIterator<Token> tokens) throws ParserException {
     if (tokens.peek().is(Tokens.CREATE)) {
       return parseCreate(tokens);
+    } else if (tokens.peek().is(Tokens.DROP)) {
+      return parseDrop(tokens);
+    } else if (tokens.peek().is(Tokens.ALTER)) {
+      return parseAlter(tokens);
     }
-    throw new ParserException("Syntax error.");
+    throw new ParserException("Syntax error, expected create, drop or alter.");
   }
 
   private Statement parseStatement(PeekingIterator<Token> tokens) throws ParserException {
@@ -77,7 +87,7 @@ public class Parser {
     } else if (tokens.peek().is(Tokens.UPDATE)) {
       return parseUpdate(tokens);
     }
-    throw new ParserException("Syntax error.");
+    throw new ParserException("Syntax error, expected select, insert, delete or update.");
   }
 
   private Delete parseDelete(PeekingIterator<Token> tokens) throws ParserException {
@@ -191,6 +201,31 @@ public class Parser {
       }
     }
     return new Create(ident.getString(), columns.build(), constraints.build());
+  }
+
+  private Drop parseDrop(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.DROP);
+    assertNext(tokens, Tokens.TABLE);
+    Ident ident = parseSimpleIdent(tokens);
+    return new Drop(ident);
+  }
+
+  private MetaStatement parseAlter(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.DROP);
+    assertNext(tokens, Tokens.TABLE);
+    Ident ident = parseSimpleIdent(tokens);
+    if (tokens.peek().is(Tokens.ADD)) {
+      ColumnDefinition column = parseColumnDefinition(tokens);
+      return new AlterTableAddColumn(ident.getString(), column);
+    } else if (tokens.peek().is(Tokens.DROP)) {
+      Ident columnName = parseSimpleIdent(tokens);
+      return new AlterTableDropColumn(ident.getString(), columnName.getString());
+    } else if (tokens.peek().is(Tokens.ALTER) || tokens.peek().is(Tokens.MODIFY)) {
+      ColumnDefinition column = parseColumnDefinition(tokens);
+      return new AlterTableAlterColumn(ident.getString(), column);
+    } else {
+      throw new ParserException("Unsupported alter operation '" + tokens.peek() + "'.");
+    }
   }
 
   private ConstraintDefinition parseConstraint(PeekingIterator<Token> tokens) throws ParserException {
@@ -430,6 +465,9 @@ public class Parser {
       return new UnaryExpression(tokens.next(), parseExpression(tokens, precedence + 1));
     } else {
       Expression primary = parseExpression(tokens, precedence + 1);
+      if (!tokens.hasNext()) {
+        return primary;
+      }
       if (tokens.peek().is(Tokens.ASC) && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.ASC)) {
         return new UnaryExpression(tokens.next(), primary);
       } else if (tokens.peek().is(Tokens.DESC)

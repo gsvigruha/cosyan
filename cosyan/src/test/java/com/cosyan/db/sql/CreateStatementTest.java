@@ -8,8 +8,9 @@ import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Keys.ForeignKey;
+import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
-import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
+import com.cosyan.db.sql.Result.ErrorResult;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableMap;
 
@@ -64,12 +65,19 @@ public class CreateStatementTest extends UnitTestBase {
         (BasicColumn) t5.column(new Ident("b")),
         t4,
         (BasicColumn) t4.column(new Ident("a")))),
-        t5.getForeignKeys());
+        t5.foreignKeys());
     assertEquals(ImmutableMap.of("fk_b", new ForeignKey(
         "fk_b",
         (BasicColumn) t4.column(new Ident("a")),
         t5,
         (BasicColumn) t5.column(new Ident("b")))),
-        t4.getReverseForeignKeys());
+        t4.reverseForeignKeys());
+  }
+
+  @Test
+  public void testCreateTableAlreadyExists() throws Exception {
+    execute("create table t6 (a varchar);");
+    ErrorResult error = error("create table t6 (a varchar);");
+    assertEquals("Table 't6' already exists.", error.getError().getMessage());
   }
 }

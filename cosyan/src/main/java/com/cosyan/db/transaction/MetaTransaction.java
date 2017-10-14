@@ -4,8 +4,8 @@ import java.io.IOException;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.logging.TransactionJournal;
-import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.sql.Result;
 import com.cosyan.db.sql.Result.ErrorResult;
 import com.cosyan.db.sql.Result.MetaStatementResult;

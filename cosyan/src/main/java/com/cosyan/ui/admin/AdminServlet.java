@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.json.simple.JSONObject;
 
-import com.cosyan.db.model.MetaRepo;
+import com.cosyan.db.meta.MetaRepo;
 
 public class AdminServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;

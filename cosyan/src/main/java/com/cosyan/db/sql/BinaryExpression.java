@@ -5,12 +5,11 @@ import static com.cosyan.db.sql.SyntaxTree.assertType;
 import java.util.Date;
 import java.util.List;
 
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.SyntaxTree.AggregationExpression;
@@ -75,10 +74,10 @@ public class BinaryExpression extends Expression {
   }
 
   @Override
-  public DerivedColumn compile(TableMeta sourceTable, MetaRepo metaRepo, List<AggrColumn> aggrColumns)
+  public DerivedColumn compile(TableMeta sourceTable, List<AggrColumn> aggrColumns)
       throws ModelException {
-    final DerivedColumn leftColumn = left.compile(sourceTable, metaRepo, aggrColumns);
-    final DerivedColumn rightColumn = right.compile(sourceTable, metaRepo, aggrColumns);
+    final DerivedColumn leftColumn = left.compile(sourceTable, aggrColumns);
+    final DerivedColumn rightColumn = right.compile(sourceTable, aggrColumns);
 
     if (token.is(Tokens.AND)) {
       assertType(DataTypes.BoolType, leftColumn.getType());
@@ -575,5 +574,10 @@ public class BinaryExpression extends Expression {
   @Override
   public AggregationExpression isAggregation() {
     return aggregation;
+  }
+
+  @Override
+  public String print() {
+    return "(" + left.print() + " " + token.getString() + " " + right.print() + ")";
   }
 }

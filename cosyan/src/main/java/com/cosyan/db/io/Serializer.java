@@ -8,22 +8,29 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.Optional;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
+import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
-import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.model.MetaRepo.ModelException;
-import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
+import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.sql.CreateStatement.SimpleCheckDefinition;
+import com.cosyan.db.sql.Lexer;
+import com.cosyan.db.sql.Parser;
+import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 public class Serializer {
 
@@ -73,9 +80,9 @@ public class Serializer {
       return 9;
     } else {
       throw new UnsupportedOperationException();
-    } 
+    }
   }
-  
+
   public static void writeColumn(Object value, DataType<?> dataType, DataOutput stream) throws IOException {
     if (value == DataTypes.NULL) {
       stream.writeByte(0);
@@ -120,8 +127,11 @@ public class Serializer {
   }
 
   public static void writeTableMeta(
-      MaterializedTableMeta tableMeta, OutputStream tableOut, OutputStream referencesOut) throws IOException {
+      MaterializedTableMeta tableMeta,
+      OutputStream tableOut,
+      OutputStream refOut) throws IOException {
     DataOutputStream tableStream = new DataOutputStream(tableOut);
+    DataOutputStream refStream = new DataOutputStream(refOut);
     tableStream.writeInt(tableMeta.columns().size());
     for (BasicColumn column : tableMeta.columns().values()) {
       tableStream.writeUTF(column.getName());
@@ -130,32 +140,39 @@ public class Serializer {
       tableStream.writeBoolean(column.isUnique());
       tableStream.writeBoolean(column.isIndexed());
     }
-    if (tableMeta.getPrimaryKey().isPresent()) {
-      PrimaryKey primaryKey = tableMeta.getPrimaryKey().get();
+    tableStream.writeInt(tableMeta.simpleChecks().size());
+    for (SimpleCheckDefinition simpleCheck : tableMeta.simpleCheckDefinitions()) {
+      tableStream.writeUTF(simpleCheck.getName());
+      tableStream.writeUTF(simpleCheck.getExpr().print());
+    }
+    if (tableMeta.primaryKey().isPresent()) {
+      PrimaryKey primaryKey = tableMeta.primaryKey().get();
       tableStream.writeByte(1);
       tableStream.writeUTF(primaryKey.getName());
       tableStream.writeUTF(primaryKey.getColumn().getName());
     } else {
       tableStream.writeByte(0);
     }
-    DataOutputStream referencesStream = new DataOutputStream(referencesOut);
-    referencesStream.writeInt(tableMeta.getForeignKeys().size());
-    for (ForeignKey foreignKey : tableMeta.getForeignKeys().values()) {
-      referencesStream.writeUTF(foreignKey.getName());
-      referencesStream.writeUTF(foreignKey.getColumn().getName());
-      referencesStream.writeUTF(foreignKey.getRefTable().getTableName());
-      referencesStream.writeUTF(foreignKey.getRefColumn().getName());
+
+    refStream.writeInt(tableMeta.foreignKeys().size());
+    for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
+      refStream.writeUTF(foreignKey.getName());
+      refStream.writeUTF(foreignKey.getColumn().getName());
+      refStream.writeUTF(foreignKey.getRefTable().tableName());
+      refStream.writeUTF(foreignKey.getRefColumn().getName());
     }
   }
 
   public static MaterializedTableMeta readTableMeta(
-      String tableName, InputStream tableIn, MetaRepo metaRepo) throws IOException {
+      String tableName, InputStream tableIn, MetaRepo metaRepo) throws IOException, ParserException, ModelException {
+    Parser parser = new Parser();
+    Lexer lexer = new Lexer();
     DataInputStream tableStream = new DataInputStream(tableIn);
     int numColumns = tableStream.readInt();
-    ImmutableMap.Builder<String, BasicColumn> columnsBuilder = ImmutableMap.builder();
+    LinkedHashMap<String, BasicColumn> columns = Maps.newLinkedHashMap();
     for (int i = 0; i < numColumns; i++) {
       String columnName = tableStream.readUTF();
-      columnsBuilder.put(columnName, new BasicColumn(
+      columns.put(columnName, new BasicColumn(
           i,
           columnName,
           DataTypes.fromString(tableStream.readUTF()),
@@ -163,50 +180,56 @@ public class Serializer {
           tableStream.readBoolean(),
           tableStream.readBoolean()));
     }
-    ImmutableMap<String, BasicColumn> columns = columnsBuilder.build();
-    byte hasPrimaryKey = tableStream.readByte();
-    MaterializedTableMeta tableMeta = new MaterializedTableMeta(tableName, columns);
-    if (hasPrimaryKey == 1) {
-      tableMeta.setPrimaryKey(Optional.of(new PrimaryKey(
+
+    MaterializedTableMeta simpleTable = MaterializedTableMeta.simpleTable(tableName, columns);
+    int numSimpleChecks = tableStream.readInt();
+    ImmutableList.Builder<SimpleCheckDefinition> simpleCheckDefinitionsBuilder = ImmutableList.builder();
+    ImmutableMap.Builder<String, DerivedColumn> simpleChecksBuilder = ImmutableMap.builder();
+    for (int i = 0; i < numSimpleChecks; i++) {
+      SimpleCheckDefinition simpleCheckDefinition = new SimpleCheckDefinition(
           tableStream.readUTF(),
-          columns.get(tableStream.readUTF()))));
+          parser.parseExpression(lexer.tokenize(tableStream.readUTF()), 0));
+      simpleCheckDefinitionsBuilder.add(simpleCheckDefinition);
+      simpleChecksBuilder.put(
+          simpleCheckDefinition.getName(),
+          simpleCheckDefinition.getExpr().compile(simpleTable));
     }
-    return tableMeta;
+    byte hasPrimaryKey = tableStream.readByte();
+    Optional<PrimaryKey> primaryKey;
+    if (hasPrimaryKey == 1) {
+      primaryKey = Optional.of(new PrimaryKey(
+          tableStream.readUTF(),
+          columns.get(tableStream.readUTF())));
+    } else {
+      primaryKey = Optional.empty();
+    }
+    return new MaterializedTableMeta(
+        tableName,
+        columns,
+        simpleCheckDefinitionsBuilder.build(),
+        simpleChecksBuilder.build(),
+        primaryKey);
   }
 
   public static void readTableReferences(
-      MaterializedTableMeta tableMeta, InputStream referencesIn, MetaRepo metaRepo) throws IOException, ModelException {
-    DataInputStream referencesStream = new DataInputStream(referencesIn);
-    ImmutableMap<String, ForeignKey> foreignKeys = readForeignKeys(tableMeta, referencesStream, metaRepo);
-    tableMeta.setForeignKeys(foreignKeys);
-    for (ForeignKey foreignKey : foreignKeys.values()) {
-      MaterializedTableMeta refTable = foreignKey.getRefTable();
-      refTable.setReverseForeignKeys(ImmutableMap.<String, ForeignKey>builder()
-          .putAll(refTable.getForeignKeys())
-          .put(foreignKey.getName(), new ForeignKey(
-              foreignKey.getName(),
-              foreignKey.getRefColumn(),
-              tableMeta,
-              foreignKey.getColumn()))
-          .build());
-    }
-  }
-
-  private static ImmutableMap<String, ForeignKey> readForeignKeys(
-      MaterializedTableMeta tableMeta, DataInputStream referencesStream, MetaRepo metaRepo)
-      throws IOException, ModelException {
-    int numForeignKeys = referencesStream.readInt();
-    ImmutableMap.Builder<String, ForeignKey> foreignKeysBuilder = ImmutableMap.builder();
+      MaterializedTableMeta tableMeta, InputStream refIn, MetaRepo metaRepo) throws IOException, ModelException {
+    DataInputStream refStream = new DataInputStream(refIn);
+    int numForeignKeys = refStream.readInt();
     for (int i = 0; i < numForeignKeys; i++) {
-      String name = referencesStream.readUTF();
-      String columnName = referencesStream.readUTF();
-      MaterializedTableMeta refTable = metaRepo.table(new Ident(referencesStream.readUTF()));
-      foreignKeysBuilder.put(name, new ForeignKey(
+      String name = refStream.readUTF();
+      String columnName = refStream.readUTF();
+      MaterializedTableMeta refTable = metaRepo.table(new Ident(refStream.readUTF()));
+      ForeignKey foreignKey = new ForeignKey(
           name,
           tableMeta.columns().get(columnName),
           refTable,
-          refTable.columns().get(referencesStream.readUTF())));
+          refTable.columns().get(refStream.readUTF()));
+      tableMeta.addForeignKey(foreignKey);
+      refTable.addReverseForeignKey(new ForeignKey(
+              foreignKey.getName(),
+              foreignKey.getRefColumn(),
+              tableMeta,
+              foreignKey.getColumn()));
     }
-    return foreignKeysBuilder.build();
   }
 }

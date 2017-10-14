@@ -1,7 +1,9 @@
 package com.cosyan.db.model;
 
 import java.util.Spliterator;
+import java.util.concurrent.ConcurrentHashMap;
 
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Aggregators.Aggregator;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.MathFunctions.Ceil;
@@ -13,7 +15,6 @@ import com.cosyan.db.model.MathFunctions.Log2;
 import com.cosyan.db.model.MathFunctions.LogE;
 import com.cosyan.db.model.MathFunctions.Power;
 import com.cosyan.db.model.MathFunctions.Round;
-import com.cosyan.db.model.MetaRepo.ModelException;
 import com.cosyan.db.model.StringFunctions.Contains;
 import com.cosyan.db.model.StringFunctions.Length;
 import com.cosyan.db.model.StringFunctions.Lower;
@@ -21,6 +22,7 @@ import com.cosyan.db.model.StringFunctions.Matches;
 import com.cosyan.db.model.StringFunctions.Replace;
 import com.cosyan.db.model.StringFunctions.Substr;
 import com.cosyan.db.model.StringFunctions.Upper;
+import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -116,5 +118,39 @@ public class BuiltinFunctions {
       builder.add(function.getIdent());
     }
     AGGREGATION_NAMES = builder.build();
+  }
+
+  private static final ConcurrentHashMap<String, SimpleFunction<?>> simpleFunctions;
+  private static final ConcurrentHashMap<String, AggrFunction> aggrFunctions;
+
+  static {
+    simpleFunctions = new ConcurrentHashMap<>();
+    for (SimpleFunction<?> simpleFunction : BuiltinFunctions.SIMPLE) {
+      simpleFunctions.put(simpleFunction.getIdent(), simpleFunction);
+    }
+    aggrFunctions = new ConcurrentHashMap<>();
+    for (AggrFunction aggrFunction : BuiltinFunctions.AGGREGATIONS) {
+      aggrFunctions.put(aggrFunction.getIdent(), aggrFunction);
+    }
+  }
+
+  public static SimpleFunction<?> simpleFunction(Ident ident) throws ModelException {
+    if (ident.parts().length != 1) {
+      throw new ModelException("Invalid function identifier " + ident.getString() + ".");
+    }
+    if (!simpleFunctions.containsKey(ident.getString())) {
+      throw new ModelException("Function " + ident.getString() + " does not exist.");
+    }
+    return simpleFunctions.get(ident.getString());
+  }
+
+  public static TypedAggrFunction<?> aggrFunction(Ident ident, DataType<?> argType) throws ModelException {
+    if (ident.parts().length != 1) {
+      throw new ModelException("Invalid function identifier " + ident.getString() + ".");
+    }
+    if (!aggrFunctions.containsKey(ident.getString())) {
+      throw new ModelException("Function " + ident.getString() + " does not exist.");
+    }
+    return aggrFunctions.get(ident.getString()).compile(argType);
   }
 }

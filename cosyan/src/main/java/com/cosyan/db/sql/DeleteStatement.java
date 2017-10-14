@@ -3,11 +3,11 @@ package com.cosyan.db.sql;
 import java.io.IOException;
 
 import com.cosyan.db.io.TableWriter;
+import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
-import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.model.MetaRepo.ModelException;
-import com.cosyan.db.model.MetaRepo.RuleException;
-import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
+import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.sql.Result.StatementResult;
 import com.cosyan.db.sql.SyntaxTree.Expression;
 import com.cosyan.db.sql.SyntaxTree.Ident;
@@ -43,7 +43,7 @@ public class DeleteStatement {
     @Override
     public MetaResources compile(MetaRepo metaRepo) throws ModelException {
       MaterializedTableMeta tableMeta = (MaterializedTableMeta) metaRepo.table(table);
-      whereColumn = where.compile(tableMeta, metaRepo);
+      whereColumn = where.compile(tableMeta);
       return MetaResources.deleteFromTable(tableMeta);
     }
   }

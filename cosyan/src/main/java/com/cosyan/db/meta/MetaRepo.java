@@ -1,4 +1,4 @@
-package com.cosyan.db.model;
+package com.cosyan.db.meta;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,7 +9,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.index.ByteMultiTrie.LongMultiIndex;
@@ -25,17 +25,17 @@ import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lock.LockManager;
-import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
-import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
-import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
-import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Keys.ForeignKey;
+import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableIndex.LongTableIndex;
 import com.cosyan.db.model.TableIndex.StringTableIndex;
-import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
+import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.LongTableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.StringTableMultiIndex;
+import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
@@ -45,32 +45,22 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 
-public class MetaRepo {
+public class MetaRepo implements MetaRepoReader {
 
   private final Config config;
-  private final ConcurrentHashMap<String, MaterializedTableMeta> tables;
-  private final ConcurrentHashMap<String, TableIndex> uniqueIndexes;
-  private final ConcurrentHashMap<String, TableMultiIndex> multiIndexes;
-
-  private final ConcurrentHashMap<String, SimpleFunction<?>> simpleFunctions;
-  private final ConcurrentHashMap<String, AggrFunction> aggrFunctions;
+  private final HashMap<String, MaterializedTableMeta> tables;
+  private final HashMap<String, TableIndex> uniqueIndexes;
+  private final HashMap<String, TableMultiIndex> multiIndexes;
 
   private final LockManager lockManager;
 
-  public MetaRepo(Config config, LockManager lockManager) throws IOException, ModelException {
+  public MetaRepo(Config config, LockManager lockManager) throws IOException, ModelException, ParserException {
     this.config = config;
     this.lockManager = lockManager;
-    this.tables = new ConcurrentHashMap<>();
-    this.uniqueIndexes = new ConcurrentHashMap<>();
-    this.multiIndexes = new ConcurrentHashMap<>();
-    this.simpleFunctions = new ConcurrentHashMap<>();
-    for (SimpleFunction<?> simpleFunction : BuiltinFunctions.SIMPLE) {
-      simpleFunctions.put(simpleFunction.getIdent(), simpleFunction);
-    }
-    this.aggrFunctions = new ConcurrentHashMap<>();
-    for (AggrFunction aggrFunction : BuiltinFunctions.AGGREGATIONS) {
-      aggrFunctions.put(aggrFunction.getIdent(), aggrFunction);
-    }
+    this.tables = new HashMap<>();
+    this.uniqueIndexes = new HashMap<>();
+    this.multiIndexes = new HashMap<>();
+
     Files.createDirectories(Paths.get(config.dataDir()));
     Files.createDirectories(Paths.get(config.metaDir()));
     Files.createDirectories(Paths.get(config.tableDir()));
@@ -105,6 +95,7 @@ public class MetaRepo {
     }
   }
 
+  @Override
   public MaterializedTableMeta table(Ident ident) throws ModelException {
     if (ident.parts().length != 1) {
       throw new ModelException("Invalid table identifier '" + ident.getString() + "'.");
@@ -116,7 +107,7 @@ public class MetaRepo {
   }
 
   private RandomAccessFile randomAccessFile(MaterializedTableMeta table) throws IOException {
-    String path = config.tableDir() + File.separator + table.getTableName();
+    String path = config.tableDir() + File.separator + table.tableName();
     try {
       return new RandomAccessFile(path, "rw");
     } catch (FileNotFoundException e) {
@@ -128,7 +119,7 @@ public class MetaRepo {
     ImmutableMap.Builder<String, IndexReader> builder = ImmutableMap.builder();
     for (BasicColumn column : table.columns().values()) {
       if (column.isIndexed()) {
-        String indexName = table.getTableName() + "." + column.getName();
+        String indexName = table.tableName() + "." + column.getName();
         if (column.isUnique()) {
           builder.put(column.getName(), uniqueIndexes.get(indexName));
         } else {
@@ -142,7 +133,7 @@ public class MetaRepo {
   public ImmutableMap<String, TableIndex> collectUniqueIndexes(MaterializedTableMeta table) {
     ImmutableMap.Builder<String, TableIndex> builder = ImmutableMap.builder();
     for (BasicColumn column : table.columns().values()) {
-      String indexName = table.getTableName() + "." + column.getName();
+      String indexName = table.tableName() + "." + column.getName();
       if (uniqueIndexes.containsKey(indexName)) {
         builder.put(column.getName(), uniqueIndexes.get(indexName));
       }
@@ -152,18 +143,18 @@ public class MetaRepo {
 
   public ImmutableMultimap<String, IndexReader> collectForeignIndexes(MaterializedTableMeta table) {
     ImmutableMultimap.Builder<String, IndexReader> builder = ImmutableMultimap.builder();
-    for (ForeignKey foreignKey : table.getForeignKeys().values()) {
+    for (ForeignKey foreignKey : table.foreignKeys().values()) {
       builder.put(
           foreignKey.getColumn().getName(),
-          uniqueIndexes.get(foreignKey.getRefTable().getTableName() + "." + foreignKey.getRefColumn().getName()));
+          uniqueIndexes.get(foreignKey.getRefTable().tableName() + "." + foreignKey.getRefColumn().getName()));
     }
     return builder.build();
   }
 
   public ImmutableMultimap<String, IndexReader> collectReverseForeignIndexes(MaterializedTableMeta table) {
     ImmutableMultimap.Builder<String, IndexReader> builder = ImmutableMultimap.builder();
-    for (ForeignKey reverseForeignKey : table.getReverseForeignKeys().values()) {
-      String indexName = reverseForeignKey.getRefTable().getTableName() + "."
+    for (ForeignKey reverseForeignKey : table.reverseForeignKeys().values()) {
+      String indexName = reverseForeignKey.getRefTable().tableName() + "."
           + reverseForeignKey.getRefColumn().getName();
       if (reverseForeignKey.getRefColumn().isUnique()) {
         builder.put(reverseForeignKey.getColumn().getName(), uniqueIndexes.get(indexName));
@@ -177,7 +168,7 @@ public class MetaRepo {
   public ImmutableMap<String, TableMultiIndex> collectMultiIndexes(MaterializedTableMeta table) {
     ImmutableMap.Builder<String, TableMultiIndex> builder = ImmutableMap.builder();
     for (BasicColumn column : table.columns().values()) {
-      String indexName = table.getTableName() + "." + column.getName();
+      String indexName = table.tableName() + "." + column.getName();
       if (multiIndexes.containsKey(indexName)) {
         builder.put(column.getName(), multiIndexes.get(indexName));
       }
@@ -197,8 +188,20 @@ public class MetaRepo {
     lockManager.registerLock(tableName);
   }
 
+  public void dropTable(String tableName) throws IOException {
+    tables.remove(tableName);
+    lockManager.removeLock(tableName);
+    new File(config.tableDir() + File.separator + tableName).delete();
+    new File(config.metaDir() + File.separator + tableName).delete();
+    new File(config.metaDir() + File.separator + tableName + "#ref").delete();
+  }
+
+  public boolean hasTable(String tableName) {
+    return tables.containsKey(tableName);
+  }
+  
   public void registerUniqueIndex(MaterializedTableMeta table, BasicColumn column) throws ModelException, IOException {
-    String indexName = table.getTableName() + "." + column.getName();
+    String indexName = table.tableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
     assert !uniqueIndexes.containsKey(indexName);
     if (column.isUnique()) {
@@ -218,7 +221,7 @@ public class MetaRepo {
   }
 
   public void registerMultiIndex(MaterializedTableMeta table, BasicColumn column) throws ModelException, IOException {
-    String indexName = table.getTableName() + "." + column.getName();
+    String indexName = table.tableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
     assert !multiIndexes.containsKey(indexName);
     if (column.getType() == DataTypes.StringType) {
@@ -235,7 +238,6 @@ public class MetaRepo {
 
   public OutputStream openForWrite(
       String tableName, ImmutableMap<String, BasicColumn> columns) throws ModelException, FileNotFoundException {
-    tables.put(tableName, new MaterializedTableMeta(tableName, columns));
     return new FileOutputStream(config.tableDir() + File.separator + tableName);
   }
 
@@ -245,43 +247,23 @@ public class MetaRepo {
     for (TableMetaResource resource : metaResources.tables()) {
       if (resource.isWrite()) {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
-        writers.put(resource.getTableMeta().getTableName(), new TableWriter(
+        writers.put(resource.getTableMeta().tableName(), new TableWriter(
             randomAccessFile(tableMeta),
             tableMeta.columns(),
             collectUniqueIndexes(tableMeta),
             collectMultiIndexes(tableMeta),
             resource.isForeignIndexes() ? collectForeignIndexes(tableMeta) : ImmutableMultimap.of(),
             resource.isReverseForeignIndexes() ? collectReverseForeignIndexes(tableMeta) : ImmutableMultimap.of(),
-            tableMeta.getSimpleChecks()));
+            ImmutableMap.copyOf(tableMeta.simpleChecks())));
       } else {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
-        readers.put(resource.getTableMeta().getTableName(), new MaterializedTableReader(
+        readers.put(resource.getTableMeta().tableName(), new MaterializedTableReader(
             randomAccessFile(tableMeta),
             tableMeta.columns(),
             collectIndexReaders(tableMeta)));
       }
     }
     return new Resources(readers.build(), writers.build());
-  }
-
-  public SimpleFunction<?> simpleFunction(Ident ident) throws ModelException {
-    if (ident.parts().length != 1) {
-      throw new ModelException("Invalid function identifier " + ident.getString() + ".");
-    }
-    if (!simpleFunctions.containsKey(ident.getString())) {
-      throw new ModelException("Function " + ident.getString() + " does not exist.");
-    }
-    return simpleFunctions.get(ident.getString());
-  }
-
-  public TypedAggrFunction<?> aggrFunction(Ident ident, DataType<?> argType) throws ModelException {
-    if (ident.parts().length != 1) {
-      throw new ModelException("Invalid function identifier " + ident.getString() + ".");
-    }
-    if (!aggrFunctions.containsKey(ident.getString())) {
-      throw new ModelException("Function " + ident.getString() + " does not exist.");
-    }
-    return aggrFunctions.get(ident.getString()).compile(argType);
   }
 
   public ImmutableList<String> uniqueIndexNames() {

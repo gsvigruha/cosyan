@@ -1,9 +1,10 @@
 package com.cosyan.db;
 
+import java.io.File;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.Properties;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 
 import com.cosyan.db.conf.Config;
@@ -11,8 +12,8 @@ import com.cosyan.db.io.IOTestUtil.DummyMaterializedTableMeta;
 import com.cosyan.db.io.IOTestUtil.DummyTableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.lock.LockManager;
-import com.cosyan.db.model.MetaRepo;
-import com.cosyan.db.model.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.sql.Lexer;
 import com.cosyan.db.sql.Parser;
 import com.cosyan.db.sql.Parser.ParserException;
@@ -30,7 +31,8 @@ public abstract class DummyTestBase {
   private static Resources resources;
 
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParseException {
+  public static void setUp() throws IOException, ModelException, ParserException {
+    FileUtils.cleanDirectory(new File("/tmp/data"));
     Properties props = new Properties();
     props.setProperty(Config.DATA_DIR, "/tmp/data");
     metaRepo = new MetaRepo(new Config(props), new LockManager());

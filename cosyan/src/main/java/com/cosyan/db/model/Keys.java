@@ -1,9 +1,8 @@
 package com.cosyan.db.model;
 
-import lombok.Data;
-
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
-import com.cosyan.db.model.TableMeta.MaterializedTableMeta;
+
+import lombok.Data;
 
 public class Keys {
 
