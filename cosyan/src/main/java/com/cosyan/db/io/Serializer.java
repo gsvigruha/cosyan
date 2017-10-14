@@ -55,10 +55,10 @@ public class Serializer {
       } else if (type == DataTypes.DateType) {
         value = new Date(inputStream.readLong());
       } else {
-        throw new UnsupportedOperationException();
+        throw new RuntimeException(String.format("Unknown data type %s.", type));
       }
     } else {
-      throw new UnsupportedOperationException();
+      throw new IOException(String.format("Invalid record header %s.", fieldDesc));
     }
     return value;
   }
@@ -112,12 +112,12 @@ public class Serializer {
     stream.writeByte(1);
     ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
     DataOutputStream recordStream = new DataOutputStream(bos);
-    for (int i = 0; i < columns.size(); i++) {
-      BasicColumn column = columns.get(i);
+    int i = 0;
+    for (BasicColumn column : columns) {
       if (!column.isDeleted()) {
-        Serializer.writeColumn(values[i], column.getType(), recordStream);  
+        Serializer.writeColumn(values[i++], column.getType(), recordStream);
       } else {
-        recordStream.writeInt(0);
+        recordStream.writeByte(0);
       }
     }
     stream.writeInt(bos.size());
@@ -227,11 +227,7 @@ public class Serializer {
           refTable,
           refTable.columns().get(refStream.readUTF()));
       tableMeta.addForeignKey(foreignKey);
-      refTable.addReverseForeignKey(new ForeignKey(
-              foreignKey.getName(),
-              foreignKey.getRefColumn(),
-              tableMeta,
-              foreignKey.getColumn()));
+      refTable.addReverseForeignKey(foreignKey.reverse(tableMeta));
     }
   }
 }

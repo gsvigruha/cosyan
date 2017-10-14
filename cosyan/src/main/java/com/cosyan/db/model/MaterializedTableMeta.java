@@ -14,11 +14,13 @@ import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
+import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.sql.CreateStatement.SimpleCheckDefinition;
 import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -31,7 +33,7 @@ public class MaterializedTableMeta extends ExposedTableMeta {
   private final Map<String, DerivedColumn> simpleChecks;
   private Optional<PrimaryKey> primaryKey;
   private final Map<String, ForeignKey> foreignKeys;
-  private final Map<String, ForeignKey> reverseForeignKeys;
+  private final Map<String, ReverseForeignKey> reverseForeignKeys;
 
   public MaterializedTableMeta(
       String tableName,
@@ -66,6 +68,10 @@ public class MaterializedTableMeta extends ExposedTableMeta {
         .collect(Collectors.toMap(BasicColumn::getName, column -> column)));
   }
 
+  public ImmutableList<BasicColumn> allColumns() {
+    return ImmutableList.copyOf(columns);
+  }
+  
   @Override
   public SeekableTableReader reader(Resources resources) throws IOException {
     return resources.reader(new Ident(tableName));
@@ -122,7 +128,7 @@ public class MaterializedTableMeta extends ExposedTableMeta {
     return Collections.unmodifiableMap(foreignKeys);
   }
 
-  public Map<String, ForeignKey> reverseForeignKeys() {
+  public Map<String, ReverseForeignKey> reverseForeignKeys() {
     return Collections.unmodifiableMap(reverseForeignKeys);
   }
 
@@ -140,7 +146,7 @@ public class MaterializedTableMeta extends ExposedTableMeta {
     foreignKeys.put(foreignKey.getName(), foreignKey);
   }
 
-  public void addReverseForeignKey(ForeignKey foreignKey) {
+  public void addReverseForeignKey(ReverseForeignKey foreignKey) {
     reverseForeignKeys.put(foreignKey.getName(), foreignKey);
   }
 

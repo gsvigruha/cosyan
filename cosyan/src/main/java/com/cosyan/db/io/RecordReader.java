@@ -22,12 +22,14 @@ public class RecordReader {
   public static final Record EMPTY = new Record(-1, null);
 
   private final ImmutableList<BasicColumn> columns;
+  private final int numColumns;
   private final SeekableInputStream inputStream;
   private final DataInput dataInput;
   private long pointer;
 
   public RecordReader(ImmutableList<BasicColumn> columns, SeekableInputStream inputStream) {
     this.columns = columns;
+    this.numColumns = (int) columns.stream().filter(column -> !column.isDeleted()).count();
     this.inputStream = inputStream;
     this.dataInput = new DataInputStream(inputStream);
     this.pointer = 0L;
@@ -45,21 +47,19 @@ public class RecordReader {
       }
       int recordSize = dataInput.readInt();
       pointer += 4;
-      Object[] values = new Object[columns.size()];
-      int i = 0; // ImmutableMap.entrySet() keeps iteration order.
+      Object[] values = new Object[numColumns];
+      int i = 0;
       for (BasicColumn column : columns) {
         Object value = Serializer.readColumn(column.getType(), dataInput);
         if (!column.isDeleted()) {
           values[i++] = value;
-        } else {
-          values[i++] = DataTypes.NULL;
         }
         pointer += Serializer.size(column.getType(), value);
         if (pointer - recordPointer == recordSize) {
           break;
         }
       }
-      for (int j = i; j < columns.size(); j++) {
+      for (int j = i; j < numColumns; j++) {
         values[j] = DataTypes.NULL;
       }
       dataInput.readInt(); // CRC;

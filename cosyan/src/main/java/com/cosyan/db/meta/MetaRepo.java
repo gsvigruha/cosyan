@@ -28,6 +28,7 @@ import com.cosyan.db.lock.LockManager;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Keys.ForeignKey;
+import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableIndex.LongTableIndex;
@@ -153,7 +154,7 @@ public class MetaRepo implements MetaRepoReader {
 
   public ImmutableMultimap<String, IndexReader> collectReverseForeignIndexes(MaterializedTableMeta table) {
     ImmutableMultimap.Builder<String, IndexReader> builder = ImmutableMultimap.builder();
-    for (ForeignKey reverseForeignKey : table.reverseForeignKeys().values()) {
+    for (ReverseForeignKey reverseForeignKey : table.reverseForeignKeys().values()) {
       String indexName = reverseForeignKey.getRefTable().tableName() + "."
           + reverseForeignKey.getRefColumn().getName();
       if (reverseForeignKey.getRefColumn().isUnique()) {
@@ -249,7 +250,7 @@ public class MetaRepo implements MetaRepoReader {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
         writers.put(resource.getTableMeta().tableName(), new TableWriter(
             randomAccessFile(tableMeta),
-            tableMeta.columns(),
+            tableMeta.allColumns(),
             collectUniqueIndexes(tableMeta),
             collectMultiIndexes(tableMeta),
             resource.isForeignIndexes() ? collectForeignIndexes(tableMeta) : ImmutableMultimap.of(),
@@ -259,7 +260,7 @@ public class MetaRepo implements MetaRepoReader {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
         readers.put(resource.getTableMeta().tableName(), new MaterializedTableReader(
             randomAccessFile(tableMeta),
-            tableMeta.columns(),
+            tableMeta.allColumns(),
             collectIndexReaders(tableMeta)));
       }
     }

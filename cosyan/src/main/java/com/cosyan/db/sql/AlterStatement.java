@@ -4,9 +4,10 @@ import java.io.IOException;
 
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
+import com.cosyan.db.model.Keys.ReverseForeignKey;
+import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.sql.CreateStatement.ColumnDefinition;
 import com.cosyan.db.sql.CreateStatement.SimpleCheckDefinition;
 import com.cosyan.db.sql.Result.MetaStatementResult;
@@ -62,18 +63,23 @@ public class AlterStatement {
       basicColumn.setDeleted(true);
       try {
         for (SimpleCheckDefinition simpleCheckDefinition : tableMeta.simpleCheckDefinitions()) {
-          simpleCheckDefinition.getExpr().compile(tableMeta);
+          try {
+            simpleCheckDefinition.getExpr().compile(tableMeta);
+          } catch (ModelException e) {
+            throw new ModelException(String.format(
+                "Cannot drop column '%s', check '%s' fails.\n%s", column, simpleCheckDefinition, e.getMessage()));
+          }
         }
         for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
           if (foreignKey.getColumn().getName().equals(basicColumn.getName())) {
             throw new ModelException(String.format(
-                "Cannot drop column '%s', it is used by foreign key %s.", column, foreignKey));
+                "Cannot drop column '%s', it is used by foreign key '%s'.", column, foreignKey));
           }
         }
-        for (ForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
-          if (foreignKey.getRefColumn().getName().equals(basicColumn.getName())) {
+        for (ReverseForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
+          if (foreignKey.getColumn().getName().equals(basicColumn.getName())) {
             throw new ModelException(String.format(
-                "Cannot drop column '%s', it is referenced by foreign key %s.", column, foreignKey));
+                "Cannot drop column '%s', it is referenced by foreign key '%s'.", column, foreignKey));
           }
         }
       } finally {

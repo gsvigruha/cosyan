@@ -211,16 +211,19 @@ public class Parser {
   }
 
   private MetaStatement parseAlter(PeekingIterator<Token> tokens) throws ParserException {
-    assertNext(tokens, Tokens.DROP);
+    assertNext(tokens, Tokens.ALTER);
     assertNext(tokens, Tokens.TABLE);
     Ident ident = parseSimpleIdent(tokens);
     if (tokens.peek().is(Tokens.ADD)) {
+      tokens.next();
       ColumnDefinition column = parseColumnDefinition(tokens);
       return new AlterTableAddColumn(ident, column);
     } else if (tokens.peek().is(Tokens.DROP)) {
+      tokens.next();
       Ident columnName = parseSimpleIdent(tokens);
       return new AlterTableDropColumn(ident, columnName);
     } else if (tokens.peek().is(Tokens.ALTER) || tokens.peek().is(Tokens.MODIFY)) {
+      tokens.next();
       ColumnDefinition column = parseColumnDefinition(tokens);
       return new AlterTableAlterColumn(ident, column);
     } else {

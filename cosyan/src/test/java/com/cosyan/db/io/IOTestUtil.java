@@ -26,7 +26,7 @@ public class IOTestUtil {
     public DummyTableReader(
         ImmutableMap<String, BasicColumn> columns,
         Object[][] data) throws IOException {
-      super(columns);
+      super(ImmutableList.copyOf(columns.values()));
       this.iterator = Arrays.asList(data).iterator();
     }
 

@@ -114,8 +114,7 @@ public class CreateStatement {
           primaryKey,
           foreignKeys);
       for (ForeignKey foreignKey : foreignKeys.values()) {
-        foreignKey.getRefTable().addReverseForeignKey(
-            new ForeignKey(foreignKey.getName(), foreignKey.getRefColumn(), tableMeta, foreignKey.getColumn()));
+        foreignKey.getRefTable().addReverseForeignKey(foreignKey.reverse(tableMeta));
       }
 
       for (BasicColumn column : columns.values()) {
@@ -125,7 +124,7 @@ public class CreateStatement {
           } else {
             metaRepo.registerMultiIndex(tableMeta, column);
           }
-        } 
+        }
       }
 
       metaRepo.registerTable(name, tableMeta);
@@ -151,6 +150,11 @@ public class CreateStatement {
   public static class SimpleCheckDefinition extends Node implements ConstraintDefinition {
     private final String name;
     private final Expression expr;
+
+    @Override
+    public String toString() {
+      return name + " [" + expr.print() + "]";
+    }
   }
 
   @Data

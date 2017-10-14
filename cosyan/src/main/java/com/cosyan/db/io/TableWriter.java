@@ -29,7 +29,7 @@ import com.google.common.collect.ImmutableMultimap;
 public class TableWriter implements TableIO {
 
   private final RandomAccessFile file;
-  private final ImmutableMap<String, BasicColumn> columns;
+  private final ImmutableList<BasicColumn> columns;
   private final ImmutableMap<String, TableIndex> uniqueIndexes;
   private final ImmutableMap<String, TableMultiIndex> multiIndexes;
   private final ImmutableMultimap<String, IndexReader> foreignIndexes;
@@ -42,7 +42,7 @@ public class TableWriter implements TableIO {
 
   public TableWriter(
       RandomAccessFile file,
-      ImmutableMap<String, BasicColumn> columns,
+      ImmutableList<BasicColumn> columns,
       ImmutableMap<String, TableIndex> uniqueIndexes,
       ImmutableMap<String, TableMultiIndex> multiIndexes,
       ImmutableMultimap<String, IndexReader> foreignIndexes,
@@ -62,7 +62,7 @@ public class TableWriter implements TableIO {
     for (int i = 0; i < values.length; i++) {
       Object value = values[i];
       long fileIndex = fileIndex0 + bos.size();
-      BasicColumn column = columns.values().asList().get(i);
+      BasicColumn column = columns.get(i);
       if (!column.isNullable() && value == DataTypes.NULL) {
         throw new RuleException("Column is not nullable (mandatory).");
       }
@@ -94,7 +94,7 @@ public class TableWriter implements TableIO {
         throw new RuleException("Constraint check " + constraint.getKey() + " failed.");
       }
     }
-    Serializer.serialize(values, columns.values().asList(), bos);
+    Serializer.serialize(values, columns, bos);
   }
 
   public void commit() throws IOException {
@@ -142,7 +142,7 @@ public class TableWriter implements TableIO {
 
   private void delete(Record record) throws IOException, RuleException {
     recordsToDelete.add(record.getFilePointer());
-    for (BasicColumn column : columns.values()) {
+    for (BasicColumn column : columns) {
       Object value = record.getValues()[column.getIndex()];
       if (uniqueIndexes.containsKey(column.getName())) {
         uniqueIndexes.get(column.getName()).delete(value);
@@ -166,7 +166,7 @@ public class TableWriter implements TableIO {
     SeekableSequenceInputStream input = new SeekableSequenceInputStream(
         new RAFBufferedInputStream(file),
         new SeekableByteArrayInputStream(bos.toByteArray()));
-    RecordReader reader = new RecordReader(columns.values().asList(), input);
+    RecordReader reader = new RecordReader(columns, input);
     do {
       Record record = reader.read();
       if (record == RecordReader.EMPTY) {
@@ -185,7 +185,7 @@ public class TableWriter implements TableIO {
     SeekableSequenceInputStream input = new SeekableSequenceInputStream(
         new RAFBufferedInputStream(file),
         new SeekableByteArrayInputStream(bos.toByteArray()));
-    RecordReader reader = new RecordReader(columns.values().asList(), input);
+    RecordReader reader = new RecordReader(columns, input);
     ImmutableList.Builder<Object[]> updatedRecords = ImmutableList.builder();
     do {
       Record record = reader.read();

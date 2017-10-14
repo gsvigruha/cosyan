@@ -2,6 +2,7 @@ package com.cosyan.db.transaction;
 
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
+import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.util.Util;
 import com.google.common.collect.ImmutableMap;
@@ -56,7 +57,7 @@ public class MetaResources {
         }
       }
       if (reverseForeignIndexes) {
-        for (ForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
+        for (ReverseForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
           String indexName = foreignKey.getRefTable().tableName() + "." + foreignKey.getRefColumn().getName();
           builder.put(indexName, new Resource(indexName, /* write= */false));
         }

@@ -21,7 +21,24 @@ public class Keys {
 
     @Override
     public String toString() {
-      return name;
+      return name + " [" + column.getName() + " -> " + refTable.tableName() + "." + refColumn.getName() + "]";
+    }
+    
+    public ReverseForeignKey reverse(MaterializedTableMeta tableMeta) {
+      return new ReverseForeignKey(name, refColumn, tableMeta, column);
+    }
+  }
+
+  @Data
+  public static class ReverseForeignKey {
+    private final String name;
+    private final BasicColumn column;
+    private final MaterializedTableMeta refTable;
+    private final BasicColumn refColumn;
+
+    @Override
+    public String toString() {
+      return name + " [" + refTable.tableName() + "." + refColumn.getName() + " -> " + column.getName() + "]";
     }
   }
 }

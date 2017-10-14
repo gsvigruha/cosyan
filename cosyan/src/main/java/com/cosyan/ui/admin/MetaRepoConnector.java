@@ -9,6 +9,7 @@ import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
+import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.MaterializedTableMeta;
 
 public class MetaRepoConnector {
@@ -55,7 +56,7 @@ public class MetaRepoConnector {
       tableObj.put("foreignKeys", foreignKeys);
 
       JSONArray reverseForeignKeys = new JSONArray();
-      for (ForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
+      for (ReverseForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
         JSONObject fkObj = new JSONObject();
         fkObj.put("name", foreignKey.getName());
         fkObj.put("column", foreignKey.getColumn().getName());

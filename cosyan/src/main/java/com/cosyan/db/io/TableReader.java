@@ -5,8 +5,10 @@ import java.io.RandomAccessFile;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
@@ -51,8 +53,8 @@ public abstract class TableReader implements TableIO {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static abstract class SeekableTableReader extends ExposedTableReader {
-    public SeekableTableReader(ImmutableMap<String, BasicColumn> columns) {
-      super(columns);
+    public SeekableTableReader(List<BasicColumn> columns) {
+      super(ImmutableMap.copyOf(columns.stream().collect(Collectors.toMap(BasicColumn::getName, column -> column))));
     }
 
     public abstract void seek(long position) throws IOException;
@@ -68,14 +70,12 @@ public abstract class TableReader implements TableIO {
 
     public MaterializedTableReader(
         RandomAccessFile raf,
-        ImmutableMap<String, BasicColumn> columns,
+        ImmutableList<BasicColumn> columns,
         ImmutableMap<String, IndexReader> indexes) throws IOException {
       super(columns);
       this.indexes = indexes;
       this.bufferedRAF = new RAFBufferedInputStream(raf);
-      this.reader = new RecordReader(
-          columns.values().asList(),
-          bufferedRAF);
+      this.reader = new RecordReader(columns, bufferedRAF);
     }
 
     @Override

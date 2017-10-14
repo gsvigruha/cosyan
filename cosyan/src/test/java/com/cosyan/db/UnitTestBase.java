@@ -59,7 +59,14 @@ public abstract class UnitTestBase {
   }
 
   public static QueryResult query(String sql, Session session) {
-    return (QueryResult) Iterables.getOnlyElement(((TransactionResult) session.execute(sql)).getResults());
+    Result result = session.execute(sql);
+    if (result instanceof TransactionResult) {
+      return (QueryResult) Iterables.getOnlyElement(((TransactionResult) result).getResults());
+    } else {
+      CrashResult crash = (CrashResult) result;
+      crash.getError().printStackTrace();
+      throw new RuntimeException(crash.getError());
+    }
   }
 
   public static TransactionResult transaction(String sql) {

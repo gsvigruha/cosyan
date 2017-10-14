@@ -8,6 +8,7 @@ import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Keys.ForeignKey;
+import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.sql.Result.ErrorResult;
@@ -66,7 +67,7 @@ public class CreateStatementTest extends UnitTestBase {
         t4,
         (BasicColumn) t4.column(new Ident("a")))),
         t5.foreignKeys());
-    assertEquals(ImmutableMap.of("fk_b", new ForeignKey(
+    assertEquals(ImmutableMap.of("fk_b", new ReverseForeignKey(
         "fk_b",
         (BasicColumn) t4.column(new Ident("a")),
         t5,

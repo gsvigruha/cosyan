@@ -39,6 +39,10 @@ public class DataTypes {
     public int compareTo(Object o) {
       return o == NULL ? 0 : -1;
     }
+    @Override
+    public String toString() {
+      return "null";
+    }
   }
 
   public static final NullType NULL = new NullType();

@@ -88,6 +88,11 @@ public class SyntaxTree {
     public boolean is(char c) {
       return string.equals(String.valueOf(c));
     }
+
+    @Override
+    public String toString() {
+      return string;
+    }
   }
 
   @Data
