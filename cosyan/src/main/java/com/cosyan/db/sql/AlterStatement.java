@@ -91,7 +91,13 @@ public class AlterStatement {
         basicColumn.setDeleted(false);
       }
       basicColumn.setDeleted(true);
-      // TODO kill index.
+      if (basicColumn.isIndexed()) {
+        if (basicColumn.isUnique()) {
+          metaRepo.dropUniqueIndex(tableMeta, basicColumn);
+        } else {
+          metaRepo.dropMultiIndex(tableMeta, basicColumn);
+        }
+      }
       return new MetaStatementResult();
     }
   }
@@ -104,7 +110,30 @@ public class AlterStatement {
 
     @Override
     public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
-
+      MaterializedTableMeta tableMeta = metaRepo.table(table);
+      if (tableMeta.indexOf(new Ident(column.getName())) < 0) {
+        throw new ModelException(
+            String.format("Cannot alter column '%s', column does not exist.", column.getName()));
+      }
+      BasicColumn originalColumn = tableMeta.column(new Ident(column.getName()));
+      if (originalColumn.getType() != column.getType()) {
+        throw new ModelException(
+            String.format("Cannot alter column '%s', type has to remain the same.", column.getName()));
+      }
+      if (originalColumn.isNullable() && !column.isNullable()) {
+        throw new ModelException(
+            String.format("Cannot alter column '%s', column has to remain nullable.", column.getName()));
+      }
+      if (!originalColumn.isUnique() && column.isUnique()) {
+        throw new ModelException(
+            String.format("Cannot alter column '%s', column cannot be unique.", column.getName()));
+      }
+      if (originalColumn.isUnique() && !column.isUnique()) {
+        originalColumn.setIndexed(false);
+        metaRepo.dropUniqueIndex(tableMeta, originalColumn);
+      }
+      originalColumn.setNullable(column.isNullable());
+      originalColumn.setUnique(column.isUnique());
       return new MetaStatementResult();
     }
   }

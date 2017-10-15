@@ -32,7 +32,7 @@ public class ByteTrieLargeTest {
       index.put(i, random.nextLong());
     }
     System.out.println(System.currentTimeMillis() - t);
-    index.cleanUp();
+    //index.cleanUp();
     t = System.currentTimeMillis();
     for (long i: ll) {
       index.get(i);

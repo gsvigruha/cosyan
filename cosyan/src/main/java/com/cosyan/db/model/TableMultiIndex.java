@@ -25,6 +25,8 @@ public abstract class TableMultiIndex implements IndexReader {
 
   public abstract ByteMultiTrieStat stats() throws IOException;
 
+  public abstract void drop() throws IOException;
+
   private boolean valid = true;
 
   public void invalidate() {
@@ -82,6 +84,11 @@ public abstract class TableMultiIndex implements IndexReader {
     public ByteMultiTrieStat stats() throws IOException {
       return index.stats();
     }
+
+    @Override
+    public void drop() throws IOException {
+      index.drop();
+    }
   }
 
   public static class StringTableMultiIndex extends TableMultiIndex {
@@ -130,6 +137,11 @@ public abstract class TableMultiIndex implements IndexReader {
     @Override
     public ByteMultiTrieStat stats() throws IOException {
       return index.stats();
+    }
+
+    @Override
+    public void drop() throws IOException {
+      index.drop();
     }
   }
 }

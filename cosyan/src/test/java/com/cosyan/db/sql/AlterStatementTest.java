@@ -155,4 +155,42 @@ public class AlterStatementTest extends UnitTestBase {
         { "y", 2.0 },
         { "z", 3.0 } }, result);
   }
+
+  @Test
+  public void testAlterColumnErrors() throws Exception {
+    execute("create table t10 (a varchar, b varchar, c varchar);");
+    {
+      ErrorResult result = error("alter table t10 alter d varchar;");
+      assertEquals("Cannot alter column 'd', column does not exist.", result.getError().getMessage());
+    }
+    {
+      ErrorResult result = error("alter table t10 alter a integer;");
+      assertEquals("Cannot alter column 'a', type has to remain the same.", result.getError().getMessage());
+    }
+    {
+      ErrorResult result = error("alter table t10 alter b varchar unique;");
+      assertEquals("Cannot alter column 'b', column cannot be unique.", result.getError().getMessage());
+    }
+    {
+      ErrorResult result = error("alter table t10 alter c varchar not null;");
+      assertEquals("Cannot alter column 'c', column has to remain nullable.", result.getError().getMessage());
+    }
+  }
+
+  @Test
+  public void testAlterColumnLiftConstraint() throws Exception {
+    execute("create table t11 (a varchar, b integer unique, c float not null);");
+    execute("insert into t11 values('x', 1, 1.0);");
+    execute("insert into t11 values('y', 2, 2.0);");
+    execute("alter table t11 alter b integer;");
+    execute("alter table t11 alter c float;");
+    execute("insert into t11 (a, b) values('z', 1);");
+
+    QueryResult result = query("select * from t11;");
+    assertHeader(new String[] { "a", "b", "c" }, result);
+    assertValues(new Object[][] {
+        { "x", 1L, 1.0 },
+        { "y", 2L, 2.0 },
+        { "z", 1L, DataTypes.NULL } }, result);
+  }
 }

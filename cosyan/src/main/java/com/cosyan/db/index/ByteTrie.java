@@ -119,6 +119,15 @@ public abstract class ByteTrie<K, V> {
     raf.close();
   }
 
+  public void cleanUp() {
+    trie.clear();
+  }
+
+  public void drop() throws IOException {
+    close();
+    new File(fileName).delete();
+  }
+
   public void reOpen() throws FileNotFoundException {
     this.raf = new RandomAccessFile(fileName, "rw");
   }
@@ -217,10 +226,6 @@ public abstract class ByteTrie<K, V> {
     ByteBuffer bb = ByteBuffer.allocate(KEYS_SIZE * 8);
     bb.asLongBuffer().put(indices);
     raf.write(bb.array());
-  }
-
-  public void cleanUp() {
-    trie.clear();
   }
 
   public void cleanUp(int limit) {

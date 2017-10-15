@@ -94,6 +94,12 @@ public abstract class ByteMultiTrie<T> {
   public void close() throws IOException {
     raf.close();
   }
+  
+  public void drop() throws IOException {
+    trie.drop();
+    close();
+    new File(fileName).delete();
+  }
 
   public void reOpen() throws FileNotFoundException {
     this.raf = new RandomAccessFile(fileName, "rw");

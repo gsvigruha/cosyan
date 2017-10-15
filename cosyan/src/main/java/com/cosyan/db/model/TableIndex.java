@@ -20,6 +20,8 @@ public abstract class TableIndex implements IndexReader {
 
   public abstract ByteTrieStat stats() throws IOException;
 
+  public abstract void drop() throws IOException;
+
   private boolean valid = true;
 
   public void invalidate() {
@@ -72,6 +74,11 @@ public abstract class TableIndex implements IndexReader {
     public ByteTrieStat stats() throws IOException {
       return index.stats();
     }
+
+    @Override
+    public void drop() throws IOException {
+      index.drop();
+    }
   }
 
   public static class StringTableIndex extends TableIndex {
@@ -115,6 +122,11 @@ public abstract class TableIndex implements IndexReader {
     @Override
     public ByteTrieStat stats() throws IOException {
       return index.stats();
+    }
+
+    @Override
+    public void drop() throws IOException {
+      index.drop();
     }
   }
 }
