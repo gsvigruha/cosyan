@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
@@ -31,7 +32,7 @@ public class CreateStatement {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class Create extends Node implements MetaStatement {
+  public static class CreateTable extends Node implements MetaStatement {
     private final String name;
     private final ImmutableList<ColumnDefinition> columnDefinitions;
     private final ImmutableList<ConstraintDefinition> constraints;
@@ -66,7 +67,7 @@ public class CreateStatement {
       List<SimpleCheckDefinition> simpleCheckDefinition = Lists.newArrayList();
       Map<String, DerivedColumn> simpleChecks = Maps.newHashMap();
       Optional<PrimaryKey> primaryKey = Optional.empty();
-      Map<String, ForeignKey> foreignKeys = Maps.newHashMap();
+      List<ForeignKey> foreignKeys = Lists.newArrayList();
       for (ConstraintDefinition constraint : constraints) {
         if (columns.containsKey(constraint.getName())) {
           throw new ModelException("Name collision for constraint '" + constraint.getName() + "'.");
@@ -101,7 +102,7 @@ public class CreateStatement {
           }
           // Unique keys are indexed by default.
           keyColumn.setIndexed(true);
-          foreignKeys.put(foreignKey.getName(),
+          foreignKeys.add(
               new ForeignKey(foreignKey.getName(), keyColumn, refTable, refColumn));
         }
       }
@@ -111,10 +112,9 @@ public class CreateStatement {
           columns.values(),
           simpleCheckDefinition,
           simpleChecks,
-          primaryKey,
-          foreignKeys);
-      for (ForeignKey foreignKey : foreignKeys.values()) {
-        foreignKey.getRefTable().addReverseForeignKey(foreignKey.reverse(tableMeta));
+          primaryKey);
+      for (ForeignKey foreignKey : foreignKeys) {
+        tableMeta.addForeignKey(foreignKey);
       }
 
       for (BasicColumn column : columns.values()) {
@@ -171,5 +171,25 @@ public class CreateStatement {
     private final Ident keyColumn;
     private final Ident refTable;
     private final Ident refColumn;
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class CreateIndex extends Node implements MetaStatement {
+
+    private final Ident ident;
+
+    @Override
+    public Result execute(MetaRepo metaRepo) throws ModelException, IndexException, IOException {
+      MaterializedTableMeta tableMeta = metaRepo.table(new Ident(ident.head()));
+      BasicColumn column = tableMeta.column(ident.tail());
+      if (column.isIndexed()) {
+        throw new ModelException(String.format("Cannot create index on '%s.%s', column is already indexed.",
+            tableMeta.tableName(), column.getName()));
+      }
+      metaRepo.registerMultiIndex(tableMeta, column);
+      column.setIndexed(true);
+      return new MetaStatementResult();
+    }
   }
 }

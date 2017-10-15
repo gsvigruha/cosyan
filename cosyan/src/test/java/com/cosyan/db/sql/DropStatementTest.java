@@ -47,4 +47,31 @@ public class DropStatementTest extends UnitTestBase {
     ErrorResult e = error("drop table t3;");
     assertEquals("Cannot drop table 't3', referenced by foreign key 't4.fk_a [t4.a -> a]'.", e.getError().getMessage());
   }
+
+  @Test
+  public void testDropIndex() throws Exception {
+    execute("create table t5 (a varchar);");
+    execute("create index t5.a;");
+    assertEquals(1, metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t5"))).size());
+    execute("drop index t5.a;");
+    assertEquals(0, metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t5"))).size());
+  }
+
+  @Test
+  public void testDropIndexError() throws Exception {
+    execute("create table t6 (a varchar unique, b varchar);");
+
+    {
+      ErrorResult e = error("drop index t6.a;");
+      assertEquals("Cannot drop index 't6.a', column is unique.", e.getError().getMessage());
+    }
+    {
+      ErrorResult e = error("drop index t6.b;");
+      assertEquals("Cannot drop index 't6.b', column is not indexed.", e.getError().getMessage());
+    }
+    {
+      ErrorResult e = error("drop index t6.c;");
+      assertEquals("Column 'c' not found in table.", e.getError().getMessage());
+    }
+  }
 }

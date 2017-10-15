@@ -227,7 +227,6 @@ public class Serializer {
           refTable,
           refTable.columns().get(refStream.readUTF()));
       tableMeta.addForeignKey(foreignKey);
-      refTable.addReverseForeignKey(foreignKey.reverse(tableMeta));
     }
   }
 }

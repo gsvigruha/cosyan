@@ -11,12 +11,14 @@ import com.cosyan.db.sql.AlterStatement.AlterTableAlterColumn;
 import com.cosyan.db.sql.AlterStatement.AlterTableDropColumn;
 import com.cosyan.db.sql.CreateStatement.ColumnDefinition;
 import com.cosyan.db.sql.CreateStatement.ConstraintDefinition;
-import com.cosyan.db.sql.CreateStatement.Create;
+import com.cosyan.db.sql.CreateStatement.CreateIndex;
+import com.cosyan.db.sql.CreateStatement.CreateTable;
 import com.cosyan.db.sql.CreateStatement.ForeignKeyDefinition;
 import com.cosyan.db.sql.CreateStatement.PrimaryKeyDefinition;
 import com.cosyan.db.sql.CreateStatement.SimpleCheckDefinition;
 import com.cosyan.db.sql.DeleteStatement.Delete;
-import com.cosyan.db.sql.DropStatement.Drop;
+import com.cosyan.db.sql.DropStatement.DropIndex;
+import com.cosyan.db.sql.DropStatement.DropTable;
 import com.cosyan.db.sql.InsertIntoStatement.InsertInto;
 import com.cosyan.db.sql.SelectStatement.AsExpression;
 import com.cosyan.db.sql.SelectStatement.AsTable;
@@ -180,34 +182,48 @@ public class Parser {
     return new Update(ident, updates.build(), where);
   }
 
-  private Create parseCreate(PeekingIterator<Token> tokens) throws ParserException {
+  private MetaStatement parseCreate(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.CREATE);
-    assertNext(tokens, Tokens.TABLE);
-    Ident ident = parseSimpleIdent(tokens);
-    assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
-    ImmutableList.Builder<ColumnDefinition> columns = ImmutableList.builder();
-    ImmutableList.Builder<ConstraintDefinition> constraints = ImmutableList.builder();
-    while (true) {
-      if (tokens.peek().is(Tokens.CONSTRAINT)) {
-        constraints.add(parseConstraint(tokens));
-      } else {
-        columns.add(parseColumnDefinition(tokens));
+    assertPeek(tokens, Tokens.TABLE, Tokens.INDEX);
+    if (tokens.peek().is(Tokens.TABLE)) {
+      tokens.next();
+      Ident ident = parseSimpleIdent(tokens);
+      assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+      ImmutableList.Builder<ColumnDefinition> columns = ImmutableList.builder();
+      ImmutableList.Builder<ConstraintDefinition> constraints = ImmutableList.builder();
+      while (true) {
+        if (tokens.peek().is(Tokens.CONSTRAINT)) {
+          constraints.add(parseConstraint(tokens));
+        } else {
+          columns.add(parseColumnDefinition(tokens));
+        }
+        if (tokens.peek().is(Tokens.COMMA)) {
+          tokens.next();
+        } else {
+          assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+          break;
+        }
       }
-      if (tokens.peek().is(Tokens.COMMA)) {
-        tokens.next();
-      } else {
-        assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-        break;
-      }
+      return new CreateTable(ident.getString(), columns.build(), constraints.build());
+    } else {
+      assertNext(tokens, Tokens.INDEX);
+      Ident ident = parseIdent(tokens);
+      return new CreateIndex(ident);
     }
-    return new Create(ident.getString(), columns.build(), constraints.build());
   }
 
-  private Drop parseDrop(PeekingIterator<Token> tokens) throws ParserException {
+  private MetaStatement parseDrop(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.DROP);
-    assertNext(tokens, Tokens.TABLE);
-    Ident ident = parseSimpleIdent(tokens);
-    return new Drop(ident);
+    assertPeek(tokens, Tokens.TABLE, Tokens.INDEX);
+    if (tokens.peek().is(Tokens.TABLE)) {
+      tokens.next();
+      Ident ident = parseSimpleIdent(tokens);
+      return new DropTable(ident);
+    } else {
+      assertNext(tokens, Tokens.INDEX);
+      Ident ident = parseIdent(tokens);
+      return new DropIndex(ident);
+    }
   }
 
   private MetaStatement parseAlter(PeekingIterator<Token> tokens) throws ParserException {

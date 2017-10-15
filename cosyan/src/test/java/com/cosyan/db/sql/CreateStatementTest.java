@@ -81,4 +81,18 @@ public class CreateStatementTest extends UnitTestBase {
     ErrorResult error = error("create table t6 (a varchar);");
     assertEquals("Table 't6' already exists.", error.getError().getMessage());
   }
+
+  @Test
+  public void testCreateIndex() throws Exception {
+    execute("create table t7 (a varchar);");
+    execute("create index t7.a;");
+    assertEquals(1, metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t7"))).size());
+  }
+
+  @Test
+  public void testCreateIndexErrors() throws Exception {
+    execute("create table t8 (a varchar unique);");
+    ErrorResult error = error("create index t8.a;");
+    assertEquals("Cannot create index on 't8.a', column is already indexed.", error.getError().getMessage());
+  }
 }

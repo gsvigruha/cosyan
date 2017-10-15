@@ -40,24 +40,14 @@ public class MaterializedTableMeta extends ExposedTableMeta {
       Iterable<BasicColumn> columns,
       List<SimpleCheckDefinition> simpleCheckDefinitions,
       Map<String, DerivedColumn> simpleChecks,
-      Optional<PrimaryKey> primaryKey,
-      Map<String, ForeignKey> foreignKeys) {
+      Optional<PrimaryKey> primaryKey) {
     this.tableName = tableName;
     this.columns = Lists.newArrayList(columns);
     this.simpleCheckDefinitions = simpleCheckDefinitions;
     this.simpleChecks = simpleChecks;
     this.primaryKey = primaryKey;
-    this.foreignKeys = foreignKeys;
+    this.foreignKeys = new HashMap<>();
     this.reverseForeignKeys = new HashMap<>();
-  }
-
-  public MaterializedTableMeta(
-      String tableName,
-      Iterable<BasicColumn> columns,
-      List<SimpleCheckDefinition> simpleCheckDefinitions,
-      Map<String, DerivedColumn> simpleChecks,
-      Optional<PrimaryKey> primaryKey) {
-    this(tableName, columns, simpleCheckDefinitions, simpleChecks, primaryKey, Maps.newHashMap());
   }
 
   @Override
@@ -65,13 +55,13 @@ public class MaterializedTableMeta extends ExposedTableMeta {
     return columnsMap(columns);
   }
 
-  public static ImmutableMap<String, BasicColumn> columnsMap(List<BasicColumn> columns){
+  public static ImmutableMap<String, BasicColumn> columnsMap(List<BasicColumn> columns) {
     return ImmutableMap.copyOf(columns
         .stream()
         .filter(column -> !column.isDeleted())
         .collect(Collectors.toMap(BasicColumn::getName, column -> column)));
   }
-  
+
   public ImmutableList<BasicColumn> allColumns() {
     return ImmutableList.copyOf(columns);
   }
@@ -148,10 +138,7 @@ public class MaterializedTableMeta extends ExposedTableMeta {
 
   public void addForeignKey(ForeignKey foreignKey) {
     foreignKeys.put(foreignKey.getName(), foreignKey);
-  }
-
-  public void addReverseForeignKey(ReverseForeignKey foreignKey) {
-    reverseForeignKeys.put(foreignKey.getName(), foreignKey);
+    foreignKey.getRefTable().reverseForeignKeys.put(foreignKey.getName(), foreignKey.reverse(this));
   }
 
   public void addColumn(BasicColumn basicColumn) {

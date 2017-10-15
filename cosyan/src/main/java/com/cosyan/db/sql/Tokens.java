@@ -15,10 +15,12 @@ public class Tokens {
   public static String ALTER = "alter";
 
   public static String ADD = "add";
-  
+
   public static String MODIFY = "modify";
-  
+
   public static String TABLE = "table";
+
+  public static String INDEX = "index";
 
   public static String VARCHAR = "varchar";
 
