@@ -1,14 +1,14 @@
 package com.cosyan.db.logic;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
 import com.cosyan.db.lang.sql.Parser.ParserException;
-import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
+import com.cosyan.db.model.Ident;
 import com.google.common.collect.ImmutableList;
 
 public class PredicateHelperTest {

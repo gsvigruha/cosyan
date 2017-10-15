@@ -5,7 +5,6 @@ import java.util.Map;
 
 import com.cosyan.db.io.TableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
-import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;

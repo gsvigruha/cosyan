@@ -1,7 +1,6 @@
 package com.cosyan.db.lang.sql;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,10 +20,10 @@ import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
+import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
@@ -58,41 +57,6 @@ public class SyntaxTree {
 
   public static interface Literal {
     public Object getValue();
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class Ident extends Node {
-    private final String string;
-
-    public String[] parts() {
-      return string.split("\\.");
-    }
-
-    public boolean isSimple() {
-      return parts().length == 1;
-    }
-
-    public String head() {
-      return parts()[0];
-    }
-
-    public Ident tail() {
-      return new Ident(Joiner.on(".").join(Arrays.copyOfRange(parts(), 1, parts().length)));
-    }
-
-    public boolean is(String str) {
-      return string.equals(str);
-    }
-
-    public boolean is(char c) {
-      return string.equals(String.valueOf(c));
-    }
-
-    @Override
-    public String toString() {
-      return string;
-    }
   }
 
   @Data
@@ -348,7 +312,7 @@ public class SyntaxTree {
         }
         KeyValueTableMeta outerTable = (KeyValueTableMeta) sourceTable;
         DerivedColumn argColumn = Iterables.getOnlyElement(args).compile(outerTable.getSourceTable());
-        final TypedAggrFunction<?> function = BuiltinFunctions.aggrFunction(ident, argColumn.getType());
+        final TypedAggrFunction<?> function = BuiltinFunctions.aggrFunction(ident.getString(), argColumn.getType());
 
         AggrColumn aggrColumn = new AggrColumn(
             function.getReturnType(), argColumn, outerTable.getKeyColumns().size() + aggrColumns.size(), function);
@@ -359,10 +323,10 @@ public class SyntaxTree {
         SimpleFunction<?> function;
         ImmutableList<Expression> allArgs;
         if (ident.isSimple()) {
-          function = BuiltinFunctions.simpleFunction(ident);
+          function = BuiltinFunctions.simpleFunction(ident.head());
           allArgs = args;
         } else {
-          function = BuiltinFunctions.simpleFunction(ident.tail());
+          function = BuiltinFunctions.simpleFunction(ident.tail().getString());
           Expression objExpr = new IdentExpression(new Ident(ident.head()));
           allArgs = ImmutableList.<Expression>builder().add(objExpr).addAll(args).build();
         }

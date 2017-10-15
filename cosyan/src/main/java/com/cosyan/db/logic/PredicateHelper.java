@@ -4,14 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cosyan.db.lang.sql.BinaryExpression;
-import com.cosyan.db.lang.sql.Tokens;
 import com.cosyan.db.lang.sql.SyntaxTree.Expression;
-import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.lang.sql.SyntaxTree.IdentExpression;
 import com.cosyan.db.lang.sql.SyntaxTree.Literal;
 import com.cosyan.db.lang.sql.SyntaxTree.LongLiteral;
 import com.cosyan.db.lang.sql.SyntaxTree.StringLiteral;
 import com.cosyan.db.lang.sql.SyntaxTree.UnaryExpression;
+import com.cosyan.db.lang.sql.Tokens;
+import com.cosyan.db.model.Ident;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;

@@ -3,7 +3,6 @@ package com.cosyan.db.model;
 import java.util.Spliterator;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Aggregators.Aggregator;
 import com.cosyan.db.model.DataTypes.DataType;
@@ -134,23 +133,17 @@ public class BuiltinFunctions {
     }
   }
 
-  public static SimpleFunction<?> simpleFunction(Ident ident) throws ModelException {
-    if (ident.parts().length != 1) {
-      throw new ModelException("Invalid function identifier " + ident.getString() + ".");
+  public static SimpleFunction<?> simpleFunction(String ident) throws ModelException {
+    if (!simpleFunctions.containsKey(ident)) {
+      throw new ModelException("Function " + ident + " does not exist.");
     }
-    if (!simpleFunctions.containsKey(ident.getString())) {
-      throw new ModelException("Function " + ident.getString() + " does not exist.");
-    }
-    return simpleFunctions.get(ident.getString());
+    return simpleFunctions.get(ident);
   }
 
-  public static TypedAggrFunction<?> aggrFunction(Ident ident, DataType<?> argType) throws ModelException {
-    if (ident.parts().length != 1) {
-      throw new ModelException("Invalid function identifier " + ident.getString() + ".");
+  public static TypedAggrFunction<?> aggrFunction(String ident, DataType<?> argType) throws ModelException {
+    if (!aggrFunctions.containsKey(ident)) {
+      throw new ModelException("Function " + ident + " does not exist.");
     }
-    if (!aggrFunctions.containsKey(ident.getString())) {
-      throw new ModelException("Function " + ident.getString() + " does not exist.");
-    }
-    return aggrFunctions.get(ident.getString()).compile(argType);
+    return aggrFunctions.get(ident).compile(argType);
   }
 }

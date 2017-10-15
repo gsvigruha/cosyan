@@ -13,8 +13,8 @@ import org.junit.Test;
 import com.cosyan.db.DBApi;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.lang.sql.Parser.ParserException;
-import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 
 public class MetaRepoTest {

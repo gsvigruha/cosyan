@@ -13,7 +13,6 @@ import com.cosyan.db.io.TableReader.FilteredTableReader;
 import com.cosyan.db.io.TableReader.IndexFilteredTableReader;
 import com.cosyan.db.io.TableReader.SortedTableReader;
 import com.cosyan.db.lang.sql.Tokens;
-import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MetaRepo.ModelException;

@@ -3,8 +3,8 @@ package com.cosyan.db.transaction;
 import java.io.IOException;
 
 import com.cosyan.db.io.TableReader.SeekableTableReader;
-import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.io.TableWriter;
+import com.cosyan.db.model.Ident;
 import com.google.common.collect.ImmutableMap;
 
 public class Resources {

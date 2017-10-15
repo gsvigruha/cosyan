@@ -7,9 +7,9 @@ import org.junit.Test;
 import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.sql.Result.ErrorResult;
 import com.cosyan.db.lang.sql.Result.QueryResult;
-import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 
 public class AlterStatementTest extends UnitTestBase {

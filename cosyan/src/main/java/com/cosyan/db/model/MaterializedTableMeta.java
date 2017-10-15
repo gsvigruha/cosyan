@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.lang.sql.CreateStatement.SimpleCheckDefinition;
-import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
