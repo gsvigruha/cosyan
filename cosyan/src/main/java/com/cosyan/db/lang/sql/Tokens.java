@@ -1,4 +1,4 @@
-package com.cosyan.db.sql;
+package com.cosyan.db.lang.sql;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;

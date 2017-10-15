@@ -11,12 +11,12 @@ import java.util.TreeMap;
 
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
+import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 

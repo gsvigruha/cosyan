@@ -3,8 +3,8 @@ package com.cosyan.db.lock;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
+import com.cosyan.db.lang.sql.Result.QueryResult;
 import com.cosyan.db.session.Session;
-import com.cosyan.db.sql.Result.QueryResult;
 
 public class LockManagerTest extends UnitTestBase {
 

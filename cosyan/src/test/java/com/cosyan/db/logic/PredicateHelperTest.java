@@ -4,11 +4,11 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
+import com.cosyan.db.lang.sql.Lexer;
+import com.cosyan.db.lang.sql.Parser;
+import com.cosyan.db.lang.sql.Parser.ParserException;
+import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
-import com.cosyan.db.sql.Lexer;
-import com.cosyan.db.sql.Parser;
-import com.cosyan.db.sql.Parser.ParserException;
-import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableList;
 
 public class PredicateHelperTest {

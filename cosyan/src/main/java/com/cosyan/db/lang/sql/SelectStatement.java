@@ -1,6 +1,6 @@
-package com.cosyan.db.sql;
+package com.cosyan.db.lang.sql;
 
-import static com.cosyan.db.sql.SyntaxTree.assertType;
+import static com.cosyan.db.lang.sql.SyntaxTree.assertType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,6 +9,14 @@ import java.util.List;
 import java.util.Optional;
 
 import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.lang.sql.Result.QueryResult;
+import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
+import com.cosyan.db.lang.sql.SyntaxTree.Expression;
+import com.cosyan.db.lang.sql.SyntaxTree.Ident;
+import com.cosyan.db.lang.sql.SyntaxTree.IdentExpression;
+import com.cosyan.db.lang.sql.SyntaxTree.Node;
+import com.cosyan.db.lang.sql.SyntaxTree.Statement;
+import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.logic.PredicateHelper;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MetaRepo;
@@ -33,14 +41,6 @@ import com.cosyan.db.model.DerivedTables.SortedTableMeta;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
-import com.cosyan.db.sql.Result.QueryResult;
-import com.cosyan.db.sql.SyntaxTree.AggregationExpression;
-import com.cosyan.db.sql.SyntaxTree.Expression;
-import com.cosyan.db.sql.SyntaxTree.Ident;
-import com.cosyan.db.sql.SyntaxTree.IdentExpression;
-import com.cosyan.db.sql.SyntaxTree.Node;
-import com.cosyan.db.sql.SyntaxTree.Statement;
-import com.cosyan.db.sql.Tokens.Token;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;

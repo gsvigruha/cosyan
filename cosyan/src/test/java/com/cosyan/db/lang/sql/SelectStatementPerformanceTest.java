@@ -1,11 +1,11 @@
-package com.cosyan.db.sql;
+package com.cosyan.db.lang.sql;
 
 import java.util.Random;
 
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
-import com.cosyan.db.sql.Result.QueryResult;
+import com.cosyan.db.lang.sql.Result.QueryResult;
 
 public class SelectStatementPerformanceTest extends UnitTestBase {
 

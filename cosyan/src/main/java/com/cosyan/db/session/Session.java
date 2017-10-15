@@ -1,13 +1,13 @@
 package com.cosyan.db.session;
 
+import com.cosyan.db.lang.sql.Lexer;
+import com.cosyan.db.lang.sql.Parser;
+import com.cosyan.db.lang.sql.Result;
+import com.cosyan.db.lang.sql.Parser.ParserException;
+import com.cosyan.db.lang.sql.Result.ErrorResult;
+import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
-import com.cosyan.db.sql.Lexer;
-import com.cosyan.db.sql.Parser;
-import com.cosyan.db.sql.Parser.ParserException;
-import com.cosyan.db.sql.Result;
-import com.cosyan.db.sql.Result.ErrorResult;
-import com.cosyan.db.sql.Tokens.Token;
 import com.cosyan.db.transaction.MetaTransaction;
 import com.cosyan.db.transaction.Transaction;
 import com.cosyan.db.transaction.TransactionHandler;

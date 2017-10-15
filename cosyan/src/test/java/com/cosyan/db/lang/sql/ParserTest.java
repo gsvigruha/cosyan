@@ -1,4 +1,4 @@
-package com.cosyan.db.sql;
+package com.cosyan.db.lang.sql;
 
 import static org.junit.Assert.assertEquals;
 
@@ -6,20 +6,24 @@ import java.util.Optional;
 
 import org.junit.Test;
 
-import com.cosyan.db.sql.Parser.ParserException;
-import com.cosyan.db.sql.SelectStatement.AsteriskExpression;
-import com.cosyan.db.sql.SelectStatement.Select;
-import com.cosyan.db.sql.SelectStatement.TableRef;
-import com.cosyan.db.sql.SyntaxTree.DoubleLiteral;
-import com.cosyan.db.sql.SyntaxTree.Expression;
-import com.cosyan.db.sql.SyntaxTree.FuncCallExpression;
-import com.cosyan.db.sql.SyntaxTree.Ident;
-import com.cosyan.db.sql.SyntaxTree.IdentExpression;
-import com.cosyan.db.sql.SyntaxTree.LongLiteral;
-import com.cosyan.db.sql.SyntaxTree.Statement;
-import com.cosyan.db.sql.SyntaxTree.StringLiteral;
-import com.cosyan.db.sql.SyntaxTree.UnaryExpression;
-import com.cosyan.db.sql.Tokens.Token;
+import com.cosyan.db.lang.sql.BinaryExpression;
+import com.cosyan.db.lang.sql.Lexer;
+import com.cosyan.db.lang.sql.Parser;
+import com.cosyan.db.lang.sql.Tokens;
+import com.cosyan.db.lang.sql.Parser.ParserException;
+import com.cosyan.db.lang.sql.SelectStatement.AsteriskExpression;
+import com.cosyan.db.lang.sql.SelectStatement.Select;
+import com.cosyan.db.lang.sql.SelectStatement.TableRef;
+import com.cosyan.db.lang.sql.SyntaxTree.DoubleLiteral;
+import com.cosyan.db.lang.sql.SyntaxTree.Expression;
+import com.cosyan.db.lang.sql.SyntaxTree.FuncCallExpression;
+import com.cosyan.db.lang.sql.SyntaxTree.Ident;
+import com.cosyan.db.lang.sql.SyntaxTree.IdentExpression;
+import com.cosyan.db.lang.sql.SyntaxTree.LongLiteral;
+import com.cosyan.db.lang.sql.SyntaxTree.Statement;
+import com.cosyan.db.lang.sql.SyntaxTree.StringLiteral;
+import com.cosyan.db.lang.sql.SyntaxTree.UnaryExpression;
+import com.cosyan.db.lang.sql.Tokens.Token;
 import com.google.common.collect.ImmutableList;
 
 public class ParserTest {

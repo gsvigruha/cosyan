@@ -1,16 +1,16 @@
-package com.cosyan.db.sql;
+package com.cosyan.db.lang.sql;
 
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
+import com.cosyan.db.lang.sql.Result.ErrorResult;
+import com.cosyan.db.lang.sql.Result.QueryResult;
+import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.sql.Result.ErrorResult;
-import com.cosyan.db.sql.Result.QueryResult;
-import com.cosyan.db.sql.SyntaxTree.Ident;
 
 public class AlterStatementTest extends UnitTestBase {
 

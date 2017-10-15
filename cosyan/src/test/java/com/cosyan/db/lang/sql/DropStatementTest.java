@@ -1,4 +1,4 @@
-package com.cosyan.db.sql;
+package com.cosyan.db.lang.sql;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -6,10 +6,10 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
+import com.cosyan.db.lang.sql.Result.ErrorResult;
+import com.cosyan.db.lang.sql.Result.QueryResult;
+import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.sql.Result.ErrorResult;
-import com.cosyan.db.sql.Result.QueryResult;
-import com.cosyan.db.sql.SyntaxTree.Ident;
 
 public class DropStatementTest extends UnitTestBase {
 

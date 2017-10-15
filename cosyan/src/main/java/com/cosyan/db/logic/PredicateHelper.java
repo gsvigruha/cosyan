@@ -3,19 +3,18 @@ package com.cosyan.db.logic;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cosyan.db.sql.BinaryExpression;
-import com.cosyan.db.sql.Tokens;
+import com.cosyan.db.lang.sql.BinaryExpression;
+import com.cosyan.db.lang.sql.Tokens;
+import com.cosyan.db.lang.sql.SyntaxTree.Expression;
+import com.cosyan.db.lang.sql.SyntaxTree.Ident;
+import com.cosyan.db.lang.sql.SyntaxTree.IdentExpression;
+import com.cosyan.db.lang.sql.SyntaxTree.Literal;
+import com.cosyan.db.lang.sql.SyntaxTree.LongLiteral;
+import com.cosyan.db.lang.sql.SyntaxTree.StringLiteral;
+import com.cosyan.db.lang.sql.SyntaxTree.UnaryExpression;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
-
-import com.cosyan.db.sql.SyntaxTree.Expression;
-import com.cosyan.db.sql.SyntaxTree.Ident;
-import com.cosyan.db.sql.SyntaxTree.IdentExpression;
-import com.cosyan.db.sql.SyntaxTree.Literal;
-import com.cosyan.db.sql.SyntaxTree.LongLiteral;
-import com.cosyan.db.sql.SyntaxTree.StringLiteral;
-import com.cosyan.db.sql.SyntaxTree.UnaryExpression;
 
 public class PredicateHelper {
 

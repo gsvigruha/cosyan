@@ -11,16 +11,16 @@ import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.lang.sql.Result;
+import com.cosyan.db.lang.sql.Parser.ParserException;
+import com.cosyan.db.lang.sql.Result.CrashResult;
+import com.cosyan.db.lang.sql.Result.ErrorResult;
+import com.cosyan.db.lang.sql.Result.QueryResult;
+import com.cosyan.db.lang.sql.Result.StatementResult;
+import com.cosyan.db.lang.sql.Result.TransactionResult;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.session.Session;
-import com.cosyan.db.sql.Parser.ParserException;
-import com.cosyan.db.sql.Result;
-import com.cosyan.db.sql.Result.CrashResult;
-import com.cosyan.db.sql.Result.ErrorResult;
-import com.cosyan.db.sql.Result.QueryResult;
-import com.cosyan.db.sql.Result.StatementResult;
-import com.cosyan.db.sql.Result.TransactionResult;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 

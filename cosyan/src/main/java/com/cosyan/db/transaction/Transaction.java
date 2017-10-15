@@ -6,15 +6,15 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.cosyan.db.lang.sql.Result;
+import com.cosyan.db.lang.sql.Result.CrashResult;
+import com.cosyan.db.lang.sql.Result.ErrorResult;
+import com.cosyan.db.lang.sql.Result.TransactionResult;
+import com.cosyan.db.lang.sql.SyntaxTree.Statement;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
-import com.cosyan.db.sql.Result;
-import com.cosyan.db.sql.Result.CrashResult;
-import com.cosyan.db.sql.Result.ErrorResult;
-import com.cosyan.db.sql.Result.TransactionResult;
-import com.cosyan.db.sql.SyntaxTree.Statement;
 import com.google.common.collect.ImmutableList;
 
 public class Transaction {

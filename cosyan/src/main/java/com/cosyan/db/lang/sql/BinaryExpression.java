@@ -1,20 +1,20 @@
-package com.cosyan.db.sql;
+package com.cosyan.db.lang.sql;
 
-import static com.cosyan.db.sql.SyntaxTree.assertType;
+import static com.cosyan.db.lang.sql.SyntaxTree.assertType;
 
 import java.util.Date;
 import java.util.List;
 
+import com.cosyan.db.lang.sql.Parser.ParserException;
+import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
+import com.cosyan.db.lang.sql.SyntaxTree.Expression;
+import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.TableMeta;
-import com.cosyan.db.sql.Parser.ParserException;
-import com.cosyan.db.sql.SyntaxTree.AggregationExpression;
-import com.cosyan.db.sql.SyntaxTree.Expression;
-import com.cosyan.db.sql.Tokens.Token;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

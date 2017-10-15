@@ -1,14 +1,15 @@
-package com.cosyan.db.sql;
+package com.cosyan.db.lang.sql;
 
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import com.cosyan.db.sql.Parser.ParserException;
-import com.cosyan.db.sql.Tokens.FloatToken;
-import com.cosyan.db.sql.Tokens.IntToken;
-import com.cosyan.db.sql.Tokens.StringToken;
-import com.cosyan.db.sql.Tokens.Token;
+import com.cosyan.db.lang.sql.Lexer;
+import com.cosyan.db.lang.sql.Parser.ParserException;
+import com.cosyan.db.lang.sql.Tokens.FloatToken;
+import com.cosyan.db.lang.sql.Tokens.IntToken;
+import com.cosyan.db.lang.sql.Tokens.StringToken;
+import com.cosyan.db.lang.sql.Tokens.Token;
 import com.google.common.collect.ImmutableList;
 
 public class LexerTest {

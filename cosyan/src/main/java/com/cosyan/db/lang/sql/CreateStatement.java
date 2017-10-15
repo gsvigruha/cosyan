@@ -1,4 +1,4 @@
-package com.cosyan.db.sql;
+package com.cosyan.db.lang.sql;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -7,6 +7,11 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
+import com.cosyan.db.lang.sql.Result.MetaStatementResult;
+import com.cosyan.db.lang.sql.SyntaxTree.Expression;
+import com.cosyan.db.lang.sql.SyntaxTree.Ident;
+import com.cosyan.db.lang.sql.SyntaxTree.MetaStatement;
+import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
@@ -16,11 +21,6 @@ import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.sql.Result.MetaStatementResult;
-import com.cosyan.db.sql.SyntaxTree.Expression;
-import com.cosyan.db.sql.SyntaxTree.Ident;
-import com.cosyan.db.sql.SyntaxTree.MetaStatement;
-import com.cosyan.db.sql.SyntaxTree.Node;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;

@@ -1,4 +1,4 @@
-package com.cosyan.db.sql;
+package com.cosyan.db.lang.sql;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
+import com.cosyan.db.lang.sql.Parser.ParserException;
+import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
@@ -20,8 +22,6 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.TableMeta;
-import com.cosyan.db.sql.Parser.ParserException;
-import com.cosyan.db.sql.Tokens.Token;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.base.Joiner;

@@ -3,6 +3,7 @@ package com.cosyan.db.model;
 import java.util.Spliterator;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Aggregators.Aggregator;
 import com.cosyan.db.model.DataTypes.DataType;
@@ -22,7 +23,6 @@ import com.cosyan.db.model.StringFunctions.Matches;
 import com.cosyan.db.model.StringFunctions.Replace;
 import com.cosyan.db.model.StringFunctions.Substr;
 import com.cosyan.db.model.StringFunctions.Upper;
-import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 

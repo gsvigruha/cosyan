@@ -3,12 +3,12 @@ package com.cosyan.db;
 import java.io.IOException;
 
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.lock.LockManager;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.session.Session;
-import com.cosyan.db.sql.Parser.ParserException;
 import com.cosyan.db.transaction.TransactionHandler;
 
 public class DBApi {

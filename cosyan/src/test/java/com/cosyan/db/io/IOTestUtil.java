@@ -7,9 +7,9 @@ import java.util.Optional;
 
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
+import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;

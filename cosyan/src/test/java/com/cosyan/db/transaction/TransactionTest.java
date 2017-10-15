@@ -7,11 +7,11 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
+import com.cosyan.db.lang.sql.Result.QueryResult;
+import com.cosyan.db.lang.sql.Result.TransactionResult;
+import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.TableIndex;
-import com.cosyan.db.sql.Result.QueryResult;
-import com.cosyan.db.sql.Result.TransactionResult;
-import com.cosyan.db.sql.SyntaxTree.Ident;
 
 public class TransactionTest extends UnitTestBase {
   @Test

@@ -9,6 +9,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.cosyan.db.io.TableReader.SeekableTableReader;
+import com.cosyan.db.lang.sql.CreateStatement.SimpleCheckDefinition;
+import com.cosyan.db.lang.sql.SyntaxTree.Ident;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
@@ -16,8 +18,6 @@ import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
-import com.cosyan.db.sql.CreateStatement.SimpleCheckDefinition;
-import com.cosyan.db.sql.SyntaxTree.Ident;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
