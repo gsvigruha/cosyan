@@ -4,6 +4,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.cosyan.db.lang.expr.BinaryExpression;
+import com.cosyan.db.lang.expr.Expression;
+import com.cosyan.db.lang.expr.Expression.IdentExpression;
+import com.cosyan.db.lang.expr.Expression.UnaryExpression;
+import com.cosyan.db.lang.expr.FuncCallExpression;
+import com.cosyan.db.lang.expr.Literals.DoubleLiteral;
+import com.cosyan.db.lang.expr.Literals.Literal;
+import com.cosyan.db.lang.expr.Literals.LongLiteral;
+import com.cosyan.db.lang.expr.Literals.StringLiteral;
 import com.cosyan.db.lang.sql.AlterStatement.AlterTableAddColumn;
 import com.cosyan.db.lang.sql.AlterStatement.AlterTableAlterColumn;
 import com.cosyan.db.lang.sql.AlterStatement.AlterTableDropColumn;
@@ -13,7 +22,7 @@ import com.cosyan.db.lang.sql.CreateStatement.CreateIndex;
 import com.cosyan.db.lang.sql.CreateStatement.CreateTable;
 import com.cosyan.db.lang.sql.CreateStatement.ForeignKeyDefinition;
 import com.cosyan.db.lang.sql.CreateStatement.PrimaryKeyDefinition;
-import com.cosyan.db.lang.sql.CreateStatement.SimpleCheckDefinition;
+import com.cosyan.db.lang.sql.CreateStatement.RuleDefinition;
 import com.cosyan.db.lang.sql.DeleteStatement.Delete;
 import com.cosyan.db.lang.sql.DropStatement.DropIndex;
 import com.cosyan.db.lang.sql.DropStatement.DropTable;
@@ -26,23 +35,14 @@ import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.sql.SelectStatement.Table;
 import com.cosyan.db.lang.sql.SelectStatement.TableExpr;
 import com.cosyan.db.lang.sql.SelectStatement.TableRef;
-import com.cosyan.db.lang.sql.SyntaxTree.DoubleLiteral;
-import com.cosyan.db.lang.sql.SyntaxTree.Expression;
-import com.cosyan.db.lang.sql.SyntaxTree.FuncCallExpression;
-import com.cosyan.db.lang.sql.SyntaxTree.IdentExpression;
-import com.cosyan.db.lang.sql.SyntaxTree.Literal;
-import com.cosyan.db.lang.sql.SyntaxTree.LongLiteral;
 import com.cosyan.db.lang.sql.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.sql.SyntaxTree.Statement;
-import com.cosyan.db.lang.sql.SyntaxTree.StringLiteral;
-import com.cosyan.db.lang.sql.SyntaxTree.UnaryExpression;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.sql.UpdateStatement.SetExpression;
 import com.cosyan.db.lang.sql.UpdateStatement.Update;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.PeekingIterator;
@@ -255,7 +255,7 @@ public class Parser {
       assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
       Expression expr = parseExpression(tokens, 0);
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-      return new SimpleCheckDefinition(ident.getString(), expr);
+      return new RuleDefinition(ident.getString(), expr);
     } else if (tokens.peek().is(Tokens.PRIMARY)) {
       tokens.next();
       assertNext(tokens, Tokens.KEY);
@@ -475,8 +475,11 @@ public class Parser {
     }
   }
 
-  @VisibleForTesting
-  public Expression parseExpression(PeekingIterator<Token> tokens, int precedence) throws ParserException {
+  public Expression parseExpression(PeekingIterator<Token> tokens) throws ParserException {
+    return parseExpression(tokens, 0);
+  }
+
+  private Expression parseExpression(PeekingIterator<Token> tokens, int precedence) throws ParserException {
     if (precedence >= Tokens.BINARY_OPERATORS_PRECEDENCE.size()) {
       return parsePrimary(tokens);
     } else if (tokens.peek().is(Tokens.NOT)

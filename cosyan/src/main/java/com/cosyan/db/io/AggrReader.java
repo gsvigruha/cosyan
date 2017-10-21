@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 
 import com.cosyan.db.model.Aggregators.Aggregator;
 import com.cosyan.db.model.ColumnMeta;
+import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -19,7 +20,7 @@ public abstract class AggrReader extends TableReader {
   protected final ImmutableList<AggrColumn> aggrColumns;
   protected final int size;
 
-  protected Iterator<Object[]> iterator;
+  protected Iterator<SourceValues> iterator;
   protected boolean aggregated;
 
   protected AggrReader(
@@ -42,22 +43,22 @@ public abstract class AggrReader extends TableReader {
   protected abstract void aggregate() throws IOException;
 
   @Override
-  public Object[] read() throws IOException {
+  public SourceValues read() throws IOException {
     if (!aggregated) {
       aggregate();
     }
-    Object[] values = null;
+    SourceValues values = SourceValues.EMPTY;
     do {
       if (!iterator.hasNext()) {
-        return null;
+        return SourceValues.EMPTY;
       }
-      Object[] sourceValues = iterator.next();
+      SourceValues sourceValues = iterator.next();
       if (!(boolean) havingColumn.getValue(sourceValues)) {
-        values = null;
+        values = SourceValues.EMPTY;
       } else {
         values = sourceValues;
       }
-    } while (values == null && !cancelled);
+    } while (values.isEmpty() && !cancelled);
     return values;
   }
 
@@ -74,7 +75,7 @@ public abstract class AggrReader extends TableReader {
       this.keyColumns = keyColumns;
     }
 
-    private ImmutableList<Object> getKeyValues(Object[] sourceValues) {
+    private ImmutableList<Object> getKeyValues(SourceValues sourceValues) {
       ImmutableList.Builder<Object> builder = ImmutableList.builder();
       for (Map.Entry<String, ? extends ColumnMeta> entry : keyColumns.entrySet()) {
         builder.add(entry.getValue().getValue(sourceValues));
@@ -86,8 +87,8 @@ public abstract class AggrReader extends TableReader {
     protected void aggregate() throws IOException {
       HashMap<ImmutableList<Object>, Aggregator<?, ?>[]> aggregatedValues = new HashMap<>();
       while (!cancelled) {
-        Object[] sourceValues = sourceReader.read();
-        if (sourceValues == null) {
+        SourceValues sourceValues = sourceReader.read();
+        if (sourceValues.isEmpty()) {
           break;
         }
         ImmutableList<Object> keyValues = getKeyValues(sourceValues);
@@ -107,7 +108,7 @@ public abstract class AggrReader extends TableReader {
       }
       final Iterator<Entry<ImmutableList<Object>, Aggregator<?, ?>[]>> innerIterator = aggregatedValues.entrySet()
           .iterator();
-      iterator = new Iterator<Object[]>() {
+      iterator = new Iterator<SourceValues>() {
 
         @Override
         public boolean hasNext() {
@@ -115,7 +116,7 @@ public abstract class AggrReader extends TableReader {
         }
 
         @Override
-        public Object[] next() {
+        public SourceValues next() {
           Object[] result = new Object[size];
           Entry<ImmutableList<Object>, Aggregator<?, ?>[]> item = innerIterator.next();
           Object[] keys = item.getKey().toArray();
@@ -123,7 +124,7 @@ public abstract class AggrReader extends TableReader {
           for (int i = 0; i < item.getValue().length; i++) {
             result[keys.length + i] = item.getValue()[i].finish();
           }
-          return result;
+          return SourceValues.of(result);
         }
       };
       aggregated = true;
@@ -147,8 +148,8 @@ public abstract class AggrReader extends TableReader {
         aggrValues[i++] = column.getFunction().create();
       }
       while (!cancelled) {
-        Object[] sourceValues = sourceReader.read();
-        if (sourceValues == null) {
+        SourceValues sourceValues = sourceReader.read();
+        if (sourceValues.isEmpty()) {
           break;
         }
         i = 1;
@@ -161,7 +162,7 @@ public abstract class AggrReader extends TableReader {
         result[j + 1] = aggrValues[j + 1].finish();
       }
 
-      iterator = ImmutableList.of(result).iterator();
+      iterator = ImmutableList.of(SourceValues.of(result)).iterator();
       aggregated = true;
     }
   }

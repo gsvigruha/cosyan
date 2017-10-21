@@ -16,10 +16,12 @@ import com.cosyan.db.io.SeekableInputStream.SeekableByteArrayInputStream;
 import com.cosyan.db.io.SeekableInputStream.SeekableSequenceInputStream;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
-import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
+import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableMultiIndex;
 import com.google.common.collect.ImmutableList;
@@ -34,7 +36,7 @@ public class TableWriter implements TableIO {
   private final ImmutableMap<String, TableMultiIndex> multiIndexes;
   private final ImmutableMultimap<String, IndexReader> foreignIndexes;
   private final ImmutableMultimap<String, IndexReader> reversedForeignIndexes;
-  private final ImmutableMap<String, DerivedColumn> simpleChecks;
+  private final ImmutableMap<String, BooleanRule> rules;
 
   private final long fileIndex0;
   private final Set<Long> recordsToDelete = new LinkedHashSet<>();
@@ -47,14 +49,14 @@ public class TableWriter implements TableIO {
       ImmutableMap<String, TableMultiIndex> multiIndexes,
       ImmutableMultimap<String, IndexReader> foreignIndexes,
       ImmutableMultimap<String, IndexReader> reversedForeignIndexes,
-      ImmutableMap<String, DerivedColumn> simpleChecks) throws IOException {
+      ImmutableMap<String, BooleanRule> rules) throws IOException {
     this.file = file;
     this.columns = columns;
     this.uniqueIndexes = uniqueIndexes;
     this.multiIndexes = multiIndexes;
     this.foreignIndexes = foreignIndexes;
     this.reversedForeignIndexes = reversedForeignIndexes;
-    this.simpleChecks = simpleChecks;
+    this.rules = rules;
     this.fileIndex0 = file.length();
   }
 
@@ -89,9 +91,9 @@ public class TableWriter implements TableIO {
         }
       }
     }
-    for (Map.Entry<String, DerivedColumn> constraint : simpleChecks.entrySet()) {
-      if (!(boolean) constraint.getValue().getValue(values)) {
-        throw new RuleException("Constraint check " + constraint.getKey() + " failed.");
+    for (Map.Entry<String, BooleanRule> rule : rules.entrySet()) {
+      if (!rule.getValue().check(SourceValues.of(values))) {
+        throw new RuleException("Constraint check " + rule.getKey() + " failed.");
       }
     }
     Serializer.serialize(values, columns, bos);
@@ -161,7 +163,7 @@ public class TableWriter implements TableIO {
     }
   }
 
-  public long delete(DerivedColumn whereColumn) throws IOException, RuleException {
+  public long delete(ColumnMeta whereColumn) throws IOException, RuleException {
     long deletedLines = 0L;
     SeekableSequenceInputStream input = new SeekableSequenceInputStream(
         new RAFBufferedInputStream(file),
@@ -172,7 +174,7 @@ public class TableWriter implements TableIO {
       if (record == RecordReader.EMPTY) {
         return deletedLines;
       }
-      if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.getValue(record.getValues())) {
+      if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.getValue(record.sourceValues())) {
         delete(record);
         deletedLines++;
       }
@@ -180,8 +182,8 @@ public class TableWriter implements TableIO {
   }
 
   private ImmutableList<Object[]> deleteAndCollectUpdated(
-      ImmutableMap<Integer, DerivedColumn> updateExprs,
-      DerivedColumn whereColumn) throws IOException, RuleException {
+      ImmutableMap<Integer, ColumnMeta> updateExprs,
+      ColumnMeta whereColumn) throws IOException, RuleException {
     SeekableSequenceInputStream input = new SeekableSequenceInputStream(
         new RAFBufferedInputStream(file),
         new SeekableByteArrayInputStream(bos.toByteArray()));
@@ -192,20 +194,20 @@ public class TableWriter implements TableIO {
       if (record == RecordReader.EMPTY) {
         return updatedRecords.build();
       }
-      if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.getValue(record.getValues())) {
+      if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.getValue(record.sourceValues())) {
         delete(record);
         Object[] values = record.getValues();
         Object[] newValues = new Object[values.length];
         System.arraycopy(values, 0, newValues, 0, values.length);
-        for (Map.Entry<Integer, DerivedColumn> updateExpr : updateExprs.entrySet()) {
-          newValues[updateExpr.getKey()] = updateExpr.getValue().getValue(values);
+        for (Map.Entry<Integer, ColumnMeta> updateExpr : updateExprs.entrySet()) {
+          newValues[updateExpr.getKey()] = updateExpr.getValue().getValue(SourceValues.of(values));
         }
         updatedRecords.add(newValues);
       }
     } while (true);
   }
 
-  public long update(ImmutableMap<Integer, DerivedColumn> columnExprs, DerivedColumn whereColumn)
+  public long update(ImmutableMap<Integer, ColumnMeta> columnExprs, ColumnMeta whereColumn)
       throws IOException, RuleException {
     ImmutableList<Object[]> valuess = deleteAndCollectUpdated(columnExprs, whereColumn);
     for (Object[] values : valuess) {
@@ -228,11 +230,11 @@ public class TableWriter implements TableIO {
       }
 
       @Override
-      public Object[] read() throws IOException {
+      public SourceValues read() throws IOException {
         do {
           Record record = reader.read();
           if (record == RecordReader.EMPTY || !recordsToDelete.contains(record.getFilePointer())) {
-            return record.getValues();
+            return record.sourceValues();
           }
         } while (true);
       }

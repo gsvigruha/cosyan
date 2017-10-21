@@ -465,6 +465,6 @@ public class TableReaderTest extends DummyTestBase {
 
   @Test(expected = ModelException.class)
   public void testNonKeyOutsideOfAggr() throws Exception {
-    query("select b, sum(c) from large group by a;");
+    query("select b, sum(c) from large group by a;").readColumns();
   }
 }

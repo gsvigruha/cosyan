@@ -35,23 +35,18 @@ public class DerivedTables {
     private final ImmutableMap<String, ColumnMeta> columns;
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> columns() {
-      return columns;
+    public ImmutableList<String> columnNames() {
+      return columns.keySet().asList();
     }
 
     @Override
     public ExposedTableReader reader(Resources resources) throws IOException {
-      return new DerivedTableReader(sourceTable.reader(resources), columns());
+      return new DerivedTableReader(sourceTable.reader(resources), columns);
     }
 
     @Override
-    public int indexOf(Ident ident) {
-      return indexOf(columns().keySet(), ident);
-    }
-
-    @Override
-    public ColumnMeta column(Ident ident) throws ModelException {
-      return column(ident, columns);
+    public Column getColumn(Ident ident) throws ModelException {
+      return new Column(columns.get(ident.getString()), indexOf(columns.keySet(), ident));
     }
 
     @Override
@@ -67,8 +62,8 @@ public class DerivedTables {
     private final ColumnMeta whereColumn;
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> columns() {
-      return sourceTable.columns();
+    public ImmutableList<String> columnNames() {
+      return sourceTable.columnNames();
     }
 
     @Override
@@ -77,13 +72,8 @@ public class DerivedTables {
     }
 
     @Override
-    public int indexOf(Ident ident) throws ModelException {
-      return sourceTable.indexOf(ident);
-    }
-
-    @Override
-    public ColumnMeta column(Ident ident) throws ModelException {
-      return sourceTable.column(ident);
+    public Column getColumn(Ident ident) throws ModelException {
+      return sourceTable.getColumn(ident);
     }
 
     @Override
@@ -100,8 +90,8 @@ public class DerivedTables {
     private final VariableEquals clause;
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> columns() {
-      return sourceTable.columns();
+    public ImmutableList<String> columnNames() {
+      return sourceTable.columnNames();
     }
 
     @Override
@@ -113,13 +103,8 @@ public class DerivedTables {
     }
 
     @Override
-    public int indexOf(Ident ident) throws ModelException {
-      return sourceTable.indexOf(ident);
-    }
-
-    @Override
-    public ColumnMeta column(Ident ident) throws ModelException {
-      return sourceTable.column(ident);
+    public Column getColumn(Ident ident) throws ModelException {
+      return sourceTable.getColumn(ident);
     }
 
     @Override
@@ -140,13 +125,12 @@ public class DerivedTables {
     }
 
     @Override
-    public int indexOf(Ident ident) {
-      return indexOf(keyColumns.keySet(), ident);
-    }
-
-    @Override
-    public ColumnMeta column(Ident ident) throws ModelException {
-      return sourceTable.column(ident);
+    public Column getColumn(Ident ident) throws ModelException {
+      if (keyColumns.containsKey(ident.getString())) {
+        return new Column(keyColumns.get(ident.getString()), indexOf(keyColumns.keySet(), ident));
+      } else {
+        return null;
+      }
     }
 
     @Override
@@ -172,13 +156,8 @@ public class DerivedTables {
     }
 
     @Override
-    public int indexOf(Ident ident) {
-      return sourceTable.keyColumns.size() + sourceTable.indexOf(ident);
-    }
-
-    @Override
-    public ColumnMeta column(Ident ident) throws ModelException {
-      return sourceTable.column(ident);
+    public Column getColumn(Ident ident) throws ModelException {
+      return sourceTable.column(ident).shift(sourceTable.keyColumns.size());
     }
 
     @Override
@@ -200,13 +179,8 @@ public class DerivedTables {
     }
 
     @Override
-    public int indexOf(Ident ident) {
-      return sourceTable.keyColumns.size() + sourceTable.indexOf(ident);
-    }
-
-    @Override
-    public ColumnMeta column(Ident ident) throws ModelException {
-      return sourceTable.column(ident);
+    public Column getColumn(Ident ident) throws ModelException {
+      return sourceTable.column(ident).shift(sourceTable.keyColumns.size());
     }
 
     @Override
@@ -222,8 +196,8 @@ public class DerivedTables {
     private final ImmutableList<OrderColumn> orderColumns;
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> columns() {
-      return sourceTable.columns();
+    public ImmutableList<String> columnNames() {
+      return sourceTable.columnNames();
     }
 
     @Override
@@ -232,13 +206,8 @@ public class DerivedTables {
     }
 
     @Override
-    public int indexOf(Ident ident) throws ModelException {
-      return sourceTable.indexOf(ident);
-    }
-
-    @Override
-    public ColumnMeta column(Ident ident) throws ModelException {
-      return sourceTable.column(ident);
+    public Column getColumn(Ident ident) throws ModelException {
+      return sourceTable.getColumn(ident);
     }
 
     @Override
@@ -253,8 +222,8 @@ public class DerivedTables {
     private final ExposedTableMeta sourceTable;
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> columns() {
-      return sourceTable.columns();
+    public ImmutableList<String> columnNames() {
+      return sourceTable.columnNames();
     }
 
     @Override
@@ -263,13 +232,8 @@ public class DerivedTables {
     }
 
     @Override
-    public int indexOf(Ident ident) throws ModelException {
-      return sourceTable.indexOf(ident);
-    }
-
-    @Override
-    public ColumnMeta column(Ident ident) throws ModelException {
-      return sourceTable.column(ident);
+    public Column getColumn(Ident ident) throws ModelException {
+      return sourceTable.getColumn(ident);
     }
 
     @Override
@@ -288,10 +252,10 @@ public class DerivedTables {
     private final ImmutableList<ColumnMeta> rightTableJoinColumns;
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> columns() {
-      return ImmutableMap.<String, ColumnMeta>builder()
-          .putAll(leftTable.columns())
-          .putAll(rightTable.columns())
+    public ImmutableList<String> columnNames() {
+      return ImmutableList.<String>builder()
+          .addAll(leftTable.columnNames())
+          .addAll(rightTable.columnNames())
           .build();
     }
 
@@ -328,33 +292,17 @@ public class DerivedTables {
     }
 
     @Override
-    public int indexOf(Ident ident) throws ModelException {
-      int leftIndex = leftTable.indexOf(ident);
-      int rightIndex = rightTable.indexOf(ident);
-      if (leftIndex >= 0 && rightIndex < 0) {
-        return leftIndex;
-      }
-      if (leftIndex < 0 && rightIndex >= 0) {
-        return leftTable.columns().size() + rightIndex;
-      }
-      if (leftIndex >= 0 && rightIndex >= 0) {
+    public Column getColumn(Ident ident) throws ModelException {
+      Column leftColumn = leftTable.getColumn(ident);
+      Column rightColumn = rightTable.getColumn(ident);
+      if (leftColumn != null && rightColumn != null) {
         throw new ModelException("Ambiguous column reference '" + ident + "'.");
       }
-      return -1;
-    }
-
-    @Override
-    public ColumnMeta column(Ident ident) throws ModelException {
-      int leftIndex = leftTable.indexOf(ident);
-      int rightIndex = rightTable.indexOf(ident);
-      if (leftIndex >= 0 && rightIndex < 0) {
-        return leftTable.column(ident);
+      if (leftColumn != null) {
+        return leftColumn;
       }
-      if (leftIndex < 0 && rightIndex >= 0) {
-        return rightTable.column(ident);
-      }
-      if (leftIndex >= 0 && rightIndex >= 0) {
-        throw new ModelException("Ambiguous column reference '" + ident + "'.");
+      if (rightColumn != null) {
+        return rightColumn.shift(leftTable.columnNames().size());
       }
       throw new ModelException("Column '" + ident + "' not found in table.");
     }
@@ -382,32 +330,19 @@ public class DerivedTables {
     }
 
     @Override
-    public ImmutableMap<String, ? extends ColumnMeta> columns() {
-      return sourceTable.columns();
+    public ImmutableList<String> columnNames() {
+      return sourceTable.columnNames();
     }
 
     @Override
-    public int indexOf(Ident ident) throws ModelException {
+    public Column getColumn(Ident ident) throws ModelException {
       if (ident.isSimple()) {
-        return sourceTable.indexOf(ident);
+        return sourceTable.getColumn(ident);
       } else {
         if (ident.head().equals(this.ident.getString())) {
-          return sourceTable.indexOf(ident.tail());
+          return sourceTable.getColumn(ident.tail());
         } else {
-          return -1;
-        }
-      }
-    }
-
-    @Override
-    public ColumnMeta column(Ident ident) throws ModelException {
-      if (ident.isSimple()) {
-        return sourceTable.column(ident);
-      } else {
-        if (ident.head().equals(this.ident.getString())) {
-          return sourceTable.column(ident.tail());
-        } else {
-          throw new ModelException("Column '" + ident + "' not found in table.");
+          return null;
         }
       }
     }

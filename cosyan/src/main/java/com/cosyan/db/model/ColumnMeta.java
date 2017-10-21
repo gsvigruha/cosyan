@@ -11,7 +11,7 @@ public abstract class ColumnMeta {
 
   protected final DataType<?> type;
 
-  public abstract Object getValue(Object[] sourceValues);
+  public abstract Object getValue(SourceValues values);
 
   @Data
   @EqualsAndHashCode(callSuper = true)
@@ -55,10 +55,9 @@ public abstract class ColumnMeta {
     }
 
     @Override
-    public Object getValue(Object[] sourceValues) {
-      return sourceValues[index];
+    public Object getValue(SourceValues values) {
+      return values.sourceValue(index);
     }
-
   }
 
   public static abstract class DerivedColumn extends ColumnMeta {
@@ -70,10 +69,10 @@ public abstract class ColumnMeta {
   public static class AggrColumn extends DerivedColumn {
 
     private final int index;
-    private final DerivedColumn baseColumn;
+    private final ColumnMeta baseColumn;
     private final TypedAggrFunction<?> function;
 
-    public AggrColumn(DataType<?> type, DerivedColumn baseColumn, int index, TypedAggrFunction<?> function) {
+    public AggrColumn(DataType<?> type, ColumnMeta baseColumn, int index, TypedAggrFunction<?> function) {
       super(type);
       this.baseColumn = baseColumn;
       this.index = index;
@@ -81,12 +80,12 @@ public abstract class ColumnMeta {
     }
 
     @Override
-    public Object getValue(Object[] sourceValues) {
-      return sourceValues[index];
+    public Object getValue(SourceValues values) {
+      return values.sourceValue(index);
     }
 
-    public Object getInnerValue(Object[] sourceValues) {
-      return baseColumn.getValue(sourceValues);
+    public Object getInnerValue(SourceValues values) {
+      return baseColumn.getValue(values);
     }
 
     public TypedAggrFunction<?> getFunction() {
@@ -96,18 +95,18 @@ public abstract class ColumnMeta {
 
   public static class OrderColumn extends DerivedColumn {
 
-    private final DerivedColumn baseColumn;
+    private final ColumnMeta baseColumn;
     private final boolean asc;
 
-    public OrderColumn(DerivedColumn baseColumn, boolean asc) {
+    public OrderColumn(ColumnMeta baseColumn, boolean asc) {
       super(baseColumn.type);
       this.baseColumn = baseColumn;
       this.asc = asc;
     }
 
     @Override
-    public Object getValue(Object[] sourceValues) {
-      return baseColumn.getValue(sourceValues);
+    public Object getValue(SourceValues values) {
+      return baseColumn.getValue(values);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -119,7 +118,7 @@ public abstract class ColumnMeta {
   public static final DerivedColumn TRUE_COLUMN = new DerivedColumn(DataTypes.BoolType) {
 
     @Override
-    public Object getValue(Object[] sourceValues) {
+    public Object getValue(SourceValues values) {
       return true;
     }
   };

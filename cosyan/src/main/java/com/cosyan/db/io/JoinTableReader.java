@@ -8,6 +8,7 @@ import java.util.List;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.SourceValues;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.LinkedListMultimap;
 
@@ -24,7 +25,7 @@ public class JoinTableReader {
     private boolean joined;
     private LinkedListMultimap<ImmutableList<Object>, Object[]> joinValues;
     private Iterator<Object[]> joinValuesForCurrentKey;
-    private Object[] mainTableValues;
+    private SourceValues mainTableValues;
 
     public HashJoinTableReader(
         ExposedTableReader mainTableReader,
@@ -51,17 +52,17 @@ public class JoinTableReader {
     }
 
     @Override
-    public Object[] read() throws IOException {
+    public SourceValues read() throws IOException {
       if (!joined) {
         join();
       }
-      Object[] result = null;
+      SourceValues result = SourceValues.EMPTY;
       do {
         while (joinValuesForCurrentKey == null || !joinValuesForCurrentKey.hasNext()) {
           List<Object[]> values = null;
           mainTableValues = mainTableReader.read();
-          if (mainTableValues == null) {
-            return null;
+          if (mainTableValues.isEmpty()) {
+            return mainTableValues;
           }
           ImmutableList.Builder<Object> builder = ImmutableList.builder();
           for (ColumnMeta column : mainTableJoinColumns) {
@@ -78,8 +79,8 @@ public class JoinTableReader {
           }
         }
 
-        result = match(mainTableValues, joinValuesForCurrentKey.next());
-      } while (result == null);
+        result = SourceValues.of(match(mainTableValues.toArray(), joinValuesForCurrentKey.next()));
+      } while (result.isEmpty());
       return result;
     }
 
@@ -101,8 +102,8 @@ public class JoinTableReader {
     private void join() throws IOException {
       joinValues = LinkedListMultimap.create();
       while (!cancelled) {
-        Object[] sourceValues = joinTableReader.read();
-        if (sourceValues == null) {
+        SourceValues sourceValues = joinTableReader.read();
+        if (sourceValues.isEmpty()) {
           break;
         }
         ImmutableList.Builder<Object> builder = ImmutableList.builder();
@@ -110,7 +111,7 @@ public class JoinTableReader {
           Object key = column.getValue(sourceValues);
           builder.add(key);
         }
-        joinValues.put(builder.build(), sourceValues);
+        joinValues.put(builder.build(), sourceValues.toArray());
       }
       joined = true;
     }

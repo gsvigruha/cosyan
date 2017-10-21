@@ -3,7 +3,6 @@ package com.cosyan.db.lang.sql;
 import java.io.IOException;
 
 import com.cosyan.db.lang.sql.CreateStatement.ColumnDefinition;
-import com.cosyan.db.lang.sql.CreateStatement.SimpleCheckDefinition;
 import com.cosyan.db.lang.sql.Result.MetaStatementResult;
 import com.cosyan.db.lang.sql.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
@@ -14,6 +13,7 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.model.Rule;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,7 +33,7 @@ public class AlterStatement {
             String.format("Cannot add column '%s', new columns have to be nullable.", column.getName()));
       }
       MaterializedTableMeta tableMeta = metaRepo.table(table);
-      if (tableMeta.indexOf(new Ident(column.getName())) >= 0) {
+      if (tableMeta.hasColumn(new Ident(column.getName()))) {
         throw new ModelException(
             String.format("Cannot add column '%s', column with the same name already exists.", column.getName()));
       }
@@ -64,15 +64,15 @@ public class AlterStatement {
     @Override
     public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
-      BasicColumn basicColumn = tableMeta.column(column);
+      BasicColumn basicColumn = tableMeta.column(column).getMeta();
       basicColumn.setDeleted(true);
       try {
-        for (SimpleCheckDefinition simpleCheckDefinition : tableMeta.simpleCheckDefinitions()) {
+        for (Rule rule : tableMeta.rules().values()) {
           try {
-            simpleCheckDefinition.getExpr().compile(tableMeta);
+            rule.reCompile(tableMeta);
           } catch (ModelException e) {
             throw new ModelException(String.format(
-                "Cannot drop column '%s', check '%s' fails.\n%s", column, simpleCheckDefinition, e.getMessage()));
+                "Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()));
           }
         }
         for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
@@ -111,11 +111,11 @@ public class AlterStatement {
     @Override
     public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
-      if (tableMeta.indexOf(new Ident(column.getName())) < 0) {
+      if (!tableMeta.hasColumn(new Ident(column.getName()))) {
         throw new ModelException(
             String.format("Cannot alter column '%s', column does not exist.", column.getName()));
       }
-      BasicColumn originalColumn = tableMeta.column(new Ident(column.getName()));
+      BasicColumn originalColumn = tableMeta.column(new Ident(column.getName())).getMeta();
       if (originalColumn.getType() != column.getType()) {
         throw new ModelException(
             String.format("Cannot alter column '%s', type has to remain the same.", column.getName()));

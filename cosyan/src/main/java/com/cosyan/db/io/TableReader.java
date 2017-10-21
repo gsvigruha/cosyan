@@ -17,6 +17,7 @@ import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.model.SourceValues;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -28,7 +29,7 @@ public abstract class TableReader implements TableIO {
 
   protected boolean cancelled = false;
 
-  public abstract Object[] read() throws IOException;
+  public abstract SourceValues read() throws IOException;
 
   @Data
   @EqualsAndHashCode(callSuper = true)
@@ -37,14 +38,14 @@ public abstract class TableReader implements TableIO {
     protected final ImmutableMap<String, ? extends ColumnMeta> columns;
 
     public ImmutableMap<String, Object> readColumns() throws IOException {
-      Object[] values = read();
-      if (values == null) {
+      SourceValues values = read();
+      if (values.isEmpty()) {
         return null;
       }
       ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
       int i = 0;
       for (String columnName : columns.keySet()) {
-        builder.put(columnName, values[i++]);
+        builder.put(columnName, values.sourceValue(i++));
       }
       return builder.build();
     }
@@ -89,12 +90,13 @@ public abstract class TableReader implements TableIO {
     }
 
     @Override
-    public Object[] read() throws IOException {
+    public SourceValues read() throws IOException {
       Record record = reader.read();
       if (record == RecordReader.EMPTY) {
         close();
       }
-      return record.getValues();
+        // TODO
+      return record.sourceValues();
     }
 
     @Override
@@ -120,19 +122,18 @@ public abstract class TableReader implements TableIO {
     }
 
     @Override
-    public Object[] read() throws IOException {
-      Object[] values = null;
-      Object[] sourceValues = sourceReader.read();
-      if (sourceValues == null) {
-        return null;
+    public SourceValues read() throws IOException {
+      SourceValues sourceValues = sourceReader.read();
+      if (sourceValues.isEmpty()) {
+        return sourceValues;
       } else {
-        values = new Object[columns.size()];
+        Object[] values = new Object[columns.size()];
         int i = 0;
         for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
           values[i++] = entry.getValue().getValue(sourceValues);
         }
+        return SourceValues.of(values);
       }
-      return values;
     }
   }
 
@@ -155,20 +156,20 @@ public abstract class TableReader implements TableIO {
     }
 
     @Override
-    public Object[] read() throws IOException {
-      Object[] values = null;
+    public SourceValues read() throws IOException {
+      SourceValues values = SourceValues.EMPTY;
       do {
-        Object[] sourceValues = sourceReader.read();
-        if (sourceValues == null) {
-          return null;
+        SourceValues sourceValues = sourceReader.read();
+        if (sourceValues.isEmpty()) {
+          return sourceValues;
         } else {
           if (!(boolean) whereColumn.getValue(sourceValues)) {
-            values = null;
+            values = SourceValues.EMPTY;
           } else {
             values = sourceValues;
           }
         }
-      } while (values == null && !cancelled);
+      } while (values.isEmpty() && !cancelled);
       return values;
     }
   }
@@ -200,29 +201,29 @@ public abstract class TableReader implements TableIO {
     }
 
     @Override
-    public Object[] read() throws IOException {
+    public SourceValues read() throws IOException {
       if (positions == null) {
         readPositions();
       }
-      Object[] values = null;
+      SourceValues values = SourceValues.EMPTY;
       do {
         if (pointer < positions.length) {
           sourceReader.seek(positions[pointer]);
-          Object[] sourceValues = sourceReader.read();
-          if (sourceValues == null) {
-            return null;
+          SourceValues sourceValues = sourceReader.read();
+          if (sourceValues.isEmpty()) {
+            return sourceValues;
           } else {
             if (!(boolean) whereColumn.getValue(sourceValues)) {
-              values = null;
+              values = SourceValues.EMPTY;
             } else {
               values = sourceValues;
             }
           }
           pointer++;
         } else {
-          return null;
+          return SourceValues.EMPTY;
         }
-      } while (values == null && !cancelled);
+      } while (values.isEmpty() && !cancelled);
       return values;
     }
 
@@ -237,7 +238,7 @@ public abstract class TableReader implements TableIO {
     private final ExposedTableReader sourceReader;
     private final ImmutableList<OrderColumn> orderColumns;
     private boolean sorted;
-    private Iterator<Object[]> iterator;
+    private Iterator<SourceValues> iterator;
 
     public SortedTableReader(
         ExposedTableReader sourceReader,
@@ -254,18 +255,18 @@ public abstract class TableReader implements TableIO {
     }
 
     @Override
-    public Object[] read() throws IOException {
+    public SourceValues read() throws IOException {
       if (!sorted) {
         sort();
       }
       if (!iterator.hasNext()) {
-        return null;
+        return SourceValues.EMPTY;
       }
       return iterator.next();
     }
 
     private void sort() throws IOException {
-      TreeMap<ImmutableList<Object>, Object[]> values = new TreeMap<>(new Comparator<ImmutableList<Object>>() {
+      TreeMap<ImmutableList<Object>, SourceValues> values = new TreeMap<>(new Comparator<ImmutableList<Object>>() {
         @Override
         public int compare(ImmutableList<Object> x, ImmutableList<Object> y) {
           for (int i = 0; i < orderColumns.size(); i++) {
@@ -278,8 +279,8 @@ public abstract class TableReader implements TableIO {
         }
       });
       while (!cancelled) {
-        Object[] sourceValues = sourceReader.read();
-        if (sourceValues == null) {
+        SourceValues sourceValues = sourceReader.read();
+        if (sourceValues.isEmpty()) {
           break;
         }
         ImmutableList.Builder<Object> builder = ImmutableList.builder();
@@ -298,7 +299,7 @@ public abstract class TableReader implements TableIO {
 
     private final ExposedTableReader sourceReader;
     private boolean distinct;
-    private Iterator<Object[]> iterator;
+    private Iterator<SourceValues> iterator;
 
     public DistinctTableReader(
         ExposedTableReader sourceReader) {
@@ -313,12 +314,12 @@ public abstract class TableReader implements TableIO {
     }
 
     @Override
-    public Object[] read() throws IOException {
+    public SourceValues read() throws IOException {
       if (!distinct) {
         distinct();
       }
       if (!iterator.hasNext()) {
-        return null;
+        return SourceValues.EMPTY;
       }
       return iterator.next();
     }
@@ -326,13 +327,13 @@ public abstract class TableReader implements TableIO {
     private void distinct() throws IOException {
       LinkedHashSet<ImmutableList<Object>> values = new LinkedHashSet<>();
       while (!cancelled) {
-        Object[] sourceValues = sourceReader.read();
-        if (sourceValues == null) {
+        SourceValues sourceValues = sourceReader.read();
+        if (sourceValues.isEmpty()) {
           break;
         }
-        values.add(ImmutableList.copyOf(sourceValues));
+        values.add(sourceValues.toList());
       }
-      iterator = values.stream().map(list -> list.toArray()).iterator();
+      iterator = values.stream().map(list -> SourceValues.of(list.toArray())).iterator();
       distinct = true;
     }
   }

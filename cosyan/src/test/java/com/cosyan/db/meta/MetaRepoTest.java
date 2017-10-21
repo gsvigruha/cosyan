@@ -38,12 +38,12 @@ public class MetaRepoTest {
         + "constraint c_a check(a > 1));");
     MaterializedTableMeta tableMeta = dbApi.getMetaRepo().table(new Ident("t1"));
     assertEquals(1, tableMeta.columns().size());
-    assertEquals(1, tableMeta.simpleCheckDefinitions().size());
+    assertEquals(1, tableMeta.rules().size());
     assertEquals(true, tableMeta.primaryKey().isPresent());
     dbApi = new DBApi(config);
     MaterializedTableMeta newTableMeta = dbApi.getMetaRepo().table(new Ident("t1"));
     assertEquals(tableMeta.columns(), newTableMeta.columns());
-    assertEquals(tableMeta.simpleCheckDefinitions(), newTableMeta.simpleCheckDefinitions());
+    assertEquals(tableMeta.rules(), newTableMeta.rules());
     assertEquals(tableMeta.primaryKey(), newTableMeta.primaryKey());
     assertEquals(tableMeta.foreignKeys(), newTableMeta.foreignKeys());
     assertEquals(tableMeta.reverseForeignKeys(), newTableMeta.reverseForeignKeys());

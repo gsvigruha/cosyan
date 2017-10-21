@@ -10,6 +10,7 @@ import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -31,11 +32,11 @@ public class IOTestUtil {
     }
 
     @Override
-    public Object[] read() throws IOException {
+    public SourceValues read() throws IOException {
       if (!iterator.hasNext()) {
-        return null;
+        return SourceValues.EMPTY;
       }
-      return iterator.next();
+      return SourceValues.of(iterator.next());
     }
 
     @Override
@@ -61,7 +62,7 @@ public class IOTestUtil {
     private final Object[][] data;
 
     public DummyMaterializedTableMeta(ImmutableMap<String, BasicColumn> columns, Object[][] data) {
-      super("dummy", columns.values(), ImmutableList.of(), ImmutableMap.of(), Optional.empty());
+      super("dummy", columns.values(), Optional.empty());
       this.data = data;
     }
 
@@ -70,14 +71,17 @@ public class IOTestUtil {
       return new DummyTableReader(columns(), data);
     }
 
-    @Override
     public int indexOf(Ident ident) {
       return columns().keySet().asList().indexOf(ident.getString());
     }
 
     @Override
-    public BasicColumn column(Ident ident) {
-      return columns().get(ident.getString());
+    public MaterializedColumn getColumn(Ident ident) {
+      BasicColumn column = columns().get(ident.getString());
+      if (column == null) {
+        return null;
+      }
+      return new MaterializedColumn(column, indexOf(ident), ImmutableList.of());
     }
   }
 }

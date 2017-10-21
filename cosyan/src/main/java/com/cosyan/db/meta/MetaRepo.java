@@ -107,7 +107,7 @@ public class MetaRepo implements MetaRepoReader {
     }
     return tables.get(ident.getString());
   }
-
+  
   private RandomAccessFile randomAccessFile(MaterializedTableMeta table) throws IOException {
     String path = config.tableDir() + File.separator + table.tableName();
     try {
@@ -272,7 +272,7 @@ public class MetaRepo implements MetaRepoReader {
             collectMultiIndexes(tableMeta),
             resource.isForeignIndexes() ? collectForeignIndexes(tableMeta) : ImmutableMultimap.of(),
             resource.isReverseForeignIndexes() ? collectReverseForeignIndexes(tableMeta) : ImmutableMultimap.of(),
-            ImmutableMap.copyOf(tableMeta.simpleChecks())));
+            ImmutableMap.copyOf(tableMeta.rules())));
       } else {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
         readers.put(resource.getTableMeta().tableName(), new MaterializedTableReader(

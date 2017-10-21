@@ -47,7 +47,10 @@ public abstract class UnitTestBase {
       ((ErrorResult) result).getError().printStackTrace();
       fail();
     }
-    assert (!(result instanceof CrashResult));
+    if (result instanceof CrashResult) {
+      ((CrashResult) result).getError().printStackTrace();
+      fail();
+    }
   }
 
   protected StatementResult statement(String sql) {

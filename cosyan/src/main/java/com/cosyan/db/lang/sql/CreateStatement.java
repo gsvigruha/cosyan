@@ -3,24 +3,25 @@ package com.cosyan.db.lang.sql;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
+import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.sql.Result.MetaStatementResult;
-import com.cosyan.db.lang.sql.SyntaxTree.Expression;
 import com.cosyan.db.lang.sql.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
-import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.model.Rule;
+import com.cosyan.db.transaction.MetaResources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -64,23 +65,16 @@ public class CreateStatement {
         }
       }
 
-      List<SimpleCheckDefinition> simpleCheckDefinition = Lists.newArrayList();
-      Map<String, DerivedColumn> simpleChecks = Maps.newHashMap();
+      List<RuleDefinition> ruleDefinitions = Lists.newArrayList();
       Optional<PrimaryKey> primaryKey = Optional.empty();
       List<ForeignKey> foreignKeys = Lists.newArrayList();
       for (ConstraintDefinition constraint : constraints) {
         if (columns.containsKey(constraint.getName())) {
           throw new ModelException("Name collision for constraint '" + constraint.getName() + "'.");
         }
-        if (constraint instanceof SimpleCheckDefinition) {
-          SimpleCheckDefinition simpleCheck = (SimpleCheckDefinition) constraint;
-          DerivedColumn constraintColumn = simpleCheck.getExpr().compile(
-              MaterializedTableMeta.simpleTable(name, columns.values()));
-          if (constraintColumn.getType() != DataTypes.BoolType) {
-            throw new ModelException("Constraint expression has to be boolean.");
-          }
-          simpleChecks.put(simpleCheck.getName(), constraintColumn);
-          simpleCheckDefinition.add(simpleCheck);
+        if (constraint instanceof RuleDefinition) {
+          RuleDefinition ruleDefinition = (RuleDefinition) constraint;
+          ruleDefinitions.add(ruleDefinition);
         } else if (constraint instanceof PrimaryKeyDefinition) {
           if (!primaryKey.isPresent()) {
             PrimaryKeyDefinition primaryKeyDefinition = (PrimaryKeyDefinition) constraint;
@@ -110,11 +104,18 @@ public class CreateStatement {
       MaterializedTableMeta tableMeta = new MaterializedTableMeta(
           name,
           columns.values(),
-          simpleCheckDefinition,
-          simpleChecks,
           primaryKey);
+
       for (ForeignKey foreignKey : foreignKeys) {
         tableMeta.addForeignKey(foreignKey);
+      }
+
+      for (RuleDefinition ruleDefinition : ruleDefinitions) {
+        Rule rule = ruleDefinition.compile(tableMeta);
+        if (rule.getType() != DataTypes.BoolType) {
+          throw new ModelException("Constraint expression has to be boolean.");
+        }
+        tableMeta.addRule(rule.toBooleanRule());
       }
 
       for (BasicColumn column : columns.values()) {
@@ -147,13 +148,22 @@ public class CreateStatement {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class SimpleCheckDefinition extends Node implements ConstraintDefinition {
+  public static class RuleDefinition extends Node implements ConstraintDefinition {
     private final String name;
     private final Expression expr;
 
     @Override
     public String toString() {
       return name + " [" + expr.print() + "]";
+    }
+
+    public Rule compile(MaterializedTableMeta tableMeta) throws ModelException {
+      ColumnMeta column = expr.compile(tableMeta);
+      return new Rule(name, column, expr);
+    }
+
+    public MetaResources readResources(MaterializedTableMeta tableMeta) throws ModelException {
+      return expr.readResources(tableMeta);
     }
   }
 
@@ -182,7 +192,7 @@ public class CreateStatement {
     @Override
     public Result execute(MetaRepo metaRepo) throws ModelException, IndexException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(new Ident(ident.head()));
-      BasicColumn column = tableMeta.column(ident.tail());
+      BasicColumn column = tableMeta.column(ident.tail()).getMeta();
       if (column.isIndexed()) {
         throw new ModelException(String.format("Cannot create index on '%s.%s', column is already indexed.",
             tableMeta.tableName(), column.getName()));

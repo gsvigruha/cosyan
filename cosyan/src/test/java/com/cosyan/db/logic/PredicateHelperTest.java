@@ -18,7 +18,7 @@ public class PredicateHelperTest {
 
   private void assertClause(String sql, VariableEquals... clauses) throws ParserException {
     assertEquals(ImmutableList.copyOf(clauses),
-        PredicateHelper.extractClauses(parser.parseExpression(lexer.tokenize(sql), 0)));
+        PredicateHelper.extractClauses(parser.parseExpression(lexer.tokenize(sql))));
   }
 
   @Test

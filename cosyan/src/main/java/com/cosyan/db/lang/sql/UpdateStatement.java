@@ -4,15 +4,14 @@ import java.io.IOException;
 import java.util.Optional;
 
 import com.cosyan.db.io.TableWriter;
+import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.sql.Result.StatementResult;
-import com.cosyan.db.lang.sql.SyntaxTree.Expression;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.SyntaxTree.Statement;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.ColumnMeta;
-import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -39,20 +38,16 @@ public class UpdateStatement {
     private final ImmutableList<SetExpression> updates;
     private final Optional<Expression> where;
 
-    private DerivedColumn whereColumn;
-    private ImmutableMap<Integer, DerivedColumn> columnExprs;
+    private ColumnMeta whereColumn;
+    private ImmutableMap<Integer, ColumnMeta> columnExprs;
 
     @Override
     public MetaResources compile(MetaRepo metaRepo) throws ModelException {
       MaterializedTableMeta tableMeta = (MaterializedTableMeta) metaRepo.table(table);
-      ImmutableMap.Builder<Integer, DerivedColumn> columnExprsBuilder = ImmutableMap.builder();
+      ImmutableMap.Builder<Integer, ColumnMeta> columnExprsBuilder = ImmutableMap.builder();
       for (SetExpression update : updates) {
-        int idx = tableMeta.indexOf(update.getIdent());
-        if (idx < 0) {
-          throw new ModelException("Identifier '" + update.getIdent() + "' not found.");
-        }
-        DerivedColumn columnExpr = update.getValue().compile(tableMeta);
-        columnExprsBuilder.put(idx, columnExpr);
+        ColumnMeta columnExpr = update.getValue().compile(tableMeta);
+        columnExprsBuilder.put(tableMeta.column(update.getIdent()).getIndex(), columnExpr);
       }
       columnExprs = columnExprsBuilder.build();
       if (where.isPresent()) {

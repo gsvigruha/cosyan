@@ -21,9 +21,9 @@ public class AlterStatementTest extends UnitTestBase {
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
     assertEquals(2, tableMeta.columns().size());
     assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false),
-        tableMeta.column(new Ident("a")));
+        tableMeta.column(new Ident("a")).getMeta());
     assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false),
-        tableMeta.column(new Ident("c")));
+        tableMeta.column(new Ident("c")).getMeta());
   }
 
   @Test
@@ -52,22 +52,22 @@ public class AlterStatementTest extends UnitTestBase {
     {
       ErrorResult result = error("alter table t3 drop a;");
       assertEquals("Cannot drop column 'a', check 'c_a [(a > 1)]' fails.\n" +
-          "Column 'a' does not exist.", result.getError().getMessage());
+          "Column 'a' not found in table.", result.getError().getMessage());
     }
-    assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("a")).isDeleted());
+    assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("a")).getMeta().isDeleted());
     execute("create table t4 (a integer, constraint fk_a foreign key (a) references t3(b));");
     {
       ErrorResult result = error("alter table t4 drop a;");
       assertEquals("Cannot drop column 'a', it is used by foreign key 'fk_a [a -> t3.b]'.",
           result.getError().getMessage());
     }
-    assertEquals(false, metaRepo.table(new Ident("t4")).column(new Ident("a")).isDeleted());
+    assertEquals(false, metaRepo.table(new Ident("t4")).column(new Ident("a")).getMeta().isDeleted());
     {
       ErrorResult result = error("alter table t3 drop b;");
       assertEquals("Cannot drop column 'b', it is referenced by foreign key 'fk_a [t4.a -> b]'.",
           result.getError().getMessage());
     }
-    assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("b")).isDeleted());
+    assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("b")).getMeta().isDeleted());
   }
 
   @Test
@@ -77,11 +77,11 @@ public class AlterStatementTest extends UnitTestBase {
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t5"));
     assertEquals(3, tableMeta.columns().size());
     assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false),
-        tableMeta.column(new Ident("a")));
+        tableMeta.column(new Ident("a")).getMeta());
     assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, false),
-        tableMeta.column(new Ident("b")));
+        tableMeta.column(new Ident("b")).getMeta());
     assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false),
-        tableMeta.column(new Ident("c")));
+        tableMeta.column(new Ident("c")).getMeta());
   }
 
   @Test

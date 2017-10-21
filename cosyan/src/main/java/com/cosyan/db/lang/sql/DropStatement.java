@@ -45,7 +45,7 @@ public class DropStatement {
     @Override
     public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(new Ident(ident.head()));
-      BasicColumn column = tableMeta.column(ident.tail());
+      BasicColumn column = tableMeta.column(ident.tail()).getMeta();
       if (!column.isIndexed()) {
         throw new ModelException(String.format("Cannot drop index '%s.%s', column is not indexed.",
             tableMeta.tableName(), column.getName()));

@@ -6,18 +6,19 @@ import java.util.Optional;
 
 import org.junit.Test;
 
+import com.cosyan.db.lang.expr.BinaryExpression;
+import com.cosyan.db.lang.expr.Expression;
+import com.cosyan.db.lang.expr.Expression.IdentExpression;
+import com.cosyan.db.lang.expr.Expression.UnaryExpression;
+import com.cosyan.db.lang.expr.FuncCallExpression;
+import com.cosyan.db.lang.expr.Literals.DoubleLiteral;
+import com.cosyan.db.lang.expr.Literals.LongLiteral;
+import com.cosyan.db.lang.expr.Literals.StringLiteral;
 import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.lang.sql.SelectStatement.AsteriskExpression;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.sql.SelectStatement.TableRef;
-import com.cosyan.db.lang.sql.SyntaxTree.DoubleLiteral;
-import com.cosyan.db.lang.sql.SyntaxTree.Expression;
-import com.cosyan.db.lang.sql.SyntaxTree.FuncCallExpression;
-import com.cosyan.db.lang.sql.SyntaxTree.IdentExpression;
-import com.cosyan.db.lang.sql.SyntaxTree.LongLiteral;
 import com.cosyan.db.lang.sql.SyntaxTree.Statement;
-import com.cosyan.db.lang.sql.SyntaxTree.StringLiteral;
-import com.cosyan.db.lang.sql.SyntaxTree.UnaryExpression;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.model.Ident;
 import com.google.common.collect.ImmutableList;
@@ -129,7 +130,7 @@ public class ParserTest {
   }
 
   private Expression parseExpression(String sql) throws ParserException {
-    return parser.parseExpression(lexer.tokenize(sql), 0);
+    return parser.parseExpression(lexer.tokenize(sql));
   }
 
   @Test

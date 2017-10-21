@@ -7,6 +7,7 @@ import java.io.IOException;
 
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.SourceValues;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
@@ -17,9 +18,25 @@ public class RecordReader {
   public static class Record {
     private final long filePointer;
     private final Object[] values;
+
+    public SourceValues sourceValues() {
+      return SourceValues.of(values);
+    }
   }
 
-  public static final Record EMPTY = new Record(-1, null);
+  private static class EmptyRecord extends Record {
+
+    public EmptyRecord() {
+      super(-1, null);
+    }
+
+    @Override
+    public SourceValues sourceValues() {
+      return SourceValues.EMPTY;
+    }
+  }
+
+  public static final Record EMPTY = new EmptyRecord();
 
   private final ImmutableList<BasicColumn> columns;
   private final int numColumns;

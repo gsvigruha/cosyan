@@ -9,10 +9,11 @@ import java.util.List;
 import java.util.Optional;
 
 import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.lang.expr.BinaryExpression;
+import com.cosyan.db.lang.expr.Expression;
+import com.cosyan.db.lang.expr.Expression.IdentExpression;
 import com.cosyan.db.lang.sql.Result.QueryResult;
 import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
-import com.cosyan.db.lang.sql.SyntaxTree.Expression;
-import com.cosyan.db.lang.sql.SyntaxTree.IdentExpression;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.Tokens.Token;
@@ -39,6 +40,7 @@ import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.DerivedTables.SortedTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -70,9 +72,8 @@ public class SelectStatement {
       if (isAggregation(columns) || groupBy.isPresent()) {
         KeyValueTableMeta intermediateTable = keyValueTable(metaRepo, filteredTable, groupBy);
         List<AggrColumn> aggrColumns = new LinkedList<>();
-        ImmutableMap<String, ColumnMeta> tableColumns = tableColumns(metaRepo, intermediateTable, columns,
-            aggrColumns);
-        DerivedColumn havingColumn = havingExpression(metaRepo, intermediateTable, having,
+        ImmutableMap<String, ColumnMeta> tableColumns = tableColumns(metaRepo, intermediateTable, columns, aggrColumns);
+        ColumnMeta havingColumn = havingExpression(metaRepo, intermediateTable, having,
             aggrColumns);
         if (groupBy.isPresent()) {
           fullTable = new DerivedTableMeta(new KeyValueAggrTableMeta(
@@ -114,9 +115,9 @@ public class SelectStatement {
     public Result execute(Resources resources) throws RuleException, IOException {
       ExposedTableReader reader = tableMeta.reader(resources);
       List<ImmutableList<Object>> values = new ArrayList<>();
-      Object[] row = reader.read();
-      while (row != null) {
-        values.add(ImmutableList.copyOf(row));
+      SourceValues row = reader.read();
+      while (!row.isEmpty()) {
+        values.add(row.toList());
         row = reader.read();
       }
       return new QueryResult(reader.getColumns().keySet().asList(), values);
@@ -148,7 +149,7 @@ public class SelectStatement {
       int i = 0;
       for (Expression expr : columns) {
         if (expr instanceof AsteriskExpression) {
-          for (String columnName : sourceTable.columns().keySet()) {
+          for (String columnName : sourceTable.columnNames()) {
             tableColumns.put(columnName,
                 new IdentExpression(new Ident(columnName)).compile(sourceTable));
           }
@@ -162,14 +163,14 @@ public class SelectStatement {
     private ExposedTableMeta filteredTable(
         MetaRepo metaRepo, ExposedTableMeta sourceTable, Optional<Expression> where) throws ModelException {
       if (where.isPresent()) {
-        DerivedColumn whereColumn = where.get().compile(sourceTable);
+        ColumnMeta whereColumn = where.get().compile(sourceTable);
         assertType(DataTypes.BoolType, whereColumn.getType());
         if (sourceTable instanceof MaterializedTableMeta) {
           ImmutableList<VariableEquals> clauses = PredicateHelper.extractClauses(where.get());
           MaterializedTableMeta materializedTableMeta = (MaterializedTableMeta) sourceTable;
           VariableEquals clause = null;
           for (VariableEquals clauseCandidate : clauses) {
-            BasicColumn column = (BasicColumn) materializedTableMeta.column(clauseCandidate.getIdent());
+            BasicColumn column = materializedTableMeta.column(clauseCandidate.getIdent()).getMeta();
             if ((clause == null && column.isIndexed()) || column.isUnique()) {
               clause = clauseCandidate;
             }
@@ -187,10 +188,10 @@ public class SelectStatement {
       }
     }
 
-    private DerivedColumn havingExpression(MetaRepo metaRepo, TableMeta sourceTable,
+    private ColumnMeta havingExpression(MetaRepo metaRepo, TableMeta sourceTable,
         Optional<Expression> having, List<AggrColumn> aggrColumns) throws ModelException {
       if (having.isPresent()) {
-        DerivedColumn havingColumn = having.get().compile(sourceTable, aggrColumns);
+        ColumnMeta havingColumn = having.get().compile(sourceTable, aggrColumns);
         assertType(DataTypes.BoolType, havingColumn.getType());
         return havingColumn;
       } else {
@@ -209,7 +210,7 @@ public class SelectStatement {
       if (groupBy.isPresent()) {
         ImmutableMap.Builder<String, ColumnMeta> keyColumnsBuilder = ImmutableMap.builder();
         for (Expression expr : groupBy.get()) {
-          DerivedColumn keyColumn = expr.compile(sourceTable);
+          ColumnMeta keyColumn = expr.compile(sourceTable);
           String name = expr.getName(null);
           if (name == null) {
             throw new ModelException("Expression in group by must be named: '" + expr + "'.");
@@ -231,7 +232,7 @@ public class SelectStatement {
         ImmutableList<Expression> orderBy) throws ModelException {
       ImmutableList.Builder<OrderColumn> orderColumnsBuilder = ImmutableList.builder();
       for (Expression expr : orderBy) {
-        DerivedColumn column = expr.compile(sourceTable);
+        ColumnMeta column = expr.compile(sourceTable);
         if (column instanceof OrderColumn) {
           orderColumnsBuilder.add((OrderColumn) column);
         } else {
@@ -315,7 +316,7 @@ public class SelectStatement {
     private final Expression expr;
 
     @Override
-    public DerivedColumn compile(
+    public ColumnMeta compile(
         TableMeta sourceTable, List<AggrColumn> aggrColumns) throws ModelException {
       return expr.compile(sourceTable, aggrColumns);
     }
@@ -333,6 +334,11 @@ public class SelectStatement {
     @Override
     public String print() {
       return expr.print() + " as " + ident.getString();
+    }
+
+    @Override
+    public MetaResources readResources(MaterializedTableMeta tableMeta) throws ModelException {
+      return expr.readResources(tableMeta);
     }
   }
 
@@ -370,6 +376,11 @@ public class SelectStatement {
     @Override
     public String print() {
       return "*";
+    }
+
+    @Override
+    public MetaResources readResources(MaterializedTableMeta tableMeta) {
+      throw new UnsupportedOperationException();
     }
   }
 }

@@ -38,4 +38,8 @@ public class Ident {
   public String toString() {
     return string;
   }
+
+  public String last() {
+    return parts()[parts().length - 1];
+  }
 }

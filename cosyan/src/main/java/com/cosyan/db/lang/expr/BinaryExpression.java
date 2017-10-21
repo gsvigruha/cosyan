@@ -1,4 +1,4 @@
-package com.cosyan.db.lang.sql;
+package com.cosyan.db.lang.expr;
 
 import static com.cosyan.db.lang.sql.SyntaxTree.assertType;
 
@@ -7,14 +7,18 @@ import java.util.List;
 
 import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
-import com.cosyan.db.lang.sql.SyntaxTree.Expression;
+import com.cosyan.db.lang.sql.Tokens;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.model.TableMeta;
+import com.cosyan.db.transaction.MetaResources;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -50,19 +54,19 @@ public class BinaryExpression extends Expression {
   }
 
   protected abstract class BinaryColumn extends DerivedColumn {
-    private final DerivedColumn leftColumn;
-    private final DerivedColumn rightColumn;
+    private final ColumnMeta leftColumn;
+    private final ColumnMeta rightColumn;
 
-    public BinaryColumn(DataType<?> type, DerivedColumn leftColumn, DerivedColumn rightColumn) {
+    public BinaryColumn(DataType<?> type, ColumnMeta leftColumn, ColumnMeta rightColumn) {
       super(type);
       this.leftColumn = leftColumn;
       this.rightColumn = rightColumn;
     }
 
     @Override
-    public Object getValue(Object[] sourceValues) {
-      Object l = leftColumn.getValue(sourceValues);
-      Object r = rightColumn.getValue(sourceValues);
+    public Object getValue(SourceValues values) {
+      Object l = leftColumn.getValue(values);
+      Object r = rightColumn.getValue(values);
       if (l == DataTypes.NULL || r == DataTypes.NULL) {
         return DataTypes.NULL;
       } else {
@@ -76,8 +80,8 @@ public class BinaryExpression extends Expression {
   @Override
   public DerivedColumn compile(TableMeta sourceTable, List<AggrColumn> aggrColumns)
       throws ModelException {
-    final DerivedColumn leftColumn = left.compile(sourceTable, aggrColumns);
-    final DerivedColumn rightColumn = right.compile(sourceTable, aggrColumns);
+    final ColumnMeta leftColumn = left.compile(sourceTable, aggrColumns);
+    final ColumnMeta rightColumn = right.compile(sourceTable, aggrColumns);
 
     if (token.is(Tokens.AND)) {
       assertType(DataTypes.BoolType, leftColumn.getType());
@@ -144,7 +148,7 @@ public class BinaryExpression extends Expression {
     }
   }
 
-  private DerivedColumn asteriskExpression(DerivedColumn leftColumn, DerivedColumn rightColumn) throws ModelException {
+  private DerivedColumn asteriskExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new BinaryColumn(DataTypes.LongType, leftColumn, rightColumn) {
         @Override
@@ -179,7 +183,7 @@ public class BinaryExpression extends Expression {
     }
   }
 
-  private DerivedColumn plusExpression(DerivedColumn leftColumn, DerivedColumn rightColumn) throws ModelException {
+  private DerivedColumn plusExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new BinaryColumn(DataTypes.LongType, leftColumn, rightColumn) {
         @Override
@@ -221,7 +225,7 @@ public class BinaryExpression extends Expression {
     }
   }
 
-  private DerivedColumn minusExpression(DerivedColumn leftColumn, DerivedColumn rightColumn) throws ModelException {
+  private DerivedColumn minusExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new BinaryColumn(DataTypes.LongType, leftColumn, rightColumn) {
         @Override
@@ -256,7 +260,7 @@ public class BinaryExpression extends Expression {
     }
   }
 
-  private DerivedColumn divExpression(DerivedColumn leftColumn, DerivedColumn rightColumn) throws ModelException {
+  private DerivedColumn divExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new BinaryColumn(DataTypes.LongType, leftColumn, rightColumn) {
         @Override
@@ -291,7 +295,7 @@ public class BinaryExpression extends Expression {
     }
   }
 
-  private DerivedColumn modExpression(DerivedColumn leftColumn, DerivedColumn rightColumn) throws ModelException {
+  private DerivedColumn modExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new BinaryColumn(DataTypes.LongType, leftColumn, rightColumn) {
         @Override
@@ -326,7 +330,7 @@ public class BinaryExpression extends Expression {
     }
   }
 
-  private DerivedColumn eqExpression(DerivedColumn leftColumn, DerivedColumn rightColumn) throws ModelException {
+  private DerivedColumn eqExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
@@ -375,7 +379,7 @@ public class BinaryExpression extends Expression {
     }
   }
 
-  private DerivedColumn lessExpression(DerivedColumn leftColumn, DerivedColumn rightColumn) throws ModelException {
+  private DerivedColumn lessExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
@@ -424,7 +428,7 @@ public class BinaryExpression extends Expression {
     }
   }
 
-  private DerivedColumn greaterExpression(DerivedColumn leftColumn, DerivedColumn rightColumn) throws ModelException {
+  private DerivedColumn greaterExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
@@ -473,7 +477,7 @@ public class BinaryExpression extends Expression {
     }
   }
 
-  private DerivedColumn leqExpression(DerivedColumn leftColumn, DerivedColumn rightColumn) throws ModelException {
+  private DerivedColumn leqExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
@@ -522,7 +526,7 @@ public class BinaryExpression extends Expression {
     }
   }
 
-  private DerivedColumn geqExpression(DerivedColumn leftColumn, DerivedColumn rightColumn) throws ModelException {
+  private DerivedColumn geqExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
     if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
@@ -579,5 +583,10 @@ public class BinaryExpression extends Expression {
   @Override
   public String print() {
     return "(" + left.print() + " " + token.getString() + " " + right.print() + ")";
+  }
+
+  @Override
+  public MetaResources readResources(MaterializedTableMeta tableMeta) throws ModelException {
+    return left.readResources(tableMeta).merge(right.readResources(tableMeta));
   }
 }
