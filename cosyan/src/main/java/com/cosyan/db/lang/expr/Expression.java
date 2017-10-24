@@ -149,7 +149,7 @@ public abstract class Expression extends Node {
       if (ident.isSimple()) {
         return ident.getString();
       } else {
-        return ident.tail().getString();
+        return ident.last();
       }
     }
 

@@ -65,6 +65,10 @@ public abstract class UnitTestBase {
     Result result = session.execute(sql);
     if (result instanceof TransactionResult) {
       return (QueryResult) Iterables.getOnlyElement(((TransactionResult) result).getResults());
+    } else if (result instanceof ErrorResult) {
+      ErrorResult crash = (ErrorResult) result;
+      crash.getError().printStackTrace();
+      throw new RuntimeException(crash.getError());
     } else {
       CrashResult crash = (CrashResult) result;
       crash.getError().printStackTrace();

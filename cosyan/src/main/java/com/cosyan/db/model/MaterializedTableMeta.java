@@ -128,7 +128,7 @@ public class MaterializedTableMeta {
       refTable = foreignKey.getRefTable();
       foreignKeyChain.add(foreignKey);
     }
-    MaterializedColumn column = refTable.column(ident.tail());
+    MaterializedColumn column = refTable.column(new Ident(ident.last()));
     return new MaterializedColumn(column.getMeta(), column.getIndex(), foreignKeyChain.build());
   }
 
