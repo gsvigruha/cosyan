@@ -167,4 +167,23 @@ public class InsertIntoTest extends UnitTestBase {
     assertHeader(new String[] { "a" }, result);
     assertValues(new Object[][] { { "x" } }, result);
   }
+
+  @Test
+  public void testRuleReferencingOtherTable() throws Exception {
+    execute("create table t17 (a varchar, b integer, constraint pk_a primary key (a));");
+    execute("create table t18 (a varchar, "
+        + "constraint fk_a foreign key (a) references t17(a), "
+        + "constraint c_a check (fk_a.b = 1));");
+    execute("insert into t17 values ('x', 1), ('y', 2);");
+    execute("insert into t18 values ('x');");
+    {
+      QueryResult result = query("select a, fk_a.a as a2, fk_a.b as b2 from t18;");
+      assertHeader(new String[] { "a", "a2", "b2" }, result);
+      assertValues(new Object[][] { { "x", "x", 1L } }, result);
+    }
+    {
+      ErrorResult result = error("insert into t18 values ('y');");
+      assertError(RuleException.class, "Constraint check c_a failed.", result);
+    }
+  }
 }

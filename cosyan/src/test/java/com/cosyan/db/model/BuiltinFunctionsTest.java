@@ -21,11 +21,12 @@ public class BuiltinFunctionsTest extends DummyTestBase {
   @BeforeClass
   public static void setUp() throws IOException, ModelException, ParserException {
     DummyTestBase.setUp();
-    register("table", new DummyMaterializedTableMeta(
+    register(new DummyMaterializedTableMeta("table", 
         ImmutableMap.of(
             "a", new BasicColumn(0, "a", DataTypes.StringType)),
         new Object[][] {
             new Object[] { "abcABC" } }));
+    DummyTestBase.finalizeResources();
   }
 
   private void assertResult(String expr, Object result)

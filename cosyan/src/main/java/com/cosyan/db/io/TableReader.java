@@ -68,13 +68,16 @@ public abstract class TableReader implements TableIO {
     private final RecordReader reader;
     private final RAFBufferedInputStream bufferedRAF;
     private final ImmutableMap<String, IndexReader> indexes;
+    private final DependencyReader dependencyReader;
 
     public MaterializedTableReader(
         RandomAccessFile raf,
         ImmutableList<BasicColumn> columns,
-        ImmutableMap<String, IndexReader> indexes) throws IOException {
+        ImmutableMap<String, IndexReader> indexes,
+        DependencyReader dependencyReader) throws IOException {
       super(columns);
       this.indexes = indexes;
+      this.dependencyReader = dependencyReader;
       this.bufferedRAF = new RAFBufferedInputStream(raf);
       this.reader = new RecordReader(columns, bufferedRAF);
     }
@@ -94,9 +97,13 @@ public abstract class TableReader implements TableIO {
       Record record = reader.read();
       if (record == RecordReader.EMPTY) {
         close();
+        return record.sourceValues();
       }
-        // TODO
-      return record.sourceValues();
+
+      Object[] values = record.sourceValues().toArray();
+      return SourceValues.of(
+          values,
+          dependencyReader.readReferencedValues(values));
     }
 
     @Override

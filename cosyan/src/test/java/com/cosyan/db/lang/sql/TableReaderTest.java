@@ -22,7 +22,7 @@ public class TableReaderTest extends DummyTestBase {
   public static void setUp() throws IOException, ModelException, ParserException {
     DummyTestBase.setUp();
 
-    register("table", new DummyMaterializedTableMeta(
+    register(new DummyMaterializedTableMeta("table",
         ImmutableMap.of(
             "a", new BasicColumn(0, "a", DataTypes.StringType),
             "b", new BasicColumn(1, "b", DataTypes.LongType),
@@ -31,7 +31,7 @@ public class TableReaderTest extends DummyTestBase {
             new Object[] { "abc", 1L, 1.0 },
             new Object[] { "xyz", 5L, 6.7 } }));
 
-    register("large", new DummyMaterializedTableMeta(
+    register(new DummyMaterializedTableMeta("large",
         ImmutableMap.of(
             "a", new BasicColumn(0, "a", DataTypes.StringType),
             "b", new BasicColumn(1, "b", DataTypes.LongType),
@@ -42,7 +42,7 @@ public class TableReaderTest extends DummyTestBase {
             new Object[] { "b", 5L, 6.0 },
             new Object[] { "b", 7L, 8.0 } }));
 
-    register("left", new DummyMaterializedTableMeta(
+    register(new DummyMaterializedTableMeta("left",
         ImmutableMap.of(
             "a", new BasicColumn(0, "a", DataTypes.StringType),
             "b", new BasicColumn(1, "b", DataTypes.LongType)),
@@ -51,7 +51,7 @@ public class TableReaderTest extends DummyTestBase {
             new Object[] { "b", 1L },
             new Object[] { "c", 5L } }));
 
-    register("right", new DummyMaterializedTableMeta(
+    register(new DummyMaterializedTableMeta("right",
         ImmutableMap.of(
             "x", new BasicColumn(0, "x", DataTypes.StringType),
             "y", new BasicColumn(1, "y", DataTypes.LongType)),
@@ -59,7 +59,7 @@ public class TableReaderTest extends DummyTestBase {
             new Object[] { "a", 2L },
             new Object[] { "c", 6L } }));
 
-    register("dupl", new DummyMaterializedTableMeta(
+    register(new DummyMaterializedTableMeta("dupl",
         ImmutableMap.of(
             "x", new BasicColumn(0, "x", DataTypes.StringType),
             "y", new BasicColumn(1, "y", DataTypes.LongType)),
@@ -67,7 +67,7 @@ public class TableReaderTest extends DummyTestBase {
             new Object[] { "a", 1L },
             new Object[] { "a", 5L } }));
 
-    register("null", new DummyMaterializedTableMeta(
+    register(new DummyMaterializedTableMeta("null",
         ImmutableMap.of(
             "a", new BasicColumn(0, "a", DataTypes.StringType, true, false),
             "b", new BasicColumn(1, "b", DataTypes.LongType, true, false),
@@ -76,7 +76,7 @@ public class TableReaderTest extends DummyTestBase {
             new Object[] { DataTypes.NULL, 1L, 2.0 },
             new Object[] { "b", DataTypes.NULL, 4.0 },
             new Object[] { "c", 5L, DataTypes.NULL } }));
-
+    finalizeResources();
   }
 
   @Test

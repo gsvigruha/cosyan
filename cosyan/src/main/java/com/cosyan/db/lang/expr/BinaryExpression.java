@@ -3,7 +3,6 @@ package com.cosyan.db.lang.expr;
 import static com.cosyan.db.lang.sql.SyntaxTree.assertType;
 
 import java.util.Date;
-import java.util.List;
 
 import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
@@ -11,12 +10,12 @@ import com.cosyan.db.lang.sql.Tokens;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta;
-import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.SourceValues;
+import com.cosyan.db.model.TableDependencies;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 
@@ -78,10 +77,10 @@ public class BinaryExpression extends Expression {
   }
 
   @Override
-  public DerivedColumn compile(TableMeta sourceTable, List<AggrColumn> aggrColumns)
+  public DerivedColumn compile(TableMeta sourceTable, TableDependencies deps)
       throws ModelException {
-    final ColumnMeta leftColumn = left.compile(sourceTable, aggrColumns);
-    final ColumnMeta rightColumn = right.compile(sourceTable, aggrColumns);
+    final ColumnMeta leftColumn = left.compile(sourceTable, deps);
+    final ColumnMeta rightColumn = right.compile(sourceTable, deps);
 
     if (token.is(Tokens.AND)) {
       assertType(DataTypes.BoolType, leftColumn.getType());

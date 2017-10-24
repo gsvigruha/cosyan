@@ -125,4 +125,20 @@ public class UpdateTest extends UnitTestBase {
     QueryResult r2 = query("select * from t8;");
     assertValues(new Object[][] { { 11L, 11.0 } }, r2);
   }
+
+  @Test
+  public void testUpdateReferencedByForeignKey() throws Exception {
+    execute("create table t9 (a integer, b integer, constraint pk_a primary key (a));");
+    execute("create table t10 (a integer, constraint fk_a foreign key (a) references t9(a));");
+    execute("insert into t9 values (1, 1);");
+    execute("insert into t10 values (1);");
+    QueryResult r1 = query("select a, fk_a.a as a2, fk_a.b as b2 from t10;");
+    assertHeader(new String[] { "a", "a2", "b2" }, r1);
+    assertValues(new Object[][] { { 1L, 1L, 1L } }, r1);
+
+    execute("update t9 set b = 2;");
+
+    QueryResult r2 = query("select a, fk_a.a as a2, fk_a.b as b2 from t10;");
+    assertValues(new Object[][] { { 1L, 1L, 2L } }, r2);
+  }
 }

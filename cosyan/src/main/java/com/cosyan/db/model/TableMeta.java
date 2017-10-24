@@ -7,6 +7,7 @@ import javax.annotation.Nullable;
 import com.cosyan.db.io.TableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -31,6 +32,10 @@ public abstract class TableMeta {
     }
 
     public String tableIdent() {
+      throw new UnsupportedOperationException();
+    }
+
+    public ImmutableList<ForeignKey> foreignKeyChain() {
       throw new UnsupportedOperationException();
     }
   }

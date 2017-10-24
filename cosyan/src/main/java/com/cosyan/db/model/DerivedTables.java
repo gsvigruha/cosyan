@@ -18,6 +18,7 @@ import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
+import com.cosyan.db.model.MaterializedTableMeta.TableWithDeps;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -85,7 +86,7 @@ public class DerivedTables {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class IndexFilteredTableMeta extends ExposedTableMeta {
-    private final MaterializedTableMeta sourceTable;
+    private final TableWithDeps sourceTable;
     private final ColumnMeta whereColumn;
     private final VariableEquals clause;
 
@@ -293,16 +294,16 @@ public class DerivedTables {
 
     @Override
     public Column getColumn(Ident ident) throws ModelException {
-      Column leftColumn = leftTable.getColumn(ident);
-      Column rightColumn = rightTable.getColumn(ident);
-      if (leftColumn != null && rightColumn != null) {
+      boolean presentInLeftTable = leftTable.hasColumn(ident);
+      boolean presentInRightTable = rightTable.hasColumn(ident);
+      if (presentInLeftTable && presentInRightTable) {
         throw new ModelException("Ambiguous column reference '" + ident + "'.");
       }
-      if (leftColumn != null) {
-        return leftColumn;
+      if (presentInLeftTable) {
+        return leftTable.getColumn(ident);
       }
-      if (rightColumn != null) {
-        return rightColumn.shift(leftTable.columnNames().size());
+      if (presentInRightTable) {
+        return rightTable.getColumn(ident).shift(leftTable.columnNames().size());
       }
       throw new ModelException("Column '" + ident + "' not found in table.");
     }

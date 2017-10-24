@@ -1,8 +1,5 @@
 package com.cosyan.db.lang.expr;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import com.cosyan.db.lang.sql.SyntaxTree;
 import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
@@ -10,7 +7,6 @@ import com.cosyan.db.lang.sql.Tokens;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta;
-import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.DataTypes;
@@ -18,6 +14,7 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.SourceValues;
+import com.cosyan.db.model.TableDependencies;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.Column;
 import com.cosyan.db.transaction.MetaResources;
@@ -31,9 +28,9 @@ public abstract class Expression extends Node {
 
   public ColumnMeta compile(
       TableMeta sourceTable) throws ModelException {
-    List<AggrColumn> aggrColumns = new LinkedList<>();
-    ColumnMeta column = compile(sourceTable, aggrColumns);
-    if (!aggrColumns.isEmpty()) {
+    TableDependencies deps = new TableDependencies();
+    ColumnMeta column = compile(sourceTable, deps);
+    if (!deps.getAggrColumns().isEmpty()) {
       throw new ModelException("Aggregators are not allowed here.");
     }
     return column;
@@ -41,7 +38,7 @@ public abstract class Expression extends Node {
 
   public abstract ColumnMeta compile(
       TableMeta sourceTable,
-      List<AggrColumn> aggrColumns) throws ModelException;
+      TableDependencies deps) throws ModelException;
 
   public String getName(String def) {
     return def;
@@ -61,9 +58,9 @@ public abstract class Expression extends Node {
 
     @Override
     public DerivedColumn compile(
-        TableMeta sourceTable, List<AggrColumn> aggrColumns) throws ModelException {
+        TableMeta sourceTable, TableDependencies deps) throws ModelException {
       if (token.is(Tokens.NOT)) {
-        ColumnMeta exprColumn = expr.compile(sourceTable, aggrColumns);
+        ColumnMeta exprColumn = expr.compile(sourceTable, deps);
         SyntaxTree.assertType(DataTypes.BoolType, exprColumn.getType());
         return new DerivedColumn(DataTypes.BoolType) {
 
@@ -73,13 +70,13 @@ public abstract class Expression extends Node {
           }
         };
       } else if (token.is(Tokens.ASC)) {
-        ColumnMeta exprColumn = expr.compile(sourceTable, aggrColumns);
+        ColumnMeta exprColumn = expr.compile(sourceTable, deps);
         return new OrderColumn(exprColumn, true);
       } else if (token.is(Tokens.DESC)) {
-        ColumnMeta exprColumn = expr.compile(sourceTable, aggrColumns);
+        ColumnMeta exprColumn = expr.compile(sourceTable, deps);
         return new OrderColumn(exprColumn, false);
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NOT, Tokens.NULL).getString())) {
-        ColumnMeta exprColumn = expr.compile(sourceTable, aggrColumns);
+        ColumnMeta exprColumn = expr.compile(sourceTable, deps);
         return new DerivedColumn(DataTypes.BoolType) {
 
           @Override
@@ -88,7 +85,7 @@ public abstract class Expression extends Node {
           }
         };
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NULL).getString())) {
-        ColumnMeta exprColumn = expr.compile(sourceTable, aggrColumns);
+        ColumnMeta exprColumn = expr.compile(sourceTable, deps);
         return new DerivedColumn(DataTypes.BoolType) {
 
           @Override
@@ -124,7 +121,7 @@ public abstract class Expression extends Node {
 
     @Override
     public ColumnMeta compile(
-        TableMeta sourceTable, List<AggrColumn> aggrColumns) throws ModelException {
+        TableMeta sourceTable, TableDependencies deps) throws ModelException {
       Column column = sourceTable.column(ident);
       if (column.usesSourceValues()) {
         final int index = column.getIndex();
@@ -135,6 +132,7 @@ public abstract class Expression extends Node {
           }
         };
       } else {
+        deps.add(column.foreignKeyChain());
         final String tableIdent = column.tableIdent();
         final int index = column.getIndex();
         return new DerivedColumn(column.getMeta().getType()) {

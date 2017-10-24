@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
@@ -20,10 +22,12 @@ import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
+import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableMultiIndex;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -37,7 +41,9 @@ public class TableWriter implements TableIO {
   private final ImmutableMultimap<String, IndexReader> foreignIndexes;
   private final ImmutableMultimap<String, IndexReader> reversedForeignIndexes;
   private final ImmutableMap<String, BooleanRule> rules;
+  private final Optional<PrimaryKey> primaryKey;
 
+  private DependencyReader dependencyReader;
   private final long fileIndex0;
   private final Set<Long> recordsToDelete = new LinkedHashSet<>();
   private final ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -49,7 +55,8 @@ public class TableWriter implements TableIO {
       ImmutableMap<String, TableMultiIndex> multiIndexes,
       ImmutableMultimap<String, IndexReader> foreignIndexes,
       ImmutableMultimap<String, IndexReader> reversedForeignIndexes,
-      ImmutableMap<String, BooleanRule> rules) throws IOException {
+      ImmutableMap<String, BooleanRule> rules,
+      Optional<PrimaryKey> primaryKey) throws IOException {
     this.file = file;
     this.columns = columns;
     this.uniqueIndexes = uniqueIndexes;
@@ -57,7 +64,12 @@ public class TableWriter implements TableIO {
     this.foreignIndexes = foreignIndexes;
     this.reversedForeignIndexes = reversedForeignIndexes;
     this.rules = rules;
+    this.primaryKey = primaryKey;
     this.fileIndex0 = file.length();
+  }
+
+  public void setDependencyReader(DependencyReader dependencyReader) {
+    this.dependencyReader = dependencyReader;
   }
 
   public void insert(Object[] values) throws IOException, RuleException {
@@ -91,8 +103,9 @@ public class TableWriter implements TableIO {
         }
       }
     }
+    SourceValues sourceValues = SourceValues.of(values, dependencyReader.readReferencedValues(values));
     for (Map.Entry<String, BooleanRule> rule : rules.entrySet()) {
-      if (!rule.getValue().check(SourceValues.of(values))) {
+      if (!rule.getValue().check(sourceValues)) {
         throw new RuleException("Constraint check " + rule.getKey() + " failed.");
       }
     }
@@ -142,7 +155,7 @@ public class TableWriter implements TableIO {
     file.close();
   }
 
-  private void delete(Record record) throws IOException, RuleException {
+  private void delete(Record record, Predicate<Integer> checkReversedForeignIndex) throws IOException, RuleException {
     recordsToDelete.add(record.getFilePointer());
     for (BasicColumn column : columns) {
       Object value = record.getValues()[column.getIndex()];
@@ -152,7 +165,7 @@ public class TableWriter implements TableIO {
       if (multiIndexes.containsKey(column.getName())) {
         multiIndexes.get(column.getName()).delete(value);
       }
-      if (reversedForeignIndexes.containsKey(column.getName())) {
+      if (checkReversedForeignIndex.test(column.getIndex()) && reversedForeignIndexes.containsKey(column.getName())) {
         for (IndexReader reverseForeignIndex : reversedForeignIndexes.get(column.getName())) {
           if (reverseForeignIndex.contains(value)) {
             throw new RuleException(String.format(
@@ -175,7 +188,7 @@ public class TableWriter implements TableIO {
         return deletedLines;
       }
       if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.getValue(record.sourceValues())) {
-        delete(record);
+        delete(record, Predicates.alwaysTrue());
         deletedLines++;
       }
     } while (true);
@@ -195,7 +208,7 @@ public class TableWriter implements TableIO {
         return updatedRecords.build();
       }
       if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.getValue(record.sourceValues())) {
-        delete(record);
+        delete(record, (columnIndex) -> updateExprs.containsKey(columnIndex));
         Object[] values = record.getValues();
         Object[] newValues = new Object[values.length];
         System.arraycopy(values, 0, newValues, 0, values.length);
@@ -216,11 +229,12 @@ public class TableWriter implements TableIO {
     return valuess.size();
   }
 
-  public SeekableTableReader reader() throws IOException {
+  public SeekableTableReader createReader(DependencyReader dependencyReader) throws IOException {
     return new SeekableTableReader(columns) {
 
       private final RecordReader reader = new RecordReader(
-          ImmutableList.copyOf(columns.values().stream().map(column -> (BasicColumn) column).collect(Collectors.toList())),
+          ImmutableList
+              .copyOf(columns.values().stream().map(column -> (BasicColumn) column).collect(Collectors.toList())),
           new SeekableSequenceInputStream(
               new RAFBufferedInputStream(file),
               new SeekableByteArrayInputStream(bos.toByteArray())));
@@ -233,8 +247,14 @@ public class TableWriter implements TableIO {
       public SourceValues read() throws IOException {
         do {
           Record record = reader.read();
-          if (record == RecordReader.EMPTY || !recordsToDelete.contains(record.getFilePointer())) {
+          if (record == RecordReader.EMPTY) {
             return record.sourceValues();
+          }
+          if (!recordsToDelete.contains(record.getFilePointer())) {
+            Object[] values = record.sourceValues().toArray();
+            return SourceValues.of(
+                values,
+                dependencyReader.readReferencedValues(values));
           }
         } while (true);
       }
@@ -253,5 +273,9 @@ public class TableWriter implements TableIO {
         }
       }
     };
+  }
+
+  public TableIndex getPrimaryKeyIndex() {
+    return uniqueIndexes.get(primaryKey.get().getColumn().getName());
   }
 }

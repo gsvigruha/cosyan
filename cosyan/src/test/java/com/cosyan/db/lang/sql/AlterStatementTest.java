@@ -52,7 +52,7 @@ public class AlterStatementTest extends UnitTestBase {
     {
       ErrorResult result = error("alter table t3 drop a;");
       assertEquals("Cannot drop column 'a', check 'c_a [(a > 1)]' fails.\n" +
-          "Column 'a' not found in table.", result.getError().getMessage());
+          "Column 'a' not found in table 't3'.", result.getError().getMessage());
     }
     assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("a")).getMeta().isDeleted());
     execute("create table t4 (a integer, constraint fk_a foreign key (a) references t3(b));");

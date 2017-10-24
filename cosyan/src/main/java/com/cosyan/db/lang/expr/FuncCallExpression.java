@@ -1,6 +1,5 @@
 package com.cosyan.db.lang.expr;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
 import com.cosyan.db.lang.sql.Parser.ParserException;
@@ -18,6 +17,7 @@ import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.SourceValues;
+import com.cosyan.db.model.TableDependencies;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.google.common.collect.ImmutableList;
@@ -58,7 +58,7 @@ public class FuncCallExpression extends Expression {
   }
 
   @Override
-  public DerivedColumn compile(TableMeta sourceTable, List<AggrColumn> aggrColumns)
+  public DerivedColumn compile(TableMeta sourceTable, TableDependencies deps)
       throws ModelException {
     if (isAggr()) {
       if (args.size() != 1) {
@@ -72,8 +72,11 @@ public class FuncCallExpression extends Expression {
       final TypedAggrFunction<?> function = BuiltinFunctions.aggrFunction(ident.getString(), argColumn.getType());
 
       AggrColumn aggrColumn = new AggrColumn(
-          function.getReturnType(), argColumn, outerTable.getKeyColumns().size() + aggrColumns.size(), function);
-      aggrColumns.add(aggrColumn);
+          function.getReturnType(),
+          argColumn,
+          outerTable.getKeyColumns().size() + deps.numAggrColumns(),
+          function);
+      deps.addAggrColumn(aggrColumn);
       return aggrColumn;
     } else {
       ImmutableList.Builder<ColumnMeta> argColumnsBuilder = ImmutableList.builder();

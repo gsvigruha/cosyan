@@ -71,7 +71,7 @@ public class DropStatementTest extends UnitTestBase {
     }
     {
       ErrorResult e = error("drop index t6.c;");
-      assertEquals("Column 'c' not found in table.", e.getError().getMessage());
+      assertEquals("Column 'c' not found in table 't6'.", e.getError().getMessage());
     }
   }
 }

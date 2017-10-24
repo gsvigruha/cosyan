@@ -46,13 +46,13 @@ public class InsertIntoStatement {
         }
       }
       indexes = indexesBuilder.build();
-      return MetaResources.insertIntoTable(tableMeta);
+      return MetaResources.insertIntoTable(tableMeta).merge(tableMeta.ruleDependenciesReadResources());
     }
 
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
       Object[] fullValues = new Object[tableMeta.columns().size()];
-      TableWriter writer = resources.writer(table);
+      TableWriter writer = tableMeta.writer(resources);
       for (ImmutableList<Literal> values : valuess) {
         if (columns.isPresent()) {
           Arrays.fill(fullValues, DataTypes.NULL);

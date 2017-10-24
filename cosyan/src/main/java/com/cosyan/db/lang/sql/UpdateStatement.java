@@ -14,6 +14,7 @@ import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.model.MaterializedTableMeta.TableWithDeps;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -38,20 +39,22 @@ public class UpdateStatement {
     private final ImmutableList<SetExpression> updates;
     private final Optional<Expression> where;
 
+    private MaterializedTableMeta tableMeta;
     private ColumnMeta whereColumn;
     private ImmutableMap<Integer, ColumnMeta> columnExprs;
 
     @Override
     public MetaResources compile(MetaRepo metaRepo) throws ModelException {
-      MaterializedTableMeta tableMeta = (MaterializedTableMeta) metaRepo.table(table);
+      tableMeta = metaRepo.table(table);
+      TableWithDeps tableWithDeps = tableMeta.toTableWithDeps();
       ImmutableMap.Builder<Integer, ColumnMeta> columnExprsBuilder = ImmutableMap.builder();
       for (SetExpression update : updates) {
-        ColumnMeta columnExpr = update.getValue().compile(tableMeta);
-        columnExprsBuilder.put(tableMeta.column(update.getIdent()).getIndex(), columnExpr);
+        ColumnMeta columnExpr = update.getValue().compile(tableWithDeps);
+        columnExprsBuilder.put(tableWithDeps.column(update.getIdent()).getIndex(), columnExpr);
       }
       columnExprs = columnExprsBuilder.build();
       if (where.isPresent()) {
-        whereColumn = where.get().compile(tableMeta);
+        whereColumn = where.get().compile(tableWithDeps);
       } else {
         whereColumn = ColumnMeta.TRUE_COLUMN;
       }
@@ -60,7 +63,7 @@ public class UpdateStatement {
 
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
-      TableWriter writer = resources.writer(table);
+      TableWriter writer = tableMeta.writer(resources);
       return new StatementResult(writer.update(columnExprs, whereColumn));
     }
 

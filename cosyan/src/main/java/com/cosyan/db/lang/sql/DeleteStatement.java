@@ -27,11 +27,12 @@ public class DeleteStatement {
     private final Ident table;
     private final Expression where;
 
+    private MaterializedTableMeta tableMeta;
     private ColumnMeta whereColumn;
 
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
-      TableWriter writer = resources.writer(table);
+      TableWriter writer = tableMeta.writer(resources);
       return new StatementResult(writer.delete(whereColumn));
     }
 
@@ -42,8 +43,8 @@ public class DeleteStatement {
 
     @Override
     public MetaResources compile(MetaRepo metaRepo) throws ModelException {
-      MaterializedTableMeta tableMeta = (MaterializedTableMeta) metaRepo.table(table);
-      whereColumn = where.compile(tableMeta);
+      tableMeta = (MaterializedTableMeta) metaRepo.table(table);
+      whereColumn = where.compile(tableMeta.toTableWithDeps());
       return MetaResources.deleteFromTable(tableMeta);
     }
   }

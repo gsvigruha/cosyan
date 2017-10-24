@@ -21,8 +21,6 @@ import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.Serializer;
-import com.cosyan.db.io.TableReader.MaterializedTableReader;
-import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.lock.LockManager;
@@ -41,6 +39,7 @@ import com.cosyan.db.model.TableMultiIndex.StringTableMultiIndex;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 import com.cosyan.db.transaction.Resources;
+import com.cosyan.db.transaction.Resources.ReaderFactory;
 import com.cosyan.db.util.Util;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -107,7 +106,7 @@ public class MetaRepo implements MetaRepoReader {
     }
     return tables.get(ident.getString());
   }
-  
+
   private RandomAccessFile randomAccessFile(MaterializedTableMeta table) throws IOException {
     String path = config.tableDir() + File.separator + table.tableName();
     try {
@@ -260,7 +259,7 @@ public class MetaRepo implements MetaRepoReader {
   }
 
   public Resources resources(MetaResources metaResources) throws IOException {
-    ImmutableMap.Builder<String, SeekableTableReader> readers = ImmutableMap.builder();
+    ImmutableMap.Builder<String, ReaderFactory> readers = ImmutableMap.builder();
     ImmutableMap.Builder<String, TableWriter> writers = ImmutableMap.builder();
     for (TableMetaResource resource : metaResources.tables()) {
       if (resource.isWrite()) {
@@ -272,13 +271,15 @@ public class MetaRepo implements MetaRepoReader {
             collectMultiIndexes(tableMeta),
             resource.isForeignIndexes() ? collectForeignIndexes(tableMeta) : ImmutableMultimap.of(),
             resource.isReverseForeignIndexes() ? collectReverseForeignIndexes(tableMeta) : ImmutableMultimap.of(),
-            ImmutableMap.copyOf(tableMeta.rules())));
+            ImmutableMap.copyOf(tableMeta.rules()),
+            tableMeta.primaryKey()));
       } else {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
-        readers.put(resource.getTableMeta().tableName(), new MaterializedTableReader(
-            randomAccessFile(tableMeta),
+        readers.put(resource.getTableMeta().tableName(), new ReaderFactory(
+            config.tableDir() + File.separator + tableMeta.tableName(),
             tableMeta.allColumns(),
-            collectIndexReaders(tableMeta)));
+            collectIndexReaders(tableMeta),
+            tableMeta.primaryKey()));
       }
     }
     return new Resources(readers.build(), writers.build());

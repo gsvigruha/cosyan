@@ -14,7 +14,6 @@ import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.SourceValues;
-import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.google.common.collect.ImmutableMap;
 
 public class CreateStatementTest extends UnitTestBase {
@@ -22,7 +21,7 @@ public class CreateStatementTest extends UnitTestBase {
   @Test
   public void testCreateTable() throws Exception {
     execute("create table t1 (a varchar not null, b integer, c float, d boolean, e timestamp);");
-    ExposedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
+    MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
     assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, false),
         tableMeta.column(new Ident("a")).getMeta());
     assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, false),
@@ -38,7 +37,7 @@ public class CreateStatementTest extends UnitTestBase {
   @Test
   public void testCreateTableUniqueColumns() throws Exception {
     execute("create table t2 (a varchar unique not null, b integer unique);");
-    ExposedTableMeta tableMeta = metaRepo.table(new Ident("t2"));
+    MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t2"));
     assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true),
         tableMeta.column(new Ident("a")).getMeta());
     assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, true),
@@ -48,7 +47,7 @@ public class CreateStatementTest extends UnitTestBase {
   @Test
   public void testCreateTablePrimaryKey() throws Exception {
     execute("create table t3 (a varchar, constraint pk_a primary key (a));");
-    ExposedTableMeta tableMeta = metaRepo.table(new Ident("t3"));
+    MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t3"));
     assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true, true),
         tableMeta.column(new Ident("a")).getMeta());
   }

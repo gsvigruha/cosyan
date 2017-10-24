@@ -1,13 +1,11 @@
 package com.cosyan.db.lang.expr;
 
-import java.util.List;
-
 import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
-import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.SourceValues;
+import com.cosyan.db.model.TableDependencies;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 
@@ -26,7 +24,7 @@ public class Literals {
     private final String value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable, List<AggrColumn> aggrColumns) {
+    public DerivedColumn compile(TableMeta sourceTable, TableDependencies deps) {
       return new DerivedColumn(DataTypes.StringType) {
 
         @Override
@@ -58,7 +56,7 @@ public class Literals {
     private final Long value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable, List<AggrColumn> aggrColumns) {
+    public DerivedColumn compile(TableMeta sourceTable, TableDependencies deps) {
       return new DerivedColumn(DataTypes.LongType) {
 
         @Override
@@ -90,7 +88,7 @@ public class Literals {
     private final Double value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable, List<AggrColumn> aggrColumns) {
+    public DerivedColumn compile(TableMeta sourceTable, TableDependencies deps) {
       return new DerivedColumn(DataTypes.DoubleType) {
 
         @Override

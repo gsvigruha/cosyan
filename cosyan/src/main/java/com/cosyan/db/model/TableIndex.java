@@ -14,6 +14,8 @@ public abstract class TableIndex implements IndexReader {
 
   public abstract boolean delete(Object key) throws IOException;
 
+  public abstract long get0(Object key) throws IOException;
+
   public abstract void commit() throws IOException;
 
   public abstract void rollback();
@@ -52,9 +54,14 @@ public abstract class TableIndex implements IndexReader {
 
     @Override
     public long[] get(Object key) throws IOException {
-      return new long[] { index.get((Long) key) };
+      return new long[] { get0(key) };
     }
 
+    @Override
+    public long get0(Object key) throws IOException {
+      return index.get((Long) key);
+    }
+    
     @Override
     public void commit() throws IOException {
       index.commit();
@@ -101,7 +108,12 @@ public abstract class TableIndex implements IndexReader {
 
     @Override
     public long[] get(Object key) throws IOException {
-      return new long[] { index.get((String) key) };
+      return new long[] { get0(key) };
+    }
+    
+    @Override
+    public long get0(Object key) throws IOException {
+      return index.get((String) key);
     }
 
     @Override

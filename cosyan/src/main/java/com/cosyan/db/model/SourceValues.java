@@ -1,6 +1,7 @@
 package com.cosyan.db.model;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -30,7 +31,7 @@ public class SourceValues {
   public static SourceValues of(Object[] sourceValues, Map<String, Object[]> referencedValues) {
     return new SourceValues(sourceValues, ImmutableMap.copyOf(referencedValues));
   }
-  
+
   public boolean isEmpty() {
     return false;
   }
@@ -55,5 +56,16 @@ public class SourceValues {
 
   public Object[] toArray() {
     return sourceValues;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    sb.append(ImmutableList.copyOf(sourceValues).stream().map(o -> o.toString()).collect(Collectors.joining(", ")));
+    sb.append("\n");
+    for (Map.Entry<String, Object[]> dep : referencedValues.entrySet()) {
+      sb.append(" " + dep.getKey() + " " + ImmutableList.copyOf(dep.getValue()).stream().map(o -> o.toString()).collect(Collectors.joining(", ")));
+    }
+    return sb.toString();
   }
 }

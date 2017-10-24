@@ -43,7 +43,6 @@ public class TransactionJournal {
       CRC32 checksum = new CRC32();
       dos.write(event);
       dos.writeLong(trxNumber);
-
       byte[] b = bos.toByteArray();
       checksum.update(b);
       dos.writeInt((int) checksum.getValue());

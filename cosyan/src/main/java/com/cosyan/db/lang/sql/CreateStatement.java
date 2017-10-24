@@ -21,6 +21,7 @@ import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.Rule;
+import com.cosyan.db.model.TableDependencies;
 import com.cosyan.db.transaction.MetaResources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -78,7 +79,11 @@ public class CreateStatement {
         } else if (constraint instanceof PrimaryKeyDefinition) {
           if (!primaryKey.isPresent()) {
             PrimaryKeyDefinition primaryKeyDefinition = (PrimaryKeyDefinition) constraint;
-            BasicColumn keyColumn = columns.get(primaryKeyDefinition.getKeyColumn().getString());
+            String pkColumnName = primaryKeyDefinition.getKeyColumn().getString();
+            if (!columns.containsKey(pkColumnName)) {
+              throw new ModelException(String.format("Invalid primary key definition: column '%s' not found.", pkColumnName));
+            }
+            BasicColumn keyColumn = columns.get(pkColumnName);
             keyColumn.setNullable(false);
             keyColumn.setUnique(true);
             keyColumn.setIndexed(true);
@@ -110,13 +115,15 @@ public class CreateStatement {
         tableMeta.addForeignKey(foreignKey);
       }
 
+      TableDependencies deps = new TableDependencies();
       for (RuleDefinition ruleDefinition : ruleDefinitions) {
-        Rule rule = ruleDefinition.compile(tableMeta);
+        Rule rule = ruleDefinition.compile(tableMeta, deps);
         if (rule.getType() != DataTypes.BoolType) {
           throw new ModelException("Constraint expression has to be boolean.");
         }
         tableMeta.addRule(rule.toBooleanRule());
       }
+      tableMeta.setRuleDependencies(deps);
 
       for (BasicColumn column : columns.values()) {
         if (column.isIndexed()) {
@@ -157,8 +164,8 @@ public class CreateStatement {
       return name + " [" + expr.print() + "]";
     }
 
-    public Rule compile(MaterializedTableMeta tableMeta) throws ModelException {
-      ColumnMeta column = expr.compile(tableMeta);
+    public Rule compile(MaterializedTableMeta tableMeta, TableDependencies deps) throws ModelException {
+      ColumnMeta column = expr.compile(tableMeta.toTableWithDeps(), deps);
       return new Rule(name, column, expr);
     }
 
