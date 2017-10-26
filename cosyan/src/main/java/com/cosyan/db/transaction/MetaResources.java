@@ -1,5 +1,8 @@
 package com.cosyan.db.transaction;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
@@ -41,7 +44,7 @@ public class MetaResources {
     }
 
     public ImmutableMap<String, Resource> resources() {
-      ImmutableMap.Builder<String, Resource> builder = ImmutableMap.builder();
+      Map<String, Resource> builder = new HashMap<>();
       String tableName = tableMeta.tableName();
       builder.put(tableName, new Resource(tableName, write));
       for (BasicColumn column : tableMeta.columns().values()) {
@@ -62,7 +65,7 @@ public class MetaResources {
           builder.put(indexName, new Resource(indexName, /* write= */false));
         }
       }
-      return builder.build();
+      return ImmutableMap.copyOf(builder);
     }
   }
 

@@ -23,7 +23,8 @@ public class SelectStatementTest extends UnitTestBase {
   @Test
   public void testValuesFromDependentTableMultipleLevels() {
     execute("create table t3 (a1 varchar, b1 integer, constraint pk_a primary key (a1));");
-    execute("create table t4 (a2 varchar, b2 varchar, constraint pk_a primary key (a2), constraint fk_b foreign key (b2) references t3(a1));");
+    execute("create table t4 (a2 varchar, b2 varchar, constraint pk_a primary key (a2), "
+        + "constraint fk_b foreign key (b2) references t3(a1));");
     execute("create table t5 (a3 varchar, constraint fk_a foreign key (a3) references t4(a2));");
     execute("insert into t3 values ('x', 1);");
     execute("insert into t4 values ('a', 'x'), ('b', 'x');");
@@ -33,5 +34,18 @@ public class SelectStatementTest extends UnitTestBase {
     assertValues(new Object[][] {
         { "a", "a", "x", "x", 1L },
         { "b", "b", "x", "x", 1L } }, result);
+  }
+
+  @Test
+  public void testMultipleForeignKeysToSameTable() {
+    execute("create table t6 (a1 varchar, b1 integer, constraint pk_a primary key (a1));");
+    execute("create table t7 (a2 varchar, b2 varchar, "
+        + "constraint fk_a foreign key (a2) references t6(a1), "
+        + "constraint fk_b foreign key (b2) references t6(a1));");
+    execute("insert into t6 values ('x', 1), ('y', 2);");
+    execute("insert into t7 values ('x', 'y');");
+    QueryResult result = query("select fk_a.a1, fk_a.b1, fk_b.a1 as a2, fk_b.b1 as b2 from t7;");
+    assertHeader(new String[] { "a1", "b1", "a2", "b2" }, result);
+    assertValues(new Object[][] { { "x", 1L, "y", 2L } }, result);
   }
 }
