@@ -2,54 +2,42 @@ package com.cosyan.db.io;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import com.cosyan.db.io.TableReader.SeekableTableReader;
+import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
-import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.model.TableIndex;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
-
-import lombok.Data;
 
 public class DependencyReader {
 
-  public static DependencyReader NO_DEPS = new DependencyReader(ImmutableList.of());
+  private final Resources resources;
 
-  @Data
-  public static class DependentTableReader {
-    private final ForeignKey foreignKey;
-    private final TableIndex index;
-    private final SeekableTableReader tableReader;
-    private final List<DependentTableReader> deps;
+  public DependencyReader(Resources resources) {
+    this.resources = resources;
   }
 
-  private final List<DependentTableReader> deps;
-
-  public DependencyReader(List<DependentTableReader> deps) {
-    this.deps = deps;
-  }
-
-  public Map<String, Object[]> readReferencedValues(Object[] sourceValues) throws IOException {
-    Map<String, Object[]> referencedValues = new HashMap<>();
-    readReferencedValues(referencedValues, "", sourceValues, deps);
-    return referencedValues;
-  }
-
-  private void readReferencedValues(
-      Map<String, Object[]> referencedValues,
-      String prefix,
-      Object[] parentTableValues,
-      List<DependentTableReader> dependencies) throws IOException {
-    for (DependentTableReader reader : dependencies) {
-      Object foreignKeyValue = parentTableValues[reader.foreignKey.getColumn().getIndex()];
-      long foreignKeyFilePointer = reader.index.get0(foreignKeyValue);
-      reader.tableReader.seek(foreignKeyFilePointer);
-      SourceValues sourceValues = reader.tableReader.read();
-      String tableReferenceName = prefix + reader.foreignKey.getName();
-      referencedValues.put(tableReferenceName, sourceValues.toArray());
-      readReferencedValues(referencedValues, tableReferenceName + ".", sourceValues.toArray(), reader.deps);
+  public void readReferencedValues(
+      Object[] sourceValues, HashMap<String, Object[]> referencedValues, ImmutableList<ForeignKey> foreignKeyChain)
+      throws IOException {
+    Object[] parentTableValues = sourceValues;
+    String prefix = "";
+    for (ForeignKey foreignKey : foreignKeyChain) {
+      prefix = prefix.isEmpty() ? foreignKey.getName() : prefix + "." + foreignKey.getName();
+      Object[] newSourceValues = referencedValues.get(prefix);
+      if (newSourceValues == null) {
+        Object foreignKeyValue = parentTableValues[foreignKey.getColumn().getIndex()];
+        Ident table = new Ident(foreignKey.getRefTable().tableName());
+        SeekableTableReader reader = resources.createReader(table);
+        TableIndex index = resources.getPrimaryKeyIndex(table);
+        long foreignKeyFilePointer = index.get0(foreignKeyValue);
+        reader.seek(foreignKeyFilePointer);
+        newSourceValues = reader.read().toArray();
+        referencedValues.put(prefix, newSourceValues);
+        reader.close();
+      }
+      parentTableValues = newSourceValues;
     }
   }
 }

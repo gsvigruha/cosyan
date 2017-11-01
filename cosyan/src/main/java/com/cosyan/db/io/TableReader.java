@@ -18,6 +18,8 @@ import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.SourceValues;
+import com.cosyan.db.model.SourceValues.ReferencingSourceValues;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -68,16 +70,16 @@ public abstract class TableReader implements TableIO {
     private final RecordReader reader;
     private final RAFBufferedInputStream bufferedRAF;
     private final ImmutableMap<String, IndexReader> indexes;
-    private final DependencyReader dependencyReader;
+    private final Resources resources;
 
     public MaterializedTableReader(
         RandomAccessFile raf,
         ImmutableList<BasicColumn> columns,
         ImmutableMap<String, IndexReader> indexes,
-        DependencyReader dependencyReader) throws IOException {
+        Resources resources) throws IOException {
       super(columns);
       this.indexes = indexes;
-      this.dependencyReader = dependencyReader;
+      this.resources = resources;
       this.bufferedRAF = new RAFBufferedInputStream(raf);
       this.reader = new RecordReader(columns, bufferedRAF);
     }
@@ -101,9 +103,7 @@ public abstract class TableReader implements TableIO {
       }
 
       Object[] values = record.sourceValues().toArray();
-      return SourceValues.of(
-          values,
-          dependencyReader.readReferencedValues(values));
+      return ReferencingSourceValues.of(resources, values);
     }
 
     @Override

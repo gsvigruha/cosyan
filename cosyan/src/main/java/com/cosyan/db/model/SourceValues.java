@@ -1,45 +1,73 @@
 package com.cosyan.db.model;
 
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.io.IOException;
+import java.util.HashMap;
 
+import com.cosyan.db.io.DependencyReader;
+import com.cosyan.db.model.MaterializedTableMeta.MaterializedColumn;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 
 public class SourceValues {
 
-  private final Object[] sourceValues;
-  private final ImmutableMap<String, Object[]> referencedValues;
+  protected final Object[] sourceValues;
 
-  public SourceValues(Object[] sourceValues, ImmutableMap<String, Object[]> referencedValues) {
+  public SourceValues(Object[] sourceValues) {
     this.sourceValues = sourceValues;
-    this.referencedValues = referencedValues;
   }
 
   public Object sourceValue(int index) {
     return sourceValues[index];
   }
 
-  public Object refTableValue(String tableName, int index) {
-    return referencedValues.get(tableName)[index];
+  public Object refTableValue(MaterializedColumn column) throws IOException {
+    throw new UnsupportedOperationException();
   }
 
   public static SourceValues of(Object[] sourceValues) {
-    return new SourceValues(sourceValues, ImmutableMap.of());
-  }
-
-  public static SourceValues of(Object[] sourceValues, Map<String, Object[]> referencedValues) {
-    return new SourceValues(sourceValues, ImmutableMap.copyOf(referencedValues));
+    return new SourceValues(sourceValues);
   }
 
   public boolean isEmpty() {
     return false;
   }
 
+  public static class ReferencingSourceValues extends SourceValues {
+
+    private final DependencyReader reader;
+    private final HashMap<String, Object[]> referencedValues;
+
+    public ReferencingSourceValues(Resources resources, Object[] sourceValues,
+        HashMap<String, Object[]> referencedValues) {
+      super(sourceValues);
+      this.reader = new DependencyReader(resources);
+      this.referencedValues = referencedValues;
+    }
+
+    @Override
+    public Object refTableValue(MaterializedColumn column) throws IOException {
+      Object[] values = referencedValues.get(column.tableIdent());
+      if (values == null) {
+        reader.readReferencedValues(sourceValues, referencedValues, column.foreignKeyChain());
+        values = referencedValues.get(column.tableIdent());
+      }
+      return values[column.getIndex()];
+    }
+
+    public static ReferencingSourceValues of(Resources resources, Object[] sourceValues) {
+      return new ReferencingSourceValues(resources, sourceValues, new HashMap<>());
+    }
+
+    public static ReferencingSourceValues of(
+        Resources resources, Object[] sourceValues, HashMap<String, Object[]> initialReferencedValues) {
+      return new ReferencingSourceValues(resources, sourceValues, initialReferencedValues);
+    }
+  }
+
   private static class EmptySourceValues extends SourceValues {
 
     public EmptySourceValues() {
-      super(new Object[] {}, ImmutableMap.of());
+      super(new Object[] {});
     }
 
     @Override
@@ -56,16 +84,5 @@ public class SourceValues {
 
   public Object[] toArray() {
     return sourceValues;
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append(ImmutableList.copyOf(sourceValues).stream().map(o -> o.toString()).collect(Collectors.joining(", ")));
-    sb.append("\n");
-    for (Map.Entry<String, Object[]> dep : referencedValues.entrySet()) {
-      sb.append(" " + dep.getKey() + " " + ImmutableList.copyOf(dep.getValue()).stream().map(o -> o.toString()).collect(Collectors.joining(", ")));
-    }
-    return sb.toString();
   }
 }

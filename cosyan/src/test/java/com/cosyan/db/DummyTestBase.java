@@ -10,7 +10,6 @@ import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 
 import com.cosyan.db.conf.Config;
-import com.cosyan.db.io.DependencyReader;
 import com.cosyan.db.io.IOTestUtil.DummyMaterializedTableMeta;
 import com.cosyan.db.io.IOTestUtil.DummyTableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
@@ -50,7 +49,7 @@ public abstract class DummyTestBase {
   public static void register(DummyMaterializedTableMeta table) throws IOException {
     readers.put(table.tableName(), new ReaderFactory(null, null, null, null) {
           @Override
-          public SeekableTableReader create(DependencyReader dependencyReader) throws IOException {
+          public SeekableTableReader create(Resources resources) throws IOException {
             return new DummyTableReader(table.columns(), table.getData());
           }
         });

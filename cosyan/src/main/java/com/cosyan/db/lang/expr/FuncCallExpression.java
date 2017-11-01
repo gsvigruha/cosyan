@@ -1,5 +1,6 @@
 package com.cosyan.db.lang.expr;
 
+import java.io.IOException;
 import java.util.stream.Collectors;
 
 import com.cosyan.db.lang.sql.Parser.ParserException;
@@ -12,12 +13,13 @@ import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
+import com.cosyan.db.model.ColumnMeta.DerivedColumnWithDeps;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.SourceValues;
-import com.cosyan.db.model.TableDependencies;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.google.common.collect.ImmutableList;
@@ -58,7 +60,7 @@ public class FuncCallExpression extends Expression {
   }
 
   @Override
-  public DerivedColumn compile(TableMeta sourceTable, TableDependencies deps)
+  public DerivedColumn compile(TableMeta sourceTable, ExtraInfoCollector collector)
       throws ModelException {
     if (isAggr()) {
       if (args.size() != 1) {
@@ -74,12 +76,11 @@ public class FuncCallExpression extends Expression {
       AggrColumn aggrColumn = new AggrColumn(
           function.getReturnType(),
           argColumn,
-          outerTable.getKeyColumns().size() + deps.numAggrColumns(),
+          outerTable.getKeyColumns().size() + collector.numAggrColumns(),
           function);
-      deps.addAggrColumn(aggrColumn);
+      collector.addAggrColumn(aggrColumn);
       return aggrColumn;
     } else {
-      ImmutableList.Builder<ColumnMeta> argColumnsBuilder = ImmutableList.builder();
       SimpleFunction<?> function;
       ImmutableList<Expression> allArgs;
       if (ident.isSimple()) {
@@ -90,19 +91,26 @@ public class FuncCallExpression extends Expression {
         Expression objExpr = new IdentExpression(new Ident(ident.head()));
         allArgs = ImmutableList.<Expression>builder().add(objExpr).addAll(args).build();
       }
+
+      ImmutableList.Builder<ColumnMeta> argColumnsBuilder = ImmutableList.builder();
+      TableDependencies tableDependencies = new TableDependencies();
       for (int i = 0; i < function.getArgTypes().size(); i++) {
         ColumnMeta col = allArgs.get(i).compile(sourceTable);
         SyntaxTree.assertType(function.getArgTypes().get(i), col.getType());
         argColumnsBuilder.add(col);
+        tableDependencies.add(col.tableDependencies());
       }
       ImmutableList<ColumnMeta> argColumns = argColumnsBuilder.build();
 
-      return new DerivedColumn(function.getReturnType()) {
+      return new DerivedColumnWithDeps(function.getReturnType(), tableDependencies) {
 
         @Override
-        public Object getValue(SourceValues values) {
-          ImmutableList<Object> params = ImmutableList
-              .copyOf(argColumns.stream().map(col -> col.getValue(values)).iterator());
+        public Object getValue(SourceValues values) throws IOException {
+          ImmutableList.Builder<Object> paramsBuilder = ImmutableList.builder();
+          for (ColumnMeta column : argColumns) {
+            paramsBuilder.add(column.getValue(values));
+          }
+          ImmutableList<Object> params = paramsBuilder.build();
           for (Object param : params) {
             if (param == DataTypes.NULL) {
               return DataTypes.NULL;

@@ -2,6 +2,7 @@ package com.cosyan.db.lang.expr;
 
 import static com.cosyan.db.lang.sql.SyntaxTree.assertType;
 
+import java.io.IOException;
 import java.util.Date;
 
 import com.cosyan.db.lang.sql.Parser.ParserException;
@@ -13,9 +14,9 @@ import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.SourceValues;
-import com.cosyan.db.model.TableDependencies;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 
@@ -63,7 +64,7 @@ public class BinaryExpression extends Expression {
     }
 
     @Override
-    public Object getValue(SourceValues values) {
+    public Object getValue(SourceValues values) throws IOException {
       Object l = leftColumn.getValue(values);
       Object r = rightColumn.getValue(values);
       if (l == DataTypes.NULL || r == DataTypes.NULL) {
@@ -73,14 +74,20 @@ public class BinaryExpression extends Expression {
       }
     }
 
+    @Override
+    public TableDependencies tableDependencies() {
+      // Left and rightColumn is not used elsewhere so mutability is ok.
+      return leftColumn.tableDependencies().add(rightColumn.tableDependencies());
+    }
+
     protected abstract Object getValueImpl(Object left, Object right);
   }
 
   @Override
-  public DerivedColumn compile(TableMeta sourceTable, TableDependencies deps)
+  public DerivedColumn compile(TableMeta sourceTable, ExtraInfoCollector collector)
       throws ModelException {
-    final ColumnMeta leftColumn = left.compile(sourceTable, deps);
-    final ColumnMeta rightColumn = right.compile(sourceTable, deps);
+    final ColumnMeta leftColumn = left.compile(sourceTable, collector);
+    final ColumnMeta rightColumn = right.compile(sourceTable, collector);
 
     if (token.is(Tokens.AND)) {
       assertType(DataTypes.BoolType, leftColumn.getType());

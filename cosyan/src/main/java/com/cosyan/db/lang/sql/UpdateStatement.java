@@ -58,13 +58,18 @@ public class UpdateStatement {
       } else {
         whereColumn = ColumnMeta.TRUE_COLUMN;
       }
-      return MetaResources.updateTable(tableMeta);
+      return MetaResources.updateTable(tableMeta)
+          .merge(tableMeta.ruleDependenciesReadResources())
+          .merge(tableMeta.reverseRuleDependenciesReadResources());
     }
 
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
+      // The rules must be re-evaluated for updated records. In addition, rules of other
+      // tables referencing this table have to be re-evaluated as well. We need the rule
+      // dependencies for the rules of this table and referencing rules.
       TableWriter writer = tableMeta.writer(resources);
-      return new StatementResult(writer.update(columnExprs, whereColumn));
+      return new StatementResult(writer.update(resources, columnExprs, whereColumn));
     }
 
     @Override

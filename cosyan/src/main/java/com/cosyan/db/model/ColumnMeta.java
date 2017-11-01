@@ -1,7 +1,10 @@
 package com.cosyan.db.model;
 
+import java.io.IOException;
+
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.Dependencies.TableDependencies;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -11,7 +14,9 @@ public abstract class ColumnMeta {
 
   protected final DataType<?> type;
 
-  public abstract Object getValue(SourceValues values);
+  public abstract Object getValue(SourceValues values) throws IOException;
+
+  public abstract TableDependencies tableDependencies();
 
   @Data
   @EqualsAndHashCode(callSuper = true)
@@ -58,11 +63,31 @@ public abstract class ColumnMeta {
     public Object getValue(SourceValues values) {
       return values.sourceValue(index);
     }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return new TableDependencies();
+    }
   }
 
   public static abstract class DerivedColumn extends ColumnMeta {
     public DerivedColumn(DataType<?> type) {
       super(type);
+    }
+  }
+
+  public static abstract class DerivedColumnWithDeps extends DerivedColumn {
+
+    private final TableDependencies deps;
+
+    public DerivedColumnWithDeps(DataType<?> type, TableDependencies deps) {
+      super(type);
+      this.deps = deps;
+    }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return deps;
     }
   }
 
@@ -84,12 +109,17 @@ public abstract class ColumnMeta {
       return values.sourceValue(index);
     }
 
-    public Object getInnerValue(SourceValues values) {
+    public Object getInnerValue(SourceValues values) throws IOException {
       return baseColumn.getValue(values);
     }
 
     public TypedAggrFunction<?> getFunction() {
       return function;
+    }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return baseColumn.tableDependencies();
     }
   }
 
@@ -105,13 +135,18 @@ public abstract class ColumnMeta {
     }
 
     @Override
-    public Object getValue(SourceValues values) {
+    public Object getValue(SourceValues values) throws IOException {
       return baseColumn.getValue(values);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public int compare(Object x, Object y) {
       return asc ? ((Comparable) x).compareTo(y) : ((Comparable) y).compareTo(x);
+    }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return baseColumn.tableDependencies();
     }
   }
 
@@ -120,6 +155,11 @@ public abstract class ColumnMeta {
     @Override
     public Object getValue(SourceValues values) {
       return true;
+    }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return new TableDependencies();
     }
   };
 }

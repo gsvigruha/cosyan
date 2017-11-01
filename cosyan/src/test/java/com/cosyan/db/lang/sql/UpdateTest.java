@@ -135,10 +135,35 @@ public class UpdateTest extends UnitTestBase {
     QueryResult r1 = query("select a, fk_a.a as a2, fk_a.b as b2 from t10;");
     assertHeader(new String[] { "a", "a2", "b2" }, r1);
     assertValues(new Object[][] { { 1L, 1L, 1L } }, r1);
+    TableIndex t9a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t9"))).get("a");
+    assertEquals(0L, t9a.get0(1L));
+    TableMultiIndex t10a = metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t10"))).get("a");
+    assertEquals(0L, t10a.get(1L)[0]);
 
     execute("update t9 set b = 2;");
-
     QueryResult r2 = query("select a, fk_a.a as a2, fk_a.b as b2 from t10;");
     assertValues(new Object[][] { { 1L, 1L, 2L } }, r2);
+    assertEquals(27L, t9a.get0(1L));
+    assertEquals(0L, t10a.get(1L)[0]);
+  }
+
+  @Test
+  public void testUpdateReferencedByRules() throws Exception {
+    execute("create table t11 (a integer, b integer, constraint pk_a primary key (a));");
+    execute("create table t12 (a integer, constraint fk_a foreign key (a) references t11(a),"
+        + "constraint c_b check (fk_a.b > 0));");
+    execute("insert into t11 values (1, 1);");
+    execute("insert into t12 values (1);");
+
+    QueryResult r1 = query("select a, fk_a.a as a2, fk_a.b as b2 from t12;");
+    assertHeader(new String[] { "a", "a2", "b2" }, r1);
+    assertValues(new Object[][] { { 1L, 1L, 1L } }, r1);
+
+    execute("update t11 set b = 2;");
+    QueryResult r2 = query("select a, fk_a.a as a2, fk_a.b as b2 from t12;");
+    assertValues(new Object[][] { { 1L, 1L, 2L } }, r2);
+
+    ErrorResult e = error("update t11 set b = 0;");
+    assertEquals("Referencing constraint check t12.c_b failed.", e.getError().getMessage());
   }
 }

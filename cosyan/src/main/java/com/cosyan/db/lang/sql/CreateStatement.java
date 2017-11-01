@@ -20,8 +20,8 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.model.MaterializedTableMeta.TableWithDeps;
 import com.cosyan.db.model.Rule;
-import com.cosyan.db.model.TableDependencies;
 import com.cosyan.db.transaction.MetaResources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -67,8 +67,8 @@ public class CreateStatement {
       }
 
       List<RuleDefinition> ruleDefinitions = Lists.newArrayList();
+      List<ForeignKeyDefinition> foreignKeyDefinitions = Lists.newArrayList();
       Optional<PrimaryKey> primaryKey = Optional.empty();
-      List<ForeignKey> foreignKeys = Lists.newArrayList();
       for (ConstraintDefinition constraint : constraints) {
         if (columns.containsKey(constraint.getName())) {
           throw new ModelException("Name collision for constraint '" + constraint.getName() + "'.");
@@ -93,16 +93,7 @@ public class CreateStatement {
           }
         } else if (constraint instanceof ForeignKeyDefinition) {
           ForeignKeyDefinition foreignKey = (ForeignKeyDefinition) constraint;
-          BasicColumn keyColumn = columns.get(foreignKey.getKeyColumn().getString());
-          MaterializedTableMeta refTable = metaRepo.table(foreignKey.getRefTable());
-          BasicColumn refColumn = refTable.columns().get(foreignKey.getRefColumn().getString());
-          if (!refColumn.isUnique()) {
-            throw new ModelException("Foreign key reference column has to be unique.");
-          }
-          // Unique keys are indexed by default.
-          keyColumn.setIndexed(true);
-          foreignKeys.add(
-              new ForeignKey(foreignKey.getName(), keyColumn, refTable, refColumn));
+          foreignKeyDefinitions.add(foreignKey);
         }
       }
 
@@ -111,19 +102,27 @@ public class CreateStatement {
           columns.values(),
           primaryKey);
 
-      for (ForeignKey foreignKey : foreignKeys) {
-        tableMeta.addForeignKey(foreignKey);
+      for (ForeignKeyDefinition foreignKeyDefinition : foreignKeyDefinitions) {
+        BasicColumn keyColumn = columns.get(foreignKeyDefinition.getKeyColumn().getString());
+        MaterializedTableMeta refTable = metaRepo.table(foreignKeyDefinition.getRefTable());
+        BasicColumn refColumn = refTable.columns().get(foreignKeyDefinition.getRefColumn().getString());
+        if (!refColumn.isUnique()) {
+          throw new ModelException("Foreign key reference column has to be unique.");
+        }
+        // Unique keys are indexed by default.
+        keyColumn.setIndexed(true);
+        tableMeta.addForeignKey(new ForeignKey(
+            foreignKeyDefinition.getName(), tableMeta, keyColumn, refTable, refColumn));
       }
 
-      TableDependencies deps = new TableDependencies();
+      TableWithDeps tableWithDeps = tableMeta.toTableWithDeps();
       for (RuleDefinition ruleDefinition : ruleDefinitions) {
-        Rule rule = ruleDefinition.compile(tableMeta, deps);
+        Rule rule = ruleDefinition.compile(tableWithDeps);
         if (rule.getType() != DataTypes.BoolType) {
           throw new ModelException("Constraint expression has to be boolean.");
         }
         tableMeta.addRule(rule.toBooleanRule());
       }
-      tableMeta.setRuleDependencies(deps);
 
       for (BasicColumn column : columns.values()) {
         if (column.isIndexed()) {
@@ -164,9 +163,9 @@ public class CreateStatement {
       return name + " [" + expr.print() + "]";
     }
 
-    public Rule compile(MaterializedTableMeta tableMeta, TableDependencies deps) throws ModelException {
-      ColumnMeta column = expr.compile(tableMeta.toTableWithDeps(), deps);
-      return new Rule(name, column, expr);
+    public Rule compile(TableWithDeps tableWithDeps) throws ModelException {
+      ColumnMeta column = expr.compile(tableWithDeps);
+      return new Rule(name, column, expr, column.tableDependencies());
     }
 
     public MetaResources readResources(MaterializedTableMeta tableMeta) throws ModelException {

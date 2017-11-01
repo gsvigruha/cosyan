@@ -64,12 +64,14 @@ public class CreateStatementTest extends UnitTestBase {
     MaterializedTableMeta t4 = metaRepo.table(new Ident("t4"));
     assertEquals(ImmutableMap.of("fk_b", new ForeignKey(
         "fk_b",
+        t5,
         (BasicColumn) t5.column(new Ident("b")).getMeta(),
         t4,
         (BasicColumn) t4.column(new Ident("a")).getMeta())),
         t5.foreignKeys());
     assertEquals(ImmutableMap.of("fk_b", new ReverseForeignKey(
         "fk_b",
+        t4,
         (BasicColumn) t4.column(new Ident("a")).getMeta(),
         t5,
         (BasicColumn) t5.column(new Ident("b")).getMeta())),
@@ -112,11 +114,42 @@ public class CreateStatementTest extends UnitTestBase {
     execute("create table t11 (a varchar,"
         + "constraint fk_a foreign key (a) references t10(a),"
         + "constraint c_b check (fk_a.b > 1));");
-    Rule rule = metaRepo.table(new Ident("t11")).rules().get("c_b");
+    MaterializedTableMeta t11 = metaRepo.table(new Ident("t11"));
+    Rule rule = t11.rules().get("c_b");
     assertEquals("c_b", rule.getName());
-    assertEquals(false, rule.getColumn().getValue(
-        SourceValues.of(new Object[] { "x" }, ImmutableMap.of("fk_a", new Object[] { "x", 0L }))));
-    assertEquals(true, rule.getColumn().getValue(
-        SourceValues.of(new Object[] { "x" }, ImmutableMap.of("fk_a", new Object[] { "x", 2L }))));
+
+    assertEquals(1, t11.ruleDependencies().size());
+    assertEquals(0, t11.reverseRuleDependencies().getColumnDeps().size());
+    assertEquals("fk_a", t11.ruleDependencies().get("fk_a").getForeignKey().getName());
+    assertEquals("b", t11.ruleDependencies().get("fk_a").getColumnDeps().get("b").getName());
+
+    MaterializedTableMeta t10 = metaRepo.table(new Ident("t10"));
+    assertEquals(0, t10.ruleDependencies().size());
+    assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().size());
+    assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().get("b").size());
+    assertEquals("fk_a", t10.reverseRuleDependencies().getColumnDeps().get("b").get("fk_a").getForeignKey().getName());
+    assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().get("b").get("fk_a").getRules().size());
+    assertEquals("c_b", t10.reverseRuleDependencies().getColumnDeps().get("b").get("fk_a").getRules().get(0).getName());
+  }
+
+  @Test
+  public void testCreateReferencingRuleMultipleLevel() throws Exception {
+    execute("create table t12 (a varchar, b integer, constraint pk_a primary key (a));");
+    execute("create table t13 (c varchar, d varchar, constraint pk_c primary key (c), "
+        + "constraint fk_d foreign key (d) references t12(a))");
+    execute("create table t14 (e varchar, constraint fk_e foreign key (e) references t13(c), "
+        + "constraint c_b check (fk_e.fk_d.b > 1));");
+
+    MaterializedTableMeta t12 = metaRepo.table(new Ident("t12"));
+    assertEquals(0, t12.ruleDependencies().size());
+    assertEquals(1, t12.reverseRuleDependencies().getColumnDeps().size());
+
+    MaterializedTableMeta t13 = metaRepo.table(new Ident("t13"));
+    assertEquals(0, t13.ruleDependencies().size());
+    assertEquals(0, t13.reverseRuleDependencies().getColumnDeps().size());
+
+    MaterializedTableMeta t14 = metaRepo.table(new Ident("t14"));
+    assertEquals(1, t14.ruleDependencies().size());
+    assertEquals(0, t14.reverseRuleDependencies().getColumnDeps().size());
   }
 }

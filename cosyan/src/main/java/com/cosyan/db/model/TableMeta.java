@@ -8,6 +8,7 @@ import com.cosyan.db.io.TableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Keys.ForeignKey;
+import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -36,7 +37,11 @@ public abstract class TableMeta {
     }
 
     public ImmutableList<ForeignKey> foreignKeyChain() {
-      throw new UnsupportedOperationException();
+      return ImmutableList.of();
+    }
+
+    public ImmutableList<ReverseForeignKey> reverseForeignKeyChain() {
+      return ImmutableList.of();
     }
   }
 

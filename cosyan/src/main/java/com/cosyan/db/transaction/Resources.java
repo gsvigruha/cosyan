@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Optional;
 
-import com.cosyan.db.io.DependencyReader;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
@@ -12,6 +11,7 @@ import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.PrimaryKey;
+import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.TableIndex;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -34,16 +34,20 @@ public class Resources {
       this.primaryKey = primaryKey;
     }
 
-    public SeekableTableReader create(DependencyReader dependencyReader) throws IOException {
+    public SeekableTableReader create(Resources resources) throws IOException {
       return new MaterializedTableReader(
           new RandomAccessFile(fileName, "rw"),
           columns,
           indexReaders,
-          dependencyReader);
+          resources);
     }
 
     public TableIndex getPrimaryKeyIndex() {
       return (TableIndex) indexReaders.get(primaryKey.get().getColumn().getName());
+    }
+    
+    public IndexReader getIndex(BasicColumn basicColumn) {
+      return indexReaders.get(basicColumn.getName());
     }
   }
 
@@ -70,25 +74,15 @@ public class Resources {
     }
   }
 
-  public TableWriter writer(Ident table, DependencyReader dependencyReader) {
-    TableWriter writer = writers.get(table.getString());
-    writer.setDependencyReader(dependencyReader);
-    return writer;
+  public TableWriter writer(Ident table) {
+    return writers.get(table.getString());
   }
 
   public SeekableTableReader createReader(Ident table) throws IOException {
     if (readers.containsKey(table.getString())) {
-      return readers.get(table.getString()).create(DependencyReader.NO_DEPS);
+      return readers.get(table.getString()).create(this);
     } else {
-      return writers.get(table.getString()).createReader(DependencyReader.NO_DEPS);
-    }
-  }
-
-  public SeekableTableReader createReader(Ident table, DependencyReader dependencyReader) throws IOException {
-    if (readers.containsKey(table.getString())) {
-      return readers.get(table.getString()).create(dependencyReader);
-    } else {
-      return writers.get(table.getString()).createReader(dependencyReader);
+      return writers.get(table.getString()).createReader(this);
     }
   }
 
@@ -97,6 +91,15 @@ public class Resources {
       return readers.get(table.getString()).getPrimaryKeyIndex();
     } else {
       return writers.get(table.getString()).getPrimaryKeyIndex();
+    }
+  }
+
+  public IndexReader getIndex(ReverseForeignKey foreignKey) {
+    String table = foreignKey.getRefTable().tableName();
+    if (readers.containsKey(table)) {
+      return readers.get(table).getIndex(foreignKey.getRefColumn());
+    } else {
+      return writers.get(table).getIndex(foreignKey.getRefColumn().getName());
     }
   }
 }

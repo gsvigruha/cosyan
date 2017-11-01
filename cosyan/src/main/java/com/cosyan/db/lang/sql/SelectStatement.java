@@ -13,6 +13,7 @@ import java.util.Optional;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.lang.expr.BinaryExpression;
 import com.cosyan.db.lang.expr.Expression;
+import com.cosyan.db.lang.expr.Expression.ExtraInfoCollector;
 import com.cosyan.db.lang.expr.Expression.IdentExpression;
 import com.cosyan.db.lang.sql.Result.QueryResult;
 import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
@@ -43,7 +44,6 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.MaterializedTableMeta.TableWithDeps;
 import com.cosyan.db.model.SourceValues;
-import com.cosyan.db.model.TableDependencies;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -72,22 +72,22 @@ public class SelectStatement {
 
     public ExposedTableMeta compileTable(MetaRepo metaRepo) throws ModelException {
       ExposedTableMeta sourceTable = table.compile(metaRepo);
-      TableDependencies deps = new TableDependencies();
-      ExposedTableMeta filteredTable = filteredTable(metaRepo, sourceTable, where, deps);
+      ExtraInfoCollector collector = new ExtraInfoCollector();
+      ExposedTableMeta filteredTable = filteredTable(metaRepo, sourceTable, where, collector);
       DerivedTableMeta fullTable;
       if (hasAggregation(columns) || groupBy.isPresent()) {
         KeyValueTableMeta intermediateTable = keyValueTable(metaRepo, filteredTable, groupBy);
-        ImmutableMap<String, ColumnMeta> tableColumns = tableColumns(metaRepo, intermediateTable, columns, deps);
-        ColumnMeta havingColumn = havingExpression(metaRepo, intermediateTable, having, deps);
+        ImmutableMap<String, ColumnMeta> tableColumns = tableColumns(metaRepo, intermediateTable, columns, collector);
+        ColumnMeta havingColumn = havingExpression(metaRepo, intermediateTable, having, collector);
         if (groupBy.isPresent()) {
           fullTable = new DerivedTableMeta(new KeyValueAggrTableMeta(
               intermediateTable,
-              deps.aggrColumns(),
+              collector.aggrColumns(),
               havingColumn), tableColumns);
         } else {
           fullTable = new DerivedTableMeta(new GlobalAggrTableMeta(
               intermediateTable,
-              deps.aggrColumns(),
+              collector.aggrColumns(),
               havingColumn), tableColumns);
         }
       } else {
@@ -127,6 +127,7 @@ public class SelectStatement {
         values.add(row.toList());
         row = reader.read();
       }
+      reader.close();
       return new QueryResult(reader.getColumns().keySet().asList(), values);
     }
 
@@ -139,11 +140,11 @@ public class SelectStatement {
         MetaRepo metaRepo,
         TableMeta sourceTable,
         ImmutableList<Expression> columns,
-        TableDependencies deps) throws ModelException {
+        ExtraInfoCollector collector) throws ModelException {
       LinkedListMultimap<String, ColumnMeta> tableColumns = LinkedListMultimap.create();
       int i = 0;
       for (Expression expr : columns) {
-        tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, deps));
+        tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, collector));
       }
       return deduplicateColumns(tableColumns);
     }
@@ -180,10 +181,10 @@ public class SelectStatement {
     }
 
     private ExposedTableMeta filteredTable(
-        MetaRepo metaRepo, ExposedTableMeta sourceTable, Optional<Expression> where, TableDependencies deps)
+        MetaRepo metaRepo, ExposedTableMeta sourceTable, Optional<Expression> where, ExtraInfoCollector collector)
         throws ModelException {
       if (where.isPresent()) {
-        ColumnMeta whereColumn = where.get().compile(sourceTable, deps);
+        ColumnMeta whereColumn = where.get().compile(sourceTable, collector);
         assertType(DataTypes.BoolType, whereColumn.getType());
         if (sourceTable instanceof TableWithDeps) {
           ImmutableList<VariableEquals> clauses = PredicateHelper.extractClauses(where.get());
@@ -209,9 +210,9 @@ public class SelectStatement {
     }
 
     private ColumnMeta havingExpression(MetaRepo metaRepo, TableMeta sourceTable,
-        Optional<Expression> having, TableDependencies deps) throws ModelException {
+        Optional<Expression> having, ExtraInfoCollector collector) throws ModelException {
       if (having.isPresent()) {
-        ColumnMeta havingColumn = having.get().compile(sourceTable, deps);
+        ColumnMeta havingColumn = having.get().compile(sourceTable, collector);
         assertType(DataTypes.BoolType, havingColumn.getType());
         return havingColumn;
       } else {
@@ -337,8 +338,8 @@ public class SelectStatement {
 
     @Override
     public ColumnMeta compile(
-        TableMeta sourceTable, TableDependencies deps) throws ModelException {
-      return expr.compile(sourceTable, deps);
+        TableMeta sourceTable, ExtraInfoCollector collector) throws ModelException {
+      return expr.compile(sourceTable, collector);
     }
 
     @Override
@@ -379,7 +380,7 @@ public class SelectStatement {
   public static class AsteriskExpression extends Expression {
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable, TableDependencies deps) {
+    public DerivedColumn compile(TableMeta sourceTable, ExtraInfoCollector collector) {
       throw new UnsupportedOperationException();
     }
 

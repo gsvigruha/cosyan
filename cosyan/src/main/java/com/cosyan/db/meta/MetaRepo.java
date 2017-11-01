@@ -272,6 +272,7 @@ public class MetaRepo implements MetaRepoReader {
             resource.isForeignIndexes() ? collectForeignIndexes(tableMeta) : ImmutableMultimap.of(),
             resource.isReverseForeignIndexes() ? collectReverseForeignIndexes(tableMeta) : ImmutableMultimap.of(),
             ImmutableMap.copyOf(tableMeta.rules()),
+            tableMeta.reverseRuleDependencies(),
             tableMeta.primaryKey()));
       } else {
         MaterializedTableMeta tableMeta = resource.getTableMeta();

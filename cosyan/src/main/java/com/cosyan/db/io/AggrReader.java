@@ -75,7 +75,7 @@ public abstract class AggrReader extends TableReader {
       this.keyColumns = keyColumns;
     }
 
-    private ImmutableList<Object> getKeyValues(SourceValues sourceValues) {
+    private ImmutableList<Object> getKeyValues(SourceValues sourceValues) throws IOException {
       ImmutableList.Builder<Object> builder = ImmutableList.builder();
       for (Map.Entry<String, ? extends ColumnMeta> entry : keyColumns.entrySet()) {
         builder.add(entry.getValue().getValue(sourceValues));

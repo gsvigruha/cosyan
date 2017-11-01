@@ -21,12 +21,15 @@ import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.Dependencies.ColumnReverseRuleDependencies;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SourceValues;
+import com.cosyan.db.model.SourceValues.ReferencingSourceValues;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableMultiIndex;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -41,9 +44,9 @@ public class TableWriter implements TableIO {
   private final ImmutableMultimap<String, IndexReader> foreignIndexes;
   private final ImmutableMultimap<String, IndexReader> reversedForeignIndexes;
   private final ImmutableMap<String, BooleanRule> rules;
+  private final ColumnReverseRuleDependencies reverseRules;
   private final Optional<PrimaryKey> primaryKey;
 
-  private DependencyReader dependencyReader;
   private final long fileIndex0;
   private final Set<Long> recordsToDelete = new LinkedHashSet<>();
   private final ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -56,6 +59,7 @@ public class TableWriter implements TableIO {
       ImmutableMultimap<String, IndexReader> foreignIndexes,
       ImmutableMultimap<String, IndexReader> reversedForeignIndexes,
       ImmutableMap<String, BooleanRule> rules,
+      ColumnReverseRuleDependencies reverseRules,
       Optional<PrimaryKey> primaryKey) throws IOException {
     this.file = file;
     this.columns = columns;
@@ -64,15 +68,13 @@ public class TableWriter implements TableIO {
     this.foreignIndexes = foreignIndexes;
     this.reversedForeignIndexes = reversedForeignIndexes;
     this.rules = rules;
+    this.reverseRules = reverseRules;
     this.primaryKey = primaryKey;
     this.fileIndex0 = file.length();
   }
 
-  public void setDependencyReader(DependencyReader dependencyReader) {
-    this.dependencyReader = dependencyReader;
-  }
-
-  public void insert(Object[] values) throws IOException, RuleException {
+  public void insert(Resources resources, Object[] values, boolean checkReferencingRules)
+      throws IOException, RuleException {
     for (int i = 0; i < values.length; i++) {
       Object value = values[i];
       long fileIndex = fileIndex0 + bos.size();
@@ -103,11 +105,16 @@ public class TableWriter implements TableIO {
         }
       }
     }
-    SourceValues sourceValues = SourceValues.of(values, dependencyReader.readReferencedValues(values));
+    SourceValues sourceValues = ReferencingSourceValues.of(resources, values);
     for (Map.Entry<String, BooleanRule> rule : rules.entrySet()) {
       if (!rule.getValue().check(sourceValues)) {
         throw new RuleException("Constraint check " + rule.getKey() + " failed.");
       }
+    }
+    if (checkReferencingRules) {
+      RuleDependencyReader ruleDependencyReader =
+          new RuleDependencyReader(resources, reverseRules, sourceValues.toArray());
+      ruleDependencyReader.readReferencedValues();
     }
     Serializer.serialize(values, columns, bos);
   }
@@ -220,16 +227,16 @@ public class TableWriter implements TableIO {
     } while (true);
   }
 
-  public long update(ImmutableMap<Integer, ColumnMeta> columnExprs, ColumnMeta whereColumn)
+  public long update(Resources resources, ImmutableMap<Integer, ColumnMeta> columnExprs, ColumnMeta whereColumn)
       throws IOException, RuleException {
     ImmutableList<Object[]> valuess = deleteAndCollectUpdated(columnExprs, whereColumn);
     for (Object[] values : valuess) {
-      insert(values);
+      insert(resources, values, /* checkReferencingRules= */true);
     }
     return valuess.size();
   }
 
-  public SeekableTableReader createReader(DependencyReader dependencyReader) throws IOException {
+  public SeekableTableReader createReader(Resources resources) throws IOException {
     return new SeekableTableReader(columns) {
 
       private final RecordReader reader = new RecordReader(
@@ -252,9 +259,7 @@ public class TableWriter implements TableIO {
           }
           if (!recordsToDelete.contains(record.getFilePointer())) {
             Object[] values = record.sourceValues().toArray();
-            return SourceValues.of(
-                values,
-                dependencyReader.readReferencedValues(values));
+            return ReferencingSourceValues.of(resources, values);
           }
         } while (true);
       }
@@ -266,16 +271,20 @@ public class TableWriter implements TableIO {
 
       @Override
       public IndexReader indexReader(Ident ident) {
-        if (uniqueIndexes.containsKey(ident.getString())) {
-          return uniqueIndexes.get(ident.getString());
-        } else {
-          return multiIndexes.get(ident.getString());
-        }
+        return getIndex(ident.getString());
       }
     };
   }
 
   public TableIndex getPrimaryKeyIndex() {
     return uniqueIndexes.get(primaryKey.get().getColumn().getName());
+  }
+
+  public IndexReader getIndex(String name) {
+    if (uniqueIndexes.containsKey(name)) {
+      return uniqueIndexes.get(name);
+    } else {
+      return multiIndexes.get(name);
+    }
   }
 }

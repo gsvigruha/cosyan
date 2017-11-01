@@ -15,6 +15,7 @@ public class Keys {
   @Data
   public static class ForeignKey {
     private final String name;
+    private final MaterializedTableMeta table;
     private final BasicColumn column;
     private final MaterializedTableMeta refTable;
     private final BasicColumn refColumn;
@@ -23,15 +24,20 @@ public class Keys {
     public String toString() {
       return name + " [" + column.getName() + " -> " + refTable.tableName() + "." + refColumn.getName() + "]";
     }
-    
-    public ReverseForeignKey reverse(MaterializedTableMeta tableMeta) {
-      return new ReverseForeignKey(name, refColumn, tableMeta, column);
+
+    public ReverseForeignKey createReverse() {
+      return new ReverseForeignKey(name, refTable, refColumn, table, column);
+    }
+
+    public ReverseForeignKey getReverse() {
+      return refTable.reverseForeignKeys().get(name);
     }
   }
 
   @Data
   public static class ReverseForeignKey {
     private final String name;
+    private final MaterializedTableMeta table;
     private final BasicColumn column;
     private final MaterializedTableMeta refTable;
     private final BasicColumn refColumn;
@@ -39,6 +45,10 @@ public class Keys {
     @Override
     public String toString() {
       return name + " [" + refTable.tableName() + "." + refColumn.getName() + " -> " + column.getName() + "]";
+    }
+    
+    public ForeignKey getReverse() {
+      return refTable.foreignKeys().get(name);
     }
   }
 }

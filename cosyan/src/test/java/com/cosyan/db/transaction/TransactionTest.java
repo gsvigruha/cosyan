@@ -140,4 +140,15 @@ public class TransactionTest extends UnitTestBase {
     assertHeader(new String[] { "a" }, resultAfterCommit);
     assertValues(new Object[][] { { "b" } }, resultAfterCommit);
   }
+
+  @Test
+  public void testInsertIntoReferencedTableAndSelect() throws InterruptedException, ModelException, IOException {
+    execute("create table t7 (a varchar unique, b integer, constraint pk_a primary key (a));");
+    execute("create table t8 (a varchar, constraint fk_a foreign key (a) references t7(a));");
+    TransactionResult result = transaction("insert into t7 values('x', 1);" +
+        "insert into t8 values('x');" +
+        "select a, fk_a.b from t8;");
+    assertHeader(new String[] { "a", "b" }, (QueryResult) result.getResults().get(2));
+    assertValues(new Object[][] { { "x", 1L } }, (QueryResult) result.getResults().get(2));
+  }
 }

@@ -52,6 +52,8 @@ public class InsertIntoStatement {
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
       Object[] fullValues = new Object[tableMeta.columns().size()];
+      // The rules must be evaluated for new records. This requires dependent table
+      // readers.
       TableWriter writer = tableMeta.writer(resources);
       for (ImmutableList<Literal> values : valuess) {
         if (columns.isPresent()) {
@@ -68,7 +70,7 @@ public class InsertIntoStatement {
             fullValues[i] = values.get(i).getValue();
           }
         }
-        writer.insert(fullValues);
+        writer.insert(resources, fullValues, /* checkReferencingRules= */false);
       }
       return new StatementResult(valuess.size());
     }
