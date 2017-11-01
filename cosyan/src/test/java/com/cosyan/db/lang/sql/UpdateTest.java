@@ -210,6 +210,9 @@ public class UpdateTest extends UnitTestBase {
 
     ErrorResult e2 = error("update t16 set b = 0 where a = 2;");
     assertEquals("Referencing constraint check t17.c_b failed.", e2.getError().getMessage());
+
+    QueryResult r3 = query("select a, fk_a.b as b1, fk_b.b as b2 from t17;");
+    assertValues(new Object[][] { { 1L, 3L, 4L } }, r3);
   }
 
   @Test
@@ -233,5 +236,38 @@ public class UpdateTest extends UnitTestBase {
 
     ErrorResult e2 = error("update t18 set c = -2;");
     assertEquals("Referencing constraint check t19.c_x failed.", e2.getError().getMessage());
+
+    QueryResult r3 = query("select a, fk_a.b, fk_a.c from t19;");
+    assertValues(new Object[][] { { 1L, 2L, 2L } }, r3);
+  }
+
+  @Test
+  public void testUpdateReferencedByRules_RuleRefersThirdTable() throws Exception {
+    execute("create table t20 (a integer, b integer, constraint pk_a primary key (a));");
+    execute("create table t21 (a integer, b integer, constraint pk_a primary key (a));");
+    execute("create table t22 (c integer, d integer, "
+        + "constraint fk_c foreign key (c) references t20(a), "
+        + "constraint fk_d foreign key (d) references t21(a), "
+        + "constraint c_x check (fk_c.b + fk_d.b > 0));");
+    execute("insert into t20 values (1, 1);");
+    execute("insert into t21 values (1, 1);");
+    execute("insert into t22 values (1, 1);");
+
+    execute("update t20 set b = 2;");
+    QueryResult r1 = query("select fk_c.b as b1, fk_d.b as b2 from t22;");
+    assertValues(new Object[][] { { 2L, 1L } }, r1);
+
+    execute("update t21 set b = 2;");
+    QueryResult r2 = query("select fk_c.b as b1, fk_d.b as b2 from t22;");
+    assertValues(new Object[][] { { 2L, 2L } }, r2);
+
+    ErrorResult e1 = error("update t20 set b = -2;");
+    assertEquals("Referencing constraint check t22.c_x failed.", e1.getError().getMessage());
+
+    ErrorResult e2 = error("update t21 set b = -2;");
+    assertEquals("Referencing constraint check t22.c_x failed.", e2.getError().getMessage());
+
+    QueryResult r3 = query("select fk_c.b as b1, fk_d.b as b2 from t22;");
+    assertValues(new Object[][] { { 2L, 2L } }, r3);
   }
 }

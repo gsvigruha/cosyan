@@ -114,7 +114,7 @@ public class TableWriter implements TableIO {
     if (checkReferencingRules) {
       RuleDependencyReader ruleDependencyReader =
           new RuleDependencyReader(resources, reverseRules, sourceValues.toArray());
-      ruleDependencyReader.readReferencedValues();
+      ruleDependencyReader.checkReferencingRules();
     }
     Serializer.serialize(values, columns, bos);
   }
@@ -149,6 +149,7 @@ public class TableWriter implements TableIO {
   }
 
   public void rollback() {
+    bos.reset();
     for (TableIndex index : uniqueIndexes.values()) {
       index.rollback();
     }

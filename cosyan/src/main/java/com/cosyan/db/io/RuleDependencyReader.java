@@ -28,15 +28,15 @@ public class RuleDependencyReader {
     this.sourceValues = sourceValues;
   }
 
-  public void readReferencedValues()
+  public void checkReferencingRules()
       throws IOException, RuleException {
     HashMap<String, Object[]> referencedValues = new HashMap<>();
     for (Map<String, ReverseRuleDependency> values : reverseRules.getColumnDeps().values()) {
-      red(values.values(), sourceValues, referencedValues, "", "");
+      checkReferencingRules(values.values(), sourceValues, referencedValues, "", "");
     }
   }
 
-  private void red(Collection<ReverseRuleDependency> collection, Object[] parentValues,
+  private void checkReferencingRules(Collection<ReverseRuleDependency> collection, Object[] parentValues,
       HashMap<String, Object[]> referencedValues, String keyPrefix, String reverseKeyPrefix) throws IOException, RuleException {
     for (ReverseRuleDependency dep : collection) {
       ReverseForeignKey foreignKey = dep.getForeignKey();
@@ -63,7 +63,7 @@ public class RuleDependencyReader {
                   dep.getForeignKey().getRefTable().tableName(), rule.getName()));
             }
           }
-          red(dep.getDeps().values(), newSourceValues, newReferencedValues, key, reverseKey);
+          checkReferencingRules(dep.getDeps().values(), newSourceValues, newReferencedValues, key, reverseKey);
         }
         reader.close();
       }

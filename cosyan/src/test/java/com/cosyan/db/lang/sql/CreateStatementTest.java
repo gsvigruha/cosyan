@@ -129,7 +129,7 @@ public class CreateStatementTest extends UnitTestBase {
     assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().get("b").size());
     assertEquals("fk_a", t10.reverseRuleDependencies().getColumnDeps().get("b").get("fk_a").getForeignKey().getName());
     assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().get("b").get("fk_a").getRules().size());
-    assertEquals("c_b", t10.reverseRuleDependencies().getColumnDeps().get("b").get("fk_a").getRules().get(0).getName());
+    assertEquals("c_b", t10.reverseRuleDependencies().getColumnDeps().get("b").get("fk_a").getRules().get("c_b").getName());
   }
 
   @Test

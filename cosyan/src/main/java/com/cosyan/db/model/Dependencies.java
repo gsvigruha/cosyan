@@ -104,8 +104,8 @@ public class Dependencies {
     }
 
     public void addAllReverseRuleDependencies(BooleanRule rule) {
-      LinkedList<ReverseForeignKey> reverseForeignKeyChain = new LinkedList<>();
       for (TableDependency tableDependency : deps.values()) {
+        LinkedList<ReverseForeignKey> reverseForeignKeyChain = new LinkedList<>();
         addAllReverseRuleDependencies(tableDependency, reverseForeignKeyChain, rule);
       }
     }
@@ -120,7 +120,8 @@ public class Dependencies {
         reverseForeignKey.getTable().addReverseRuleDependency(column, reverseForeignKeyChain, rule);
       }
       for (TableDependency childDep : tableDependency.getDeps().values()) {
-        addAllReverseRuleDependencies(childDep, reverseForeignKeyChain, rule);
+        LinkedList<ReverseForeignKey> newReverseForeignKeyChain = new LinkedList<>(reverseForeignKeyChain);
+        addAllReverseRuleDependencies(childDep, newReverseForeignKeyChain, rule);
       }
     }
   }
