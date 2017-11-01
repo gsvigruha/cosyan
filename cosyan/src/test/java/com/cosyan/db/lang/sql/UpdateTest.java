@@ -166,4 +166,23 @@ public class UpdateTest extends UnitTestBase {
     ErrorResult e = error("update t11 set b = 0;");
     assertEquals("Referencing constraint check t12.c_b failed.", e.getError().getMessage());
   }
+
+  @Test
+  public void testUpdateReferencedByRulesMultipleLevel() throws Exception {
+    execute("create table t13 (a integer, b integer, constraint pk_a primary key (a));");
+    execute("create table t14 (a integer, b integer, constraint pk_a primary key (a),"
+        + "constraint fk_b foreign key (b) references t13(a));");
+    execute("create table t15 (a integer, constraint fk_a foreign key (a) references t14(a),"
+        + "constraint c_b check (fk_a.fk_b.b > 0));");
+    execute("insert into t13 values (1, 1);");
+    execute("insert into t14 values (1, 1);");
+    execute("insert into t15 values (1);");
+
+    execute("update t13 set b = 2;");
+    QueryResult r1 = query("select a, fk_a.fk_b.b from t15;");
+    assertValues(new Object[][] { { 1L, 2L } }, r1);
+
+    ErrorResult e = error("update t13 set b = 0;");
+    assertEquals("Referencing constraint check t15.c_b failed.", e.getError().getMessage());
+  }
 }
