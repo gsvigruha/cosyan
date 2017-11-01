@@ -109,10 +109,15 @@ public class CreateStatement {
         if (!refColumn.isUnique()) {
           throw new ModelException("Foreign key reference column has to be unique.");
         }
-        // Unique keys are indexed by default.
+        // Unique keys are indexed by default, so no need to change refColumn.
         keyColumn.setIndexed(true);
         tableMeta.addForeignKey(new ForeignKey(
-            foreignKeyDefinition.getName(), tableMeta, keyColumn, refTable, refColumn));
+            foreignKeyDefinition.getName(),
+            foreignKeyDefinition.getRevName(),
+            tableMeta,
+            keyColumn,
+            refTable,
+            refColumn));
       }
 
       TableWithDeps tableWithDeps = tableMeta.toTableWithDeps();
@@ -184,6 +189,7 @@ public class CreateStatement {
   @EqualsAndHashCode(callSuper = true)
   public static class ForeignKeyDefinition extends Node implements ConstraintDefinition {
     private final String name;
+    private final String revName;
     private final Ident keyColumn;
     private final Ident refTable;
     private final Ident refColumn;

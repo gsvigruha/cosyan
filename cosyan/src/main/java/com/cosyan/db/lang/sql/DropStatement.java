@@ -30,7 +30,7 @@ public class DropStatement {
         throw new ModelException(String.format("Cannot drop table '%s', referenced by foreign key '%s.%s'.",
             table.getString(),
             foreignKey.getRefTable().tableName(),
-            foreignKey));
+            foreignKey.getReverse()));
       }
       metaRepo.dropTable(table.getString());
       return new MetaStatementResult();

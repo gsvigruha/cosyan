@@ -64,12 +64,14 @@ public class CreateStatementTest extends UnitTestBase {
     MaterializedTableMeta t4 = metaRepo.table(new Ident("t4"));
     assertEquals(ImmutableMap.of("fk_b", new ForeignKey(
         "fk_b",
+        "rev_fk_b",
         t5,
         (BasicColumn) t5.column(new Ident("b")).getMeta(),
         t4,
         (BasicColumn) t4.column(new Ident("a")).getMeta())),
         t5.foreignKeys());
     assertEquals(ImmutableMap.of("fk_b", new ReverseForeignKey(
+        "rev_fk_b",
         "fk_b",
         t4,
         (BasicColumn) t4.column(new Ident("a")).getMeta(),
@@ -127,9 +129,9 @@ public class CreateStatementTest extends UnitTestBase {
     assertEquals(0, t10.ruleDependencies().size());
     assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().size());
     assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().get("b").size());
-    assertEquals("fk_a", t10.reverseRuleDependencies().getColumnDeps().get("b").get("fk_a").getForeignKey().getName());
-    assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().get("b").get("fk_a").getRules().size());
-    assertEquals("c_b", t10.reverseRuleDependencies().getColumnDeps().get("b").get("fk_a").getRules().get("c_b").getName());
+    assertEquals("rev_fk_a", t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getForeignKey().getName());
+    assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getRules().size());
+    assertEquals("c_b", t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getRules().get("c_b").getName());
   }
 
   @Test

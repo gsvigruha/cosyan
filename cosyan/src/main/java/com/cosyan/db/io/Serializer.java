@@ -155,6 +155,7 @@ public class Serializer {
     refStream.writeInt(tableMeta.foreignKeys().size());
     for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
       refStream.writeUTF(foreignKey.getName());
+      refStream.writeUTF(foreignKey.getRevName());
       refStream.writeUTF(foreignKey.getColumn().getName());
       refStream.writeUTF(foreignKey.getRefTable().tableName());
       refStream.writeUTF(foreignKey.getRefColumn().getName());
@@ -203,10 +204,12 @@ public class Serializer {
     int numForeignKeys = refStream.readInt();
     for (int i = 0; i < numForeignKeys; i++) {
       String name = refStream.readUTF();
+      String revName = refStream.readUTF();
       String columnName = refStream.readUTF();
       MaterializedTableMeta refTable = metaRepo.table(new Ident(refStream.readUTF()));
       ForeignKey foreignKey = new ForeignKey(
           name,
+          revName,
           tableMeta,
           tableMeta.columns().get(columnName),
           refTable,

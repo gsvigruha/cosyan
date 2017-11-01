@@ -15,6 +15,7 @@ public class Keys {
   @Data
   public static class ForeignKey {
     private final String name;
+    private final String revName;
     private final MaterializedTableMeta table;
     private final BasicColumn column;
     private final MaterializedTableMeta refTable;
@@ -26,7 +27,7 @@ public class Keys {
     }
 
     public ReverseForeignKey createReverse() {
-      return new ReverseForeignKey(name, refTable, refColumn, table, column);
+      return new ReverseForeignKey(revName, name, refTable, refColumn, table, column);
     }
 
     public ReverseForeignKey getReverse() {
@@ -37,6 +38,7 @@ public class Keys {
   @Data
   public static class ReverseForeignKey {
     private final String name;
+    private final String revName;
     private final MaterializedTableMeta table;
     private final BasicColumn column;
     private final MaterializedTableMeta refTable;
@@ -48,7 +50,7 @@ public class Keys {
     }
     
     public ForeignKey getReverse() {
-      return refTable.foreignKeys().get(name);
+      return refTable.foreignKeys().get(revName);
     }
   }
 }

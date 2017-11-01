@@ -42,6 +42,8 @@ public class Tokens {
 
   public static String REFERENCES = "references";
 
+  public static String REVERSE = "reverse";
+
   public static String CONSTRAINT = "constraint";
 
   public static String CHECK = "check";

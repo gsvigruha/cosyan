@@ -37,18 +37,20 @@ public class RuleDependencyReader {
   }
 
   private void checkReferencingRules(Collection<ReverseRuleDependency> collection, Object[] parentValues,
-      HashMap<String, Object[]> referencedValues, String keyPrefix, String reverseKeyPrefix) throws IOException, RuleException {
+      HashMap<String, Object[]> referencedValues, String keyPrefix, String reverseKeySuffix)
+      throws IOException, RuleException {
     for (ReverseRuleDependency dep : collection) {
-      ReverseForeignKey foreignKey = dep.getForeignKey();
-      String key = keyPrefix.isEmpty() ? foreignKey.getName() : keyPrefix + "." + foreignKey.getName();
-      String reverseKey = reverseKeyPrefix.isEmpty() ? foreignKey.getReverse().getName() : foreignKey.getName() + "." + keyPrefix;
-      
+      ReverseForeignKey reverseForeignKey = dep.getForeignKey();
+      String key = keyPrefix.isEmpty() ? reverseForeignKey.getName() : keyPrefix + "." + reverseForeignKey.getName();
+      String reverseKey = reverseKeySuffix.isEmpty() ? reverseForeignKey.getReverse().getName()
+          : reverseForeignKey.getReverse().getName() + "." + reverseKeySuffix;
+
       Object[] newSourceValues = referencedValues.get(key);
       if (newSourceValues == null) {
-        Object foreignKeyValue = parentValues[foreignKey.getColumn().getIndex()];
-        Ident table = new Ident(foreignKey.getRefTable().tableName());
+        Object foreignKeyValue = parentValues[reverseForeignKey.getColumn().getIndex()];
+        Ident table = new Ident(reverseForeignKey.getRefTable().tableName());
         SeekableTableReader reader = resources.createReader(table);
-        IndexReader index = resources.getIndex(foreignKey);
+        IndexReader index = resources.getIndex(reverseForeignKey);
         long[] foreignKeyFilePointers = index.get(foreignKeyValue);
         for (long foreignKeyFilePointer : foreignKeyFilePointers) {
           reader.seek(foreignKeyFilePointer);

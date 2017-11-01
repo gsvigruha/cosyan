@@ -274,7 +274,13 @@ public class Parser {
       assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
       Ident refColumn = parseSimpleIdent(tokens);
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-      return new ForeignKeyDefinition(ident.getString(), column, refTable, refColumn);
+      if (tokens.peek().is(Tokens.REVERSE)) {
+        tokens.next();
+        Ident reverseIdent = parseSimpleIdent(tokens);
+        return new ForeignKeyDefinition(ident.getString(), reverseIdent.getString(), column, refTable, refColumn);
+      } else {
+        return new ForeignKeyDefinition(ident.getString(), "rev_" + ident.getString(), column, refTable, refColumn);
+      }
     } else {
       throw new ParserException("Unsupported constraint '" + tokens.peek() + "'.");
     }

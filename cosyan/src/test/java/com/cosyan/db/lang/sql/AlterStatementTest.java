@@ -64,7 +64,7 @@ public class AlterStatementTest extends UnitTestBase {
     assertEquals(false, metaRepo.table(new Ident("t4")).column(new Ident("a")).getMeta().isDeleted());
     {
       ErrorResult result = error("alter table t3 drop b;");
-      assertEquals("Cannot drop column 'b', it is referenced by foreign key 'fk_a [t4.a -> b]'.",
+      assertEquals("Cannot drop column 'b', it is used by reverse foreign key 'rev_fk_a [t4.a -> b]'.",
           result.getError().getMessage());
     }
     assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("b")).getMeta().isDeleted());

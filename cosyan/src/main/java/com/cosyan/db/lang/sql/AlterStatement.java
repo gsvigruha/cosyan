@@ -84,7 +84,7 @@ public class AlterStatement {
         for (ReverseForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
           if (foreignKey.getColumn().getName().equals(basicColumn.getName())) {
             throw new ModelException(String.format(
-                "Cannot drop column '%s', it is referenced by foreign key '%s'.", column, foreignKey));
+                "Cannot drop column '%s', it is used by reverse foreign key '%s'.", column, foreignKey));
           }
         }
       } finally {
