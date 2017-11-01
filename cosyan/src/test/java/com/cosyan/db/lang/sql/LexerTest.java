@@ -36,6 +36,10 @@ public class LexerTest {
         lexer.tokens("a<100;"));
     assertEquals(ImmutableList.of(new Token("a"), new Token("<"), new FloatToken("1.5"), new Token(";")),
         lexer.tokens("a<1.5;"));
+    assertEquals(ImmutableList.of(new Token("a"), new Token("<"), new FloatToken("-1.5"), new Token(";")),
+        lexer.tokens("a<-1.5;"));
+    assertEquals(ImmutableList.of(new IntToken("3"), new Token("+"), new IntToken("-1"), new Token(";")),
+        lexer.tokens("3+-1;"));
   }
 
   @Test

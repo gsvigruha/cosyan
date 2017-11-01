@@ -2,7 +2,6 @@ package com.cosyan.db.model;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -57,7 +56,7 @@ public class Dependencies {
   public static class ReverseRuleDependency implements TransitiveTableDependency {
     private final ReverseForeignKey foreignKey;
     private final Map<String, ReverseRuleDependency> deps = new HashMap<>();
-    private final List<BooleanRule> rules = new LinkedList<>();
+    private final Map<String, BooleanRule> rules = new HashMap<>();
 
     @Override
     public MaterializedTableMeta table() {
@@ -68,7 +67,7 @@ public class Dependencies {
     public Iterable<? extends TransitiveTableDependency> childDeps() {
       return Iterables.concat(
           deps.values(),
-          rules.stream().flatMap(rule -> rule.getDeps().getDeps().values().stream()).collect(Collectors.toList()));
+          rules.values().stream().flatMap(rule -> rule.getDeps().getDeps().values().stream()).collect(Collectors.toList()));
     }
   }
 
@@ -136,7 +135,7 @@ public class Dependencies {
         columnDeps.put(column.getName(), new HashMap<>());
       }
       Map<String, ReverseRuleDependency> actDeps = columnDeps.get(column.getName());
-      List<BooleanRule> rules = null;
+      Map<String, BooleanRule> rules = null;
       for (ReverseForeignKey foreignKey : foreignKeyChain) {
         if (!actDeps.containsKey(foreignKey.getName())) {
           actDeps.put(foreignKey.getName(), new ReverseRuleDependency(foreignKey));
@@ -145,7 +144,7 @@ public class Dependencies {
         actDeps = reverseDep.getDeps();
         rules = reverseDep.getRules();
       }
-      rules.add(rule);
+      rules.put(rule.getName(), rule);
     }
   }
 }

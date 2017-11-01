@@ -79,7 +79,10 @@ public class Lexer {
           }
         }
       } else if (state == STATE_DEFAULT) {
-        if (Tokens.isDelimiter(c)) {
+        if (Tokens.isDigit(c) || (c == Tokens.MINUS && i < sql.length() - 1 && Tokens.isDigit(sql.charAt(i + 1)))) {
+          state = STATE_NUMBER_LITERAL;
+          literalStartIndex = i;
+        } else if (Tokens.isDelimiter(c)) {
           if (c == Tokens.LESS && i < sql.length() - 1 && sql.charAt(i + 1) == Tokens.EQ) {
             builder.add(new Token(Tokens.LEQ));
             i++;
@@ -95,9 +98,6 @@ public class Lexer {
           literalStartIndex = i;
         } else if (c == Tokens.DOUBLE_QUOTE) {
           state = STATE_IN_DOUBLE_QUOTE;
-          literalStartIndex = i;
-        } else if (Tokens.isDigit(c)) {
-          state = STATE_NUMBER_LITERAL;
           literalStartIndex = i;
         } else if (Tokens.isLowerCaseLetter(c)) {
           state = STATE_IDENT;

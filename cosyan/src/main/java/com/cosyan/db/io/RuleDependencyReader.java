@@ -55,7 +55,7 @@ public class RuleDependencyReader {
           newSourceValues = reader.read().toArray();
           HashMap<String, Object[]> newReferencedValues = new HashMap<>(referencedValues);
           newReferencedValues.put(keyPrefix, newSourceValues);
-          for (BooleanRule rule : dep.getRules()) {
+          for (BooleanRule rule : dep.getRules().values()) {
             HashMap<String, Object[]> initialValues = new HashMap<>();
             initialValues.put(reverseKey, sourceValues);
             if (!rule.check(ReferencingSourceValues.of(resources, newSourceValues, initialValues))) {

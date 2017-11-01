@@ -168,7 +168,7 @@ public class UpdateTest extends UnitTestBase {
   }
 
   @Test
-  public void testUpdateReferencedByRulesMultipleLevel() throws Exception {
+  public void testUpdateReferencedByRules_MultipleLevels() throws Exception {
     execute("create table t13 (a integer, b integer, constraint pk_a primary key (a));");
     execute("create table t14 (a integer, b integer, constraint pk_a primary key (a),"
         + "constraint fk_b foreign key (b) references t13(a));");
@@ -184,5 +184,54 @@ public class UpdateTest extends UnitTestBase {
 
     ErrorResult e = error("update t13 set b = 0;");
     assertEquals("Referencing constraint check t15.c_b failed.", e.getError().getMessage());
+  }
+
+  @Test
+  public void testUpdateReferencedByRules_MultipleLinks() throws Exception {
+    execute("create table t16 (a integer, b integer, constraint pk_a primary key (a));");
+    execute("create table t17 (a integer, b integer, "
+        + "constraint fk_a foreign key (a) references t16(a), "
+        + "constraint fk_b foreign key (b) references t16(a),"
+        + "constraint c_a check (fk_a.b > 0),"
+        + "constraint c_b check (fk_b.b > 0));");
+    execute("insert into t16 values (1, 1), (2, 2);");
+    execute("insert into t17 values (1, 2);");
+
+    execute("update t16 set b = 3 where a = 1;");
+    QueryResult r1 = query("select a, fk_a.b as b1, fk_b.b as b2 from t17;");
+    assertValues(new Object[][] { { 1L, 3L, 2L } }, r1);
+
+    execute("update t16 set b = 4 where a = 2;");
+    QueryResult r2 = query("select a, fk_a.b as b1, fk_b.b as b2 from t17;");
+    assertValues(new Object[][] { { 1L, 3L, 4L } }, r2);
+
+    ErrorResult e1 = error("update t16 set b = 0 where a = 1;");
+    assertEquals("Referencing constraint check t17.c_a failed.", e1.getError().getMessage());
+
+    ErrorResult e2 = error("update t16 set b = 0 where a = 2;");
+    assertEquals("Referencing constraint check t17.c_b failed.", e2.getError().getMessage());
+  }
+
+  @Test
+  public void testUpdateReferencedByRules_MultipleVariables() throws Exception {
+    execute("create table t18 (a integer, b integer, c integer, constraint pk_a primary key (a));");
+    execute("create table t19 (a integer, constraint fk_a foreign key (a) references t18(a), "
+        + "constraint c_x check (fk_a.b + fk_a.c > 0));");
+    execute("insert into t18 values (1, 1, 1);");
+    execute("insert into t19 values (1);");
+
+    execute("update t18 set b = 2;");
+    QueryResult r1 = query("select a, fk_a.b, fk_a.c from t19;");
+    assertValues(new Object[][] { { 1L, 2L, 1L } }, r1);
+
+    execute("update t18 set c = 2;");
+    QueryResult r2 = query("select a, fk_a.b, fk_a.c from t19;");
+    assertValues(new Object[][] { { 1L, 2L, 2L } }, r2);
+
+    ErrorResult e1 = error("update t18 set b = -2;");
+    assertEquals("Referencing constraint check t19.c_x failed.", e1.getError().getMessage());
+
+    ErrorResult e2 = error("update t18 set c = -2;");
+    assertEquals("Referencing constraint check t19.c_x failed.", e2.getError().getMessage());
   }
 }
