@@ -1,5 +1,6 @@
 package com.cosyan.db.lang.sql;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
@@ -455,6 +456,14 @@ public class TableReaderTest extends DummyTestBase {
     ExposedTableReader reader = query("select a, count(distinct b) as b from large group by a;");
     assertEquals(ImmutableMap.of("a", "a", "b", 2L), reader.readColumns());
     assertEquals(ImmutableMap.of("a", "b", "b", 2L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testListAggr() throws Exception {
+    ExposedTableReader reader = query("select a, list(b) as b from large group by a;");
+    assertArrayEquals(new Long[] { 1L, 3L }, (Long[]) reader.readColumns().get("b"));
+    assertArrayEquals(new Long[] { 5L, 7L }, (Long[]) reader.readColumns().get("b"));
     assertEquals(null, reader.readColumns());
   }
 

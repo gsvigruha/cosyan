@@ -26,19 +26,32 @@ public class DataTypes {
 
   public static final DataType<Date> DateType = new DataType<>("timestamp");
 
+  public static final DataType<String[]> StringListType = new DataType<>("varchar_list");
+
+  public static final DataType<Double[]> DoubleListType = new DataType<>("float_list");
+
+  public static final DataType<Long[]> LongListType = new DataType<>("integer_list");
+
+  public static final DataType<Boolean[]> BoolListType = new DataType<>("boolean_list");
+
+  public static final DataType<Date[]> DateListType = new DataType<>("timestamp_list");
+
   public static final class NullType implements Comparable<Object> {
     @Override
     public boolean equals(Object o) {
       return o == NULL;
     }
+
     @Override
     public int hashCode() {
       return 0;
     }
+
     @Override
     public int compareTo(Object o) {
       return o == NULL ? 0 : -1;
     }
+
     @Override
     public String toString() {
       return "null";
@@ -58,6 +71,16 @@ public class DataTypes {
       return BoolType;
     } else if (name.equals("timestamp")) {
       return DateType;
+    } else if (name.equals("varchar_list")) {
+      return StringListType;
+    } else if (name.equals("float_list")) {
+      return DoubleListType;
+    } else if (name.equals("integer_list")) {
+      return LongListType;
+    } else if (name.equals("boolean_list")) {
+      return BoolListType;
+    } else if (name.equals("timestamp_list")) {
+      return DateListType;
     } else {
       throw new IllegalArgumentException();
     }

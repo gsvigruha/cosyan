@@ -88,6 +88,7 @@ public class BuiltinFunctions {
       .add(new Aggregators.CountDistinct())
       .add(new Aggregators.Max())
       .add(new Aggregators.Min())
+      .add(new ListAggregator())
       .build();
 
   public static final ImmutableList<SimpleFunction<?>> SIMPLE = ImmutableList.<SimpleFunction<?>>builder()
