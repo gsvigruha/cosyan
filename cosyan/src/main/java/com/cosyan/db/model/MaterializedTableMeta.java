@@ -53,26 +53,23 @@ public class MaterializedTableMeta {
     }
 
     @Override
+    public boolean usesRefValues() {
+      return !foreignKeyChain.isEmpty();
+    }
+
+    @Override
     public BasicColumn getMeta() {
       return (BasicColumn) super.getMeta();
     }
 
-    @Override
-    public boolean usesSourceValues() {
-      return foreignKeyChain.isEmpty();
-    }
-
-    @Override
     public String tableIdent() {
       return foreignKeyChain.stream().map(foreignKey -> foreignKey.getName()).collect(Collectors.joining("."));
     }
 
-    @Override
     public ImmutableList<ForeignKey> foreignKeyChain() {
       return foreignKeyChain;
     }
 
-    @Override
     public ImmutableList<ReverseForeignKey> reverseForeignKeyChain() {
       return ImmutableList
           .copyOf(foreignKeyChain.reverse().stream().map(key -> key.getReverse()).collect(Collectors.toList()));

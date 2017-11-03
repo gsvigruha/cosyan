@@ -56,22 +56,29 @@ public class FuncCallExpression extends Expression {
   }
 
   private boolean isAggr() {
-    return BuiltinFunctions.AGGREGATION_NAMES.contains(ident.getString());
+    return BuiltinFunctions.AGGREGATION_NAMES.contains(ident.last());
   }
 
   @Override
   public DerivedColumn compile(TableMeta sourceTable, ExtraInfoCollector collector)
       throws ModelException {
     if (isAggr()) {
-      if (args.size() != 1) {
-        throw new ModelException("Invalid number of arguments for aggregator: " + args.size() + ".");
+      Expression arg;
+      if (ident.isSimple()) {
+        if (args.size() == 1) {
+          arg = Iterables.getOnlyElement(args);
+        } else {
+          throw new ModelException("Invalid number of arguments for aggregator: " + args.size() + ".");
+        }
+      } else {
+        arg = new IdentExpression(ident.body());
       }
       if (!(sourceTable instanceof KeyValueTableMeta)) {
         throw new ModelException("Aggregators are not allowed here.");
       }
       KeyValueTableMeta outerTable = (KeyValueTableMeta) sourceTable;
-      ColumnMeta argColumn = Iterables.getOnlyElement(args).compile(outerTable.getSourceTable());
-      final TypedAggrFunction<?> function = BuiltinFunctions.aggrFunction(ident.getString(), argColumn.getType());
+      ColumnMeta argColumn = arg.compile(outerTable.getSourceTable());
+      final TypedAggrFunction<?> function = BuiltinFunctions.aggrFunction(ident.last(), argColumn.getType());
 
       AggrColumn aggrColumn = new AggrColumn(
           function.getReturnType(),
@@ -87,8 +94,8 @@ public class FuncCallExpression extends Expression {
         function = BuiltinFunctions.simpleFunction(ident.head());
         allArgs = args;
       } else {
-        function = BuiltinFunctions.simpleFunction(ident.tail().getString());
-        Expression objExpr = new IdentExpression(new Ident(ident.head()));
+        function = BuiltinFunctions.simpleFunction(ident.last());
+        Expression objExpr = new IdentExpression(new Ident(ident.body().getString()));
         allArgs = ImmutableList.<Expression>builder().add(objExpr).addAll(args).build();
       }
 

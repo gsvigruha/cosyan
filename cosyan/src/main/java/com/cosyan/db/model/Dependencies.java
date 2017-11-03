@@ -77,7 +77,7 @@ public class Dependencies {
     private final Map<String, TableDependency> deps = new HashMap<>();
 
     public void addTableDependency(MaterializedColumn column) {
-      if (column.usesSourceValues()) {
+      if (column.foreignKeyChain().isEmpty()) {
         return;
       }
       Map<String, TableDependency> actDeps = deps;

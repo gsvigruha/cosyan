@@ -26,6 +26,10 @@ public class Ident {
     return new Ident(Joiner.on(".").join(Arrays.copyOfRange(parts(), 1, parts().length)));
   }
 
+  public Ident body() {
+    return new Ident(Joiner.on(".").join(Arrays.copyOfRange(parts(), 0, parts().length - 1)));
+  }
+
   public boolean is(String str) {
     return string.equals(str);
   }

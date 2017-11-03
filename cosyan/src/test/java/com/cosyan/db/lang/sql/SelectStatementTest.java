@@ -13,11 +13,17 @@ public class SelectStatementTest extends UnitTestBase {
     execute("create table t2 (a2 varchar, b2 varchar, constraint fk_a foreign key (a2) references t1(a1));");
     execute("insert into t1 values ('x', 1), ('y', 2);");
     execute("insert into t2 values ('x', 'y'), ('x', 'z');");
-    QueryResult result = query("select a2, b2, fk_a.a1, fk_a.b1 from t2;");
-    assertHeader(new String[] { "a2", "b2", "a1", "b1" }, result);
+    QueryResult r1 = query("select a2, b2, fk_a.a1, fk_a.b1 from t2;");
+    assertHeader(new String[] { "a2", "b2", "a1", "b1" }, r1);
     assertValues(new Object[][] {
         { "x", "y", "x", 1L },
-        { "x", "z", "x", 1L } }, result);
+        { "x", "z", "x", 1L } }, r1);
+
+    QueryResult r2 = query("select fk_a.a1.length() as a, fk_a.b1 + 1 as b from t2;");
+    assertHeader(new String[] { "a", "b" }, r2);
+    assertValues(new Object[][] {
+        { 1L, 2L },
+        { 1L, 2L } }, r2);
   }
 
   @Test
@@ -47,5 +53,41 @@ public class SelectStatementTest extends UnitTestBase {
     QueryResult result = query("select fk_a.a1, fk_a.b1, fk_b.a1 as a2, fk_b.b1 as b2 from t7;");
     assertHeader(new String[] { "a1", "b1", "a2", "b2" }, result);
     assertValues(new Object[][] { { "x", 1L, "y", 2L } }, result);
+  }
+
+  @Test
+  public void testForeignKeysInAggregation() {
+    execute("create table t8 (a1 varchar, b1 integer, constraint pk_a primary key (a1));");
+    execute("create table t9 (a2 varchar, constraint fk_a foreign key (a2) references t8(a1));");
+    execute("insert into t8 values ('x', 1), ('y', 2);");
+    execute("insert into t9 values ('x'), ('x'), ('x'), ('y');");
+
+    QueryResult r1 = query("select a2, sum(fk_a.b1) as s from t9 group by a2;");
+    assertHeader(new String[] { "a2", "s" }, r1);
+    assertValues(new Object[][] { { "x", 3L }, { "y", 2L } }, r1);
+
+    QueryResult r2 = query("select a1, sum(fk_a.b1) as s from t9 group by fk_a.a1 as a1;");
+    assertHeader(new String[] { "a1", "s" }, r2);
+    assertValues(new Object[][] { { "x", 3L }, { "y", 2L } }, r2);
+
+    QueryResult r3 = query("select sum(fk_a.b1) as s from t9;");
+    assertHeader(new String[] { "s" }, r3);
+    assertValues(new Object[][] { { 5L } }, r3);
+
+    QueryResult r4 = query("select a2, fk_a.b1.sum() as s from t9 group by a2;");
+    assertHeader(new String[] { "a2", "s" }, r4);
+    assertValues(new Object[][] { { "x", 3L }, { "y", 2L } }, r4);
+  }
+
+  @Test
+  public void testReverseForeignKeys() {
+    execute("create table t10 (a1 varchar, constraint pk_a primary key (a1));");
+    execute("create table t11 (a2 varchar, b2 integer, constraint fk_a foreign key (a2) references t10(a1));");
+    execute("insert into t10 values ('x');");
+    execute("insert into t11 values ('x', 1), ('x', 2);");
+
+    QueryResult r1 = query("select a1 as a, rev_fk_a.b2 as b from t10;");
+    assertHeader(new String[] { "a", "b" }, r1);
+    assertValues(new Object[][] { { "x", 3L }, { "y", 2L } }, r1);
   }
 }

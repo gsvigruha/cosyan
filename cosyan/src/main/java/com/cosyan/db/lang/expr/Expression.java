@@ -147,15 +147,7 @@ public abstract class Expression extends Node {
     public ColumnMeta compile(
         TableMeta sourceTable, ExtraInfoCollector collector) throws ModelException {
       Column column = sourceTable.column(ident);
-      if (column.usesSourceValues()) {
-        final int index = column.getIndex();
-        return new DerivedColumnWithDeps(column.getMeta().getType(), new TableDependencies()) {
-          @Override
-          public Object getValue(SourceValues values) {
-            return values.sourceValue(index);
-          }
-        };
-      } else {
+      if (column.usesRefValues()) {
         TableDependencies tableDependencies = new TableDependencies();
         final MaterializedColumn materializedColumn = (MaterializedColumn) column;
         tableDependencies.addTableDependency(materializedColumn);
@@ -163,6 +155,14 @@ public abstract class Expression extends Node {
           @Override
           public Object getValue(SourceValues values) throws IOException {
             return values.refTableValue(materializedColumn);
+          }
+        };
+      } else {
+        final int index = column.getIndex();
+        return new DerivedColumnWithDeps(column.getMeta().getType(), new TableDependencies()) {
+          @Override
+          public Object getValue(SourceValues values) {
+            return values.sourceValue(index);
           }
         };
       }
