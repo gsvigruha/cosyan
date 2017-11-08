@@ -11,7 +11,7 @@ import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.PrimaryKey;
-import com.cosyan.db.model.Keys.ReverseForeignKey;
+import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.TableIndex;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -78,23 +78,23 @@ public class Resources {
     return writers.get(table.getString());
   }
 
-  public SeekableTableReader createReader(Ident table) throws IOException {
-    if (readers.containsKey(table.getString())) {
-      return readers.get(table.getString()).create(this);
+  public SeekableTableReader createReader(String table) throws IOException {
+    if (readers.containsKey(table)) {
+      return readers.get(table).create(this);
     } else {
-      return writers.get(table.getString()).createReader(this);
+      return writers.get(table).createReader(this);
     }
   }
 
-  public TableIndex getPrimaryKeyIndex(Ident table) {
-    if (readers.containsKey(table.getString())) {
-      return readers.get(table.getString()).getPrimaryKeyIndex();
+  public TableIndex getPrimaryKeyIndex(String table) {
+    if (readers.containsKey(table)) {
+      return readers.get(table).getPrimaryKeyIndex();
     } else {
-      return writers.get(table.getString()).getPrimaryKeyIndex();
+      return writers.get(table).getPrimaryKeyIndex();
     }
   }
 
-  public IndexReader getIndex(ReverseForeignKey foreignKey) {
+  public IndexReader getIndex(Ref foreignKey) {
     String table = foreignKey.getRefTable().tableName();
     if (readers.containsKey(table)) {
       return readers.get(table).getIndex(foreignKey.getRefColumn());

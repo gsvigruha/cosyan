@@ -2,6 +2,7 @@ package com.cosyan.db.model;
 
 import java.io.IOException;
 
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Dependencies.TableDependencies;
@@ -10,7 +11,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
-public abstract class ColumnMeta {
+public abstract class ColumnMeta implements CompiledObject {
 
   protected final DataType<?> type;
 
@@ -67,6 +68,27 @@ public abstract class ColumnMeta {
     @Override
     public TableDependencies tableDependencies() {
       return new TableDependencies();
+    }
+  }
+
+  public static class IterableColumn extends ColumnMeta {
+
+    private final ColumnMeta sourceColumn;
+
+    public IterableColumn(ColumnMeta sourceColumn) throws ModelException {
+      super(sourceColumn.getType().toListType());
+      this.sourceColumn = sourceColumn;
+    }
+
+    @Override
+    public Object getValue(SourceValues values) throws IOException {
+      // TODO Auto-generated method stub
+      return null;
+    }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return sourceColumn.tableDependencies();
     }
   }
 

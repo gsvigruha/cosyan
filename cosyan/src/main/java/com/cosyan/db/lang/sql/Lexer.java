@@ -24,7 +24,7 @@ public class Lexer {
   public PeekingIterator<Token> tokenize(String sql) throws ParserException {
     return Iterators.peekingIterator(tokens(sql).iterator());
   }
-  
+
   ImmutableList<Token> tokens(String sql) throws ParserException {
     int state = STATE_DEFAULT;
     ArrayList<Token> builder = new ArrayList<>();
@@ -68,13 +68,13 @@ public class Lexer {
           }
         }
       } else if (state == STATE_IDENT) {
-        if (Tokens.isDelimiter(c)) {
+        if (Tokens.isDelimiter(c) || c == Tokens.DOT) {
           builder.add(new IdentToken(sql.substring(literalStartIndex, i)));
           state = STATE_DEFAULT;
           literalStartIndex = i;
           i--;
         } else {
-          if (!(Tokens.isDigit(c) || Tokens.isLowerCaseLetter(c) || Tokens.isUpperCaseLetter(c) || c == '_' || c == '.')) {
+          if (!(Tokens.isDigit(c) || Tokens.isLowerCaseLetter(c) || Tokens.isUpperCaseLetter(c) || c == '_')) {
             throw new ParserException("Wrong ident.");
           }
         }
@@ -99,7 +99,11 @@ public class Lexer {
         } else if (c == Tokens.DOUBLE_QUOTE) {
           state = STATE_IN_DOUBLE_QUOTE;
           literalStartIndex = i;
-        } else if (Tokens.isLowerCaseLetter(c)) {
+        } else if (Tokens.isLowerCaseLetter(c) || c == Tokens.DOT) {
+          if (c == Tokens.DOT) {
+            builder.add(new Token(String.valueOf(c)));
+            i++;
+          }
           state = STATE_IDENT;
           literalStartIndex = i;
         } else {

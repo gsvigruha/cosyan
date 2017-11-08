@@ -70,7 +70,7 @@ public class CreateStatementTest extends UnitTestBase {
         t4,
         (BasicColumn) t4.column(new Ident("a")).getMeta())),
         t5.foreignKeys());
-    assertEquals(ImmutableMap.of("fk_b", new ReverseForeignKey(
+    assertEquals(ImmutableMap.of("rev_fk_b", new ReverseForeignKey(
         "rev_fk_b",
         "fk_b",
         t4,

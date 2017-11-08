@@ -5,10 +5,8 @@ import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Dependencies.TableDependencies;
-import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.model.TableMeta;
-import com.cosyan.db.transaction.MetaResources;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -58,11 +56,6 @@ public class Literals {
     public String print() {
       return "'" + value + "'";
     }
-
-    @Override
-    public MetaResources readResources(MaterializedTableMeta tableMeta) {
-      return MetaResources.empty();
-    }
   }
 
   @Data
@@ -84,11 +77,6 @@ public class Literals {
     public String print() {
       return String.valueOf(value);
     }
-
-    @Override
-    public MetaResources readResources(MaterializedTableMeta tableMeta) {
-      return MetaResources.empty();
-    }
   }
 
   @Data
@@ -109,11 +97,6 @@ public class Literals {
     @Override
     public String print() {
       return String.valueOf(value);
-    }
-
-    @Override
-    public MetaResources readResources(MaterializedTableMeta tableMeta) {
-      return MetaResources.empty();
     }
   }
 }

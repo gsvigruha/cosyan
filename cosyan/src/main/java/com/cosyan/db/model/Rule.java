@@ -43,7 +43,7 @@ public class Rule {
     Parser parser = new Parser();
     Lexer lexer = new Lexer();
     try {
-      parser.parseExpression(lexer.tokenize(expr.print())).compile(tableMeta.toTableWithDeps());
+      parser.parseExpression(lexer.tokenize(expr.print())).compileColumn(tableMeta);
     } catch (ParserException e) {
       throw new RuntimeException(e); // This should not happen.
     }

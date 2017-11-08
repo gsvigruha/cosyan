@@ -40,12 +40,13 @@ public class DropStatement {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class DropIndex extends Node implements MetaStatement {
-    private final Ident ident;
+    private final Ident table;
+    private final Ident column;
 
     @Override
     public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
-      MaterializedTableMeta tableMeta = metaRepo.table(new Ident(ident.head()));
-      BasicColumn column = tableMeta.column(ident.tail()).getMeta();
+      MaterializedTableMeta tableMeta = metaRepo.table(table);
+      BasicColumn column = tableMeta.column(this.column).getMeta();
       if (!column.isIndexed()) {
         throw new ModelException(String.format("Cannot drop index '%s.%s', column is not indexed.",
             tableMeta.tableName(), column.getName()));

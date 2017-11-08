@@ -20,9 +20,7 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.MaterializedTableMeta.TableWithDeps;
 import com.cosyan.db.model.Rule;
-import com.cosyan.db.transaction.MetaResources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -120,9 +118,8 @@ public class CreateStatement {
             refColumn));
       }
 
-      TableWithDeps tableWithDeps = tableMeta.toTableWithDeps();
       for (RuleDefinition ruleDefinition : ruleDefinitions) {
-        Rule rule = ruleDefinition.compile(tableWithDeps);
+        Rule rule = ruleDefinition.compile(tableMeta);
         if (rule.getType() != DataTypes.BoolType) {
           throw new ModelException("Constraint expression has to be boolean.");
         }
@@ -168,13 +165,9 @@ public class CreateStatement {
       return name + " [" + expr.print() + "]";
     }
 
-    public Rule compile(TableWithDeps tableWithDeps) throws ModelException {
-      ColumnMeta column = expr.compile(tableWithDeps);
+    public Rule compile(MaterializedTableMeta tableMeta) throws ModelException {
+      ColumnMeta column = expr.compileColumn(tableMeta);
       return new Rule(name, column, expr, column.tableDependencies());
-    }
-
-    public MetaResources readResources(MaterializedTableMeta tableMeta) throws ModelException {
-      return expr.readResources(tableMeta);
     }
   }
 
@@ -199,12 +192,13 @@ public class CreateStatement {
   @EqualsAndHashCode(callSuper = true)
   public static class CreateIndex extends Node implements MetaStatement {
 
-    private final Ident ident;
+    private final Ident table;
+    private final Ident column;
 
     @Override
     public Result execute(MetaRepo metaRepo) throws ModelException, IndexException, IOException {
-      MaterializedTableMeta tableMeta = metaRepo.table(new Ident(ident.head()));
-      BasicColumn column = tableMeta.column(ident.tail()).getMeta();
+      MaterializedTableMeta tableMeta = metaRepo.table(table);
+      BasicColumn column = tableMeta.column(this.column).getMeta();
       if (column.isIndexed()) {
         throw new ModelException(String.format("Cannot create index on '%s.%s', column is already indexed.",
             tableMeta.tableName(), column.getName()));

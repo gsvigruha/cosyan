@@ -14,7 +14,7 @@ import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.lang.expr.BinaryExpression;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.Expression.ExtraInfoCollector;
-import com.cosyan.db.lang.expr.Expression.IdentExpression;
+import com.cosyan.db.lang.expr.FuncCallExpression;
 import com.cosyan.db.lang.sql.Result.QueryResult;
 import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
@@ -42,7 +42,6 @@ import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.DerivedTables.SortedTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.MaterializedTableMeta.TableWithDeps;
 import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
@@ -144,7 +143,7 @@ public class SelectStatement {
       LinkedListMultimap<String, ColumnMeta> tableColumns = LinkedListMultimap.create();
       int i = 0;
       for (Expression expr : columns) {
-        tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable, collector));
+        tableColumns.put(expr.getName("_c" + (i++)), expr.compileColumn(sourceTable, collector));
       }
       return deduplicateColumns(tableColumns);
     }
@@ -159,10 +158,10 @@ public class SelectStatement {
         if (expr instanceof AsteriskExpression) {
           for (String columnName : sourceTable.columnNames()) {
             tableColumns.put(columnName,
-                new IdentExpression(new Ident(columnName)).compile(sourceTable));
+                FuncCallExpression.of(new Ident(columnName)).compileColumn(sourceTable));
           }
         } else {
-          tableColumns.put(expr.getName("_c" + (i++)), expr.compile(sourceTable));
+          tableColumns.put(expr.getName("_c" + (i++)), expr.compileColumn(sourceTable));
         }
       }
       return deduplicateColumns(tableColumns);
@@ -184,11 +183,11 @@ public class SelectStatement {
         MetaRepo metaRepo, ExposedTableMeta sourceTable, Optional<Expression> where, ExtraInfoCollector collector)
         throws ModelException {
       if (where.isPresent()) {
-        ColumnMeta whereColumn = where.get().compile(sourceTable, collector);
+        ColumnMeta whereColumn = where.get().compileColumn(sourceTable, collector);
         assertType(DataTypes.BoolType, whereColumn.getType());
-        if (sourceTable instanceof TableWithDeps) {
+        if (sourceTable instanceof MaterializedTableMeta) {
           ImmutableList<VariableEquals> clauses = PredicateHelper.extractClauses(where.get());
-          TableWithDeps materializedTableMeta = (TableWithDeps) sourceTable;
+          MaterializedTableMeta materializedTableMeta = (MaterializedTableMeta) sourceTable;
           VariableEquals clause = null;
           for (VariableEquals clauseCandidate : clauses) {
             BasicColumn column = materializedTableMeta.column(clauseCandidate.getIdent()).getMeta();
@@ -212,7 +211,7 @@ public class SelectStatement {
     private ColumnMeta havingExpression(MetaRepo metaRepo, TableMeta sourceTable,
         Optional<Expression> having, ExtraInfoCollector collector) throws ModelException {
       if (having.isPresent()) {
-        ColumnMeta havingColumn = having.get().compile(sourceTable, collector);
+        ColumnMeta havingColumn = having.get().compileColumn(sourceTable, collector);
         assertType(DataTypes.BoolType, havingColumn.getType());
         return havingColumn;
       } else {
@@ -231,7 +230,7 @@ public class SelectStatement {
       if (groupBy.isPresent()) {
         ImmutableMap.Builder<String, ColumnMeta> keyColumnsBuilder = ImmutableMap.builder();
         for (Expression expr : groupBy.get()) {
-          ColumnMeta keyColumn = expr.compile(sourceTable);
+          ColumnMeta keyColumn = expr.compileColumn(sourceTable);
           String name = expr.getName(null);
           if (name == null) {
             throw new ModelException("Expression in group by must be named: '" + expr + "'.");
@@ -253,7 +252,7 @@ public class SelectStatement {
         ImmutableList<Expression> orderBy) throws ModelException {
       ImmutableList.Builder<OrderColumn> orderColumnsBuilder = ImmutableList.builder();
       for (Expression expr : orderBy) {
-        ColumnMeta column = expr.compile(sourceTable);
+        ColumnMeta column = expr.compileColumn(sourceTable);
         if (column instanceof OrderColumn) {
           orderColumnsBuilder.add((OrderColumn) column);
         } else {
@@ -276,7 +275,7 @@ public class SelectStatement {
     private final Ident ident;
 
     public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
-      return metaRepo.table(ident).toTableWithDeps();
+      return metaRepo.table(ident);
     }
   }
 
@@ -306,8 +305,8 @@ public class SelectStatement {
       ImmutableList<BinaryExpression> exprs = ImmutableList
           .copyOf(decompose(onExpr, new LinkedList<BinaryExpression>()));
       for (BinaryExpression expr : exprs) {
-        leftJoinColumns.add(expr.getLeft().compile(leftTable));
-        rightJoinColumns.add(expr.getRight().compile(rightTable));
+        leftJoinColumns.add(expr.getLeft().compileColumn(leftTable));
+        rightJoinColumns.add(expr.getRight().compileColumn(rightTable));
       }
       return new JoinTableMeta(joinType, leftTable, rightTable, leftJoinColumns.build(), rightJoinColumns.build());
     }
@@ -339,7 +338,7 @@ public class SelectStatement {
     @Override
     public ColumnMeta compile(
         TableMeta sourceTable, ExtraInfoCollector collector) throws ModelException {
-      return expr.compile(sourceTable, collector);
+      return expr.compileColumn(sourceTable, collector);
     }
 
     @Override
@@ -355,11 +354,6 @@ public class SelectStatement {
     @Override
     public String print() {
       return expr.print() + " as " + ident.getString();
-    }
-
-    @Override
-    public MetaResources readResources(MaterializedTableMeta tableMeta) throws ModelException {
-      return expr.readResources(tableMeta);
     }
   }
 
@@ -397,11 +391,6 @@ public class SelectStatement {
     @Override
     public String print() {
       return "*";
-    }
-
-    @Override
-    public MetaResources readResources(MaterializedTableMeta tableMeta) {
-      throw new UnsupportedOperationException();
     }
   }
 }

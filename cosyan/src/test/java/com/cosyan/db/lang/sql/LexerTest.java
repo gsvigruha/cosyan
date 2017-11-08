@@ -57,4 +57,16 @@ public class LexerTest {
     assertEquals(ImmutableList.of(new Token("a"), new Token("<"), new FloatToken("1.5"), new Token(";")),
         lexer.tokens("a < 1.5;"));
   }
+
+  @Test
+  public void testIdents() throws ParserException {
+    assertEquals(ImmutableList.of(new Token("a"), new Token("."), new Token("b"), new Token(";")),
+        lexer.tokens("a.b;"));
+    assertEquals(ImmutableList.of(new Token("f"), new Token("("), new Token(")"), new Token(";")),
+        lexer.tokens("f();"));
+    assertEquals(ImmutableList.of(new Token("f"), new Token("."), new Token("g"), new Token("("), new Token(")"), new Token(";")),
+        lexer.tokens("f.g();"));
+    assertEquals(ImmutableList.of(new Token("f"), new Token("("), new Token(")"), new Token("."), new Token("g"), new Token(";")),
+        lexer.tokens("f().g;"));
+  }
 }

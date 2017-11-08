@@ -15,10 +15,8 @@ import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Dependencies.TableDependencies;
-import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.model.TableMeta;
-import com.cosyan.db.transaction.MetaResources;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -86,8 +84,8 @@ public class BinaryExpression extends Expression {
   @Override
   public DerivedColumn compile(TableMeta sourceTable, ExtraInfoCollector collector)
       throws ModelException {
-    final ColumnMeta leftColumn = left.compile(sourceTable, collector);
-    final ColumnMeta rightColumn = right.compile(sourceTable, collector);
+    final ColumnMeta leftColumn = left.compileColumn(sourceTable, collector);
+    final ColumnMeta rightColumn = right.compileColumn(sourceTable, collector);
 
     if (token.is(Tokens.AND)) {
       assertType(DataTypes.BoolType, leftColumn.getType());
@@ -589,10 +587,5 @@ public class BinaryExpression extends Expression {
   @Override
   public String print() {
     return "(" + left.print() + " " + token.getString() + " " + right.print() + ")";
-  }
-
-  @Override
-  public MetaResources readResources(MaterializedTableMeta tableMeta) throws ModelException {
-    return left.readResources(tableMeta).merge(right.readResources(tableMeta));
   }
 }

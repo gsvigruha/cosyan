@@ -10,8 +10,7 @@ import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.Dependencies.ColumnReverseRuleDependencies;
 import com.cosyan.db.model.Dependencies.ReverseRuleDependency;
-import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.Keys.ReverseForeignKey;
+import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SourceValues.ReferencingSourceValues;
 import com.cosyan.db.transaction.Resources;
@@ -40,15 +39,15 @@ public class RuleDependencyReader {
       HashMap<String, Object[]> referencedValues, String keyPrefix, String reverseKeySuffix)
       throws IOException, RuleException {
     for (ReverseRuleDependency dep : collection) {
-      ReverseForeignKey reverseForeignKey = dep.getForeignKey();
+      Ref reverseForeignKey = dep.getForeignKey();
       String key = keyPrefix.isEmpty() ? reverseForeignKey.getName() : keyPrefix + "." + reverseForeignKey.getName();
-      String reverseKey = reverseKeySuffix.isEmpty() ? reverseForeignKey.getReverse().getName()
-          : reverseForeignKey.getReverse().getName() + "." + reverseKeySuffix;
+      String reverseKey = reverseKeySuffix.isEmpty() ? reverseForeignKey.getRevName()
+          : reverseForeignKey.getRevName() + "." + reverseKeySuffix;
 
       Object[] newSourceValues = referencedValues.get(key);
       if (newSourceValues == null) {
         Object foreignKeyValue = parentValues[reverseForeignKey.getColumn().getIndex()];
-        Ident table = new Ident(reverseForeignKey.getRefTable().tableName());
+        String table = reverseForeignKey.getRefTable().tableName();
         SeekableTableReader reader = resources.createReader(table);
         IndexReader index = resources.getIndex(reverseForeignKey);
         long[] foreignKeyFilePointers = index.get(foreignKeyValue);

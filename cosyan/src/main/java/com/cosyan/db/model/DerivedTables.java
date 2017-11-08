@@ -18,7 +18,8 @@ import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
-import com.cosyan.db.model.MaterializedTableMeta.TableWithDeps;
+import com.cosyan.db.model.References.Column;
+import com.cosyan.db.model.References.ReferencedTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -29,6 +30,20 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 public class DerivedTables {
+
+  private static MetaResources resourcesFromColumns(Iterable<ColumnMeta> columns) {
+    MetaResources resources = MetaResources.empty();
+    for (ColumnMeta columnMeta : columns) {
+      resources = resources.merge(
+          MaterializedTableMeta.readResources(columnMeta.tableDependencies().getDeps().values()));
+    }
+    return resources;
+  }
+
+  private static MetaResources resourcesFromColumn(ColumnMeta column) {
+    return MaterializedTableMeta.readResources(column.tableDependencies().getDeps().values());
+  }
+
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class DerivedTableMeta extends ExposedTableMeta {
@@ -51,8 +66,13 @@ public class DerivedTables {
     }
 
     @Override
+    protected ReferencedTableMeta getTable(Ident ident) throws ModelException {
+      return null;
+    }
+
+    @Override
     public MetaResources readResources() {
-      return sourceTable.readResources();
+      return sourceTable.readResources().merge(resourcesFromColumns(columns.values()));
     }
   }
 
@@ -78,15 +98,20 @@ public class DerivedTables {
     }
 
     @Override
+    protected TableMeta getTable(Ident ident) throws ModelException {
+      return sourceTable.getTable(ident);
+    }
+
+    @Override
     public MetaResources readResources() {
-      return sourceTable.readResources();
+      return sourceTable.readResources().merge(resourcesFromColumn(whereColumn));
     }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class IndexFilteredTableMeta extends ExposedTableMeta {
-    private final TableWithDeps sourceTable;
+    private final MaterializedTableMeta sourceTable;
     private final ColumnMeta whereColumn;
     private final VariableEquals clause;
 
@@ -109,8 +134,13 @@ public class DerivedTables {
     }
 
     @Override
+    protected TableMeta getTable(Ident ident) throws ModelException {
+      return sourceTable.getTable(ident);
+    }
+
+    @Override
     public MetaResources readResources() {
-      return sourceTable.readResources();
+      return sourceTable.readResources().merge(resourcesFromColumn(whereColumn));
     }
   }
 
@@ -135,8 +165,13 @@ public class DerivedTables {
     }
 
     @Override
+    protected ReferencedTableMeta getTable(Ident ident) throws ModelException {
+      return null;
+    }
+
+    @Override
     public MetaResources readResources() {
-      return sourceTable.readResources();
+      return sourceTable.readResources().merge(resourcesFromColumns(keyColumns.values()));
     }
   }
 
@@ -162,6 +197,11 @@ public class DerivedTables {
     }
 
     @Override
+    protected ReferencedTableMeta getTable(Ident ident) throws ModelException {
+      return null;
+    }
+
+    @Override
     public MetaResources readResources() {
       return sourceTable.readResources();
     }
@@ -182,6 +222,11 @@ public class DerivedTables {
     @Override
     public Column getColumn(Ident ident) throws ModelException {
       return sourceTable.column(ident).shift(sourceTable.keyColumns.size());
+    }
+
+    @Override
+    protected ReferencedTableMeta getTable(Ident ident) throws ModelException {
+      return null;
     }
 
     @Override
@@ -212,6 +257,11 @@ public class DerivedTables {
     }
 
     @Override
+    protected TableMeta getTable(Ident ident) throws ModelException {
+      return sourceTable.getTable(ident);
+    }
+
+    @Override
     public MetaResources readResources() {
       return sourceTable.readResources();
     }
@@ -235,6 +285,11 @@ public class DerivedTables {
     @Override
     public Column getColumn(Ident ident) throws ModelException {
       return sourceTable.getColumn(ident);
+    }
+
+    @Override
+    protected TableMeta getTable(Ident ident) throws ModelException {
+      return sourceTable.getTable(ident);
     }
 
     @Override
@@ -309,8 +364,27 @@ public class DerivedTables {
     }
 
     @Override
+    protected TableMeta getTable(Ident ident) throws ModelException {
+      boolean presentInLeftTable = leftTable.hasTable(ident);
+      boolean presentInRightTable = rightTable.hasTable(ident);
+      if (presentInLeftTable && presentInRightTable) {
+        throw new ModelException("Ambiguous table reference '" + ident + "'.");
+      }
+      if (presentInLeftTable) {
+        return leftTable.getTable(ident);
+      }
+      if (presentInRightTable) {
+        return new ShiftedTableMeta(rightTable.getTable(ident), leftTable.columnNames().size());
+      }
+      throw new ModelException("Table reference '" + ident + "' not found.");
+    }
+
+    @Override
     public MetaResources readResources() {
-      return leftTable.readResources().merge(rightTable.readResources());
+      return leftTable.readResources()
+          .merge(rightTable.readResources())
+          .merge(resourcesFromColumns(leftTableJoinColumns))
+          .merge(resourcesFromColumns(rightTableJoinColumns));
     }
   }
 
@@ -337,15 +411,47 @@ public class DerivedTables {
 
     @Override
     public Column getColumn(Ident ident) throws ModelException {
-      if (ident.isSimple()) {
-        return sourceTable.getColumn(ident);
-      } else {
-        if (ident.head().equals(this.ident.getString())) {
-          return sourceTable.getColumn(ident.tail());
-        } else {
-          return null;
-        }
+      return sourceTable.getColumn(ident);
+    }
+
+    @Override
+    protected TableMeta getTable(Ident ident) throws ModelException {
+      if (this.ident.getString().equals(ident.getString())) {
+        return sourceTable;
       }
+      return sourceTable.getTable(ident);
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources();
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class ShiftedTableMeta extends TableMeta {
+    private final TableMeta sourceTable;
+    private final int shift;
+
+    public ShiftedTableMeta(TableMeta sourceTable, int shift) {
+      this.sourceTable = sourceTable;
+      this.shift = shift;
+    }
+
+    @Override
+    public TableReader reader(Resources resources) throws IOException {
+      return sourceTable.reader(resources);
+    }
+
+    @Override
+    public Column getColumn(Ident ident) throws ModelException {
+      return sourceTable.getColumn(ident).shift(shift);
+    }
+
+    @Override
+    protected TableMeta getTable(Ident ident) throws ModelException {
+      return sourceTable.getTable(ident);
     }
 
     @Override

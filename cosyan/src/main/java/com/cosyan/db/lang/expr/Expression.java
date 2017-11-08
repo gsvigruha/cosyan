@@ -15,16 +15,10 @@ import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumnWithDeps;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
+import com.cosyan.db.model.CompiledObject;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.Dependencies.TableDependencies;
-import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.Keys.ForeignKey;
-import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.MaterializedTableMeta.MaterializedColumn;
 import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.model.TableMeta;
-import com.cosyan.db.model.TableMeta.Column;
-import com.cosyan.db.transaction.MetaResources;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
@@ -50,17 +44,33 @@ public abstract class Expression extends Node {
     }
   }
 
-  public ColumnMeta compile(
+  public ColumnMeta compileColumn(
       TableMeta sourceTable) throws ModelException {
     ExtraInfoCollector collector = new ExtraInfoCollector();
-    ColumnMeta column = compile(sourceTable, collector);
+    ColumnMeta column = compileColumn(sourceTable, collector);
     if (!collector.aggrColumns().isEmpty()) {
       throw new ModelException("Aggregators are not allowed here.");
     }
     return column;
   }
 
-  public abstract ColumnMeta compile(
+  public ColumnMeta compileColumn(
+      TableMeta sourceTable,
+      ExtraInfoCollector collector) throws ModelException {
+    CompiledObject obj = compile(sourceTable, collector);
+    return (ColumnMeta) obj;
+  }
+
+  public CompiledObject compile(TableMeta sourceTable) throws ModelException {
+    ExtraInfoCollector collector = new ExtraInfoCollector();
+    CompiledObject obj = compile(sourceTable, collector);
+    if (!collector.aggrColumns().isEmpty()) {
+      throw new ModelException("Aggregators are not allowed here.");
+    }
+    return obj;
+  }
+
+  public abstract CompiledObject compile(
       TableMeta sourceTable,
       ExtraInfoCollector collector) throws ModelException;
 
@@ -72,8 +82,6 @@ public abstract class Expression extends Node {
 
   public abstract String print();
 
-  public abstract MetaResources readResources(MaterializedTableMeta tableMeta) throws ModelException;
-
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class UnaryExpression extends Expression {
@@ -84,7 +92,7 @@ public abstract class Expression extends Node {
     public DerivedColumn compile(
         TableMeta sourceTable, ExtraInfoCollector collector) throws ModelException {
       if (token.is(Tokens.NOT)) {
-        ColumnMeta exprColumn = expr.compile(sourceTable, collector);
+        ColumnMeta exprColumn = expr.compileColumn(sourceTable, collector);
         SyntaxTree.assertType(DataTypes.BoolType, exprColumn.getType());
         return new DerivedColumnWithDeps(DataTypes.BoolType, exprColumn.tableDependencies()) {
 
@@ -94,13 +102,13 @@ public abstract class Expression extends Node {
           }
         };
       } else if (token.is(Tokens.ASC)) {
-        ColumnMeta exprColumn = expr.compile(sourceTable, collector);
+        ColumnMeta exprColumn = expr.compileColumn(sourceTable, collector);
         return new OrderColumn(exprColumn, true);
       } else if (token.is(Tokens.DESC)) {
-        ColumnMeta exprColumn = expr.compile(sourceTable, collector);
+        ColumnMeta exprColumn = expr.compileColumn(sourceTable, collector);
         return new OrderColumn(exprColumn, false);
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NOT, Tokens.NULL).getString())) {
-        ColumnMeta exprColumn = expr.compile(sourceTable, collector);
+        ColumnMeta exprColumn = expr.compileColumn(sourceTable, collector);
         return new DerivedColumnWithDeps(DataTypes.BoolType, exprColumn.tableDependencies()) {
 
           @Override
@@ -109,7 +117,7 @@ public abstract class Expression extends Node {
           }
         };
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NULL).getString())) {
-        ColumnMeta exprColumn = expr.compile(sourceTable, collector);
+        ColumnMeta exprColumn = expr.compileColumn(sourceTable, collector);
         return new DerivedColumnWithDeps(DataTypes.BoolType, exprColumn.tableDependencies()) {
 
           @Override
@@ -130,70 +138,6 @@ public abstract class Expression extends Node {
     @Override
     public String print() {
       return token.getString() + " " + expr.print();
-    }
-
-    @Override
-    public MetaResources readResources(MaterializedTableMeta tableMeta) throws ModelException {
-      return expr.readResources(tableMeta);
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class IdentExpression extends Expression {
-    private final Ident ident;
-
-    @Override
-    public ColumnMeta compile(
-        TableMeta sourceTable, ExtraInfoCollector collector) throws ModelException {
-      Column column = sourceTable.column(ident);
-      if (column.usesRefValues()) {
-        TableDependencies tableDependencies = new TableDependencies();
-        final MaterializedColumn materializedColumn = (MaterializedColumn) column;
-        tableDependencies.addTableDependency(materializedColumn);
-        return new DerivedColumnWithDeps(column.getMeta().getType(), tableDependencies) {
-          @Override
-          public Object getValue(SourceValues values) throws IOException {
-            return values.refTableValue(materializedColumn);
-          }
-        };
-      } else {
-        final int index = column.getIndex();
-        return new DerivedColumnWithDeps(column.getMeta().getType(), new TableDependencies()) {
-          @Override
-          public Object getValue(SourceValues values) {
-            return values.sourceValue(index);
-          }
-        };
-      }
-    }
-
-    @Override
-    public String getName(String def) {
-      if (ident.isSimple()) {
-        return ident.getString();
-      } else {
-        return ident.last();
-      }
-    }
-
-    @Override
-    public AggregationExpression isAggregation() {
-      return AggregationExpression.NO;
-    }
-
-    @Override
-    public String print() {
-      return ident.getString();
-    }
-
-    @Override
-    public MetaResources readResources(MaterializedTableMeta tableMeta) throws ModelException {
-      MetaResources readResources = MetaResources.empty();
-      for (ForeignKey foreignKey : tableMeta.column(ident).getForeignKeyChain()) {
-        readResources = readResources.merge(MetaResources.readTable(foreignKey.getRefTable()));
-      }
-      return readResources;
     }
   }
 }

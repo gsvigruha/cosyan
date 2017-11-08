@@ -125,6 +125,12 @@ public class TableReaderTest extends DummyTestBase {
   }
 
   @Test
+  public void testFuncallOfFuncall() throws Exception {
+    ExposedTableReader reader = query("select a.upper().length() as l from table;");
+    assertEquals(ImmutableMap.of("l", 3L), reader.readColumns());
+  }
+
+  @Test
   public void testWhere() throws Exception {
     ExposedTableReader reader = query("select * from table where b > 1;");
     assertEquals(ImmutableMap.of("a", "xyz", "b", 5L, "c", 6.7), reader.readColumns());
@@ -139,9 +145,15 @@ public class TableReaderTest extends DummyTestBase {
   }
 
   @Test
-  public void testAliasing() throws Exception {
+  public void testColumnAliasing() throws Exception {
     ExposedTableReader reader = query("select b + 2 as x, c * 3.0 as y from table;");
     assertEquals(ImmutableMap.of("x", 3L, "y", 3.0), reader.readColumns());
+  }
+
+  @Test
+  public void testTableAliasing() throws Exception {
+    ExposedTableReader reader = query("select t.b from table as t;");
+    assertEquals(ImmutableMap.of("b", 1L), reader.readColumns());
   }
 
   @Test
@@ -177,6 +189,13 @@ public class TableReaderTest extends DummyTestBase {
   public void testAggregatorsMin() throws Exception {
     ExposedTableReader reader = query("select min(a) as a, min(b) as b, min(c) as c from large;");
     assertEquals(ImmutableMap.of("a", "a", "b", 1L, "c", 2.0), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testAggregatorsFuncallOnColumn() throws Exception {
+    ExposedTableReader reader = query("select a.max() as a, b.count() as b, c.sum() as c from large;");
+    assertEquals(ImmutableMap.of("a", "b", "b", 4L, "c", 20.0), reader.readColumns());
     assertEquals(null, reader.readColumns());
   }
 
@@ -474,6 +493,11 @@ public class TableReaderTest extends DummyTestBase {
 
   @Test(expected = ModelException.class)
   public void testNonKeyOutsideOfAggr() throws Exception {
-    query("select b, sum(c) from large group by a;").readColumns();
+    query("select b, sum(c) from large group by a;");
+  }
+
+  @Test(expected = ModelException.class)
+  public void testGroupByInconsistentAggr() throws Exception {
+    query("select sum(b) + b from large group by a;");
   }
 }

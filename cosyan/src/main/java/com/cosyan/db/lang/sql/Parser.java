@@ -6,7 +6,6 @@ import java.util.stream.Stream;
 
 import com.cosyan.db.lang.expr.BinaryExpression;
 import com.cosyan.db.lang.expr.Expression;
-import com.cosyan.db.lang.expr.Expression.IdentExpression;
 import com.cosyan.db.lang.expr.Expression.UnaryExpression;
 import com.cosyan.db.lang.expr.FuncCallExpression;
 import com.cosyan.db.lang.expr.Literals.DoubleLiteral;
@@ -95,7 +94,7 @@ public class Parser {
   private Delete parseDelete(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.DELETE);
     assertNext(tokens, Tokens.FROM);
-    Ident ident = parseSimpleIdent(tokens);
+    Ident ident = parseIdent(tokens);
     assertNext(tokens, Tokens.WHERE);
     Expression where = parseExpression(tokens, 0);
     return new Delete(ident, where);
@@ -104,13 +103,13 @@ public class Parser {
   private InsertInto parseInsert(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.INSERT);
     assertNext(tokens, Tokens.INTO);
-    Ident ident = parseSimpleIdent(tokens);
+    Ident ident = parseIdent(tokens);
     Optional<ImmutableList<Ident>> columns;
     if (tokens.peek().is(Tokens.PARENT_OPEN)) {
       tokens.next();
       ImmutableList.Builder<Ident> builder = ImmutableList.builder();
       while (true) {
-        builder.add(parseSimpleIdent(tokens));
+        builder.add(parseIdent(tokens));
         if (tokens.peek().is(Tokens.COMMA)) {
           tokens.next();
         } else {
@@ -157,11 +156,11 @@ public class Parser {
 
   private Update parseUpdate(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.UPDATE);
-    Ident ident = parseSimpleIdent(tokens);
+    Ident ident = parseIdent(tokens);
     assertNext(tokens, Tokens.SET);
     ImmutableList.Builder<SetExpression> updates = ImmutableList.builder();
     while (true) {
-      Ident columnIdent = parseSimpleIdent(tokens);
+      Ident columnIdent = parseIdent(tokens);
       assertNext(tokens, String.valueOf(Tokens.EQ));
       Expression expr = parseExpression(tokens, 0);
       updates.add(new SetExpression(columnIdent, expr));
@@ -187,7 +186,7 @@ public class Parser {
     assertPeek(tokens, Tokens.TABLE, Tokens.INDEX);
     if (tokens.peek().is(Tokens.TABLE)) {
       tokens.next();
-      Ident ident = parseSimpleIdent(tokens);
+      Ident ident = parseIdent(tokens);
       assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
       ImmutableList.Builder<ColumnDefinition> columns = ImmutableList.builder();
       ImmutableList.Builder<ConstraintDefinition> constraints = ImmutableList.builder();
@@ -207,8 +206,10 @@ public class Parser {
       return new CreateTable(ident.getString(), columns.build(), constraints.build());
     } else {
       assertNext(tokens, Tokens.INDEX);
-      Ident ident = parseIdent(tokens);
-      return new CreateIndex(ident);
+      Ident table = parseIdent(tokens);
+      assertNext(tokens, String.valueOf(Tokens.DOT));
+      Ident column = parseIdent(tokens);
+      return new CreateIndex(table, column);
     }
   }
 
@@ -217,26 +218,28 @@ public class Parser {
     assertPeek(tokens, Tokens.TABLE, Tokens.INDEX);
     if (tokens.peek().is(Tokens.TABLE)) {
       tokens.next();
-      Ident ident = parseSimpleIdent(tokens);
+      Ident ident = parseIdent(tokens);
       return new DropTable(ident);
     } else {
       assertNext(tokens, Tokens.INDEX);
-      Ident ident = parseIdent(tokens);
-      return new DropIndex(ident);
+      Ident table = parseIdent(tokens);
+      assertNext(tokens, String.valueOf(Tokens.DOT));
+      Ident column = parseIdent(tokens);
+      return new DropIndex(table, column);
     }
   }
 
   private MetaStatement parseAlter(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.ALTER);
     assertNext(tokens, Tokens.TABLE);
-    Ident ident = parseSimpleIdent(tokens);
+    Ident ident = parseIdent(tokens);
     if (tokens.peek().is(Tokens.ADD)) {
       tokens.next();
       ColumnDefinition column = parseColumnDefinition(tokens);
       return new AlterTableAddColumn(ident, column);
     } else if (tokens.peek().is(Tokens.DROP)) {
       tokens.next();
-      Ident columnName = parseSimpleIdent(tokens);
+      Ident columnName = parseIdent(tokens);
       return new AlterTableDropColumn(ident, columnName);
     } else if (tokens.peek().is(Tokens.ALTER) || tokens.peek().is(Tokens.MODIFY)) {
       tokens.next();
@@ -249,7 +252,7 @@ public class Parser {
 
   private ConstraintDefinition parseConstraint(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.CONSTRAINT);
-    Ident ident = parseSimpleIdent(tokens);
+    Ident ident = parseIdent(tokens);
     if (tokens.peek().is(Tokens.CHECK)) {
       tokens.next();
       assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
@@ -260,23 +263,23 @@ public class Parser {
       tokens.next();
       assertNext(tokens, Tokens.KEY);
       assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
-      Ident column = parseSimpleIdent(tokens);
+      Ident column = parseIdent(tokens);
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
       return new PrimaryKeyDefinition(ident.getString(), column);
     } else if (tokens.peek().is(Tokens.FOREIGN)) {
       tokens.next();
       assertNext(tokens, Tokens.KEY);
       assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
-      Ident column = parseSimpleIdent(tokens);
+      Ident column = parseIdent(tokens);
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
       assertNext(tokens, Tokens.REFERENCES);
-      Ident refTable = parseSimpleIdent(tokens);
+      Ident refTable = parseIdent(tokens);
       assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
-      Ident refColumn = parseSimpleIdent(tokens);
+      Ident refColumn = parseIdent(tokens);
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
       if (tokens.peek().is(Tokens.REVERSE)) {
         tokens.next();
-        Ident reverseIdent = parseSimpleIdent(tokens);
+        Ident reverseIdent = parseIdent(tokens);
         return new ForeignKeyDefinition(ident.getString(), reverseIdent.getString(), column, refTable, refColumn);
       } else {
         return new ForeignKeyDefinition(ident.getString(), "rev_" + ident.getString(), column, refTable, refColumn);
@@ -287,7 +290,7 @@ public class Parser {
   }
 
   private ColumnDefinition parseColumnDefinition(PeekingIterator<Token> tokens) throws ParserException {
-    Ident ident = parseSimpleIdent(tokens);
+    Ident ident = parseIdent(tokens);
     DataType<?> type = parseDataType(tokens);
     boolean unique;
     if (tokens.peek().is(Tokens.UNIQUE)) {
@@ -380,42 +383,63 @@ public class Parser {
 
   private Expression parsePrimary(PeekingIterator<Token> tokens) throws ParserException {
     Token token = tokens.peek();
+    Expression expr;
     if (token.is(Tokens.PARENT_OPEN)) {
       tokens.next();
-      Expression expr = parseExpression(tokens, 0);
+      expr = parseExpression(tokens, 0);
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
       return expr;
     } else if (token.is(Tokens.ASTERISK)) {
       tokens.next();
-      return new AsteriskExpression();
+      expr = new AsteriskExpression();
     } else if (token.isIdent()) {
       Ident ident = new Ident(tokens.next().getString());
-      if (tokens.peek().is(Tokens.PARENT_OPEN)) {
-        tokens.next();
-        if (ident.is(Tokens.COUNT) && tokens.peek().is(Tokens.DISTINCT)) {
-          tokens.next();
-          ImmutableList<Expression> argExprs = parseExprs(tokens, false, String.valueOf(Tokens.PARENT_CLOSED));
-          tokens.next();
-          return new FuncCallExpression(new Ident("count$distinct"), argExprs);
-        } else {
-          ImmutableList<Expression> argExprs = parseExprs(tokens, false, String.valueOf(Tokens.PARENT_CLOSED));
-          tokens.next();
-          return new FuncCallExpression(ident, argExprs);
-        }
-      } else {
-        return new IdentExpression(ident);
-      }
+      expr = parseFuncCallExpression(ident, null, tokens);
     } else if (token.isInt()) {
       tokens.next();
-      return new LongLiteral(Long.valueOf(token.getString()));
+      expr = new LongLiteral(Long.valueOf(token.getString()));
     } else if (token.isFloat()) {
       tokens.next();
-      return new DoubleLiteral(Double.valueOf(token.getString()));
+      expr = new DoubleLiteral(Double.valueOf(token.getString()));
     } else if (token.isString()) {
       tokens.next();
-      return new StringLiteral(token.getString());
+      expr = new StringLiteral(token.getString());
     } else {
       throw new ParserException("Expected literal but got " + token.getString() + ".");
+    }
+    if (tokens.peek().is(Tokens.DOT)) {
+      tokens.next();
+      Ident newIdent = parseIdent(tokens);
+      return parseFuncCallExpression(newIdent, expr, tokens);
+    } else {
+      return expr;
+    }
+  }
+
+  private FuncCallExpression parseFuncCallExpression(Ident ident, Expression parent, PeekingIterator<Token> tokens)
+      throws ParserException {
+    FuncCallExpression expr;
+    if (tokens.peek().is(Tokens.PARENT_OPEN)) {
+      tokens.next();
+      if (ident.is(Tokens.COUNT) && tokens.peek().is(Tokens.DISTINCT)) {
+        tokens.next();
+        ImmutableList<Expression> argExprs = parseExprs(tokens, false, String.valueOf(Tokens.PARENT_CLOSED));
+        tokens.next();
+        expr = new FuncCallExpression(new Ident("count$distinct"), parent, argExprs);
+      } else {
+        ImmutableList<Expression> argExprs = parseExprs(tokens, false, String.valueOf(Tokens.PARENT_CLOSED));
+        tokens.next();
+        expr = new FuncCallExpression(ident, parent, argExprs);
+      }
+    } else {
+      expr = new FuncCallExpression(ident, parent, ImmutableList.of());
+    }
+    if (tokens.peek().is(Tokens.DOT)) {
+      tokens.next();
+      Ident newIdent = parseIdent(tokens);
+      return parseFuncCallExpression(newIdent, expr, tokens);
+    } else {
+      return expr;
     }
   }
 
@@ -453,14 +477,6 @@ public class Parser {
     } else {
       throw new ParserException("Expected identifier but got " + token.getString() + ".");
     }
-  }
-
-  private Ident parseSimpleIdent(PeekingIterator<Token> tokens) throws ParserException {
-    Ident ident = parseIdent(tokens);
-    if (!ident.isSimple()) {
-      throw new ParserException("Expected simple identifier but got '" + ident + "'.");
-    }
-    return ident;
   }
 
   private Table parseTable(PeekingIterator<Token> tokens) throws ParserException {
@@ -539,14 +555,14 @@ public class Parser {
   private void assertNext(PeekingIterator<Token> tokens, String... values) throws ParserException {
     String next = tokens.next().getString();
     if (!ImmutableSet.copyOf(values).contains(next)) {
-      throw new ParserException("Expected " + join(values) + " but got " + next + ".");
+      throw new ParserException("Expected '" + join(values) + "' but got '" + next + "'.");
     }
   }
 
   private void assertPeek(PeekingIterator<Token> tokens, String... values) throws ParserException {
     String next = tokens.peek().getString();
     if (!ImmutableSet.copyOf(values).contains(next)) {
-      throw new ParserException("Expected " + join(values) + " but got " + next + ".");
+      throw new ParserException("Expected '" + join(values) + "' but got '" + next + "'.");
     }
   }
 

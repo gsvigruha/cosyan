@@ -98,9 +98,6 @@ public class MetaRepo implements MetaRepoReader {
 
   @Override
   public MaterializedTableMeta table(Ident ident) throws ModelException {
-    if (ident.parts().length != 1) {
-      throw new ModelException("Invalid table identifier '" + ident.getString() + "'.");
-    }
     if (!tables.containsKey(ident.getString())) {
       throw new ModelException("Table '" + ident.getString() + "' does not exist.");
     }

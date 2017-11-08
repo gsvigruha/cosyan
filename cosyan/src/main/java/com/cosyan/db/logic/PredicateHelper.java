@@ -5,8 +5,8 @@ import java.util.List;
 
 import com.cosyan.db.lang.expr.BinaryExpression;
 import com.cosyan.db.lang.expr.Expression;
-import com.cosyan.db.lang.expr.Expression.IdentExpression;
 import com.cosyan.db.lang.expr.Expression.UnaryExpression;
+import com.cosyan.db.lang.expr.FuncCallExpression;
 import com.cosyan.db.lang.expr.Literals.Literal;
 import com.cosyan.db.lang.expr.Literals.LongLiteral;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
@@ -46,8 +46,9 @@ public class PredicateHelper {
   }
 
   private static void collectClause(Expression first, Expression second, List<VariableEquals> lookupsToCollect) {
-    if (first instanceof IdentExpression && second instanceof Literal) {
-      Ident ident = ((IdentExpression) first).getIdent();
+    if (first instanceof FuncCallExpression && second instanceof Literal) {
+      Ident ident = ((FuncCallExpression) first).getIdent();
+      // TODO replan this
       if (second instanceof StringLiteral) {
         lookupsToCollect.add(new VariableEquals(ident, ((StringLiteral) second).getValue()));
       } else if (second instanceof LongLiteral) {

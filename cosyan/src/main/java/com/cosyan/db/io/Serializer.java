@@ -27,7 +27,6 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.MaterializedTableMeta.TableWithDeps;
 import com.cosyan.db.model.Rule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
@@ -219,13 +218,12 @@ public class Serializer {
     
     Parser parser = new Parser();
     Lexer lexer = new Lexer();
-    TableWithDeps tableWithDeps = tableMeta.toTableWithDeps();
     int numSimpleChecks = refStream.readInt();
     for (int i = 0; i < numSimpleChecks; i++) {
       String name = refStream.readUTF();
       Expression expr = parser.parseExpression(lexer.tokenize(refStream.readUTF()));
       RuleDefinition ruleDefinition = new RuleDefinition(name, expr);
-      tableMeta.addRule(ruleDefinition.compile(tableWithDeps).toBooleanRule());
+      tableMeta.addRule(ruleDefinition.compile(tableMeta).toBooleanRule());
     }
   }
 }

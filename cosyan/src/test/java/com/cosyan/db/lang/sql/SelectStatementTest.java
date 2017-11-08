@@ -77,6 +77,10 @@ public class SelectStatementTest extends UnitTestBase {
     QueryResult r4 = query("select a2, fk_a.b1.sum() as s from t9 group by a2;");
     assertHeader(new String[] { "a2", "s" }, r4);
     assertValues(new Object[][] { { "x", 3L }, { "y", 2L } }, r4);
+
+    QueryResult r5 = query("select a1 from t9 group by fk_a.a1 as a1;");
+    assertHeader(new String[] { "a1" }, r5);
+    assertValues(new Object[][] { { "x" }, { "y" } }, r5);
   }
 
   @Test
@@ -87,6 +91,7 @@ public class SelectStatementTest extends UnitTestBase {
     execute("insert into t11 values ('x', 1), ('x', 2);");
 
     QueryResult r1 = query("select a1 as a, rev_fk_a.b2 as b from t10;");
+    System.out.println(r1);
     assertHeader(new String[] { "a", "b" }, r1);
     assertValues(new Object[][] { { "x", 3L }, { "y", 2L } }, r1);
   }
