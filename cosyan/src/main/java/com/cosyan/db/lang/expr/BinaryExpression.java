@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.Date;
 
 import com.cosyan.db.lang.sql.Parser.ParserException;
-import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.lang.sql.Tokens;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -28,7 +27,6 @@ public class BinaryExpression extends Expression {
   private final Token token;
   private final Expression left;
   private final Expression right;
-  private final AggregationExpression aggregation;
 
   public BinaryExpression(
       Token token,
@@ -37,18 +35,6 @@ public class BinaryExpression extends Expression {
     this.token = token;
     this.left = left;
     this.right = right;
-    AggregationExpression leftAggr = left.isAggregation();
-    AggregationExpression rightAggr = right.isAggregation();
-
-    if (leftAggr == rightAggr) {
-      this.aggregation = leftAggr;
-    } else if (leftAggr == AggregationExpression.EITHER) {
-      this.aggregation = rightAggr;
-    } else if (rightAggr == AggregationExpression.EITHER) {
-      this.aggregation = leftAggr;
-    } else {
-      throw new ParserException("Incompatible left and right expression for " + token.getString() + ".");
-    }
   }
 
   protected abstract class BinaryColumn extends DerivedColumn {
@@ -577,11 +563,6 @@ public class BinaryExpression extends Expression {
       throw new ModelException("Unsupported binary expression " + token.getString() +
           " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
     }
-  }
-
-  @Override
-  public AggregationExpression isAggregation() {
-    return aggregation;
   }
 
   @Override

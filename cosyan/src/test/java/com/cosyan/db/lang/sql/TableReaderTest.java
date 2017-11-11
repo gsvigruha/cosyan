@@ -500,4 +500,9 @@ public class TableReaderTest extends DummyTestBase {
   public void testGroupByInconsistentAggr() throws Exception {
     query("select sum(b) + b from large group by a;");
   }
+
+  @Test(expected = ModelException.class)
+  public void testInconsistentAggr() throws Exception {
+    query("select sum(b) + b from large;");
+  }
 }

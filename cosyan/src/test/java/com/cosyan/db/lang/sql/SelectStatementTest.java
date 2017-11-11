@@ -90,9 +90,16 @@ public class SelectStatementTest extends UnitTestBase {
     execute("insert into t10 values ('x');");
     execute("insert into t11 values ('x', 1), ('x', 2);");
 
-    QueryResult r1 = query("select a1 as a, rev_fk_a.b2 as b from t10;");
-    System.out.println(r1);
-    assertHeader(new String[] { "a", "b" }, r1);
-    assertValues(new Object[][] { { "x", 3L }, { "y", 2L } }, r1);
+    QueryResult r1 = query("select a1, rev_fk_a.select(sum(b2)) from t10;");
+    assertHeader(new String[] { "a1", "_c0" }, r1);
+    assertValues(new Object[][] { { "x", 3L } }, r1);
+    
+    QueryResult r2 = query("select a1, rev_fk_a.select(b2.sum()) from t10;");
+    assertHeader(new String[] { "a1", "_c0" }, r2);
+    assertValues(new Object[][] { { "x", 3L } }, r2);
+    
+    QueryResult r3 = query("select a1 as a, rev_fk_a.select(sum(b2), count(b2)) from t10;");
+    assertHeader(new String[] { "a", "_c0", "_c1" }, r3);
+    assertValues(new Object[][] { { "x", 3L, 2L } }, r3);
   }
 }

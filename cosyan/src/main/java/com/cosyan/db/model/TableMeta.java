@@ -36,7 +36,7 @@ public abstract class TableMeta implements CompiledObject {
   }
 
   public TableMeta table(Ident ident) throws ModelException {
-    TableMeta table = getTable(ident);
+    TableMeta table = getRefTable(ident);
     if (table == null) {
       throw new ModelException(String.format("Table reference '%s' not found.", ident));
     }
@@ -45,7 +45,7 @@ public abstract class TableMeta implements CompiledObject {
 
   public boolean hasTable(Ident ident) {
     try {
-      return getTable(ident) != null;
+      return getRefTable(ident) != null;
     } catch (ModelException e) {
       return false;
     }
@@ -55,7 +55,7 @@ public abstract class TableMeta implements CompiledObject {
   protected abstract Column getColumn(Ident ident) throws ModelException;
 
   @Nullable
-  protected abstract TableMeta getTable(Ident ident) throws ModelException;
+  protected abstract TableMeta getRefTable(Ident ident) throws ModelException;
 
   protected abstract TableReader reader(Resources resources) throws IOException;
 

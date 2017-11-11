@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import com.cosyan.db.io.DependencyReader;
-import com.cosyan.db.model.References.SimpleReferencingColumn;
+import com.cosyan.db.model.References.ReferencingColumn;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 
@@ -20,7 +20,7 @@ public class SourceValues {
     return sourceValues[index];
   }
 
-  public Object refTableValue(SimpleReferencingColumn column) throws IOException {
+  public Object refTableValue(ReferencingColumn column) throws IOException {
     throw new UnsupportedOperationException();
   }
 
@@ -45,7 +45,7 @@ public class SourceValues {
     }
 
     @Override
-    public Object refTableValue(SimpleReferencingColumn column) throws IOException {
+    public Object refTableValue(ReferencingColumn column) throws IOException {
       Object[] values = referencedValues.get(column.tableNameWithChain());
       if (values == null) {
         reader.readReferencedValues(sourceValues, referencedValues, column);

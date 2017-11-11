@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cosyan.db.lang.sql.SyntaxTree;
-import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.Tokens;
 import com.cosyan.db.lang.sql.Tokens.Token;
@@ -78,8 +77,6 @@ public abstract class Expression extends Node {
     return def;
   }
 
-  public abstract AggregationExpression isAggregation();
-
   public abstract String print();
 
   @Data
@@ -128,11 +125,6 @@ public abstract class Expression extends Node {
       } else {
         throw new UnsupportedOperationException();
       }
-    }
-
-    @Override
-    public AggregationExpression isAggregation() {
-      return expr.isAggregation();
     }
 
     @Override

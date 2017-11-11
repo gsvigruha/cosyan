@@ -7,7 +7,6 @@ import javax.annotation.Nullable;
 
 import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.lang.sql.SyntaxTree;
-import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BuiltinFunctions;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
@@ -18,11 +17,15 @@ import com.cosyan.db.model.ColumnMeta.DerivedColumnWithDeps;
 import com.cosyan.db.model.CompiledObject;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Dependencies.TableDependencies;
+import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Ident;
+import com.cosyan.db.model.References.MultiReferencingColumn;
+import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.model.TableMeta;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 
 import lombok.Data;
@@ -35,39 +38,18 @@ public class FuncCallExpression extends Expression {
   @Nullable
   private final Expression object;
   private final ImmutableList<Expression> args;
-  private final AggregationExpression aggregation;
 
   public FuncCallExpression(Ident ident, @Nullable Expression object, ImmutableList<Expression> args)
       throws ParserException {
     this.ident = ident;
     this.object = object;
     this.args = args;
-    if (isAggr()) {
-      aggregation = AggregationExpression.YES;
-    } else {
-      long yes = args.stream().filter(arg -> arg.isAggregation() == AggregationExpression.YES).count();
-      long no = args.stream().filter(arg -> arg.isAggregation() == AggregationExpression.NO).count();
-      if (no == 0 && yes == 0) {
-        aggregation = AggregationExpression.EITHER;
-      } else if (no == 0) {
-        aggregation = AggregationExpression.YES;
-      } else if (yes == 0) {
-        aggregation = AggregationExpression.NO;
-      } else {
-        throw new ParserException("Inconsistent parameter.");
-      }
-    }
   }
 
   public FuncCallExpression(Ident ident) {
     this.ident = ident;
     this.object = null;
     this.args = ImmutableList.of();
-    if (isAggr()) {
-      aggregation = AggregationExpression.YES;
-    } else {
-      aggregation = AggregationExpression.EITHER;
-    }
   }
 
   public static FuncCallExpression of(Ident ident) {
@@ -116,20 +98,57 @@ public class FuncCallExpression extends Expression {
 
   private AggrColumn aggrFunction(TableMeta sourceTable, Expression arg, ExtraInfoCollector collector)
       throws ModelException {
-    if (!(sourceTable instanceof KeyValueTableMeta)) {
-      throw new ModelException("Aggregators are not allowed here.");
+    TableMeta t;
+    int shift;
+    if ((sourceTable instanceof KeyValueTableMeta)) {
+      KeyValueTableMeta keyValueTableMeta = (KeyValueTableMeta) sourceTable;
+      t = keyValueTableMeta.getSourceTable();
+      shift = keyValueTableMeta.getKeyColumns().size();
+    } else if (sourceTable instanceof ReferencedMultiTableMeta) {
+      KeyValueTableMeta keyValueTableMeta = ((ReferencedMultiTableMeta) sourceTable).getProxyTable();
+      t = keyValueTableMeta.getSourceTable();
+      shift = keyValueTableMeta.getKeyColumns().size();
+    } else {
+      t = sourceTable;
+      shift = 1;
     }
-    KeyValueTableMeta outerTable = (KeyValueTableMeta) sourceTable;
-    ColumnMeta argColumn = arg.compileColumn(outerTable.getSourceTable());
+    ColumnMeta argColumn = arg.compileColumn(t);
     final TypedAggrFunction<?> function = BuiltinFunctions.aggrFunction(ident.getString(), argColumn.getType());
-
     AggrColumn aggrColumn = new AggrColumn(
         function.getReturnType(),
         argColumn,
-        outerTable.getKeyColumns().size() + collector.numAggrColumns(),
+        shift + collector.numAggrColumns(),
         function);
     collector.addAggrColumn(aggrColumn);
     return aggrColumn;
+  }
+
+  private TableMeta tableFunction(TableMeta tableMeta) throws ModelException {
+    if (tableMeta instanceof ReferencedMultiTableMeta && ident.getString().equals("select")) {
+      ReferencedMultiTableMeta multiTableMeta = (ReferencedMultiTableMeta) tableMeta;
+      ImmutableMap.Builder<String, ColumnMeta> argColumnsBuilder = ImmutableMap.builder();
+      ExtraInfoCollector collector = new ExtraInfoCollector();
+      for (int i = 0; i < args.size(); i++) {
+        ColumnMeta col = args.get(i).compileColumn(tableMeta, collector);
+        MultiReferencingColumn mrc = new MultiReferencingColumn(multiTableMeta, col, i + 1);
+        TableDependencies deps = new TableDependencies();
+        deps.add(col.tableDependencies());
+        deps.addTableDependency(multiTableMeta);
+        DerivedColumnWithDeps c = new DerivedColumnWithDeps(col.getType(), deps) {
+
+          @Override
+          public Object getValue(SourceValues values) throws IOException {
+            return values.refTableValue(mrc);
+          }
+
+        };
+        argColumnsBuilder.put(args.get(i).getName("_c" + i), c);
+      }
+      multiTableMeta.setColumns(collector.aggrColumns());
+      return new DerivedTableMeta(multiTableMeta, argColumnsBuilder.build());
+    } else {
+      throw new ModelException("Wrong func");
+    }
   }
 
   @Override
@@ -158,7 +177,7 @@ public class FuncCallExpression extends Expression {
           throw new ModelException("Invalid number of arguments for aggregator: " + args.size() + ".");
         }
         return aggrFunction(sourceTable, object, collector);
-      } else {
+      } else { // Not aggregator.
         CompiledObject obj = object.compile(sourceTable);
         if (obj instanceof TableMeta) {
           TableMeta tableMeta = (TableMeta) obj;
@@ -169,7 +188,7 @@ public class FuncCallExpression extends Expression {
               return tableMeta.column(ident).toMeta();
             }
           } else {
-            throw new ModelException(String.format("Arguments are not allowed here.", ident.getString()));
+            return tableFunction(tableMeta);
           }
         } else if (obj instanceof ColumnMeta) {
           ColumnMeta columnMeta = (ColumnMeta) obj;
@@ -181,13 +200,8 @@ public class FuncCallExpression extends Expression {
   }
 
   @Override
-  public AggregationExpression isAggregation() {
-    return aggregation;
-  }
-
-  @Override
   public String getName(String def) {
-    if (args.size() == 0) {
+    if (args.size() == 0 && !isAggr()) {
       return ident.getString();
     } else {
       return super.getName(def);

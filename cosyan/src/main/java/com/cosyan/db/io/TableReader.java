@@ -181,25 +181,20 @@ public abstract class TableReader implements TableIO {
     }
   }
 
-  public static class IndexFilteredTableReader extends ExposedTableReader {
+  protected static abstract class MultiFilteredTableReader extends ExposedTableReader {
 
     private final SeekableTableReader sourceReader;
     private final ColumnMeta whereColumn;
-    private final VariableEquals clause;
-    private final IndexReader index;
 
-    private long[] positions;
+    protected long[] positions;
     private int pointer;
 
-    public IndexFilteredTableReader(
+    public MultiFilteredTableReader(
         SeekableTableReader sourceReader,
-        ColumnMeta whereColumn,
-        VariableEquals clause) {
+        ColumnMeta whereColumn) {
       super(sourceReader.columns);
       this.sourceReader = sourceReader;
       this.whereColumn = whereColumn;
-      this.clause = clause;
-      this.index = sourceReader.indexReader(clause.getIdent());
     }
 
     @Override
@@ -211,6 +206,7 @@ public abstract class TableReader implements TableIO {
     public SourceValues read() throws IOException {
       if (positions == null) {
         readPositions();
+        pointer = 0;
       }
       SourceValues values = SourceValues.EMPTY;
       do {
@@ -234,9 +230,26 @@ public abstract class TableReader implements TableIO {
       return values;
     }
 
-    private void readPositions() throws IOException {
+    protected abstract void readPositions() throws IOException;
+  }
+
+  public static class IndexFilteredTableReader extends MultiFilteredTableReader {
+
+    private final VariableEquals clause;
+    private final IndexReader index;
+
+    public IndexFilteredTableReader(
+        SeekableTableReader sourceReader,
+        ColumnMeta whereColumn,
+        VariableEquals clause) {
+      super(sourceReader, whereColumn);
+      this.clause = clause;
+      this.index = sourceReader.indexReader(clause.getIdent());
+    }
+
+    @Override
+    protected void readPositions() throws IOException {
       positions = index.get(clause.getValue());
-      pointer = 0;
     }
   }
 

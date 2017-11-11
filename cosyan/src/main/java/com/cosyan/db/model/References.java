@@ -5,12 +5,15 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
+import com.cosyan.db.io.ReferencedMultiTableReader;
 import com.cosyan.db.io.TableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumnWithDeps;
 import com.cosyan.db.model.ColumnMeta.IterableColumn;
 import com.cosyan.db.model.Dependencies.TableDependencies;
+import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
@@ -73,9 +76,44 @@ public class References {
     }
   }
 
+  public interface ReferencingColumn {
+
+    ReferencedTableMeta getTableMeta();
+
+    String tableNameWithChain();
+
+    int getIndex();
+
+  }
+
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class SimpleReferencingColumn extends Column {
+  public static class MultiReferencingColumn extends Column implements ReferencingColumn {
+
+    private final ReferencedTableMeta tableMeta;
+
+    public MultiReferencingColumn(ReferencedTableMeta tableMeta, ColumnMeta column, int index) throws ModelException {
+      super(column, index);
+      this.tableMeta = tableMeta;
+    }
+
+    public String tableNameWithChain() {
+      return tableMeta.tableNameWithChain();
+    }
+
+    @Override
+    public boolean usesRefValues() {
+      return true;
+    }
+
+    public Iterable<Ref> foreignKeyChain() {
+      return tableMeta.foreignKeyChain();
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class SimpleReferencingColumn extends Column implements ReferencingColumn {
 
     private final ReferencedTableMeta tableMeta;
     private final BasicColumn originalColumn;
@@ -102,7 +140,7 @@ public class References {
     public BasicColumn getOriginalMeta() {
       return originalColumn;
     }
-    
+
     @Override
     public ColumnMeta toMeta() {
       TableDependencies tableDependencies = new TableDependencies();
@@ -125,7 +163,7 @@ public class References {
 
     public abstract ReferencedTableMeta getParent();
 
-    public static TableMeta getTable(
+    public static TableMeta getRefTable(
         @Nullable ReferencedTableMeta parent,
         String tableName,
         String key,
@@ -178,8 +216,8 @@ public class References {
     }
 
     @Override
-    protected TableMeta getTable(Ident ident) throws ModelException {
-      return getTable(
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      return getRefTable(
           this,
           tableNameWithChain(),
           ident.getString(),
@@ -207,10 +245,17 @@ public class References {
     @Nullable
     private final ReferencedTableMeta parent;
     private final ReverseForeignKey reverseForeignKey;
+    private final KeyValueTableMeta proxyTable;
+
+    private ImmutableList<AggrColumn> columns;
 
     public ReferencedMultiTableMeta(ReferencedTableMeta parent, ReverseForeignKey reverseForeignKey) {
       this.parent = parent;
       this.reverseForeignKey = reverseForeignKey;
+      MaterializedTableMeta sourceTable = getReverseForeignKey().getRefTable();
+      this.proxyTable = new KeyValueTableMeta(
+          sourceTable,
+          TableMeta.wholeTableKeys);
     }
 
     public Iterable<Ref> foreignKeyChain() {
@@ -231,13 +276,12 @@ public class References {
 
     @Override
     protected Column getColumn(Ident ident) throws ModelException {
-      // TODO Auto-generated method stub
-      return null;
+      return proxyTable.getColumn(ident);
     }
 
     @Override
-    protected TableMeta getTable(Ident ident) throws ModelException {
-      return getTable(
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      return getRefTable(
           this,
           tableNameWithChain(),
           ident.getString(),
@@ -246,15 +290,17 @@ public class References {
     }
 
     @Override
-    protected TableReader reader(Resources resources) throws IOException {
-      // TODO Auto-generated method stub
-      return null;
+    public ReferencedMultiTableReader reader(Resources resources) throws IOException {
+      return new ReferencedMultiTableReader(
+          reverseForeignKey.getRefTable(),
+          resources,
+          columns);
     }
 
     @Override
     public MetaResources readResources() {
-      // TODO Auto-generated method stub
-      return null;
+      return MetaResources.readTable(reverseForeignKey.getRefTable())
+          .merge(DerivedTables.resourcesFromColumns(columns));
     }
   }
 }

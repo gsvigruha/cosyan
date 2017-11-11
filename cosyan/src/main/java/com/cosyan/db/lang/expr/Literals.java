@@ -1,6 +1,5 @@
 package com.cosyan.db.lang.expr;
 
-import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
@@ -48,11 +47,6 @@ public class Literals {
     }
 
     @Override
-    public AggregationExpression isAggregation() {
-      return AggregationExpression.EITHER;
-    }
-
-    @Override
     public String print() {
       return "'" + value + "'";
     }
@@ -69,11 +63,6 @@ public class Literals {
     }
 
     @Override
-    public AggregationExpression isAggregation() {
-      return AggregationExpression.EITHER;
-    }
-
-    @Override
     public String print() {
       return String.valueOf(value);
     }
@@ -87,11 +76,6 @@ public class Literals {
     @Override
     public DerivedColumn compile(TableMeta sourceTable, ExtraInfoCollector collector) {
       return new LiteralColumn(DataTypes.DoubleType, value);
-    }
-
-    @Override
-    public AggregationExpression isAggregation() {
-      return AggregationExpression.EITHER;
     }
 
     @Override

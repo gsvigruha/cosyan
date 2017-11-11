@@ -16,7 +16,6 @@ import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.Expression.ExtraInfoCollector;
 import com.cosyan.db.lang.expr.FuncCallExpression;
 import com.cosyan.db.lang.sql.Result.QueryResult;
-import com.cosyan.db.lang.sql.SyntaxTree.AggregationExpression;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.Tokens.Token;
@@ -29,6 +28,7 @@ import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
+import com.cosyan.db.model.CompiledObject;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DerivedTables.AliasedTableMeta;
 import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
@@ -74,24 +74,29 @@ public class SelectStatement {
       ExtraInfoCollector collector = new ExtraInfoCollector();
       ExposedTableMeta filteredTable = filteredTable(metaRepo, sourceTable, where, collector);
       DerivedTableMeta fullTable;
-      if (hasAggregation(columns) || groupBy.isPresent()) {
-        KeyValueTableMeta intermediateTable = keyValueTable(metaRepo, filteredTable, groupBy);
+      if (groupBy.isPresent()) {
+        KeyValueTableMeta intermediateTable = keyValueTable(metaRepo, filteredTable, groupBy.get());
         ImmutableMap<String, ColumnMeta> tableColumns = tableColumns(metaRepo, intermediateTable, columns, collector);
         ColumnMeta havingColumn = havingExpression(metaRepo, intermediateTable, having, collector);
-        if (groupBy.isPresent()) {
-          fullTable = new DerivedTableMeta(new KeyValueAggrTableMeta(
-              intermediateTable,
-              collector.aggrColumns(),
-              havingColumn), tableColumns);
-        } else {
-          fullTable = new DerivedTableMeta(new GlobalAggrTableMeta(
-              intermediateTable,
-              collector.aggrColumns(),
-              havingColumn), tableColumns);
-        }
+        fullTable = new DerivedTableMeta(new KeyValueAggrTableMeta(
+            intermediateTable,
+            collector.aggrColumns(),
+            havingColumn), tableColumns);
       } else {
-        ImmutableMap<String, ColumnMeta> tableColumns = tableColumns(metaRepo, filteredTable, columns);
-        fullTable = new DerivedTableMeta(filteredTable, tableColumns);
+        ImmutableMap<String, ColumnMeta> tableColumns = tableColumns(metaRepo, filteredTable, columns, collector);
+        if (collector.aggrColumns().isEmpty()) {
+          fullTable = new DerivedTableMeta(filteredTable, tableColumns);
+        } else {
+          KeyValueTableMeta keyValueTableMeta = new KeyValueTableMeta(
+              filteredTable,
+              TableMeta.wholeTableKeys);
+          // Recompile with keyValueTableMeta to catch consistency issues.
+          tableColumns(metaRepo, keyValueTableMeta, columns, new ExtraInfoCollector());
+          fullTable = new DerivedTableMeta(new GlobalAggrTableMeta(
+              keyValueTableMeta,
+              collector.aggrColumns(),
+              ColumnMeta.TRUE_COLUMN), tableColumns);  
+        }
       }
 
       ExposedTableMeta distinctTable;
@@ -143,25 +148,26 @@ public class SelectStatement {
       LinkedListMultimap<String, ColumnMeta> tableColumns = LinkedListMultimap.create();
       int i = 0;
       for (Expression expr : columns) {
-        tableColumns.put(expr.getName("_c" + (i++)), expr.compileColumn(sourceTable, collector));
-      }
-      return deduplicateColumns(tableColumns);
-    }
-
-    private ImmutableMap<String, ColumnMeta> tableColumns(
-        MetaRepo metaRepo,
-        ExposedTableMeta sourceTable,
-        ImmutableList<Expression> columns) throws ModelException {
-      LinkedListMultimap<String, ColumnMeta> tableColumns = LinkedListMultimap.create();
-      int i = 0;
-      for (Expression expr : columns) {
         if (expr instanceof AsteriskExpression) {
-          for (String columnName : sourceTable.columnNames()) {
+          if (!(sourceTable instanceof ExposedTableMeta)) {
+            throw new ModelException("Asterisk experssion is not allowed here.");
+          }
+          for (String columnName : ((ExposedTableMeta) sourceTable).columnNames()) {
             tableColumns.put(columnName,
                 FuncCallExpression.of(new Ident(columnName)).compileColumn(sourceTable));
           }
         } else {
-          tableColumns.put(expr.getName("_c" + (i++)), expr.compileColumn(sourceTable));
+          CompiledObject obj = expr.compile(sourceTable, collector);
+          if (obj instanceof ColumnMeta) {
+            tableColumns.put(expr.getName("_c" + (i++)), (ColumnMeta) obj);
+          } else if (obj instanceof DerivedTableMeta) {
+            DerivedTableMeta tableMeta = (DerivedTableMeta) obj;
+            for (String name : tableMeta.columnNames()) {
+              tableColumns.put(name, tableMeta.getColumns().get(name));
+            }
+          } else {
+            throw new ModelException("Expected table or column.");
+          }
         }
       }
       return deduplicateColumns(tableColumns);
@@ -219,33 +225,23 @@ public class SelectStatement {
       }
     }
 
-    private boolean hasAggregation(ImmutableList<Expression> columns) {
-      return columns.stream().anyMatch(column -> column.isAggregation() == AggregationExpression.YES);
-    }
-
     private KeyValueTableMeta keyValueTable(
         MetaRepo metaRepo,
         ExposedTableMeta sourceTable,
-        Optional<ImmutableList<Expression>> groupBy) throws ModelException {
-      if (groupBy.isPresent()) {
-        ImmutableMap.Builder<String, ColumnMeta> keyColumnsBuilder = ImmutableMap.builder();
-        for (Expression expr : groupBy.get()) {
-          ColumnMeta keyColumn = expr.compileColumn(sourceTable);
-          String name = expr.getName(null);
-          if (name == null) {
-            throw new ModelException("Expression in group by must be named: '" + expr + "'.");
-          }
-          keyColumnsBuilder.put(name, keyColumn);
+        ImmutableList<Expression> groupBy) throws ModelException {
+      ImmutableMap.Builder<String, ColumnMeta> keyColumnsBuilder = ImmutableMap.builder();
+      for (Expression expr : groupBy) {
+        ColumnMeta keyColumn = expr.compileColumn(sourceTable);
+        String name = expr.getName(null);
+        if (name == null) {
+          throw new ModelException("Expression in group by must be named: '" + expr + "'.");
         }
-        ImmutableMap<String, ColumnMeta> keyColumns = keyColumnsBuilder.build();
-        return new KeyValueTableMeta(
-            sourceTable,
-            keyColumns);
-      } else {
-        return new KeyValueTableMeta(
-            sourceTable,
-            TableMeta.wholeTableKeys);
+        keyColumnsBuilder.put(name, keyColumn);
       }
+      ImmutableMap<String, ColumnMeta> keyColumns = keyColumnsBuilder.build();
+      return new KeyValueTableMeta(
+          sourceTable,
+          keyColumns);
     }
 
     private ImmutableList<OrderColumn> orderColumns(MetaRepo metaRepo, ExposedTableMeta sourceTable,
@@ -342,11 +338,6 @@ public class SelectStatement {
     }
 
     @Override
-    public AggregationExpression isAggregation() {
-      return expr.isAggregation();
-    }
-
-    @Override
     public String getName(String def) {
       return ident.getString();
     }
@@ -381,11 +372,6 @@ public class SelectStatement {
     @Override
     public String getName(String def) {
       throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public AggregationExpression isAggregation() {
-      return AggregationExpression.NO;
     }
 
     @Override

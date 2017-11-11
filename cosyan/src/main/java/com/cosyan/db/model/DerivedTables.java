@@ -31,7 +31,7 @@ import lombok.EqualsAndHashCode;
 
 public class DerivedTables {
 
-  private static MetaResources resourcesFromColumns(Iterable<ColumnMeta> columns) {
+  protected static MetaResources resourcesFromColumns(Iterable<? extends ColumnMeta> columns) {
     MetaResources resources = MetaResources.empty();
     for (ColumnMeta columnMeta : columns) {
       resources = resources.merge(
@@ -66,7 +66,7 @@ public class DerivedTables {
     }
 
     @Override
-    protected ReferencedTableMeta getTable(Ident ident) throws ModelException {
+    protected ReferencedTableMeta getRefTable(Ident ident) throws ModelException {
       return null;
     }
 
@@ -98,8 +98,8 @@ public class DerivedTables {
     }
 
     @Override
-    protected TableMeta getTable(Ident ident) throws ModelException {
-      return sourceTable.getTable(ident);
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      return sourceTable.getRefTable(ident);
     }
 
     @Override
@@ -134,8 +134,8 @@ public class DerivedTables {
     }
 
     @Override
-    protected TableMeta getTable(Ident ident) throws ModelException {
-      return sourceTable.getTable(ident);
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      return sourceTable.getRefTable(ident);
     }
 
     @Override
@@ -165,7 +165,7 @@ public class DerivedTables {
     }
 
     @Override
-    protected ReferencedTableMeta getTable(Ident ident) throws ModelException {
+    protected ReferencedTableMeta getRefTable(Ident ident) throws ModelException {
       return null;
     }
 
@@ -197,7 +197,7 @@ public class DerivedTables {
     }
 
     @Override
-    protected ReferencedTableMeta getTable(Ident ident) throws ModelException {
+    protected ReferencedTableMeta getRefTable(Ident ident) throws ModelException {
       return null;
     }
 
@@ -225,7 +225,7 @@ public class DerivedTables {
     }
 
     @Override
-    protected ReferencedTableMeta getTable(Ident ident) throws ModelException {
+    protected ReferencedTableMeta getRefTable(Ident ident) throws ModelException {
       return null;
     }
 
@@ -257,8 +257,8 @@ public class DerivedTables {
     }
 
     @Override
-    protected TableMeta getTable(Ident ident) throws ModelException {
-      return sourceTable.getTable(ident);
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      return sourceTable.getRefTable(ident);
     }
 
     @Override
@@ -288,8 +288,8 @@ public class DerivedTables {
     }
 
     @Override
-    protected TableMeta getTable(Ident ident) throws ModelException {
-      return sourceTable.getTable(ident);
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      return sourceTable.getRefTable(ident);
     }
 
     @Override
@@ -364,17 +364,17 @@ public class DerivedTables {
     }
 
     @Override
-    protected TableMeta getTable(Ident ident) throws ModelException {
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
       boolean presentInLeftTable = leftTable.hasTable(ident);
       boolean presentInRightTable = rightTable.hasTable(ident);
       if (presentInLeftTable && presentInRightTable) {
         throw new ModelException("Ambiguous table reference '" + ident + "'.");
       }
       if (presentInLeftTable) {
-        return leftTable.getTable(ident);
+        return leftTable.getRefTable(ident);
       }
       if (presentInRightTable) {
-        return new ShiftedTableMeta(rightTable.getTable(ident), leftTable.columnNames().size());
+        return new ShiftedTableMeta(rightTable.getRefTable(ident), leftTable.columnNames().size());
       }
       throw new ModelException("Table reference '" + ident + "' not found.");
     }
@@ -415,11 +415,11 @@ public class DerivedTables {
     }
 
     @Override
-    protected TableMeta getTable(Ident ident) throws ModelException {
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
       if (this.ident.getString().equals(ident.getString())) {
         return sourceTable;
       }
-      return sourceTable.getTable(ident);
+      return sourceTable.getRefTable(ident);
     }
 
     @Override
@@ -450,8 +450,8 @@ public class DerivedTables {
     }
 
     @Override
-    protected TableMeta getTable(Ident ident) throws ModelException {
-      return sourceTable.getTable(ident);
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      return sourceTable.getRefTable(ident);
     }
 
     @Override

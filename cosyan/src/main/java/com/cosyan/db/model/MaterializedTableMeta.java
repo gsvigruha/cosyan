@@ -235,15 +235,15 @@ public class MaterializedTableMeta extends ExposedTableMeta {
   @Override
   protected SimpleMaterializedColumn getColumn(Ident ident) throws ModelException {
     if (!columns().containsKey(ident.getString())) {
-      return null;
+      throw new ModelException(String.format("Column '%s' not found in table '$s'.", ident, tableName));
     }
     BasicColumn column = columns().get(ident.getString());
     return new SimpleMaterializedColumn(this, column, indexOf(columns().keySet(), ident));
   }
 
   @Override
-  protected TableMeta getTable(Ident ident) throws ModelException {
-    return References.ReferencedTableMeta.getTable(
+  protected TableMeta getRefTable(Ident ident) throws ModelException {
+    return References.ReferencedTableMeta.getRefTable(
         null,
         tableName,
         ident.getString(),

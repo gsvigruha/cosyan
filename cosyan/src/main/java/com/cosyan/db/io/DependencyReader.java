@@ -12,7 +12,7 @@ import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.References.ReferencedSimpleTableMeta;
 import com.cosyan.db.model.References.ReferencedTableMeta;
-import com.cosyan.db.model.References.SimpleReferencingColumn;
+import com.cosyan.db.model.References.ReferencingColumn;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.transaction.Resources;
 
@@ -25,7 +25,7 @@ public class DependencyReader {
   }
 
   public void readReferencedValues(
-      Object[] sourceValues, HashMap<String, Object[]> referencedValues, SimpleReferencingColumn column)
+      Object[] sourceValues, HashMap<String, Object[]> referencedValues, ReferencingColumn column)
       throws IOException {
     ReferencedTableMeta tableMeta = column.getTableMeta();
     readReferencedValues(sourceValues, referencedValues, tableMeta);
@@ -54,19 +54,16 @@ public class DependencyReader {
         referencedValues.put(tableMeta.tableNameWithChain(), newSourceValues);
         reader.close();
       } else if (tableMeta instanceof ReferencedMultiTableMeta) {
-        ReverseForeignKey foreignKey = ((ReferencedMultiTableMeta) tableMeta).getReverseForeignKey();
+        ReferencedMultiTableMeta multiTableMeta = (ReferencedMultiTableMeta) tableMeta;
+        ReverseForeignKey foreignKey = multiTableMeta.getReverseForeignKey();
         Object[] parentTableValues = readReferencedValues(sourceValues, referencedValues, tableMeta.getParent());
         Object foreignKeyValue = parentTableValues[foreignKey.getColumn().getIndex()];
-        String table = foreignKey.getRefTable().tableName();
-        SeekableTableReader reader = resources.createReader(table);
         IndexReader index = resources.getIndex(foreignKey);
         long[] foreignKeyFilePointers = index.get(foreignKeyValue);
-        for (long foreignKeyFilePointer : foreignKeyFilePointers) {
-          reader.seek(foreignKeyFilePointer);
-          newSourceValues = reader.read().toArray();
-          referencedValues.put(tableMeta.tableNameWithChain(), newSourceValues);
-        }
-        reader.close();
+        ReferencedMultiTableReader reader = multiTableMeta.reader(resources);
+        reader.seek(foreignKeyFilePointers);
+        newSourceValues = reader.read().toArray();
+        referencedValues.put(tableMeta.tableNameWithChain(), newSourceValues);
       } else {
         throw new AssertionError();
       }
