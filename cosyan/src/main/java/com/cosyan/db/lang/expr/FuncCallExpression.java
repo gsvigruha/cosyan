@@ -108,7 +108,7 @@ public class FuncCallExpression extends Expression {
     };
   }
 
-  private AggrColumn aggrFunction(TableMeta sourceTable, Expression arg, ExtraInfoCollector collector)
+  private AggrColumn aggrFunction(TableMeta sourceTable, Expression arg)
       throws ModelException {
     if (!(sourceTable instanceof AggrTables)) {
       throw new NotAggrTableException();
@@ -122,18 +122,16 @@ public class FuncCallExpression extends Expression {
         aggrTable,
         function.getReturnType(),
         argColumn,
-        shift + collector.numAggrColumns(),
+        shift + aggrTable.numAggrColumns(),
         function);
-    collector.addAggrColumn(aggrColumn);
     aggrTable.addAggrColumn(aggrColumn);
     return aggrColumn;
   }
 
   private TableMeta tableFunction(ReferencedMultiTableMeta tableMeta) throws ModelException {
     if (ident.getString().equals("select")) {
-      ExtraInfoCollector collector = new ExtraInfoCollector();
       try {
-        TableColumns tableColumns = SelectStatement.Select.tableColumns(tableMeta, args, collector);
+        TableColumns tableColumns = SelectStatement.Select.tableColumns(tableMeta, args);
         return new DerivedTableMeta(tableMeta, tableColumns.getColumns());
       } catch (NotAggrTableException e) {
         ReferencedAggrTableMeta aggrTable = new ReferencedAggrTableMeta(
@@ -141,7 +139,7 @@ public class FuncCallExpression extends Expression {
                 tableMeta,
                 TableMeta.wholeTableKeys), tableMeta.getReverseForeignKey());
         // Columns have aggregations, recompile with an AggrTable.
-        TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, args, new ExtraInfoCollector());
+        TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, args);
         return new ReferencedDerivedTableMeta(aggrTable, tableColumns.getColumns());
       }
     } else {
@@ -150,7 +148,7 @@ public class FuncCallExpression extends Expression {
   }
 
   @Override
-  public CompiledObject compile(TableMeta sourceTable, ExtraInfoCollector collector)
+  public CompiledObject compile(TableMeta sourceTable)
       throws ModelException {
     if (object == null) {
       if (args.isEmpty()) {
@@ -164,7 +162,7 @@ public class FuncCallExpression extends Expression {
           if (args.size() != 1) {
             throw new ModelException("Invalid number of arguments for aggregator: " + args.size() + ".");
           }
-          return aggrFunction(sourceTable, Iterables.getOnlyElement(args), collector);
+          return aggrFunction(sourceTable, Iterables.getOnlyElement(args));
         } else {
           return simpleFunction(sourceTable, null);
         }
@@ -174,7 +172,7 @@ public class FuncCallExpression extends Expression {
         if (args.size() > 0) {
           throw new ModelException("Invalid number of arguments for aggregator: " + args.size() + ".");
         }
-        return aggrFunction(sourceTable, object, collector);
+        return aggrFunction(sourceTable, object);
       } else { // Not aggregator.
         CompiledObject obj = object.compile(sourceTable);
         if (obj instanceof TableMeta) {

@@ -29,8 +29,7 @@ import lombok.EqualsAndHashCode;
 public class References {
 
   public static interface ReferencingTable {
-    public String tableNameWithChain();
-
+    
     public Iterable<Ref> foreignKeyChain();
 
     public ReferencingTable getParent();
@@ -73,11 +72,6 @@ public class References {
     }
 
     @Override
-    public String tableNameWithChain() {
-      return parent == null ? foreignKey.getName() : parent.tableNameWithChain() + "." + foreignKey.getName();
-    }
-
-    @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
       BasicColumn column = foreignKey.getRefTable().column(ident);
       if (column == null) {
@@ -92,7 +86,7 @@ public class References {
     protected TableMeta getRefTable(Ident ident) throws ModelException {
       return References.getRefTable(
           this,
-          tableNameWithChain(),
+          foreignKey.getTable().tableName(),
           ident.getString(),
           foreignKey.getRefTable().foreignKeys(),
           foreignKey.getRefTable().reverseForeignKeys());
@@ -146,12 +140,6 @@ public class References {
     }
 
     @Override
-    public String tableNameWithChain() {
-      return parent == null ? reverseForeignKey.getName()
-          : parent.tableNameWithChain() + "." + reverseForeignKey.getName();
-    }
-
-    @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
       BasicColumn column = reverseForeignKey.getRefTable().column(ident);
       if (column == null) {
@@ -166,7 +154,7 @@ public class References {
     protected TableMeta getRefTable(Ident ident) throws ModelException {
       return References.getRefTable(
           this,
-          tableNameWithChain(),
+          reverseForeignKey.getTable().tableName(),
           ident.getString(),
           reverseForeignKey.getRefTable().foreignKeys(),
           reverseForeignKey.getRefTable().reverseForeignKeys());
@@ -214,16 +202,6 @@ public class References {
     public Iterable<TableMeta> tableDeps() {
       return ImmutableList.of();
     }
-    /*
-     * @Override public Object[] values(Object[] sourceValues, Resources resources)
-     * throws IOException { Object[] parentValues = parent.values(sourceValues,
-     * resources); Object key =
-     * parentValues[reverseForeignKey.getColumn().getIndex()]; IndexReader index =
-     * resources.getIndex(reverseForeignKey); long filePointer = index.get(key)[0];
-     * SeekableTableReader reader =
-     * resources.reader(reverseForeignKey.getRefTable().tableName()); return
-     * reader.get(filePointer).getValues(); }
-     */
   }
 
   public static class ReferencedAggrTableMeta extends GlobalAggrTableMeta {

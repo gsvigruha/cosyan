@@ -1,8 +1,6 @@
 package com.cosyan.db.model;
 
-import com.cosyan.db.lang.expr.Expression.ExtraInfoCollector;
 import com.cosyan.db.model.BuiltinFunctions.TableFunction;
-import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
 import com.google.common.collect.ImmutableMap;
 
 public class TableFunctions {
@@ -14,7 +12,7 @@ public class TableFunctions {
     }
 
     @Override
-    public TableMeta call(TableMeta tableMeta, ImmutableMap<String, ColumnMeta> argValues, ExtraInfoCollector collector) {
+    public TableMeta call(TableMeta tableMeta, ImmutableMap<String, ColumnMeta> argValues) {
       //return new DerivedTableMeta(tableMeta, argValues);
       return null;
     }

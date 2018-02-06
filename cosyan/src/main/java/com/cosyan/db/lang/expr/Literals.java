@@ -57,7 +57,7 @@ public class Literals {
     private final String value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable, ExtraInfoCollector collector) {
+    public DerivedColumn compile(TableMeta sourceTable) {
       return new LiteralColumn(DataTypes.StringType, value);
     }
 
@@ -73,7 +73,7 @@ public class Literals {
     private final Long value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable, ExtraInfoCollector collector) {
+    public DerivedColumn compile(TableMeta sourceTable) {
       return new LiteralColumn(DataTypes.LongType, value);
     }
 
@@ -89,7 +89,7 @@ public class Literals {
     private final Double value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable, ExtraInfoCollector collector) {
+    public DerivedColumn compile(TableMeta sourceTable) {
       return new LiteralColumn(DataTypes.DoubleType, value);
     }
 

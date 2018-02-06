@@ -241,4 +241,8 @@ public abstract class AggrTables extends IterableTableMeta {
       };
     }
   }
+
+  public int numAggrColumns() {
+    return aggrColumns.size();
+  }
 }

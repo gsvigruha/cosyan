@@ -3,7 +3,6 @@ package com.cosyan.db.model;
 import java.util.Spliterator;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.cosyan.db.lang.expr.Expression.ExtraInfoCollector;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Aggregators.Aggregator;
 import com.cosyan.db.model.DataTypes.DataType;
@@ -93,7 +92,7 @@ public class BuiltinFunctions {
       super(ident, false);
     }
 
-    public abstract TableMeta call(TableMeta tableMeta, ImmutableMap<String, ColumnMeta> argValues, ExtraInfoCollector collector);
+    public abstract TableMeta call(TableMeta tableMeta, ImmutableMap<String, ColumnMeta> argValues);
   }
 
   public static final ImmutableList<AggrFunction> AGGREGATIONS = ImmutableList.<AggrFunction>builder()

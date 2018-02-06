@@ -7,11 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
 import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
-import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
@@ -267,12 +265,6 @@ public class MaterializedTableMeta {
 
     public MaterializedTableMeta tableMeta() {
       return tableMeta;
-    }
-
-    @Override
-    public String tableNameWithChain() {
-      // TODO Auto-generated method stub
-      return null;
     }
 
     @Override

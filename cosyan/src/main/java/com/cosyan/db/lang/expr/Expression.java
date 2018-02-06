@@ -27,51 +27,12 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public abstract class Expression extends Node {
 
-  public static class ExtraInfoCollector {
-    private final List<AggrColumn> aggrColumns = new ArrayList<>();
-
-    public void addAggrColumn(AggrColumn aggrColumn) {
-      aggrColumns.add(aggrColumn);
-    }
-
-    public int numAggrColumns() {
-      return aggrColumns.size();
-    }
-
-    public ImmutableList<AggrColumn> aggrColumns() {
-      return ImmutableList.copyOf(aggrColumns);
-    }
-  }
-
-  public ColumnMeta compileColumn(
-      TableMeta sourceTable) throws ModelException {
-    ExtraInfoCollector collector = new ExtraInfoCollector();
-    ColumnMeta column = compileColumn(sourceTable, collector);
-    if (!collector.aggrColumns().isEmpty()) {
-      throw new ModelException("Aggregators are not allowed here.");
-    }
-    return column;
-  }
-
-  public ColumnMeta compileColumn(
-      TableMeta sourceTable,
-      ExtraInfoCollector collector) throws ModelException {
-    CompiledObject obj = compile(sourceTable, collector);
+  public ColumnMeta compileColumn(TableMeta sourceTable) throws ModelException {
+    CompiledObject obj = compile(sourceTable);
     return (ColumnMeta) obj;
   }
 
-  public CompiledObject compile(TableMeta sourceTable) throws ModelException {
-    ExtraInfoCollector collector = new ExtraInfoCollector();
-    CompiledObject obj = compile(sourceTable, collector);
-    if (!collector.aggrColumns().isEmpty()) {
-      throw new ModelException("Aggregators are not allowed here.");
-    }
-    return obj;
-  }
-
-  public abstract CompiledObject compile(
-      TableMeta sourceTable,
-      ExtraInfoCollector collector) throws ModelException;
+  public abstract CompiledObject compile(TableMeta sourceTable) throws ModelException;
 
   public String getName(String def) {
     return def;
@@ -86,10 +47,9 @@ public abstract class Expression extends Node {
     private final Expression expr;
 
     @Override
-    public DerivedColumn compile(
-        TableMeta sourceTable, ExtraInfoCollector collector) throws ModelException {
+    public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
       if (token.is(Tokens.NOT)) {
-        ColumnMeta exprColumn = expr.compileColumn(sourceTable, collector);
+        ColumnMeta exprColumn = expr.compileColumn(sourceTable);
         SyntaxTree.assertType(DataTypes.BoolType, exprColumn.getType());
         return new DerivedColumnWithDeps(
             DataTypes.BoolType,
@@ -103,13 +63,13 @@ public abstract class Expression extends Node {
           }
         };
       } else if (token.is(Tokens.ASC)) {
-        ColumnMeta exprColumn = expr.compileColumn(sourceTable, collector);
+        ColumnMeta exprColumn = expr.compileColumn(sourceTable);
         return new OrderColumn(exprColumn, true);
       } else if (token.is(Tokens.DESC)) {
-        ColumnMeta exprColumn = expr.compileColumn(sourceTable, collector);
+        ColumnMeta exprColumn = expr.compileColumn(sourceTable);
         return new OrderColumn(exprColumn, false);
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NOT, Tokens.NULL).getString())) {
-        ColumnMeta exprColumn = expr.compileColumn(sourceTable, collector);
+        ColumnMeta exprColumn = expr.compileColumn(sourceTable);
         return new DerivedColumnWithDeps(
             DataTypes.BoolType,
             exprColumn.tableDependencies(),
@@ -122,7 +82,7 @@ public abstract class Expression extends Node {
           }
         };
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NULL).getString())) {
-        ColumnMeta exprColumn = expr.compileColumn(sourceTable, collector);
+        ColumnMeta exprColumn = expr.compileColumn(sourceTable);
         return new DerivedColumnWithDeps(
             DataTypes.BoolType,
             exprColumn.tableDependencies(),

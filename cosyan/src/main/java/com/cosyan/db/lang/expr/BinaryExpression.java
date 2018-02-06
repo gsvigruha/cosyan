@@ -81,10 +81,9 @@ public class BinaryExpression extends Expression {
   }
 
   @Override
-  public DerivedColumn compile(TableMeta sourceTable, ExtraInfoCollector collector)
-      throws ModelException {
-    final ColumnMeta leftColumn = left.compileColumn(sourceTable, collector);
-    final ColumnMeta rightColumn = right.compileColumn(sourceTable, collector);
+  public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
+    final ColumnMeta leftColumn = left.compileColumn(sourceTable);
+    final ColumnMeta rightColumn = right.compileColumn(sourceTable);
 
     if (token.is(Tokens.AND)) {
       assertType(DataTypes.BoolType, leftColumn.getType());
