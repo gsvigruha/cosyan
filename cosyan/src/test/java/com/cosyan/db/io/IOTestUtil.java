@@ -3,15 +3,17 @@ package com.cosyan.db.io;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 
 import com.cosyan.db.io.Indexes.IndexReader;
+import com.cosyan.db.io.RecordReader.Record;
+import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.SourceValues;
-import com.google.common.collect.ImmutableList;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableMap;
 
 import lombok.Data;
@@ -21,35 +23,48 @@ public class IOTestUtil {
 
   public static class DummyTableReader extends SeekableTableReader {
 
-    private final Iterator<Object[]> iterator;
+    private final List<Object[]> data;
 
     public DummyTableReader(
         ImmutableMap<String, BasicColumn> columns,
         Object[][] data) throws IOException {
-      super(ImmutableList.copyOf(columns.values()));
-      this.iterator = Arrays.asList(data).iterator();
-    }
-
-    @Override
-    public SourceValues read() throws IOException {
-      if (!iterator.hasNext()) {
-        return SourceValues.EMPTY;
-      }
-      return SourceValues.of(iterator.next());
+      super(null);
+      this.data = Arrays.asList(data);
     }
 
     @Override
     public void close() throws IOException {
-
-    }
-
-    @Override
-    public void seek(long position) throws IOException {
       throw new UnsupportedOperationException();
     }
 
     @Override
-    public IndexReader indexReader(Ident ident) {
+    public Record get(long position) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IterableTableReader iterableReader(Resources resources) throws IOException {
+      Iterator<Object[]> iterator = data.iterator();
+      return new IterableTableReader() {
+
+        @Override
+        public Object[] next() throws IOException {
+          if (iterator.hasNext()) {
+            return iterator.next();
+          } else {
+            return null;
+          }
+        }
+
+        @Override
+        public void close() throws IOException {
+
+        }
+      };
+    }
+
+    @Override
+    public IndexReader getIndex(String name) {
       throw new UnsupportedOperationException();
     }
   }

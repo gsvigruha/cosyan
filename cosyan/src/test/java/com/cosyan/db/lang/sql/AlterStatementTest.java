@@ -21,9 +21,9 @@ public class AlterStatementTest extends UnitTestBase {
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
     assertEquals(2, tableMeta.columns().size());
     assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false),
-        tableMeta.column(new Ident("a")).getMeta());
+        tableMeta.column(new Ident("a")));
     assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false),
-        tableMeta.column(new Ident("c")).getMeta());
+        tableMeta.column(new Ident("c")));
   }
 
   @Test
@@ -54,20 +54,20 @@ public class AlterStatementTest extends UnitTestBase {
       assertEquals("Cannot drop column 'a', check 'c_a [(a > 1)]' fails.\n" +
           "Column 'a' not found in table 't3'.", result.getError().getMessage());
     }
-    assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("a")).getMeta().isDeleted());
+    assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("a")).isDeleted());
     execute("create table t4 (a integer, constraint fk_a foreign key (a) references t3(b));");
     {
       ErrorResult result = error("alter table t4 drop a;");
       assertEquals("Cannot drop column 'a', it is used by foreign key 'fk_a [a -> t3.b]'.",
           result.getError().getMessage());
     }
-    assertEquals(false, metaRepo.table(new Ident("t4")).column(new Ident("a")).getMeta().isDeleted());
+    assertEquals(false, metaRepo.table(new Ident("t4")).column(new Ident("a")).isDeleted());
     {
       ErrorResult result = error("alter table t3 drop b;");
       assertEquals("Cannot drop column 'b', it is used by reverse foreign key 'rev_fk_a [t4.a -> b]'.",
           result.getError().getMessage());
     }
-    assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("b")).getMeta().isDeleted());
+    assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("b")).isDeleted());
   }
 
   @Test
@@ -77,11 +77,11 @@ public class AlterStatementTest extends UnitTestBase {
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t5"));
     assertEquals(3, tableMeta.columns().size());
     assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false),
-        tableMeta.column(new Ident("a")).getMeta());
+        tableMeta.column(new Ident("a")));
     assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, false),
-        tableMeta.column(new Ident("b")).getMeta());
+        tableMeta.column(new Ident("b")));
     assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false),
-        tableMeta.column(new Ident("c")).getMeta());
+        tableMeta.column(new Ident("c")));
   }
 
   @Test
@@ -192,5 +192,13 @@ public class AlterStatementTest extends UnitTestBase {
         { "x", 1L, 1.0 },
         { "y", 2L, 2.0 },
         { "z", 1L, DataTypes.NULL } }, result);
+  }
+
+  @Test
+  public void testQueryDroppedColumn() throws Exception {
+    execute("create table t12 (a varchar, b integer);");
+    execute("alter table t12 drop b;");
+    ErrorResult result = error("select a, b from t12;");
+    assertEquals("Column 'b' not found in table 't12'.", result.getError().getMessage());
   }
 }

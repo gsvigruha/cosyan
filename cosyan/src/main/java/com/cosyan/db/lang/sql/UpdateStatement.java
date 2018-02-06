@@ -14,6 +14,7 @@ import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -38,17 +39,18 @@ public class UpdateStatement {
     private final ImmutableList<SetExpression> updates;
     private final Optional<Expression> where;
 
-    private MaterializedTableMeta tableMeta;
+    private SeekableTableMeta tableMeta;
     private ColumnMeta whereColumn;
     private ImmutableMap<Integer, ColumnMeta> columnExprs;
 
     @Override
     public MetaResources compile(MetaRepo metaRepo) throws ModelException {
-      tableMeta = metaRepo.table(table);
+      MaterializedTableMeta materializedTableMeta = metaRepo.table(table);
+      tableMeta = materializedTableMeta.reader();
       ImmutableMap.Builder<Integer, ColumnMeta> columnExprsBuilder = ImmutableMap.builder();
       for (SetExpression update : updates) {
         ColumnMeta columnExpr = update.getValue().compileColumn(tableMeta);
-        columnExprsBuilder.put(tableMeta.column(update.getIdent()).getIndex(), columnExpr);
+        columnExprsBuilder.put(tableMeta.column(update.getIdent()).index(), columnExpr);
       }
       columnExprs = columnExprsBuilder.build();
       if (where.isPresent()) {
@@ -56,9 +58,9 @@ public class UpdateStatement {
       } else {
         whereColumn = ColumnMeta.TRUE_COLUMN;
       }
-      return MetaResources.updateTable(tableMeta)
-          .merge(tableMeta.ruleDependenciesReadResources())
-          .merge(tableMeta.reverseRuleDependenciesReadResources());
+      return MetaResources.updateTable(materializedTableMeta)
+          .merge(materializedTableMeta.ruleDependenciesReadResources())
+          .merge(materializedTableMeta.reverseRuleDependenciesReadResources());
     }
 
     @Override
@@ -66,7 +68,7 @@ public class UpdateStatement {
       // The rules must be re-evaluated for updated records. In addition, rules of other
       // tables referencing this table have to be re-evaluated as well. We need the rule
       // dependencies for the rules of this table and referencing rules.
-      TableWriter writer = tableMeta.writer(resources);
+      TableWriter writer = resources.writer(tableMeta.tableName());
       return new StatementResult(writer.update(resources, columnExprs, whereColumn));
     }
 

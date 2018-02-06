@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.lang.expr.BinaryExpression;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.Expression.ExtraInfoCollector;
@@ -24,6 +24,10 @@ import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.model.AggrTables;
+import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
+import com.cosyan.db.model.AggrTables.KeyValueAggrTableMeta;
+import com.cosyan.db.model.AggrTables.NotAggrTableException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
@@ -34,17 +38,16 @@ import com.cosyan.db.model.DerivedTables.AliasedTableMeta;
 import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
 import com.cosyan.db.model.DerivedTables.DistinctTableMeta;
 import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
-import com.cosyan.db.model.DerivedTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.DerivedTables.IndexFilteredTableMeta;
-import com.cosyan.db.model.DerivedTables.JoinTableMeta;
-import com.cosyan.db.model.DerivedTables.KeyValueAggrTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
+import com.cosyan.db.model.DerivedTables.ReferencedDerivedTableMeta;
 import com.cosyan.db.model.DerivedTables.SortedTableMeta;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.SourceValues;
+import com.cosyan.db.model.JoinTables.JoinTableMeta;
+import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
+import com.cosyan.db.model.TableMeta.IterableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -76,27 +79,13 @@ public class SelectStatement {
       DerivedTableMeta fullTable;
       if (groupBy.isPresent()) {
         KeyValueTableMeta intermediateTable = keyValueTable(metaRepo, filteredTable, groupBy.get());
-        ImmutableMap<String, ColumnMeta> tableColumns = tableColumns(metaRepo, intermediateTable, columns, collector);
-        ColumnMeta havingColumn = havingExpression(metaRepo, intermediateTable, having, collector);
-        fullTable = new DerivedTableMeta(new KeyValueAggrTableMeta(
-            intermediateTable,
-            collector.aggrColumns(),
-            havingColumn), tableColumns);
+        AggrTables aggrTable = new KeyValueAggrTableMeta(intermediateTable);
+        TableColumns tableColumns = tableColumns(aggrTable, columns, collector);
+        ColumnMeta havingColumn = havingExpression(metaRepo, aggrTable, having, collector);
+        aggrTable.setHavingColumn(havingColumn);
+        fullTable = new DerivedTableMeta(aggrTable, tableColumns.columns);
       } else {
-        ImmutableMap<String, ColumnMeta> tableColumns = tableColumns(metaRepo, filteredTable, columns, collector);
-        if (collector.aggrColumns().isEmpty()) {
-          fullTable = new DerivedTableMeta(filteredTable, tableColumns);
-        } else {
-          KeyValueTableMeta keyValueTableMeta = new KeyValueTableMeta(
-              filteredTable,
-              TableMeta.wholeTableKeys);
-          // Recompile with keyValueTableMeta to catch consistency issues.
-          tableColumns(metaRepo, keyValueTableMeta, columns, new ExtraInfoCollector());
-          fullTable = new DerivedTableMeta(new GlobalAggrTableMeta(
-              keyValueTableMeta,
-              collector.aggrColumns(),
-              ColumnMeta.TRUE_COLUMN), tableColumns);  
-        }
+        fullTable = selectTable(filteredTable, columns, collector);
       }
 
       ExposedTableMeta distinctTable;
@@ -124,15 +113,14 @@ public class SelectStatement {
 
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
-      ExposedTableReader reader = tableMeta.reader(resources);
-      List<ImmutableList<Object>> values = new ArrayList<>();
-      SourceValues row = reader.read();
-      while (!row.isEmpty()) {
-        values.add(row.toList());
-        row = reader.read();
+      List<ImmutableList<Object>> valuess = new ArrayList<>();
+      IterableTableReader reader = tableMeta.reader(resources);
+      Object[] values = null;
+      while ((values = reader.next()) != null) {
+        valuess.add(ImmutableList.copyOf(values));
       }
       reader.close();
-      return new QueryResult(reader.getColumns().keySet().asList(), values);
+      return new QueryResult(tableMeta.columnNames(), valuess);
     }
 
     @Override
@@ -140,11 +128,35 @@ public class SelectStatement {
 
     }
 
-    private ImmutableMap<String, ColumnMeta> tableColumns(
-        MetaRepo metaRepo,
-        TableMeta sourceTable,
+    public static DerivedTableMeta selectTable(
+        IterableTableMeta sourceTable,
         ImmutableList<Expression> columns,
         ExtraInfoCollector collector) throws ModelException {
+      try {
+        TableColumns tableColumns = tableColumns(sourceTable, columns, collector);
+        return new DerivedTableMeta(sourceTable, tableColumns.columns);
+      } catch (NotAggrTableException e) {
+        AggrTables aggrTable = new GlobalAggrTableMeta(
+            new KeyValueTableMeta(
+                sourceTable,
+                TableMeta.wholeTableKeys));
+        // Columns have aggregations, recompile with KeyValueTableMeta.
+        TableColumns tableColumns = tableColumns(aggrTable, columns, new ExtraInfoCollector());
+        return new DerivedTableMeta(aggrTable, tableColumns.columns);
+      }
+    }
+
+    @Data
+    public static class TableColumns {
+      private final ImmutableMap<String, ColumnMeta> columns;
+      private final ImmutableList<TableMeta> tables;
+    }
+
+    public static TableColumns tableColumns(
+        TableMeta sourceTable,
+        ImmutableList<Expression> columns,
+        ExtraInfoCollector collector) throws NotAggrTableException, ModelException {
+      ImmutableList.Builder<TableMeta> tables = ImmutableList.builder();
       LinkedListMultimap<String, ColumnMeta> tableColumns = LinkedListMultimap.create();
       int i = 0;
       for (Expression expr : columns) {
@@ -160,20 +172,22 @@ public class SelectStatement {
           CompiledObject obj = expr.compile(sourceTable, collector);
           if (obj instanceof ColumnMeta) {
             tableColumns.put(expr.getName("_c" + (i++)), (ColumnMeta) obj);
-          } else if (obj instanceof DerivedTableMeta) {
-            DerivedTableMeta tableMeta = (DerivedTableMeta) obj;
+          } else if (obj instanceof ReferencedDerivedTableMeta) {
+            ReferencedDerivedTableMeta tableMeta = (ReferencedDerivedTableMeta) obj;
             for (String name : tableMeta.columnNames()) {
-              tableColumns.put(name, tableMeta.getColumns().get(name));
+              tableColumns.put(name, tableMeta.column(new Ident(name)));
             }
+            tables.add(tableMeta);
           } else {
             throw new ModelException("Expected table or column.");
           }
         }
       }
-      return deduplicateColumns(tableColumns);
+      return new TableColumns(deduplicateColumns(tableColumns), tables.build());
     }
 
-    private ImmutableMap<String, ColumnMeta> deduplicateColumns(LinkedListMultimap<String, ColumnMeta> tableColumns)
+    private static ImmutableMap<String, ColumnMeta> deduplicateColumns(
+        LinkedListMultimap<String, ColumnMeta> tableColumns)
         throws ModelException {
       ImmutableMap.Builder<String, ColumnMeta> builder = ImmutableMap.builder();
       for (Map.Entry<String, Collection<ColumnMeta>> column : tableColumns.asMap().entrySet()) {
@@ -191,18 +205,18 @@ public class SelectStatement {
       if (where.isPresent()) {
         ColumnMeta whereColumn = where.get().compileColumn(sourceTable, collector);
         assertType(DataTypes.BoolType, whereColumn.getType());
-        if (sourceTable instanceof MaterializedTableMeta) {
+        if (sourceTable instanceof SeekableTableMeta) {
           ImmutableList<VariableEquals> clauses = PredicateHelper.extractClauses(where.get());
-          MaterializedTableMeta materializedTableMeta = (MaterializedTableMeta) sourceTable;
+          SeekableTableMeta tableMeta = (SeekableTableMeta) sourceTable;
           VariableEquals clause = null;
           for (VariableEquals clauseCandidate : clauses) {
-            BasicColumn column = materializedTableMeta.column(clauseCandidate.getIdent()).getMeta();
+            BasicColumn column = tableMeta.tableMeta().column(clauseCandidate.getIdent());
             if ((clause == null && column.isIndexed()) || column.isUnique()) {
               clause = clauseCandidate;
             }
           }
           if (clause != null) {
-            return new IndexFilteredTableMeta(materializedTableMeta, whereColumn, clause);
+            return new IndexFilteredTableMeta(tableMeta, whereColumn, clause);
           } else {
             return new FilteredTableMeta(sourceTable, whereColumn);
           }
@@ -271,7 +285,7 @@ public class SelectStatement {
     private final Ident ident;
 
     public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
-      return metaRepo.table(ident);
+      return metaRepo.table(ident).reader();
     }
   }
 

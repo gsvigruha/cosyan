@@ -4,11 +4,12 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.Set;
 
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.SourceValues;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 import lombok.Data;
 
@@ -18,10 +19,6 @@ public class RecordReader {
   public static class Record {
     private final long filePointer;
     private final Object[] values;
-
-    public SourceValues sourceValues() {
-      return SourceValues.of(values);
-    }
   }
 
   private static class EmptyRecord extends Record {
@@ -29,27 +26,33 @@ public class RecordReader {
     public EmptyRecord() {
       super(-1, null);
     }
-
-    @Override
-    public SourceValues sourceValues() {
-      return SourceValues.EMPTY;
-    }
   }
 
   public static final Record EMPTY = new EmptyRecord();
 
   private final ImmutableList<BasicColumn> columns;
+  private final Set<Long> recordsToDelete;
   private final int numColumns;
   private final SeekableInputStream inputStream;
   private final DataInput dataInput;
   private long pointer;
 
-  public RecordReader(ImmutableList<BasicColumn> columns, SeekableInputStream inputStream) {
+  public RecordReader(
+      ImmutableList<BasicColumn> columns,
+      SeekableInputStream inputStream,
+      Set<Long> recordsToDelete) {
     this.columns = columns;
+    this.recordsToDelete = recordsToDelete;
     this.numColumns = (int) columns.stream().filter(column -> !column.isDeleted()).count();
     this.inputStream = inputStream;
     this.dataInput = new DataInputStream(inputStream);
     this.pointer = 0L;
+  }
+
+  public RecordReader(
+      ImmutableList<BasicColumn> columns,
+      SeekableInputStream inputStream) {
+    this(columns, inputStream, ImmutableSet.of());
   }
 
   public Record read() throws IOException {
@@ -82,14 +85,25 @@ public class RecordReader {
       }
       dataInput.readInt(); // CRC;
       pointer += 4;
-      if (desc == 1) {
+      if (desc == 1 && !recordsToDelete.contains(recordPointer)) {
         return new Record(recordPointer, values);
       }
     } while (true);
   }
 
   public void seek(long position) throws IOException {
+    if (recordsToDelete.contains(position)) {
+      throw new IOException("Record " + position + " is deleted.");
+    }
     inputStream.seek(position);
     pointer = position;
+  }
+
+  public Object position() {
+    return pointer;
+  }
+
+  public void close() throws IOException {
+    inputStream.close();
   }
 }

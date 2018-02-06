@@ -37,7 +37,7 @@ public class InsertIntoStatement {
 
     @Override
     public MetaResources compile(MetaRepo metaRepo) throws ModelException {
-      tableMeta = (MaterializedTableMeta) metaRepo.table(table);
+      tableMeta = metaRepo.table(table);
       ImmutableMap.Builder<Ident, Integer> indexesBuilder = ImmutableMap.builder();
       if (columns.isPresent()) {
         for (int i = 0; i < columns.get().size(); i++) {
@@ -54,7 +54,7 @@ public class InsertIntoStatement {
       Object[] fullValues = new Object[tableMeta.columns().size()];
       // The rules must be evaluated for new records. This requires dependent table
       // readers.
-      TableWriter writer = tableMeta.writer(resources);
+      TableWriter writer = resources.writer(tableMeta.tableName());
       for (ImmutableList<Literal> values : valuess) {
         if (columns.isPresent()) {
           Arrays.fill(fullValues, DataTypes.NULL);

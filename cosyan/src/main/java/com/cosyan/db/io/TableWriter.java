@@ -6,27 +6,24 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
-import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
 import com.cosyan.db.io.SeekableInputStream.SeekableByteArrayInputStream;
 import com.cosyan.db.io.SeekableInputStream.SeekableSequenceInputStream;
+import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Dependencies.ColumnReverseRuleDependencies;
-import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.PrimaryKey;
+import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.Rule.BooleanRule;
-import com.cosyan.db.model.SourceValues;
-import com.cosyan.db.model.SourceValues.ReferencingSourceValues;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.transaction.Resources;
@@ -35,9 +32,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 
-public class TableWriter implements TableIO {
+public class TableWriter extends SeekableTableReader implements TableIO {
 
+  private final MaterializedTableMeta tableMeta;
+  private final String fileName;
   private final RandomAccessFile file;
+  private final RecordReader reader;
   private final ImmutableList<BasicColumn> columns;
   private final ImmutableMap<String, TableIndex> uniqueIndexes;
   private final ImmutableMap<String, TableMultiIndex> multiIndexes;
@@ -48,11 +48,13 @@ public class TableWriter implements TableIO {
   private final Optional<PrimaryKey> primaryKey;
 
   private final long fileIndex0;
+  private long actFileIndex;
   private final Set<Long> recordsToDelete = new LinkedHashSet<>();
-  private final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+  private final TreeMap<Long, byte[]> recordsToInsert = new TreeMap<>();
 
   public TableWriter(
-      RandomAccessFile file,
+      MaterializedTableMeta tableMeta,
+      String fileName,
       ImmutableList<BasicColumn> columns,
       ImmutableMap<String, TableIndex> uniqueIndexes,
       ImmutableMap<String, TableMultiIndex> multiIndexes,
@@ -61,7 +63,14 @@ public class TableWriter implements TableIO {
       ImmutableMap<String, BooleanRule> rules,
       ColumnReverseRuleDependencies reverseRules,
       Optional<PrimaryKey> primaryKey) throws IOException {
-    this.file = file;
+    super(tableMeta);
+    this.tableMeta = tableMeta;
+    this.fileName = fileName;
+    this.file = new RandomAccessFile(fileName, "rw");
+    this.reader = new RecordReader(columns, new SeekableSequenceInputStream(
+        new RAFBufferedInputStream(file),
+        new TreeMapInputStream(recordsToInsert)),
+        recordsToDelete);
     this.columns = columns;
     this.uniqueIndexes = uniqueIndexes;
     this.multiIndexes = multiIndexes;
@@ -71,13 +80,14 @@ public class TableWriter implements TableIO {
     this.reverseRules = reverseRules;
     this.primaryKey = primaryKey;
     this.fileIndex0 = file.length();
+    this.actFileIndex = fileIndex0;
   }
 
   public void insert(Resources resources, Object[] values, boolean checkReferencingRules)
       throws IOException, RuleException {
+    long fileIndex = actFileIndex;
     for (int i = 0; i < values.length; i++) {
       Object value = values[i];
-      long fileIndex = fileIndex0 + bos.size();
       BasicColumn column = columns.get(i);
       if (!column.isNullable() && value == DataTypes.NULL) {
         throw new RuleException("Column is not nullable (mandatory).");
@@ -105,24 +115,26 @@ public class TableWriter implements TableIO {
         }
       }
     }
-    SourceValues sourceValues = ReferencingSourceValues.of(resources, values);
+    byte[] data = Serializer.serialize(values, columns);
+    recordsToInsert.put(actFileIndex, data);
+    actFileIndex += data.length;
     for (Map.Entry<String, BooleanRule> rule : rules.entrySet()) {
-      if (!rule.getValue().check(sourceValues)) {
+      if (!rule.getValue().check(resources, fileIndex)) {
         throw new RuleException("Constraint check " + rule.getKey() + " failed.");
       }
     }
     if (checkReferencingRules) {
-      RuleDependencyReader ruleDependencyReader =
-          new RuleDependencyReader(resources, reverseRules, sourceValues.toArray());
-      ruleDependencyReader.checkReferencingRules();
+      RuleDependencyReader ruleDependencyReader = new RuleDependencyReader(resources, reverseRules);
+      ruleDependencyReader.checkReferencingRules(fileIndex);
     }
-    Serializer.serialize(values, columns, bos);
   }
 
   public void commit() throws IOException {
     try {
       file.seek(fileIndex0);
-      file.write(bos.toByteArray());
+      for (byte[] data : recordsToInsert.values()) {
+        file.write(data);
+      }
       for (Long pos : recordsToDelete) {
         file.seek(pos);
         file.writeByte(0);
@@ -149,7 +161,8 @@ public class TableWriter implements TableIO {
   }
 
   public void rollback() {
-    bos.reset();
+    recordsToDelete.clear();
+    recordsToInsert.clear();
     for (TableIndex index : uniqueIndexes.values()) {
       index.rollback();
     }
@@ -159,7 +172,6 @@ public class TableWriter implements TableIO {
   }
 
   public void close() throws IOException {
-    bos.close();
     file.close();
   }
 
@@ -184,18 +196,17 @@ public class TableWriter implements TableIO {
     }
   }
 
-  public long delete(ColumnMeta whereColumn) throws IOException, RuleException {
+  public long delete(Resources resources, ColumnMeta whereColumn) throws IOException, RuleException {
     long deletedLines = 0L;
-    SeekableSequenceInputStream input = new SeekableSequenceInputStream(
-        new RAFBufferedInputStream(file),
-        new SeekableByteArrayInputStream(bos.toByteArray()));
-    RecordReader reader = new RecordReader(columns, input);
+    RecordReader reader = recordReader();
     do {
       Record record = reader.read();
       if (record == RecordReader.EMPTY) {
+        reader.close();
         return deletedLines;
       }
-      if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.getValue(record.sourceValues())) {
+      if (!recordsToDelete.contains(record.getFilePointer())
+          && (boolean) whereColumn.getValue(record.getValues(), resources)) {
         delete(record, Predicates.alwaysTrue());
         deletedLines++;
       }
@@ -203,25 +214,24 @@ public class TableWriter implements TableIO {
   }
 
   private ImmutableList<Object[]> deleteAndCollectUpdated(
+      Resources resources,
       ImmutableMap<Integer, ColumnMeta> updateExprs,
       ColumnMeta whereColumn) throws IOException, RuleException {
-    SeekableSequenceInputStream input = new SeekableSequenceInputStream(
-        new RAFBufferedInputStream(file),
-        new SeekableByteArrayInputStream(bos.toByteArray()));
-    RecordReader reader = new RecordReader(columns, input);
     ImmutableList.Builder<Object[]> updatedRecords = ImmutableList.builder();
+    RecordReader reader = recordReader();
     do {
       Record record = reader.read();
       if (record == RecordReader.EMPTY) {
+        reader.close();
         return updatedRecords.build();
       }
-      if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.getValue(record.sourceValues())) {
+      Object[] values = record.getValues();
+      if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.getValue(values, resources)) {
         delete(record, (columnIndex) -> updateExprs.containsKey(columnIndex));
-        Object[] values = record.getValues();
         Object[] newValues = new Object[values.length];
         System.arraycopy(values, 0, newValues, 0, values.length);
         for (Map.Entry<Integer, ColumnMeta> updateExpr : updateExprs.entrySet()) {
-          newValues[updateExpr.getKey()] = updateExpr.getValue().getValue(SourceValues.of(values));
+          newValues[updateExpr.getKey()] = updateExpr.getValue().getValue(values, resources);
         }
         updatedRecords.add(newValues);
       }
@@ -230,62 +240,53 @@ public class TableWriter implements TableIO {
 
   public long update(Resources resources, ImmutableMap<Integer, ColumnMeta> columnExprs, ColumnMeta whereColumn)
       throws IOException, RuleException {
-    ImmutableList<Object[]> valuess = deleteAndCollectUpdated(columnExprs, whereColumn);
+    ImmutableList<Object[]> valuess = deleteAndCollectUpdated(resources, columnExprs, whereColumn);
     for (Object[] values : valuess) {
       insert(resources, values, /* checkReferencingRules= */true);
     }
     return valuess.size();
   }
 
-  public SeekableTableReader createReader(Resources resources) throws IOException {
-    return new SeekableTableReader(columns) {
-
-      private final RecordReader reader = new RecordReader(
-          ImmutableList
-              .copyOf(columns.values().stream().map(column -> (BasicColumn) column).collect(Collectors.toList())),
-          new SeekableSequenceInputStream(
-              new RAFBufferedInputStream(file),
-              new SeekableByteArrayInputStream(bos.toByteArray())));
-
-      @Override
-      public void close() throws IOException {
-      }
-
-      @Override
-      public SourceValues read() throws IOException {
-        do {
-          Record record = reader.read();
-          if (record == RecordReader.EMPTY) {
-            return record.sourceValues();
-          }
-          if (!recordsToDelete.contains(record.getFilePointer())) {
-            Object[] values = record.sourceValues().toArray();
-            return ReferencingSourceValues.of(resources, values);
-          }
-        } while (true);
-      }
-
-      @Override
-      public void seek(long position) throws IOException {
-        reader.seek(position);
-      }
-
-      @Override
-      public IndexReader indexReader(Ident ident) {
-        return getIndex(ident.getString());
-      }
-    };
-  }
-
   public TableIndex getPrimaryKeyIndex() {
     return uniqueIndexes.get(primaryKey.get().getColumn().getName());
   }
 
+  @Override
   public IndexReader getIndex(String name) {
     if (uniqueIndexes.containsKey(name)) {
       return uniqueIndexes.get(name);
     } else {
       return multiIndexes.get(name);
     }
+  }
+
+  @Override
+  public Record get(long position) throws IOException {
+    reader.seek(position);
+    return reader.read();
+  }
+
+  private RecordReader recordReader() throws IOException {
+    SeekableSequenceInputStream rafReader = new SeekableSequenceInputStream(
+        new RAFBufferedInputStream(file),
+        new TreeMapInputStream(recordsToInsert));
+    return new RecordReader(columns, rafReader, recordsToDelete);
+  }
+
+  @Override
+  public IterableTableReader iterableReader(Resources resources) throws IOException {
+    RecordReader reader = recordReader();
+    return new IterableTableReader() {
+
+      @Override
+      public Object[] next() throws IOException {
+        return reader.read().getValues();
+      }
+
+      @Override
+      public void close() throws IOException {
+        reader.close();
+      }
+    };
   }
 }

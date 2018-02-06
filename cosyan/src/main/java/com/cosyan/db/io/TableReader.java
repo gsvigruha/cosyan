@@ -1,68 +1,85 @@
 package com.cosyan.db.io;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
-import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
-import com.cosyan.db.model.ColumnMeta.OrderColumn;
-import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.SourceValues;
-import com.cosyan.db.model.SourceValues.ReferencingSourceValues;
+import com.cosyan.db.model.TableIndex;
+import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
 public abstract class TableReader implements TableIO {
 
-  protected boolean cancelled = false;
-
-  public abstract SourceValues read() throws IOException;
-
   @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static abstract class ExposedTableReader extends TableReader {
+  public static class ExposedTableReader {
 
-    protected final ImmutableMap<String, ? extends ColumnMeta> columns;
+    private final ExposedTableMeta tableMeta;
+    private final IterableTableReader reader;
 
     public ImmutableMap<String, Object> readColumns() throws IOException {
-      SourceValues values = read();
-      if (values.isEmpty()) {
+      Object[] values = reader.next();
+      if (values == null) {
         return null;
       }
       ImmutableMap.Builder<String, Object> builder = ImmutableMap.builder();
       int i = 0;
-      for (String columnName : columns.keySet()) {
-        builder.put(columnName, values.sourceValue(i++));
+      for (String columnName : tableMeta.columnNames()) {
+        builder.put(columnName, values[i++]);
       }
       return builder.build();
     }
   }
 
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static abstract class SeekableTableReader extends ExposedTableReader {
-    public SeekableTableReader(List<BasicColumn> columns) {
-      super(MaterializedTableMeta.columnsMap(columns));
+  public static abstract class IterableTableReader {
+    public abstract Object[] next() throws IOException;
+
+    public abstract void close() throws IOException;
+  }
+
+  public static abstract class DerivedIterableTableReader extends IterableTableReader {
+
+    protected final IterableTableReader sourceReader;
+
+    public DerivedIterableTableReader(IterableTableReader sourceReader) {
+      this.sourceReader = sourceReader;
     }
 
-    public abstract void seek(long position) throws IOException;
+    @Override
+    public void close() throws IOException {
+      sourceReader.close();
+    }
+  }
 
-    public abstract IndexReader indexReader(Ident ident);
+  public static abstract class SeekableTableReader implements TableIO {
+
+    private final MaterializedTableMeta tableMeta;
+
+    public SeekableTableReader(
+        MaterializedTableMeta tableMeta) {
+      this.tableMeta = tableMeta;
+    }
+
+    public abstract void close() throws IOException;
+
+    public abstract Record get(long position) throws IOException;
+
+    public abstract IterableTableReader iterableReader(Resources resources) throws IOException;
+
+    public TableIndex getPrimaryKeyIndex() {
+      return (TableIndex) getIndex(tableMeta.primaryKey().get().getColumn().getName());
+    }
+
+    public abstract IndexReader getIndex(String name);
   }
 
   public static class MaterializedTableReader extends SeekableTableReader {
@@ -70,18 +87,20 @@ public abstract class TableReader implements TableIO {
     private final RecordReader reader;
     private final RAFBufferedInputStream bufferedRAF;
     private final ImmutableMap<String, IndexReader> indexes;
-    private final Resources resources;
+    private final String fileName;
+    private final ImmutableList<BasicColumn> columns;
 
     public MaterializedTableReader(
-        RandomAccessFile raf,
+        MaterializedTableMeta tableMeta,
+        String fileName,
         ImmutableList<BasicColumn> columns,
-        ImmutableMap<String, IndexReader> indexes,
-        Resources resources) throws IOException {
-      super(columns);
+        ImmutableMap<String, IndexReader> indexes) throws IOException {
+      super(tableMeta);
       this.indexes = indexes;
-      this.resources = resources;
-      this.bufferedRAF = new RAFBufferedInputStream(raf);
+      this.bufferedRAF = new RAFBufferedInputStream(new RandomAccessFile(fileName, "r"));
       this.reader = new RecordReader(columns, bufferedRAF);
+      this.fileName = fileName;
+      this.columns = columns;
     }
 
     @Override
@@ -90,271 +109,88 @@ public abstract class TableReader implements TableIO {
     }
 
     @Override
-    public void seek(long position) throws IOException {
-      bufferedRAF.seek(position);
+    public Record get(long position) throws IOException {
+      reader.seek(position);
+      return reader.read();
     }
 
     @Override
-    public SourceValues read() throws IOException {
-      Record record = reader.read();
-      if (record == RecordReader.EMPTY) {
-        close();
-        return record.sourceValues();
-      }
+    public IterableTableReader iterableReader(Resources resources) throws IOException {
+      RAFBufferedInputStream rafReader = new RAFBufferedInputStream(new RandomAccessFile(fileName, "r"));
+      RecordReader reader = new RecordReader(columns, rafReader);
+      return new IterableTableReader() {
 
-      Object[] values = record.sourceValues().toArray();
-      return ReferencingSourceValues.of(resources, values);
-    }
-
-    @Override
-    public IndexReader indexReader(Ident ident) {
-      return indexes.get(ident.getString());
-    }
-  }
-
-  public static class DerivedTableReader extends ExposedTableReader {
-
-    private final TableReader sourceReader;
-
-    public DerivedTableReader(
-        TableReader sourceReader,
-        ImmutableMap<String, ? extends ColumnMeta> columns) {
-      super(columns);
-      this.sourceReader = sourceReader;
-    }
-
-    @Override
-    public void close() throws IOException {
-      sourceReader.close();
-    }
-
-    @Override
-    public SourceValues read() throws IOException {
-      SourceValues sourceValues = sourceReader.read();
-      if (sourceValues.isEmpty()) {
-        return sourceValues;
-      } else {
-        Object[] values = new Object[columns.size()];
-        int i = 0;
-        for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-          values[i++] = entry.getValue().getValue(sourceValues);
+        @Override
+        public Object[] next() throws IOException {
+          return reader.read().getValues();
         }
-        return SourceValues.of(values);
-      }
-    }
-  }
 
-  public static class FilteredTableReader extends ExposedTableReader {
-
-    private final ExposedTableReader sourceReader;
-    private final ColumnMeta whereColumn;
-
-    public FilteredTableReader(
-        ExposedTableReader sourceReader,
-        ColumnMeta whereColumn) {
-      super(sourceReader.columns);
-      this.sourceReader = sourceReader;
-      this.whereColumn = whereColumn;
-    }
-
-    @Override
-    public void close() throws IOException {
-      sourceReader.close();
-    }
-
-    @Override
-    public SourceValues read() throws IOException {
-      SourceValues values = SourceValues.EMPTY;
-      do {
-        SourceValues sourceValues = sourceReader.read();
-        if (sourceValues.isEmpty()) {
-          return sourceValues;
-        } else {
-          if (!(boolean) whereColumn.getValue(sourceValues)) {
-            values = SourceValues.EMPTY;
-          } else {
-            values = sourceValues;
-          }
+        @Override
+        public void close() throws IOException {
+          rafReader.close();
         }
-      } while (values.isEmpty() && !cancelled);
-      return values;
+      };
+    }
+
+    @Override
+    public IndexReader getIndex(String name) {
+      return indexes.get(name);
     }
   }
 
-  protected static abstract class MultiFilteredTableReader extends ExposedTableReader {
+  public static abstract class MultiFilteredTableReader extends IterableTableReader {
 
-    private final SeekableTableReader sourceReader;
-    private final ColumnMeta whereColumn;
+    protected final SeekableTableReader sourceReader;
+    protected final ColumnMeta whereColumn;
+    private final Resources resources;
 
     protected long[] positions;
     private int pointer;
+    private boolean cancelled;
 
     public MultiFilteredTableReader(
         SeekableTableReader sourceReader,
-        ColumnMeta whereColumn) {
-      super(sourceReader.columns);
+        ColumnMeta whereColumn,
+        Resources resources) {
       this.sourceReader = sourceReader;
       this.whereColumn = whereColumn;
+      this.resources = resources;
+    }
+
+    public void reset() {
+      positions = null;
     }
 
     @Override
-    public void close() throws IOException {
-      sourceReader.close();
-    }
-
-    @Override
-    public SourceValues read() throws IOException {
+    public Object[] next() throws IOException {
       if (positions == null) {
         readPositions();
         pointer = 0;
       }
-      SourceValues values = SourceValues.EMPTY;
+      Object[] values = null;
       do {
         if (pointer < positions.length) {
-          sourceReader.seek(positions[pointer]);
-          SourceValues sourceValues = sourceReader.read();
-          if (sourceValues.isEmpty()) {
-            return sourceValues;
+          values = sourceReader.get(positions[pointer]).getValues();
+          if (values == null) {
+            return null;
           } else {
-            if (!(boolean) whereColumn.getValue(sourceValues)) {
-              values = SourceValues.EMPTY;
-            } else {
-              values = sourceValues;
+            if (!(boolean) whereColumn.getValue(values, resources)) {
+              values = null;
             }
           }
           pointer++;
         } else {
-          return SourceValues.EMPTY;
+          return null;
         }
-      } while (values.isEmpty() && !cancelled);
+      } while (values == null && !cancelled);
       return values;
     }
 
     protected abstract void readPositions() throws IOException;
-  }
-
-  public static class IndexFilteredTableReader extends MultiFilteredTableReader {
-
-    private final VariableEquals clause;
-    private final IndexReader index;
-
-    public IndexFilteredTableReader(
-        SeekableTableReader sourceReader,
-        ColumnMeta whereColumn,
-        VariableEquals clause) {
-      super(sourceReader, whereColumn);
-      this.clause = clause;
-      this.index = sourceReader.indexReader(clause.getIdent());
-    }
-
-    @Override
-    protected void readPositions() throws IOException {
-      positions = index.get(clause.getValue());
-    }
-  }
-
-  public static class SortedTableReader extends ExposedTableReader {
-
-    private final ExposedTableReader sourceReader;
-    private final ImmutableList<OrderColumn> orderColumns;
-    private boolean sorted;
-    private Iterator<SourceValues> iterator;
-
-    public SortedTableReader(
-        ExposedTableReader sourceReader,
-        ImmutableList<OrderColumn> orderColumns) {
-      super(sourceReader.columns);
-      this.sourceReader = sourceReader;
-      this.orderColumns = orderColumns;
-      this.sorted = false;
-    }
 
     @Override
     public void close() throws IOException {
-      sourceReader.close();
-    }
-
-    @Override
-    public SourceValues read() throws IOException {
-      if (!sorted) {
-        sort();
-      }
-      if (!iterator.hasNext()) {
-        return SourceValues.EMPTY;
-      }
-      return iterator.next();
-    }
-
-    private void sort() throws IOException {
-      TreeMap<ImmutableList<Object>, SourceValues> values = new TreeMap<>(new Comparator<ImmutableList<Object>>() {
-        @Override
-        public int compare(ImmutableList<Object> x, ImmutableList<Object> y) {
-          for (int i = 0; i < orderColumns.size(); i++) {
-            int result = orderColumns.get(i).compare(x.get(i), y.get(i));
-            if (result != 0) {
-              return result;
-            }
-          }
-          return 0;
-        }
-      });
-      while (!cancelled) {
-        SourceValues sourceValues = sourceReader.read();
-        if (sourceValues.isEmpty()) {
-          break;
-        }
-        ImmutableList.Builder<Object> builder = ImmutableList.builder();
-        for (OrderColumn column : orderColumns) {
-          Object key = column.getValue(sourceValues);
-          builder.add(key);
-        }
-        values.put(builder.build(), sourceValues);
-      }
-      iterator = values.values().iterator();
-      sorted = true;
-    }
-  }
-
-  public static class DistinctTableReader extends ExposedTableReader {
-
-    private final ExposedTableReader sourceReader;
-    private boolean distinct;
-    private Iterator<SourceValues> iterator;
-
-    public DistinctTableReader(
-        ExposedTableReader sourceReader) {
-      super(sourceReader.columns);
-      this.sourceReader = sourceReader;
-      this.distinct = false;
-    }
-
-    @Override
-    public void close() throws IOException {
-      sourceReader.close();
-    }
-
-    @Override
-    public SourceValues read() throws IOException {
-      if (!distinct) {
-        distinct();
-      }
-      if (!iterator.hasNext()) {
-        return SourceValues.EMPTY;
-      }
-      return iterator.next();
-    }
-
-    private void distinct() throws IOException {
-      LinkedHashSet<ImmutableList<Object>> values = new LinkedHashSet<>();
-      while (!cancelled) {
-        SourceValues sourceValues = sourceReader.read();
-        if (sourceValues.isEmpty()) {
-          break;
-        }
-        values.add(sourceValues.toList());
-      }
-      iterator = values.stream().map(list -> SourceValues.of(list.toArray())).iterator();
-      distinct = true;
+      // SeekableTableReader should not be closed manually.
     }
   }
 }

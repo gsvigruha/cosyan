@@ -58,7 +58,12 @@ public abstract class UnitTestBase {
   }
 
   protected ErrorResult error(String sql) {
-    return (ErrorResult) session.execute(sql);
+    Result result = session.execute(sql);
+    if (result instanceof CrashResult) {
+      ((CrashResult) result).getError().printStackTrace();
+      fail();
+    }
+    return (ErrorResult) result;
   }
 
   public static QueryResult query(String sql, Session session) {
@@ -77,7 +82,13 @@ public abstract class UnitTestBase {
   }
 
   public static TransactionResult transaction(String sql) {
-    return (TransactionResult) session.execute(sql);
+    Result result = session.execute(sql);
+    if (result instanceof CrashResult) {
+      CrashResult crash = (CrashResult) result;
+      crash.getError().printStackTrace();
+      throw new RuntimeException(crash.getError());
+    }
+    return (TransactionResult) result;
   }
 
   protected QueryResult query(String sql) {

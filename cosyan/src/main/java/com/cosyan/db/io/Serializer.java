@@ -106,6 +106,13 @@ public class Serializer {
     }
   }
 
+  public static byte[] serialize(Object[] values, ImmutableList<BasicColumn> columns)
+      throws IOException {
+    ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
+    serialize(values, columns, bos);
+    return bos.toByteArray();
+  }
+
   public static void serialize(Object[] values, ImmutableList<BasicColumn> columns, OutputStream out)
       throws IOException {
     DataOutputStream stream = new DataOutputStream(out);
@@ -198,7 +205,8 @@ public class Serializer {
   }
 
   public static void readTableReferences(
-      MaterializedTableMeta tableMeta, InputStream refIn, MetaRepo metaRepo) throws IOException, ModelException, ParserException {
+      MaterializedTableMeta tableMeta, InputStream refIn, MetaRepo metaRepo)
+      throws IOException, ModelException, ParserException {
     DataInputStream refStream = new DataInputStream(refIn);
     int numForeignKeys = refStream.readInt();
     for (int i = 0; i < numForeignKeys; i++) {
@@ -215,7 +223,7 @@ public class Serializer {
           refTable.columns().get(refStream.readUTF()));
       tableMeta.addForeignKey(foreignKey);
     }
-    
+
     Parser parser = new Parser();
     Lexer lexer = new Lexer();
     int numSimpleChecks = refStream.readInt();

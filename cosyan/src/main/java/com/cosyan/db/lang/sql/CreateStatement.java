@@ -20,7 +20,9 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.model.Rule;
+import com.cosyan.db.model.TableMeta;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -166,8 +168,9 @@ public class CreateStatement {
     }
 
     public Rule compile(MaterializedTableMeta tableMeta) throws ModelException {
-      ColumnMeta column = expr.compileColumn(tableMeta);
-      return new Rule(name, column, expr, column.tableDependencies());
+      SeekableTableMeta table = tableMeta.reader();
+      ColumnMeta column = expr.compileColumn(table);
+      return new Rule(name, table, column, expr, column.tableDependencies());
     }
   }
 
@@ -198,7 +201,7 @@ public class CreateStatement {
     @Override
     public Result execute(MetaRepo metaRepo) throws ModelException, IndexException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
-      BasicColumn column = tableMeta.column(this.column).getMeta();
+      BasicColumn column = tableMeta.column(this.column);
       if (column.isIndexed()) {
         throw new ModelException(String.format("Cannot create index on '%s.%s', column is already indexed.",
             tableMeta.tableName(), column.getName()));

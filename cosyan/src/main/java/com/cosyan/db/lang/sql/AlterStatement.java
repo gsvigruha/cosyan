@@ -64,7 +64,7 @@ public class AlterStatement {
     @Override
     public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
-      BasicColumn basicColumn = tableMeta.column(column).getMeta();
+      BasicColumn basicColumn = tableMeta.column(column);
       basicColumn.setDeleted(true);
       try {
         for (Rule rule : tableMeta.rules().values()) {
@@ -115,7 +115,7 @@ public class AlterStatement {
         throw new ModelException(
             String.format("Cannot alter column '%s', column does not exist.", column.getName()));
       }
-      BasicColumn originalColumn = tableMeta.column(new Ident(column.getName())).getMeta();
+      BasicColumn originalColumn = tableMeta.column(new Ident(column.getName()));
       if (originalColumn.getType() != column.getType()) {
         throw new ModelException(
             String.format("Cannot alter column '%s', type has to remain the same.", column.getName()));

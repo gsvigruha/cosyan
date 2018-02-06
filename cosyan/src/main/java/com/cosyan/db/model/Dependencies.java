@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
-import com.cosyan.db.model.References.SimpleReferencingColumn;
+import com.cosyan.db.model.References.ReferencedSimpleTableMeta;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.google.common.collect.Iterables;
 
@@ -76,20 +76,20 @@ public class Dependencies {
 
     private final Map<String, TableDependency> deps = new HashMap<>();
 
-    public void addTableDependency(SimpleReferencingColumn column) {
+    public void addTableDependency(ReferencedSimpleTableMeta table, BasicColumn column) {
       Map<String, TableDependency> actDeps = deps;
       TableDependency tableDependency = null;
-      for (Ref foreignKey : column.foreignKeyChain()) {
+      for (Ref foreignKey : table.foreignKeyChain()) {
         if (!actDeps.containsKey(foreignKey.getName())) {
           actDeps.put(foreignKey.getName(), new TableDependency(foreignKey));
         }
         tableDependency = actDeps.get(foreignKey.getName());
         actDeps = tableDependency.getDeps();
       }
-      tableDependency.columnDeps.put(column.getOriginalMeta().getName(), column.getOriginalMeta());
+      tableDependency.columnDeps.put(column.getName(), column);
     }
 
-    public void addTableDependency(ReferencedMultiTableMeta tableMeta) {
+    public void addTableDependency(ReferencedMultiTableMeta tableMeta, BasicColumn column) {
       Map<String, TableDependency> actDeps = deps;
       TableDependency tableDependency = null;
       for (Ref foreignKey : tableMeta.foreignKeyChain()) {
@@ -99,7 +99,7 @@ public class Dependencies {
         tableDependency = actDeps.get(foreignKey.getName());
         actDeps = tableDependency.getDeps();
       }
-      //tableDependency.columnDeps.put(column.getOriginalMeta().getName(), column.getOriginalMeta());
+      tableDependency.columnDeps.put(column.getName(), column);
     }
     
     public TableDependencies add(TableDependencies other) {

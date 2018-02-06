@@ -1,30 +1,30 @@
 package com.cosyan.db.model;
 
 import java.io.IOException;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
-import com.cosyan.db.io.AggrReader.GlobalAggrTableReader;
-import com.cosyan.db.io.AggrReader.KeyValueAggrTableReader;
-import com.cosyan.db.io.JoinTableReader.HashJoinTableReader;
-import com.cosyan.db.io.TableReader;
-import com.cosyan.db.io.TableReader.DerivedTableReader;
-import com.cosyan.db.io.TableReader.DistinctTableReader;
-import com.cosyan.db.io.TableReader.ExposedTableReader;
-import com.cosyan.db.io.TableReader.FilteredTableReader;
-import com.cosyan.db.io.TableReader.IndexFilteredTableReader;
-import com.cosyan.db.io.TableReader.SortedTableReader;
-import com.cosyan.db.lang.sql.Tokens;
-import com.cosyan.db.lang.sql.Tokens.Token;
+import com.cosyan.db.io.Indexes.IndexReader;
+import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
+import com.cosyan.db.io.TableReader.IterableTableReader;
+import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.model.ColumnMeta.AggrColumn;
+import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
-import com.cosyan.db.model.References.Column;
-import com.cosyan.db.model.References.ReferencedTableMeta;
+import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
+import com.cosyan.db.model.TableMeta.IterableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -34,8 +34,7 @@ public class DerivedTables {
   protected static MetaResources resourcesFromColumns(Iterable<? extends ColumnMeta> columns) {
     MetaResources resources = MetaResources.empty();
     for (ColumnMeta columnMeta : columns) {
-      resources = resources.merge(
-          MaterializedTableMeta.readResources(columnMeta.tableDependencies().getDeps().values()));
+      resources = resources.merge(columnMeta.readResources());
     }
     return resources;
   }
@@ -47,8 +46,10 @@ public class DerivedTables {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class DerivedTableMeta extends ExposedTableMeta {
-    private final TableMeta sourceTable;
+    private final IterableTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
+
+    private Object[] values;
 
     @Override
     public ImmutableList<String> columnNames() {
@@ -56,23 +57,109 @@ public class DerivedTables {
     }
 
     @Override
-    public ExposedTableReader reader(Resources resources) throws IOException {
-      return new DerivedTableReader(sourceTable.reader(resources), columns);
+    public IndexColumn getColumn(Ident ident) throws ModelException {
+      ColumnMeta column = columns.get(ident.getString());
+      return IndexColumn.of(this, column, indexOf(columns.keySet(), ident));
     }
 
     @Override
-    public Column getColumn(Ident ident) throws ModelException {
-      return new Column(columns.get(ident.getString()), indexOf(columns.keySet(), ident));
-    }
-
-    @Override
-    protected ReferencedTableMeta getRefTable(Ident ident) throws ModelException {
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
       return null;
+    }
+
+    private Set<TableMeta> sourceTables() {
+      return columns.values().stream().flatMap(column -> column.tables().stream()).collect(Collectors.toSet());
     }
 
     @Override
     public MetaResources readResources() {
-      return sourceTable.readResources().merge(resourcesFromColumns(columns.values()));
+      MetaResources resources = resourcesFromColumns(columns.values());
+      resources = resources.merge(sourceTable.readResources());
+      for (TableMeta sourceTable : sourceTables()) {
+        resources = resources.merge(sourceTable.readResources());
+      }
+      return resources;
+    }
+
+    @Override
+    public Iterable<TableMeta> tableDeps() {
+      return ImmutableList.<TableMeta>builder().add(sourceTable).addAll(sourceTables()).build();
+    }
+
+    @Override
+    public IterableTableReader reader(Object key, Resources resources) throws IOException {
+      return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
+
+        @Override
+        public Object[] next() throws IOException {
+          Object[] sourceValues = sourceReader.next();
+          if (sourceValues == null) {
+            return null;
+          }
+          Object[] values = new Object[columns.size()];
+          int i = 0;
+          for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
+            values[i++] = entry.getValue().getValue(sourceValues, resources);
+          }
+          return values;
+        }
+      };
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class ReferencedDerivedTableMeta extends TableMeta {
+    private final TableMeta sourceTable;
+    private final ImmutableMap<String, ColumnMeta> columns;
+
+    @Override
+    public Iterable<TableMeta> tableDeps() {
+      return ImmutableList.of(sourceTable);
+    }
+
+    public IterableTableReader reader(Object key, Resources resources) throws IOException {
+      return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
+
+        @Override
+        public Object[] next() throws IOException {
+          Object[] sourceValues = sourceReader.next();
+          if (sourceValues == null) {
+            return null;
+          }
+          Object[] values = new Object[columns.size()];
+          int i = 0;
+          for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
+            values[i++] = entry.getValue().getValue(sourceValues, resources);
+          }
+          return values;
+        }
+      };
+    }
+
+    @Override
+    protected IndexColumn getColumn(Ident ident) throws ModelException {
+      ColumnMeta column = columns.get(ident.getString());
+      return IndexColumn.of(sourceTable, column, indexOf(columns.keySet(), ident));
+    }
+
+    @Override
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources();
+    }
+
+    public ImmutableList<String> columnNames() {
+      return columns.keySet().asList();
+    }
+
+    @Override
+    public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
+      return sourceTable.values(sourceValues, resources);
     }
   }
 
@@ -82,18 +169,15 @@ public class DerivedTables {
     private final ExposedTableMeta sourceTable;
     private final ColumnMeta whereColumn;
 
+    private Object[] values;
+
     @Override
     public ImmutableList<String> columnNames() {
       return sourceTable.columnNames();
     }
 
     @Override
-    public ExposedTableReader reader(Resources resources) throws IOException {
-      return new FilteredTableReader(sourceTable.reader(resources), whereColumn);
-    }
-
-    @Override
-    public Column getColumn(Ident ident) throws ModelException {
+    public IndexColumn getColumn(Ident ident) throws ModelException {
       return sourceTable.getColumn(ident);
     }
 
@@ -105,15 +189,52 @@ public class DerivedTables {
     @Override
     public MetaResources readResources() {
       return sourceTable.readResources().merge(resourcesFromColumn(whereColumn));
+    }
+
+    @Override
+    public Iterable<TableMeta> tableDeps() {
+      return ImmutableList.of(sourceTable);
+    }
+
+    public IterableTableReader reader(Object key, Resources resources) throws IOException {
+      return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
+
+        @Override
+        public Object[] next() throws IOException {
+          Object[] values = null;
+          do {
+            values = sourceReader.next();
+            if (values == null) {
+              return null;
+            }
+            if ((boolean) whereColumn.getValue(values, resources)) {
+              return values;
+            } else {
+              values = null;
+            }
+          } while (values == null && !cancelled);
+          return values;
+        }
+      };
     }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class IndexFilteredTableMeta extends ExposedTableMeta {
-    private final MaterializedTableMeta sourceTable;
-    private final ColumnMeta whereColumn;
     private final VariableEquals clause;
+    private final SeekableTableMeta sourceTable;
+    private final ColumnMeta whereColumn;
+    private MultiFilteredTableReader reader;
+
+    public IndexFilteredTableMeta(
+        SeekableTableMeta sourceTable,
+        ColumnMeta whereColumn,
+        VariableEquals clause) {
+      this.clause = clause;
+      this.sourceTable = sourceTable;
+      this.whereColumn = whereColumn;
+    }
 
     @Override
     public ImmutableList<String> columnNames() {
@@ -121,15 +242,7 @@ public class DerivedTables {
     }
 
     @Override
-    public ExposedTableReader reader(Resources resources) throws IOException {
-      return new IndexFilteredTableReader(
-          sourceTable.reader(resources),
-          whereColumn,
-          clause);
-    }
-
-    @Override
-    public Column getColumn(Ident ident) throws ModelException {
+    public IndexColumn getColumn(Ident ident) throws ModelException {
       return sourceTable.getColumn(ident);
     }
 
@@ -142,30 +255,42 @@ public class DerivedTables {
     public MetaResources readResources() {
       return sourceTable.readResources().merge(resourcesFromColumn(whereColumn));
     }
+
+    @Override
+    public Iterable<TableMeta> tableDeps() {
+      return ImmutableList.of(sourceTable);
+    }
+
+    @Override
+    public IterableTableReader reader(Object key, Resources resources) throws IOException {
+      return new MultiFilteredTableReader(resources.reader(sourceTable.tableName()), whereColumn, resources) {
+        @Override
+        protected void readPositions() throws IOException {
+          IndexReader index = resources.getIndex(sourceTable.tableName(), clause.getIdent().getString());
+          positions = index.get(clause.getValue());
+        }
+      };
+    }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class KeyValueTableMeta extends TableMeta {
-    private final TableMeta sourceTable;
+  public static class KeyValueTableMeta extends IterableTableMeta {
+    private final IterableTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> keyColumns;
 
     @Override
-    public TableReader reader(Resources resources) throws IOException {
-      return sourceTable.reader(resources);
-    }
-
-    @Override
-    public Column getColumn(Ident ident) throws ModelException {
+    public IndexColumn getColumn(Ident ident) throws ModelException {
       if (keyColumns.containsKey(ident.getString())) {
-        return new Column(keyColumns.get(ident.getString()), indexOf(keyColumns.keySet(), ident));
+        ColumnMeta column = keyColumns.get(ident.getString());
+        return IndexColumn.of(this, column, indexOf(keyColumns.keySet(), ident));
       } else {
         return null;
       }
     }
 
     @Override
-    protected ReferencedTableMeta getRefTable(Ident ident) throws ModelException {
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
       return null;
     }
 
@@ -173,65 +298,17 @@ public class DerivedTables {
     public MetaResources readResources() {
       return sourceTable.readResources().merge(resourcesFromColumns(keyColumns.values()));
     }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class KeyValueAggrTableMeta extends TableMeta {
-    private final KeyValueTableMeta sourceTable;
-    private final ImmutableList<AggrColumn> aggrColumns;
-    private final ColumnMeta havingColumn;
 
     @Override
-    public TableReader reader(Resources resources) throws IOException {
-      return new KeyValueAggrTableReader(
-          sourceTable.reader(resources),
-          sourceTable.keyColumns,
-          aggrColumns,
-          havingColumn);
+    public Iterable<TableMeta> tableDeps() {
+      return Iterables.concat(
+          ImmutableList.of(sourceTable),
+          keyColumns.values().stream().flatMap(column -> column.tables().stream()).collect(Collectors.toSet()));
     }
 
     @Override
-    public Column getColumn(Ident ident) throws ModelException {
-      return sourceTable.column(ident).shift(sourceTable.keyColumns.size());
-    }
-
-    @Override
-    protected ReferencedTableMeta getRefTable(Ident ident) throws ModelException {
-      return null;
-    }
-
-    @Override
-    public MetaResources readResources() {
-      return sourceTable.readResources();
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class GlobalAggrTableMeta extends TableMeta {
-    private final KeyValueTableMeta sourceTable;
-    private final ImmutableList<AggrColumn> aggrColumns;
-    private final ColumnMeta havingColumn;
-
-    @Override
-    public TableReader reader(Resources resources) throws IOException {
-      return new GlobalAggrTableReader(sourceTable.reader(resources), aggrColumns, havingColumn);
-    }
-
-    @Override
-    public Column getColumn(Ident ident) throws ModelException {
-      return sourceTable.column(ident).shift(sourceTable.keyColumns.size());
-    }
-
-    @Override
-    protected ReferencedTableMeta getRefTable(Ident ident) throws ModelException {
-      return null;
-    }
-
-    @Override
-    public MetaResources readResources() {
-      return sourceTable.readResources();
+    public IterableTableReader reader(Object key, Resources resources) throws IOException {
+      return sourceTable.reader(key, resources);
     }
   }
 
@@ -241,18 +318,17 @@ public class DerivedTables {
     private final ExposedTableMeta sourceTable;
     private final ImmutableList<OrderColumn> orderColumns;
 
+    private Object[] values;
+    private boolean sorted;
+    private Iterator<Object[]> iterator;
+
     @Override
     public ImmutableList<String> columnNames() {
       return sourceTable.columnNames();
     }
 
     @Override
-    public ExposedTableReader reader(Resources resources) throws IOException {
-      return new SortedTableReader(sourceTable.reader(resources), orderColumns);
-    }
-
-    @Override
-    public Column getColumn(Ident ident) throws ModelException {
+    public IndexColumn getColumn(Ident ident) throws ModelException {
       return sourceTable.getColumn(ident);
     }
 
@@ -264,6 +340,56 @@ public class DerivedTables {
     @Override
     public MetaResources readResources() {
       return sourceTable.readResources();
+    }
+
+    @Override
+    public Iterable<TableMeta> tableDeps() {
+      return ImmutableList.of(sourceTable);
+    }
+
+    public IterableTableReader reader(Object key, Resources resources) throws IOException {
+      return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
+
+        private void sort() throws IOException {
+          TreeMap<ImmutableList<Object>, Object[]> values = new TreeMap<>(new Comparator<ImmutableList<Object>>() {
+            @Override
+            public int compare(ImmutableList<Object> x, ImmutableList<Object> y) {
+              for (int i = 0; i < orderColumns.size(); i++) {
+                int result = orderColumns.get(i).compare(x.get(i), y.get(i));
+                if (result != 0) {
+                  return result;
+                }
+              }
+              return 0;
+            }
+          });
+          while (!cancelled) {
+            Object[] sourceValues = sourceReader.next();
+            if (sourceValues == null) {
+              break;
+            }
+            ImmutableList.Builder<Object> builder = ImmutableList.builder();
+            for (OrderColumn column : orderColumns) {
+              Object key = column.getValue(sourceValues, resources);
+              builder.add(key);
+            }
+            values.put(builder.build(), sourceValues);
+          }
+          iterator = values.values().iterator();
+          sorted = true;
+        }
+
+        @Override
+        public Object[] next() throws IOException {
+          if (!sorted) {
+            sort();
+          }
+          if (!iterator.hasNext()) {
+            return null;
+          }
+          return iterator.next();
+        }
+      };
     }
   }
 
@@ -272,18 +398,17 @@ public class DerivedTables {
   public static class DistinctTableMeta extends ExposedTableMeta {
     private final ExposedTableMeta sourceTable;
 
+    private Object[] values;
+    private boolean distinct;
+    private Iterator<Object[]> iterator;
+
     @Override
     public ImmutableList<String> columnNames() {
       return sourceTable.columnNames();
     }
 
     @Override
-    public ExposedTableReader reader(Resources resources) throws IOException {
-      return new DistinctTableReader(sourceTable.reader(resources));
-    }
-
-    @Override
-    public Column getColumn(Ident ident) throws ModelException {
+    public IndexColumn getColumn(Ident ident) throws ModelException {
       return sourceTable.getColumn(ident);
     }
 
@@ -296,95 +421,40 @@ public class DerivedTables {
     public MetaResources readResources() {
       return sourceTable.readResources();
     }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class JoinTableMeta extends ExposedTableMeta {
-    private final Token joinType;
-    private final ExposedTableMeta leftTable;
-    private final ExposedTableMeta rightTable;
-    private final ImmutableList<ColumnMeta> leftTableJoinColumns;
-    private final ImmutableList<ColumnMeta> rightTableJoinColumns;
 
     @Override
-    public ImmutableList<String> columnNames() {
-      return ImmutableList.<String>builder()
-          .addAll(leftTable.columnNames())
-          .addAll(rightTable.columnNames())
-          .build();
+    public Iterable<TableMeta> tableDeps() {
+      return ImmutableList.of(sourceTable);
     }
 
     @Override
-    public ExposedTableReader reader(Resources resources) throws IOException {
-      if (joinType.is(Tokens.INNER)) {
-        return new HashJoinTableReader(
-            leftTable.reader(resources),
-            rightTable.reader(resources),
-            leftTableJoinColumns,
-            rightTableJoinColumns,
-            /* mainTableFirst= */true,
-            /* innerJoin= */true);
-      } else if (joinType.is(Tokens.LEFT)) {
-        return new HashJoinTableReader(
-            leftTable.reader(resources),
-            rightTable.reader(resources),
-            leftTableJoinColumns,
-            rightTableJoinColumns,
-            /* mainTableFirst= */true,
-            /* innerJoin= */false);
-      } else if (joinType.is(Tokens.RIGHT)) {
-        return new HashJoinTableReader(
-            rightTable.reader(resources),
-            leftTable.reader(resources),
-            rightTableJoinColumns,
-            leftTableJoinColumns,
-            /* mainTableFirst= */false,
-            /* innerJoin= */false);
-      } else {
-        // TODO remove this and resolve in compilation time.
-        throw new RuntimeException("Unknown join type '" + joinType.getString() + "'.");
-      }
-    }
+    public IterableTableReader reader(Object key, Resources resources) throws IOException {
+      return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
 
-    @Override
-    public Column getColumn(Ident ident) throws ModelException {
-      boolean presentInLeftTable = leftTable.hasColumn(ident);
-      boolean presentInRightTable = rightTable.hasColumn(ident);
-      if (presentInLeftTable && presentInRightTable) {
-        throw new ModelException("Ambiguous column reference '" + ident + "'.");
-      }
-      if (presentInLeftTable) {
-        return leftTable.getColumn(ident);
-      }
-      if (presentInRightTable) {
-        return rightTable.getColumn(ident).shift(leftTable.columnNames().size());
-      }
-      throw new ModelException("Column '" + ident + "' not found in table.");
-    }
+        private void distinct() throws IOException {
+          LinkedHashSet<ImmutableList<Object>> values = new LinkedHashSet<>();
+          while (!cancelled) {
+            Object[] sourceValues = sourceReader.next();
+            if (sourceValues == null) {
+              break;
+            }
+            values.add(ImmutableList.copyOf(sourceValues));
+          }
+          iterator = values.stream().map(list -> list.toArray()).iterator();
+          distinct = true;
+        }
 
-    @Override
-    protected TableMeta getRefTable(Ident ident) throws ModelException {
-      boolean presentInLeftTable = leftTable.hasTable(ident);
-      boolean presentInRightTable = rightTable.hasTable(ident);
-      if (presentInLeftTable && presentInRightTable) {
-        throw new ModelException("Ambiguous table reference '" + ident + "'.");
-      }
-      if (presentInLeftTable) {
-        return leftTable.getRefTable(ident);
-      }
-      if (presentInRightTable) {
-        return new ShiftedTableMeta(rightTable.getRefTable(ident), leftTable.columnNames().size());
-      }
-      throw new ModelException("Table reference '" + ident + "' not found.");
-    }
-
-    @Override
-    public MetaResources readResources() {
-      return leftTable.readResources()
-          .merge(rightTable.readResources())
-          .merge(resourcesFromColumns(leftTableJoinColumns))
-          .merge(resourcesFromColumns(rightTableJoinColumns));
+        @Override
+        public Object[] next() throws IOException {
+          if (!distinct) {
+            distinct();
+          }
+          if (!iterator.hasNext()) {
+            return null;
+          }
+          return iterator.next();
+        }
+      };
     }
   }
 
@@ -400,17 +470,12 @@ public class DerivedTables {
     }
 
     @Override
-    public ExposedTableReader reader(Resources resources) throws IOException {
-      return sourceTable.reader(resources);
-    }
-
-    @Override
     public ImmutableList<String> columnNames() {
       return sourceTable.columnNames();
     }
 
     @Override
-    public Column getColumn(Ident ident) throws ModelException {
+    public IndexColumn getColumn(Ident ident) throws ModelException {
       return sourceTable.getColumn(ident);
     }
 
@@ -426,27 +491,28 @@ public class DerivedTables {
     public MetaResources readResources() {
       return sourceTable.readResources();
     }
+
+    @Override
+    public Iterable<TableMeta> tableDeps() {
+      return ImmutableList.of(sourceTable);
+    }
+
+    @Override
+    public IterableTableReader reader(Object key, Resources resources) throws IOException {
+      return sourceTable.reader(key, resources);
+    }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class ShiftedTableMeta extends TableMeta {
-    private final TableMeta sourceTable;
+  public static class ShiftedTableMeta extends IterableTableMeta {
+    private final IterableTableMeta sourceTable;
+    private final TableMeta childTable;
     private final int shift;
 
-    public ShiftedTableMeta(TableMeta sourceTable, int shift) {
-      this.sourceTable = sourceTable;
-      this.shift = shift;
-    }
-
     @Override
-    public TableReader reader(Resources resources) throws IOException {
-      return sourceTable.reader(resources);
-    }
-
-    @Override
-    public Column getColumn(Ident ident) throws ModelException {
-      return sourceTable.getColumn(ident).shift(shift);
+    public IndexColumn getColumn(Ident ident) throws ModelException {
+      return childTable.getColumn(ident).shift(sourceTable, shift);
     }
 
     @Override
@@ -457,6 +523,16 @@ public class DerivedTables {
     @Override
     public MetaResources readResources() {
       return sourceTable.readResources();
+    }
+
+    @Override
+    public Iterable<TableMeta> tableDeps() {
+      return ImmutableList.of(sourceTable);
+    }
+
+    @Override
+    public IterableTableReader reader(Object key, Resources resources) throws IOException {
+      return sourceTable.reader(key, resources);
     }
   }
 }

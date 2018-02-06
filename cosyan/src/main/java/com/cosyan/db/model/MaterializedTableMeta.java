@@ -7,10 +7,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.cosyan.db.io.Indexes.IndexReader;
+import com.cosyan.db.io.RecordReader.Record;
+import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
+import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
-import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.Dependencies.ColumnReverseRuleDependencies;
 import com.cosyan.db.model.Dependencies.ReverseRuleDependency;
 import com.cosyan.db.model.Dependencies.TableDependencies;
@@ -20,8 +24,7 @@ import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
-import com.cosyan.db.model.References.MaterializedColumn;
-import com.cosyan.db.model.References.SimpleMaterializedColumn;
+import com.cosyan.db.model.References.ReferencingTable;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -30,7 +33,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-public class MaterializedTableMeta extends ExposedTableMeta {
+public class MaterializedTableMeta {
 
   private final String tableName;
   private final List<BasicColumn> columns;
@@ -78,38 +81,13 @@ public class MaterializedTableMeta extends ExposedTableMeta {
     return ImmutableList.copyOf(columns);
   }
 
-  @Override
-  public MaterializedColumn column(Ident ident) throws ModelException {
+  public BasicColumn column(Ident ident) throws ModelException {
     if (!columns().containsKey(ident.getString())) {
       throw new ModelException(String.format("Column '%s' not found in table '%s'.", ident, tableName));
     }
-    return new SimpleMaterializedColumn(
-        this,
-        columns().get(ident.getString()),
-        columns().keySet().asList().indexOf(ident.getString()));
+    return columns().get(ident.getString());
   }
 
-  /*
-   * public Column column(Ident ident) throws ModelException { if
-   * (ident.isSimple()) { return simpleColumn(ident); } String[] parts =
-   * ident.parts(); boolean startsWithTable = tableName.equals(ident.head());
-   * MaterializedTableMeta referencingTable = this; ReferencedTableMeta
-   * referencedTable = null; for (int i = startsWithTable ? 1 : 0; i <
-   * parts.length - 1; i++) { String refName = parts[i]; if
-   * (referencingTable.hasForeignKey(refName)) { ForeignKey foreignKey =
-   * referencingTable.foreignKey(refName); referencingTable =
-   * foreignKey.getRefTable(); referencedTable = new
-   * ReferencedSimpleTableMeta(referencedTable, foreignKey); } else if
-   * (referencingTable.hasReverseForeignKey(refName)) { ReverseForeignKey
-   * reverseForeignKey = referencingTable.reverseForeignKey(refName);
-   * referencingTable = reverseForeignKey.getRefTable(); referencedTable = new
-   * ReferencedMultiTableMeta(referencedTable, reverseForeignKey); } else { throw
-   * new ModelException(String.format( "Invalid reference '%s' in table '%s'.",
-   * refName, referencingTable.tableName())); } } MaterializedColumn column =
-   * referencingTable.column(new Ident(ident.last())); return new
-   * SimpleReferencingColumn(referencedTable, column.getMeta(),
-   * column.getIndex()); }
-   */
   public boolean hasColumn(Ident ident) {
     try {
       return column(ident) != null;
@@ -200,10 +178,6 @@ public class MaterializedTableMeta extends ExposedTableMeta {
     return reverseForeignKeys.containsKey(name);
   }
 
-  public TableWriter writer(Resources resources) throws IOException {
-    return resources.writer(new Ident(tableName));
-  }
-
   public MetaResources ruleDependenciesReadResources() {
     return readResources(ruleDependencies.getDeps().values());
   }
@@ -232,32 +206,99 @@ public class MaterializedTableMeta extends ExposedTableMeta {
     return readResources;
   }
 
-  @Override
-  protected SimpleMaterializedColumn getColumn(Ident ident) throws ModelException {
-    if (!columns().containsKey(ident.getString())) {
-      throw new ModelException(String.format("Column '%s' not found in table '$s'.", ident, tableName));
-    }
-    BasicColumn column = columns().get(ident.getString());
-    return new SimpleMaterializedColumn(this, column, indexOf(columns().keySet(), ident));
+  public SeekableTableMeta reader() {
+    return new SeekableTableMeta(this);
   }
 
-  @Override
-  protected TableMeta getRefTable(Ident ident) throws ModelException {
-    return References.ReferencedTableMeta.getRefTable(
-        null,
-        tableName,
-        ident.getString(),
-        foreignKeys,
-        reverseForeignKeys);
-  }
-
-  @Override
-  public SeekableTableReader reader(Resources resources) throws IOException {
-    return resources.createReader(tableName);
-  }
-
-  @Override
   public MetaResources readResources() {
     return MetaResources.readTable(this);
+  }
+
+  public static class SeekableTableMeta extends ExposedTableMeta implements ReferencingTable {
+
+    private final MaterializedTableMeta tableMeta;
+
+    public SeekableTableMeta(MaterializedTableMeta tableMeta) {
+      this.tableMeta = tableMeta;
+    }
+
+    public Record get(Resources resources, long position) throws IOException {
+      return resources.reader(tableName()).get(position);
+    }
+
+    @Override
+    public Iterable<TableMeta> tableDeps() {
+      return ImmutableList.of();
+    }
+
+    @Override
+    public ImmutableList<String> columnNames() {
+      return tableMeta.columnNames();
+    }
+
+    @Override
+    protected IndexColumn getColumn(Ident ident) throws ModelException {
+      BasicColumn column = tableMeta.column(ident);
+      if (column == null) {
+        return null;
+      }
+      int index = tableMeta.columnNames().indexOf(column.getName());
+      return new IndexColumn(this, index, column.getType(), new TableDependencies());
+    }
+
+    @Override
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      return References.getRefTable(
+          this,
+          tableMeta.tableName(),
+          ident.getString(),
+          tableMeta.foreignKeys(),
+          tableMeta.reverseForeignKeys());
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return MetaResources.readTable(tableMeta);
+    }
+
+    public String tableName() {
+      return tableMeta.tableName();
+    }
+
+    public MaterializedTableMeta tableMeta() {
+      return tableMeta;
+    }
+
+    @Override
+    public String tableNameWithChain() {
+      // TODO Auto-generated method stub
+      return null;
+    }
+
+    @Override
+    public Iterable<Ref> foreignKeyChain() {
+      return ImmutableList.of();
+    }
+
+    @Override
+    public ReferencingTable getParent() {
+      return null;
+    }
+
+    @Override
+    public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
+      return sourceValues;
+    }
+
+    @Override
+    public IterableTableReader reader(Object key, Resources resources) throws IOException {
+      return new DerivedIterableTableReader(resources.createIterableReader(tableName())) {
+
+        @Override
+        public Object[] next() throws IOException {
+          return sourceReader.next(); 
+        }
+      };
+    }
   }
 }

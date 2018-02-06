@@ -14,9 +14,9 @@ import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumnWithDeps;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
+import com.cosyan.db.transaction.Resources;
 import com.cosyan.db.model.CompiledObject;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.model.TableMeta;
 import com.google.common.collect.ImmutableList;
 
@@ -91,11 +91,15 @@ public abstract class Expression extends Node {
       if (token.is(Tokens.NOT)) {
         ColumnMeta exprColumn = expr.compileColumn(sourceTable, collector);
         SyntaxTree.assertType(DataTypes.BoolType, exprColumn.getType());
-        return new DerivedColumnWithDeps(DataTypes.BoolType, exprColumn.tableDependencies()) {
+        return new DerivedColumnWithDeps(
+            DataTypes.BoolType,
+            exprColumn.tableDependencies(),
+            exprColumn.readResources(),
+            exprColumn.tables()) {
 
           @Override
-          public Object getValue(SourceValues values) throws IOException {
-            return !((Boolean) exprColumn.getValue(values));
+          public Object getValue(Object[] values, Resources resources) throws IOException {
+            return !((Boolean) exprColumn.getValue(values, resources));
           }
         };
       } else if (token.is(Tokens.ASC)) {
@@ -106,20 +110,28 @@ public abstract class Expression extends Node {
         return new OrderColumn(exprColumn, false);
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NOT, Tokens.NULL).getString())) {
         ColumnMeta exprColumn = expr.compileColumn(sourceTable, collector);
-        return new DerivedColumnWithDeps(DataTypes.BoolType, exprColumn.tableDependencies()) {
+        return new DerivedColumnWithDeps(
+            DataTypes.BoolType,
+            exprColumn.tableDependencies(),
+            exprColumn.readResources(),
+            exprColumn.tables()) {
 
           @Override
-          public Object getValue(SourceValues values) throws IOException {
-            return exprColumn.getValue(values) != DataTypes.NULL;
+          public Object getValue(Object[] values, Resources resources) throws IOException {
+            return exprColumn.getValue(values, resources) != DataTypes.NULL;
           }
         };
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NULL).getString())) {
         ColumnMeta exprColumn = expr.compileColumn(sourceTable, collector);
-        return new DerivedColumnWithDeps(DataTypes.BoolType, exprColumn.tableDependencies()) {
+        return new DerivedColumnWithDeps(
+            DataTypes.BoolType,
+            exprColumn.tableDependencies(),
+            exprColumn.readResources(),
+            exprColumn.tables()) {
 
           @Override
-          public Object getValue(SourceValues values) throws IOException {
-            return exprColumn.getValue(values) == DataTypes.NULL;
+          public Object getValue(Object[] values, Resources resources) throws IOException {
+            return exprColumn.getValue(values, resources) == DataTypes.NULL;
           }
         };
       } else {

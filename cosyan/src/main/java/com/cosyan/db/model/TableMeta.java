@@ -4,10 +4,9 @@ import java.io.IOException;
 
 import javax.annotation.Nullable;
 
-import com.cosyan.db.io.TableReader;
-import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.model.References.Column;
+import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -19,8 +18,8 @@ public abstract class TableMeta implements CompiledObject {
   public static final ImmutableMap<String, ColumnMeta> wholeTableKeys = ImmutableMap.of("",
       ColumnMeta.TRUE_COLUMN);
 
-  public Column column(Ident ident) throws ModelException {
-    Column column = getColumn(ident);
+  public IndexColumn column(Ident ident) throws ModelException {
+    IndexColumn column = getColumn(ident);
     if (column == null) {
       throw new ModelException(String.format("Column '%s' not found in table.", ident));
     }
@@ -33,6 +32,16 @@ public abstract class TableMeta implements CompiledObject {
     } catch (ModelException e) {
       return false;
     }
+  }
+
+  public IterableTableReader reader(Resources resources) throws IOException {
+    return reader(null, resources);
+  }
+  
+  public abstract IterableTableReader reader(Object key, Resources resources) throws IOException;
+  
+  public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
+    return sourceValues;
   }
 
   public TableMeta table(Ident ident) throws ModelException {
@@ -51,13 +60,13 @@ public abstract class TableMeta implements CompiledObject {
     }
   }
 
+  public abstract Iterable<TableMeta> tableDeps();
+
   @Nullable
-  protected abstract Column getColumn(Ident ident) throws ModelException;
+  protected abstract IndexColumn getColumn(Ident ident) throws ModelException;
 
   @Nullable
   protected abstract TableMeta getRefTable(Ident ident) throws ModelException;
-
-  protected abstract TableReader reader(Resources resources) throws IOException;
 
   public abstract MetaResources readResources();
 
@@ -65,10 +74,13 @@ public abstract class TableMeta implements CompiledObject {
     return keys.asList().indexOf(ident.getString());
   }
 
-  public static abstract class ExposedTableMeta extends TableMeta {
-    public abstract ImmutableList<String> columnNames();
+  public static abstract class IterableTableMeta extends TableMeta {
 
-    @Override
-    public abstract ExposedTableReader reader(Resources resources) throws IOException;
   }
+
+  public static abstract class ExposedTableMeta extends IterableTableMeta {
+    public abstract ImmutableList<String> columnNames();
+  }
+
+  protected boolean cancelled = false;
 }

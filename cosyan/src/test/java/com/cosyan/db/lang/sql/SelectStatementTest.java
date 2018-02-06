@@ -1,8 +1,11 @@
 package com.cosyan.db.lang.sql;
 
+import static org.junit.Assert.*;
+
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
+import com.cosyan.db.lang.sql.Result.ErrorResult;
 import com.cosyan.db.lang.sql.Result.QueryResult;
 
 public class SelectStatementTest extends UnitTestBase {
@@ -88,18 +91,38 @@ public class SelectStatementTest extends UnitTestBase {
     execute("create table t10 (a1 varchar, constraint pk_a primary key (a1));");
     execute("create table t11 (a2 varchar, b2 integer, constraint fk_a foreign key (a2) references t10(a1));");
     execute("insert into t10 values ('x');");
-    execute("insert into t11 values ('x', 1), ('x', 2);");
+    execute("insert into t11 values ('x', 1), ('x', 5);");
 
     QueryResult r1 = query("select a1, rev_fk_a.select(sum(b2)) from t10;");
     assertHeader(new String[] { "a1", "_c0" }, r1);
-    assertValues(new Object[][] { { "x", 3L } }, r1);
-    
+    assertValues(new Object[][] { { "x", 6L } }, r1);
+
     QueryResult r2 = query("select a1, rev_fk_a.select(b2.sum()) from t10;");
     assertHeader(new String[] { "a1", "_c0" }, r2);
-    assertValues(new Object[][] { { "x", 3L } }, r2);
-    
+    assertValues(new Object[][] { { "x", 6L } }, r2);
+
     QueryResult r3 = query("select a1 as a, rev_fk_a.select(sum(b2), count(b2)) from t10;");
     assertHeader(new String[] { "a", "_c0", "_c1" }, r3);
-    assertValues(new Object[][] { { "x", 3L, 2L } }, r3);
+    assertValues(new Object[][] { { "x", 6L, 2L } }, r3);
+
+    ErrorResult r4 = error("select a1 as a, rev_fk_a.select(b2) from t10;");
+    assertEquals("Expected table or column.", r4.getError().getMessage());
+  }
+
+  @Test
+  public void testReverseForeignKeyDependentTable() {
+    execute("create table t12 (a1 varchar, constraint pk_a primary key (a1));");
+    execute("create table t14 (a4 varchar, b4 integer, constraint pk_a primary key (a4));");
+    execute("create table t13 (a2 varchar, a3 varchar,"
+        + "constraint fk_v foreign key (a2) references t12(a1),"
+        + "constraint fk_w foreign key (a3) references t14(a4));");
+
+    execute("insert into t12 values ('x'), ('y');");
+    execute("insert into t14 values ('a', 1), ('b', 5);");
+    execute("insert into t13 values ('x', 'a'), ('x', 'a'), ('y', 'b');");
+
+    QueryResult r1 = query("select a1, rev_fk_v.select(sum(fk_w.b4)) from t12;");
+    assertHeader(new String[] { "a1", "_c0" }, r1);
+    assertValues(new Object[][] { { "x", 2L }, { "y", 5L } }, r1);
   }
 }

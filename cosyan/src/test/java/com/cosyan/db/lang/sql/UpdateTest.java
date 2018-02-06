@@ -149,19 +149,19 @@ public class UpdateTest extends UnitTestBase {
 
   @Test
   public void testUpdateReferencedByRules() throws Exception {
-    execute("create table t11 (a integer, b integer, constraint pk_a primary key (a));");
-    execute("create table t12 (a integer, constraint fk_a foreign key (a) references t11(a),"
+    execute("create table t11 (a varchar, b integer, constraint pk_a primary key (a));");
+    execute("create table t12 (a varchar, constraint fk_a foreign key (a) references t11(a),"
         + "constraint c_b check (fk_a.b > 0));");
-    execute("insert into t11 values (1, 1);");
-    execute("insert into t12 values (1);");
+    execute("insert into t11 values ('x', 1);");
+    execute("insert into t12 values ('x');");
 
     QueryResult r1 = query("select a, fk_a.a as a2, fk_a.b as b2 from t12;");
     assertHeader(new String[] { "a", "a2", "b2" }, r1);
-    assertValues(new Object[][] { { 1L, 1L, 1L } }, r1);
+    assertValues(new Object[][] { { "x", "x", 1L } }, r1);
 
     execute("update t11 set b = 2;");
     QueryResult r2 = query("select a, fk_a.a as a2, fk_a.b as b2 from t12;");
-    assertValues(new Object[][] { { 1L, 1L, 2L } }, r2);
+    assertValues(new Object[][] { { "x", "x", 2L } }, r2);
 
     ErrorResult e = error("update t11 set b = 0;");
     assertEquals("Referencing constraint check t12.c_b failed.", e.getError().getMessage());

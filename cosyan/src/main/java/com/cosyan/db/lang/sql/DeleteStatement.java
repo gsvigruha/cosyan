@@ -13,6 +13,7 @@ import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 
@@ -27,13 +28,13 @@ public class DeleteStatement {
     private final Ident table;
     private final Expression where;
 
-    private MaterializedTableMeta tableMeta;
+    private SeekableTableMeta tableMeta;
     private ColumnMeta whereColumn;
 
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
-      TableWriter writer = tableMeta.writer(resources);
-      return new StatementResult(writer.delete(whereColumn));
+      TableWriter writer = resources.writer(tableMeta.tableName());
+      return new StatementResult(writer.delete(resources, whereColumn));
     }
 
     @Override
@@ -43,9 +44,10 @@ public class DeleteStatement {
 
     @Override
     public MetaResources compile(MetaRepo metaRepo) throws ModelException {
-      tableMeta = (MaterializedTableMeta) metaRepo.table(table);
+      MaterializedTableMeta materializedTableMeta = metaRepo.table(table);
+      tableMeta = materializedTableMeta.reader();
       whereColumn = where.compileColumn(tableMeta);
-      return MetaResources.deleteFromTable(tableMeta);
+      return MetaResources.deleteFromTable(materializedTableMeta);
     }
   }
 }

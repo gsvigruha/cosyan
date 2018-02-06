@@ -5,18 +5,20 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
-import com.cosyan.db.io.ReferencedMultiTableReader;
-import com.cosyan.db.io.TableReader;
+import com.cosyan.db.io.Indexes.IndexReader;
+import com.cosyan.db.io.TableReader.IterableTableReader;
+import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
+import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.model.ColumnMeta.AggrColumn;
+import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.ColumnMeta.BasicColumn;
-import com.cosyan.db.model.ColumnMeta.DerivedColumnWithDeps;
-import com.cosyan.db.model.ColumnMeta.IterableColumn;
+import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
+import com.cosyan.db.model.TableMeta.IterableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -25,168 +27,42 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 public class References {
-  @Data
-  public static class Column {
-    private final ColumnMeta meta;
-    private final int index;
 
-    public Column shift(int i) {
-      return new Column(meta, index + i);
-    }
+  public static interface ReferencingTable {
+    public String tableNameWithChain();
 
-    public boolean usesRefValues() {
-      return false;
-    }
+    public Iterable<Ref> foreignKeyChain();
 
-    public ColumnMeta toMeta() {
-      final int index = getIndex();
-      return new DerivedColumnWithDeps(getMeta().getType(), new TableDependencies()) {
-        @Override
-        public Object getValue(SourceValues values) {
-          return values.sourceValue(index);
-        }
-      };
-    }
+    public ReferencingTable getParent();
+
+    public MetaResources readResources();
+
+    public Object[] values(Object[] sourceValues, Resources resources) throws IOException;
   }
 
-  public static abstract class MaterializedColumn extends Column {
-    public MaterializedColumn(ColumnMeta meta, int index) {
-      super(meta, index);
+  public static TableMeta getRefTable(
+      ReferencingTable parent,
+      String tableName,
+      String key,
+      Map<String, ForeignKey> foreignKeys,
+      Map<String, ReverseForeignKey> reverseForeignKeys) throws ModelException {
+    if (foreignKeys.containsKey(key)) {
+      return new ReferencedSimpleTableMeta(parent, foreignKeys.get(key));
+    } else if (reverseForeignKeys.containsKey(key)) {
+      return new ReferencedMultiTableMeta(parent, reverseForeignKeys.get(key));
     }
-
-    @Override
-    public BasicColumn getMeta() {
-      return (BasicColumn) super.getMeta();
-    }
+    throw new ModelException(String.format("Reference '%s' not found in table '%s'.", key, tableName));
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class SimpleMaterializedColumn extends MaterializedColumn {
-
-    protected final MaterializedTableMeta tableMeta;
-
-    public SimpleMaterializedColumn(MaterializedTableMeta tableMeta, BasicColumn column, int index) {
-      super(column, index);
-      this.tableMeta = tableMeta;
-    }
-
-    public MaterializedTableMeta table() {
-      return tableMeta;
-    }
-  }
-
-  public interface ReferencingColumn {
-
-    ReferencedTableMeta getTableMeta();
-
-    String tableNameWithChain();
-
-    int getIndex();
-
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class MultiReferencingColumn extends Column implements ReferencingColumn {
-
-    private final ReferencedTableMeta tableMeta;
-
-    public MultiReferencingColumn(ReferencedTableMeta tableMeta, ColumnMeta column, int index) throws ModelException {
-      super(column, index);
-      this.tableMeta = tableMeta;
-    }
-
-    public String tableNameWithChain() {
-      return tableMeta.tableNameWithChain();
-    }
-
-    @Override
-    public boolean usesRefValues() {
-      return true;
-    }
-
-    public Iterable<Ref> foreignKeyChain() {
-      return tableMeta.foreignKeyChain();
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class SimpleReferencingColumn extends Column implements ReferencingColumn {
-
-    private final ReferencedTableMeta tableMeta;
-    private final BasicColumn originalColumn;
-
-    public SimpleReferencingColumn(ReferencedTableMeta tableMeta, BasicColumn column, int index) throws ModelException {
-      super(column, index);
-      this.tableMeta = tableMeta;
-      this.originalColumn = column;
-    }
-
-    public String tableNameWithChain() {
-      return tableMeta.tableNameWithChain();
-    }
-
-    @Override
-    public boolean usesRefValues() {
-      return true;
-    }
-
-    public Iterable<Ref> foreignKeyChain() {
-      return tableMeta.foreignKeyChain();
-    }
-
-    public BasicColumn getOriginalMeta() {
-      return originalColumn;
-    }
-
-    @Override
-    public ColumnMeta toMeta() {
-      TableDependencies tableDependencies = new TableDependencies();
-      tableDependencies.addTableDependency(this);
-      return new DerivedColumnWithDeps(getMeta().getType(), tableDependencies) {
-        @Override
-        public Object getValue(SourceValues values) throws IOException {
-          return values.refTableValue(SimpleReferencingColumn.this);
-        }
-      };
-    }
-  }
-
-  public static abstract class ReferencedTableMeta extends TableMeta {
-    public abstract String tableNameWithChain();
-
-    public abstract ColumnMeta transform(BasicColumn column) throws ModelException;
-
-    public abstract Iterable<Ref> foreignKeyChain();
-
-    public abstract ReferencedTableMeta getParent();
-
-    public static TableMeta getRefTable(
-        @Nullable ReferencedTableMeta parent,
-        String tableName,
-        String key,
-        Map<String, ForeignKey> foreignKeys,
-        Map<String, ReverseForeignKey> reverseForeignKeys) throws ModelException {
-      if (foreignKeys.containsKey(key)) {
-        return new ReferencedSimpleTableMeta(parent, foreignKeys.get(key));
-      } else if (reverseForeignKeys.containsKey(key)) {
-        return new ReferencedMultiTableMeta(parent, reverseForeignKeys.get(key));
-      }
-      throw new ModelException(String.format("Reference '%s' not found in table '%s'.", key, tableName));
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class ReferencedSimpleTableMeta extends ReferencedTableMeta {
+  public static class ReferencedSimpleTableMeta extends TableMeta implements ReferencingTable {
 
     @Nullable
-    private final ReferencedTableMeta parent;
+    private final ReferencingTable parent;
     private final ForeignKey foreignKey;
 
-    public ReferencedSimpleTableMeta(ReferencedTableMeta parent, ForeignKey foreignKey) {
+    public ReferencedSimpleTableMeta(ReferencingTable parent, ForeignKey foreignKey) {
       this.parent = parent;
       this.foreignKey = foreignKey;
     }
@@ -202,22 +78,19 @@ public class References {
     }
 
     @Override
-    public BasicColumn transform(BasicColumn column) {
-      return column;
-    }
-
-    @Override
-    protected Column getColumn(Ident ident) throws ModelException {
-      SimpleMaterializedColumn column = foreignKey.getRefTable().getColumn(ident);
+    protected IndexColumn getColumn(Ident ident) throws ModelException {
+      BasicColumn column = foreignKey.getRefTable().column(ident);
       if (column == null) {
         return null;
       }
-      return new SimpleReferencingColumn(this, column.getMeta(), column.getIndex());
+      TableDependencies deps = new TableDependencies();
+      deps.addTableDependency(this, column);
+      return new IndexColumn(this, column.getIndex(), column.getType(), deps);
     }
 
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
-      return getRefTable(
+      return References.getRefTable(
           this,
           tableNameWithChain(),
           ident.getString(),
@@ -226,36 +99,45 @@ public class References {
     }
 
     @Override
-    protected TableReader reader(Resources resources) throws IOException {
-      // TODO Auto-generated method stub
-      return null;
-    }
-
-    @Override
     public MetaResources readResources() {
       MetaResources parentResources = parent == null ? MetaResources.empty() : parent.readResources();
       return parentResources.merge(MetaResources.readTable(foreignKey.getRefTable()));
+    }
+
+    @Override
+    public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
+      Object[] parentValues = parent.values(sourceValues, resources);
+      Object key = parentValues[foreignKey.getColumn().getIndex()];
+      IndexReader index = resources.getIndex(foreignKey);
+      long filePointer = index.get(key)[0];
+      SeekableTableReader reader = resources.reader(foreignKey.getRefTable().tableName());
+      return reader.get(filePointer).getValues();
+    }
+
+    @Override
+    public Iterable<TableMeta> tableDeps() {
+      return ImmutableList.of((TableMeta) parent);
+    }
+
+    @Override
+    public IterableTableReader reader(Object key, Resources resources) throws IOException {
+      throw new UnsupportedOperationException();
     }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class ReferencedMultiTableMeta extends ReferencedTableMeta {
+  public static class ReferencedMultiTableMeta extends IterableTableMeta implements ReferencingTable {
 
     @Nullable
-    private final ReferencedTableMeta parent;
+    private final ReferencingTable parent;
     private final ReverseForeignKey reverseForeignKey;
-    private final KeyValueTableMeta proxyTable;
+    private final MaterializedTableMeta sourceTable;
 
-    private ImmutableList<AggrColumn> columns;
-
-    public ReferencedMultiTableMeta(ReferencedTableMeta parent, ReverseForeignKey reverseForeignKey) {
+    public ReferencedMultiTableMeta(ReferencingTable parent, ReverseForeignKey reverseForeignKey) {
       this.parent = parent;
       this.reverseForeignKey = reverseForeignKey;
-      MaterializedTableMeta sourceTable = getReverseForeignKey().getRefTable();
-      this.proxyTable = new KeyValueTableMeta(
-          sourceTable,
-          TableMeta.wholeTableKeys);
+      this.sourceTable = getReverseForeignKey().getRefTable();
     }
 
     public Iterable<Ref> foreignKeyChain() {
@@ -270,18 +152,19 @@ public class References {
     }
 
     @Override
-    public ColumnMeta transform(BasicColumn column) throws ModelException {
-      return new IterableColumn(column);
-    }
-
-    @Override
-    protected Column getColumn(Ident ident) throws ModelException {
-      return proxyTable.getColumn(ident);
+    protected IndexColumn getColumn(Ident ident) throws ModelException {
+      BasicColumn column = reverseForeignKey.getRefTable().column(ident);
+      if (column == null) {
+        return null;
+      }
+      TableDependencies deps = new TableDependencies();
+      deps.addTableDependency(this, column);
+      return new IndexColumn(this, column.getIndex(), column.getType(), deps);
     }
 
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
-      return getRefTable(
+      return References.getRefTable(
           this,
           tableNameWithChain(),
           ident.getString(),
@@ -290,17 +173,78 @@ public class References {
     }
 
     @Override
-    public ReferencedMultiTableReader reader(Resources resources) throws IOException {
-      return new ReferencedMultiTableReader(
-          reverseForeignKey.getRefTable(),
-          resources,
-          columns);
+    public MetaResources readResources() {
+      MetaResources parentResources = parent == null ? MetaResources.empty() : parent.readResources();
+      return parentResources.merge(MetaResources.readTable(reverseForeignKey.getRefTable()));
     }
 
     @Override
-    public MetaResources readResources() {
-      return MetaResources.readTable(reverseForeignKey.getRefTable())
-          .merge(DerivedTables.resourcesFromColumns(columns));
+    public IterableTableReader reader(final Object key, Resources resources) throws IOException {
+
+      String table = reverseForeignKey.getRefTable().tableName();
+      final IndexReader index = resources.getIndex(reverseForeignKey);
+      MultiFilteredTableReader reader = new MultiFilteredTableReader(resources.reader(table), ColumnMeta.TRUE_COLUMN,
+          resources) {
+
+        @Override
+        protected void readPositions() throws IOException {
+          positions = index.get(key);
+        }
+      };
+
+      return new IterableTableReader() {
+
+        @Override
+        public void close() throws IOException {
+          reader.close();
+        }
+
+        @Override
+        public Object[] next() throws IOException {
+          Object[] values = reader.next();
+          if (values == null) {
+            return null;
+          }
+          return values;
+        }
+      };
+    }
+
+    @Override
+    public Iterable<TableMeta> tableDeps() {
+      return ImmutableList.of();
+    }
+    /*
+     * @Override public Object[] values(Object[] sourceValues, Resources resources)
+     * throws IOException { Object[] parentValues = parent.values(sourceValues,
+     * resources); Object key =
+     * parentValues[reverseForeignKey.getColumn().getIndex()]; IndexReader index =
+     * resources.getIndex(reverseForeignKey); long filePointer = index.get(key)[0];
+     * SeekableTableReader reader =
+     * resources.reader(reverseForeignKey.getRefTable().tableName()); return
+     * reader.get(filePointer).getValues(); }
+     */
+  }
+
+  public static class ReferencedAggrTableMeta extends GlobalAggrTableMeta {
+    private final ReverseForeignKey reverseForeignKey;
+
+    public ReferencedAggrTableMeta(
+        KeyValueTableMeta sourceTable,
+        ReverseForeignKey reverseForeignKey) {
+      super(sourceTable);
+      this.reverseForeignKey = reverseForeignKey;
+    }
+
+    @Override
+    public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
+      Object key = sourceValues[reverseForeignKey.getColumn().getIndex()];
+      IterableTableReader reader = reader(key, resources);
+      Object[] values = reader.next();
+      reader.close();
+      Object[] result = new Object[values.length - 1];
+      System.arraycopy(values, 1, result, 0, result.length);
+      return result;
     }
   }
 }

@@ -13,6 +13,7 @@ import com.cosyan.db.conf.Config;
 import com.cosyan.db.io.IOTestUtil.DummyMaterializedTableMeta;
 import com.cosyan.db.io.IOTestUtil.DummyTableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
@@ -22,8 +23,8 @@ import com.cosyan.db.lang.sql.SyntaxTree.Statement;
 import com.cosyan.db.lock.LockManager;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.Resources;
-import com.cosyan.db.transaction.Resources.ReaderFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -32,7 +33,7 @@ public abstract class DummyTestBase {
   private static MetaRepo metaRepo;
   private static Parser parser;
   private static Lexer lexer;
-  private static Map<String, ReaderFactory> readers;
+  private static Map<String, SeekableTableReader> readers;
   private static Resources resources;
 
   @BeforeClass
@@ -47,21 +48,17 @@ public abstract class DummyTestBase {
   }
 
   public static void register(DummyMaterializedTableMeta table) throws IOException {
-    readers.put(table.tableName(), new ReaderFactory(null, null, null, null) {
-          @Override
-          public SeekableTableReader create(Resources resources) throws IOException {
-            return new DummyTableReader(table.columns(), table.getData());
-          }
-        });
+    readers.put(table.tableName(), new DummyTableReader(table.columns(), table.getData()));
     metaRepo.registerTable(table.tableName(), table);
   }
-  
+
   public static void finalizeResources() {
     resources = new Resources(ImmutableMap.copyOf(readers), ImmutableMap.of());
   }
 
   protected ExposedTableReader query(String sql) throws ModelException, ParserException, IOException {
     ImmutableList<Statement> tree = parser.parseStatements(lexer.tokenize(sql));
-    return ((Select) Iterables.getOnlyElement(tree)).compileTable(metaRepo).reader(resources);
+    ExposedTableMeta tableMeta = ((Select) Iterables.getOnlyElement(tree)).compileTable(metaRepo);
+    return new ExposedTableReader(tableMeta, tableMeta.reader(resources));
   }
 }

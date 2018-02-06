@@ -6,8 +6,12 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import com.cosyan.db.lang.sql.Parser.ParserException;
+import com.cosyan.db.lang.sql.SelectStatement;
+import com.cosyan.db.lang.sql.SelectStatement.Select.TableColumns;
 import com.cosyan.db.lang.sql.SyntaxTree;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.model.AggrTables;
+import com.cosyan.db.model.AggrTables.NotAggrTableException;
 import com.cosyan.db.model.BuiltinFunctions;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
@@ -19,13 +23,16 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
+import com.cosyan.db.model.DerivedTables.ReferencedDerivedTableMeta;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.References.MultiReferencingColumn;
+import com.cosyan.db.model.References.ReferencedAggrTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
-import com.cosyan.db.model.SourceValues;
 import com.cosyan.db.model.TableMeta;
+import com.cosyan.db.model.TableMeta.IterableTableMeta;
+import com.cosyan.db.transaction.MetaResources;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 
 import lombok.Data;
@@ -71,19 +78,24 @@ public class FuncCallExpression extends Expression {
     for (int i = 0; i < args.size(); i++) {
       ColumnMeta col = args.get(i).compileColumn(sourceTable);
       argColumnsBuilder.add(col);
-      tableDependencies.add(col.tableDependencies());
+      // tableDependencies.add(col.tableDependencies());
     }
+
+    MetaResources resources = MetaResources.empty();
+    ImmutableSet.Builder<TableMeta> tables = ImmutableSet.builder();
     ImmutableList<ColumnMeta> argColumns = argColumnsBuilder.build();
     for (int i = 0; i < function.getArgTypes().size(); i++) {
       SyntaxTree.assertType(function.getArgTypes().get(i), argColumns.get(i).getType());
+      resources = resources.merge(argColumns.get(i).readResources());
+      tables.addAll(argColumns.get(i).tables());
     }
-    return new DerivedColumnWithDeps(function.getReturnType(), tableDependencies) {
+    return new DerivedColumnWithDeps(function.getReturnType(), tableDependencies, resources, tables.build()) {
 
       @Override
-      public Object getValue(SourceValues values) throws IOException {
+      public Object getValue(Object[] values, Resources resources) throws IOException {
         ImmutableList.Builder<Object> paramsBuilder = ImmutableList.builder();
         for (ColumnMeta column : argColumns) {
-          paramsBuilder.add(column.getValue(values));
+          paramsBuilder.add(column.getValue(values, resources));
         }
         ImmutableList<Object> params = paramsBuilder.build();
         for (Object param : params) {
@@ -98,54 +110,40 @@ public class FuncCallExpression extends Expression {
 
   private AggrColumn aggrFunction(TableMeta sourceTable, Expression arg, ExtraInfoCollector collector)
       throws ModelException {
-    TableMeta t;
-    int shift;
-    if ((sourceTable instanceof KeyValueTableMeta)) {
-      KeyValueTableMeta keyValueTableMeta = (KeyValueTableMeta) sourceTable;
-      t = keyValueTableMeta.getSourceTable();
-      shift = keyValueTableMeta.getKeyColumns().size();
-    } else if (sourceTable instanceof ReferencedMultiTableMeta) {
-      KeyValueTableMeta keyValueTableMeta = ((ReferencedMultiTableMeta) sourceTable).getProxyTable();
-      t = keyValueTableMeta.getSourceTable();
-      shift = keyValueTableMeta.getKeyColumns().size();
-    } else {
-      t = sourceTable;
-      shift = 1;
+    if (!(sourceTable instanceof AggrTables)) {
+      throw new NotAggrTableException();
     }
-    ColumnMeta argColumn = arg.compileColumn(t);
+    AggrTables aggrTable = (AggrTables) sourceTable;
+    KeyValueTableMeta keyValueTableMeta = aggrTable.sourceTable();
+    int shift = keyValueTableMeta.getKeyColumns().size();
+    ColumnMeta argColumn = arg.compileColumn(keyValueTableMeta.getSourceTable());
     final TypedAggrFunction<?> function = BuiltinFunctions.aggrFunction(ident.getString(), argColumn.getType());
     AggrColumn aggrColumn = new AggrColumn(
+        aggrTable,
         function.getReturnType(),
         argColumn,
         shift + collector.numAggrColumns(),
         function);
     collector.addAggrColumn(aggrColumn);
+    aggrTable.addAggrColumn(aggrColumn);
     return aggrColumn;
   }
 
-  private TableMeta tableFunction(TableMeta tableMeta) throws ModelException {
-    if (tableMeta instanceof ReferencedMultiTableMeta && ident.getString().equals("select")) {
-      ReferencedMultiTableMeta multiTableMeta = (ReferencedMultiTableMeta) tableMeta;
-      ImmutableMap.Builder<String, ColumnMeta> argColumnsBuilder = ImmutableMap.builder();
+  private TableMeta tableFunction(ReferencedMultiTableMeta tableMeta) throws ModelException {
+    if (ident.getString().equals("select")) {
       ExtraInfoCollector collector = new ExtraInfoCollector();
-      for (int i = 0; i < args.size(); i++) {
-        ColumnMeta col = args.get(i).compileColumn(tableMeta, collector);
-        MultiReferencingColumn mrc = new MultiReferencingColumn(multiTableMeta, col, i + 1);
-        TableDependencies deps = new TableDependencies();
-        deps.add(col.tableDependencies());
-        deps.addTableDependency(multiTableMeta);
-        DerivedColumnWithDeps c = new DerivedColumnWithDeps(col.getType(), deps) {
-
-          @Override
-          public Object getValue(SourceValues values) throws IOException {
-            return values.refTableValue(mrc);
-          }
-
-        };
-        argColumnsBuilder.put(args.get(i).getName("_c" + i), c);
+      try {
+        TableColumns tableColumns = SelectStatement.Select.tableColumns(tableMeta, args, collector);
+        return new DerivedTableMeta(tableMeta, tableColumns.getColumns());
+      } catch (NotAggrTableException e) {
+        ReferencedAggrTableMeta aggrTable = new ReferencedAggrTableMeta(
+            new KeyValueTableMeta(
+                tableMeta,
+                TableMeta.wholeTableKeys), tableMeta.getReverseForeignKey());
+        // Columns have aggregations, recompile with an AggrTable.
+        TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, args, new ExtraInfoCollector());
+        return new ReferencedDerivedTableMeta(aggrTable, tableColumns.getColumns());
       }
-      multiTableMeta.setColumns(collector.aggrColumns());
-      return new DerivedTableMeta(multiTableMeta, argColumnsBuilder.build());
     } else {
       throw new ModelException("Wrong func");
     }
@@ -159,7 +157,7 @@ public class FuncCallExpression extends Expression {
         if (sourceTable.hasTable(ident)) {
           return sourceTable.table(ident);
         } else {
-          return sourceTable.column(ident).toMeta();
+          return sourceTable.column(ident);
         }
       } else {
         if (isAggr()) {
@@ -185,10 +183,14 @@ public class FuncCallExpression extends Expression {
             if (tableMeta.hasTable(ident)) {
               return tableMeta.table(ident);
             } else {
-              return tableMeta.column(ident).toMeta();
+              return tableMeta.column(ident);
             }
           } else {
-            return tableFunction(tableMeta);
+            if (tableMeta instanceof ReferencedMultiTableMeta) {
+              return tableFunction((ReferencedMultiTableMeta) tableMeta);
+            } else {
+              throw new ModelException("Cannot call function on table.");
+            }
           }
         } else if (obj instanceof ColumnMeta) {
           ColumnMeta columnMeta = (ColumnMeta) obj;

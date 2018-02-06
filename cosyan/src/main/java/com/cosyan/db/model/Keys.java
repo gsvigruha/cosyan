@@ -15,17 +15,17 @@ public class Keys {
   public static interface Ref {
 
     String getName();
-    
+
     String getRevName();
 
     MaterializedTableMeta getTable();
 
     BasicColumn getColumn();
-    
+
     MaterializedTableMeta getRefTable();
 
     BasicColumn getRefColumn();
-    
+
     Ref getReverse();
   }
 

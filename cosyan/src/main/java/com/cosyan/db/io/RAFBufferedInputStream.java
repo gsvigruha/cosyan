@@ -62,4 +62,8 @@ public class RAFBufferedInputStream extends SeekableInputStream {
     totalPointer = position;
     file.seek(position);
   }
+
+  public Object position() {
+    return totalPointer;
+  }
 }
