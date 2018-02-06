@@ -13,7 +13,7 @@ import com.cosyan.db.io.IOTestUtil.DummyMaterializedTableMeta;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
 import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.google.common.collect.ImmutableMap;
 

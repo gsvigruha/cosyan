@@ -1,8 +1,6 @@
 package com.cosyan.db.lang.expr;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.cosyan.db.lang.sql.SyntaxTree;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
@@ -10,15 +8,13 @@ import com.cosyan.db.lang.sql.Tokens;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta;
-import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumnWithDeps;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
-import com.cosyan.db.transaction.Resources;
 import com.cosyan.db.model.CompiledObject;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.TableMeta;
-import com.google.common.collect.ImmutableList;
+import com.cosyan.db.transaction.Resources;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -54,12 +50,11 @@ public abstract class Expression extends Node {
         return new DerivedColumnWithDeps(
             DataTypes.BoolType,
             exprColumn.tableDependencies(),
-            exprColumn.readResources(),
-            exprColumn.tables()) {
+            exprColumn.readResources()) {
 
           @Override
-          public Object getValue(Object[] values, Resources resources) throws IOException {
-            return !((Boolean) exprColumn.getValue(values, resources));
+          public Object value(Object[] values, Resources resources) throws IOException {
+            return !((Boolean) exprColumn.value(values, resources));
           }
         };
       } else if (token.is(Tokens.ASC)) {
@@ -73,12 +68,11 @@ public abstract class Expression extends Node {
         return new DerivedColumnWithDeps(
             DataTypes.BoolType,
             exprColumn.tableDependencies(),
-            exprColumn.readResources(),
-            exprColumn.tables()) {
+            exprColumn.readResources()) {
 
           @Override
-          public Object getValue(Object[] values, Resources resources) throws IOException {
-            return exprColumn.getValue(values, resources) != DataTypes.NULL;
+          public Object value(Object[] values, Resources resources) throws IOException {
+            return exprColumn.value(values, resources) != DataTypes.NULL;
           }
         };
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NULL).getString())) {
@@ -86,12 +80,11 @@ public abstract class Expression extends Node {
         return new DerivedColumnWithDeps(
             DataTypes.BoolType,
             exprColumn.tableDependencies(),
-            exprColumn.readResources(),
-            exprColumn.tables()) {
+            exprColumn.readResources()) {
 
           @Override
-          public Object getValue(Object[] values, Resources resources) throws IOException {
-            return exprColumn.getValue(values, resources) == DataTypes.NULL;
+          public Object value(Object[] values, Resources resources) throws IOException {
+            return exprColumn.value(values, resources) == DataTypes.NULL;
           }
         };
       } else {

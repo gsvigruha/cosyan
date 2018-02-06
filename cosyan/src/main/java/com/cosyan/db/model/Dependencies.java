@@ -5,7 +5,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.References.ReferencedSimpleTableMeta;

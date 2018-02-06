@@ -5,9 +5,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
@@ -24,7 +22,6 @@ import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -67,23 +64,11 @@ public class DerivedTables {
       return null;
     }
 
-    private Set<TableMeta> sourceTables() {
-      return columns.values().stream().flatMap(column -> column.tables().stream()).collect(Collectors.toSet());
-    }
-
     @Override
     public MetaResources readResources() {
       MetaResources resources = resourcesFromColumns(columns.values());
       resources = resources.merge(sourceTable.readResources());
-      for (TableMeta sourceTable : sourceTables()) {
-        resources = resources.merge(sourceTable.readResources());
-      }
       return resources;
-    }
-
-    @Override
-    public Iterable<TableMeta> tableDeps() {
-      return ImmutableList.<TableMeta>builder().add(sourceTable).addAll(sourceTables()).build();
     }
 
     @Override
@@ -99,7 +84,7 @@ public class DerivedTables {
           Object[] values = new Object[columns.size()];
           int i = 0;
           for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-            values[i++] = entry.getValue().getValue(sourceValues, resources);
+            values[i++] = entry.getValue().value(sourceValues, resources);
           }
           return values;
         }
@@ -113,11 +98,6 @@ public class DerivedTables {
     private final TableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
 
-    @Override
-    public Iterable<TableMeta> tableDeps() {
-      return ImmutableList.of(sourceTable);
-    }
-
     public IterableTableReader reader(Object key, Resources resources) throws IOException {
       return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
 
@@ -130,7 +110,7 @@ public class DerivedTables {
           Object[] values = new Object[columns.size()];
           int i = 0;
           for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-            values[i++] = entry.getValue().getValue(sourceValues, resources);
+            values[i++] = entry.getValue().value(sourceValues, resources);
           }
           return values;
         }
@@ -191,11 +171,6 @@ public class DerivedTables {
       return sourceTable.readResources().merge(resourcesFromColumn(whereColumn));
     }
 
-    @Override
-    public Iterable<TableMeta> tableDeps() {
-      return ImmutableList.of(sourceTable);
-    }
-
     public IterableTableReader reader(Object key, Resources resources) throws IOException {
       return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
 
@@ -207,7 +182,7 @@ public class DerivedTables {
             if (values == null) {
               return null;
             }
-            if ((boolean) whereColumn.getValue(values, resources)) {
+            if ((boolean) whereColumn.value(values, resources)) {
               return values;
             } else {
               values = null;
@@ -257,11 +232,6 @@ public class DerivedTables {
     }
 
     @Override
-    public Iterable<TableMeta> tableDeps() {
-      return ImmutableList.of(sourceTable);
-    }
-
-    @Override
     public IterableTableReader reader(Object key, Resources resources) throws IOException {
       return new MultiFilteredTableReader(resources.reader(sourceTable.tableName()), whereColumn, resources) {
         @Override
@@ -300,13 +270,6 @@ public class DerivedTables {
     }
 
     @Override
-    public Iterable<TableMeta> tableDeps() {
-      return Iterables.concat(
-          ImmutableList.of(sourceTable),
-          keyColumns.values().stream().flatMap(column -> column.tables().stream()).collect(Collectors.toSet()));
-    }
-
-    @Override
     public IterableTableReader reader(Object key, Resources resources) throws IOException {
       return sourceTable.reader(key, resources);
     }
@@ -342,11 +305,6 @@ public class DerivedTables {
       return sourceTable.readResources();
     }
 
-    @Override
-    public Iterable<TableMeta> tableDeps() {
-      return ImmutableList.of(sourceTable);
-    }
-
     public IterableTableReader reader(Object key, Resources resources) throws IOException {
       return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
 
@@ -370,7 +328,7 @@ public class DerivedTables {
             }
             ImmutableList.Builder<Object> builder = ImmutableList.builder();
             for (OrderColumn column : orderColumns) {
-              Object key = column.getValue(sourceValues, resources);
+              Object key = column.value(sourceValues, resources);
               builder.add(key);
             }
             values.put(builder.build(), sourceValues);
@@ -420,11 +378,6 @@ public class DerivedTables {
     @Override
     public MetaResources readResources() {
       return sourceTable.readResources();
-    }
-
-    @Override
-    public Iterable<TableMeta> tableDeps() {
-      return ImmutableList.of(sourceTable);
     }
 
     @Override
@@ -493,11 +446,6 @@ public class DerivedTables {
     }
 
     @Override
-    public Iterable<TableMeta> tableDeps() {
-      return ImmutableList.of(sourceTable);
-    }
-
-    @Override
     public IterableTableReader reader(Object key, Resources resources) throws IOException {
       return sourceTable.reader(key, resources);
     }
@@ -523,11 +471,6 @@ public class DerivedTables {
     @Override
     public MetaResources readResources() {
       return sourceTable.readResources();
-    }
-
-    @Override
-    public Iterable<TableMeta> tableDeps() {
-      return ImmutableList.of(sourceTable);
     }
 
     @Override

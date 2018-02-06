@@ -71,7 +71,7 @@ public class Rule {
 
     public boolean check(Resources resources, long fileIndex) throws IOException {
       Object[] values = table.get(resources, fileIndex).getValues();
-      return (boolean) column.getValue(values, resources);
+      return (boolean) column.value(values, resources);
     }
   }
 }

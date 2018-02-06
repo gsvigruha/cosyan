@@ -11,7 +11,6 @@ import com.cosyan.db.io.RecordReader.Record;
 import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.Dependencies.ColumnReverseRuleDependencies;
 import com.cosyan.db.model.Dependencies.ReverseRuleDependency;
@@ -222,11 +221,6 @@ public class MaterializedTableMeta {
 
     public Record get(Resources resources, long position) throws IOException {
       return resources.reader(tableName()).get(position);
-    }
-
-    @Override
-    public Iterable<TableMeta> tableDeps() {
-      return ImmutableList.of();
     }
 
     @Override

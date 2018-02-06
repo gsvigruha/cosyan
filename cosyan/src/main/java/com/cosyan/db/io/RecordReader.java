@@ -6,7 +6,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.Set;
 
-import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;

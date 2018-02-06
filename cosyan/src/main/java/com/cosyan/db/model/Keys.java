@@ -1,7 +1,5 @@
 package com.cosyan.db.model;
 
-import com.cosyan.db.model.ColumnMeta.BasicColumn;
-
 import lombok.Data;
 
 public class Keys {

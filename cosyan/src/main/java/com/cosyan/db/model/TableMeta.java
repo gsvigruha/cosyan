@@ -60,8 +60,6 @@ public abstract class TableMeta implements CompiledObject {
     }
   }
 
-  public abstract Iterable<TableMeta> tableDeps();
-
   @Nullable
   protected abstract IndexColumn getColumn(Ident ident) throws ModelException;
 

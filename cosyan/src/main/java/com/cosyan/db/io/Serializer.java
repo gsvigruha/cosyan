@@ -20,7 +20,7 @@ import com.cosyan.db.lang.sql.Parser;
 import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;

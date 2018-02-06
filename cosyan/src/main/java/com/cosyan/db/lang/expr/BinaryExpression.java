@@ -4,7 +4,6 @@ import static com.cosyan.db.lang.sql.SyntaxTree.assertType;
 
 import java.io.IOException;
 import java.util.Date;
-import java.util.Set;
 
 import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.lang.sql.Tokens;
@@ -18,7 +17,6 @@ import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
-import com.google.common.collect.Sets;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -51,9 +49,9 @@ public class BinaryExpression extends Expression {
     }
 
     @Override
-    public Object getValue(Object[] values, Resources resources) throws IOException {
-      Object l = leftColumn.getValue(values, resources);
-      Object r = rightColumn.getValue(values, resources);
+    public Object value(Object[] values, Resources resources) throws IOException {
+      Object l = leftColumn.value(values, resources);
+      Object r = rightColumn.value(values, resources);
       if (l == DataTypes.NULL || r == DataTypes.NULL) {
         return DataTypes.NULL;
       } else {
@@ -70,11 +68,6 @@ public class BinaryExpression extends Expression {
     public TableDependencies tableDependencies() {
       // Left and rightColumn is not used elsewhere so mutability is ok.
       return leftColumn.tableDependencies().add(rightColumn.tableDependencies());
-    }
-
-    @Override
-    public Set<TableMeta> tables() {
-      return Sets.union(leftColumn.tables(), rightColumn.tables());
     }
     
     protected abstract Object getValueImpl(Object left, Object right);

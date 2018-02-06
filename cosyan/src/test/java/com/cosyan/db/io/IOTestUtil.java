@@ -10,7 +10,7 @@ import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
-import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.transaction.Resources;

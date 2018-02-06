@@ -12,13 +12,12 @@ import java.util.function.Predicate;
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
-import com.cosyan.db.io.SeekableInputStream.SeekableByteArrayInputStream;
 import com.cosyan.db.io.SeekableInputStream.SeekableSequenceInputStream;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
-import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Dependencies.ColumnReverseRuleDependencies;
 import com.cosyan.db.model.Keys.PrimaryKey;
@@ -34,8 +33,6 @@ import com.google.common.collect.ImmutableMultimap;
 
 public class TableWriter extends SeekableTableReader implements TableIO {
 
-  private final MaterializedTableMeta tableMeta;
-  private final String fileName;
   private final RandomAccessFile file;
   private final RecordReader reader;
   private final ImmutableList<BasicColumn> columns;
@@ -64,8 +61,6 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       ColumnReverseRuleDependencies reverseRules,
       Optional<PrimaryKey> primaryKey) throws IOException {
     super(tableMeta);
-    this.tableMeta = tableMeta;
-    this.fileName = fileName;
     this.file = new RandomAccessFile(fileName, "rw");
     this.reader = new RecordReader(columns, new SeekableSequenceInputStream(
         new RAFBufferedInputStream(file),
@@ -206,7 +201,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
         return deletedLines;
       }
       if (!recordsToDelete.contains(record.getFilePointer())
-          && (boolean) whereColumn.getValue(record.getValues(), resources)) {
+          && (boolean) whereColumn.value(record.getValues(), resources)) {
         delete(record, Predicates.alwaysTrue());
         deletedLines++;
       }
@@ -226,12 +221,12 @@ public class TableWriter extends SeekableTableReader implements TableIO {
         return updatedRecords.build();
       }
       Object[] values = record.getValues();
-      if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.getValue(values, resources)) {
+      if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.value(values, resources)) {
         delete(record, (columnIndex) -> updateExprs.containsKey(columnIndex));
         Object[] newValues = new Object[values.length];
         System.arraycopy(values, 0, newValues, 0, values.length);
         for (Map.Entry<Integer, ColumnMeta> updateExpr : updateExprs.entrySet()) {
-          newValues[updateExpr.getKey()] = updateExpr.getValue().getValue(values, resources);
+          newValues[updateExpr.getKey()] = updateExpr.getValue().value(values, resources);
         }
         updatedRecords.add(newValues);
       }

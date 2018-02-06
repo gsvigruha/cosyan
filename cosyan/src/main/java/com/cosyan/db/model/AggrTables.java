@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -18,8 +17,6 @@ import com.cosyan.db.model.TableMeta.IterableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 
 public abstract class AggrTables extends IterableTableMeta {
 
@@ -75,14 +72,6 @@ public abstract class AggrTables extends IterableTableMeta {
 
   public abstract KeyValueTableMeta sourceTable();
 
-  @Override
-  public Iterable<TableMeta> tableDeps() {
-    return Iterables.concat(
-        ImmutableSet.of(sourceTable()),
-        sourceTable().tableDeps(),
-        aggrColumns.stream().flatMap(column -> column.tables().stream()).collect(Collectors.toSet()));
-  }
-
   public void addAggrColumn(AggrColumn aggrColumn) {
     aggrColumns.add(aggrColumn);
   }
@@ -122,14 +111,14 @@ public abstract class AggrTables extends IterableTableMeta {
               return null;
             }
             values = iterator.next();
-          } while (!(boolean) havingColumn.getValue(values, resources) && !cancelled);
+          } while (!(boolean) havingColumn.value(values, resources) && !cancelled);
           return values;
         }
 
         private ImmutableList<Object> getKeyValues(Object[] sourceValues, Resources resources) throws IOException {
           ImmutableList.Builder<Object> builder = ImmutableList.builder();
           for (Map.Entry<String, ? extends ColumnMeta> entry : sourceTable.getKeyColumns().entrySet()) {
-            builder.add(entry.getValue().getValue(sourceValues, resources));
+            builder.add(entry.getValue().value(sourceValues, resources));
           }
           return builder.build();
         }
@@ -210,7 +199,7 @@ public abstract class AggrTables extends IterableTableMeta {
               return null;
             }
             values = iterator.next();
-          } while (!(boolean) havingColumn.getValue(values, resources) && !cancelled);
+          } while (!(boolean) havingColumn.value(values, resources) && !cancelled);
           return values;
         }
 

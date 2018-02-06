@@ -28,11 +28,9 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.References.ReferencedAggrTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.TableMeta;
-import com.cosyan.db.model.TableMeta.IterableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 
 import lombok.Data;
@@ -82,20 +80,18 @@ public class FuncCallExpression extends Expression {
     }
 
     MetaResources resources = MetaResources.empty();
-    ImmutableSet.Builder<TableMeta> tables = ImmutableSet.builder();
     ImmutableList<ColumnMeta> argColumns = argColumnsBuilder.build();
     for (int i = 0; i < function.getArgTypes().size(); i++) {
       SyntaxTree.assertType(function.getArgTypes().get(i), argColumns.get(i).getType());
       resources = resources.merge(argColumns.get(i).readResources());
-      tables.addAll(argColumns.get(i).tables());
     }
-    return new DerivedColumnWithDeps(function.getReturnType(), tableDependencies, resources, tables.build()) {
+    return new DerivedColumnWithDeps(function.getReturnType(), tableDependencies, resources) {
 
       @Override
-      public Object getValue(Object[] values, Resources resources) throws IOException {
+      public Object value(Object[] values, Resources resources) throws IOException {
         ImmutableList.Builder<Object> paramsBuilder = ImmutableList.builder();
         for (ColumnMeta column : argColumns) {
-          paramsBuilder.add(column.getValue(values, resources));
+          paramsBuilder.add(column.value(values, resources));
         }
         ImmutableList<Object> params = paramsBuilder.build();
         for (Object param : params) {

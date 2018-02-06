@@ -11,7 +11,6 @@ import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
-import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
@@ -109,11 +108,6 @@ public class References {
     }
 
     @Override
-    public Iterable<TableMeta> tableDeps() {
-      return ImmutableList.of((TableMeta) parent);
-    }
-
-    @Override
     public IterableTableReader reader(Object key, Resources resources) throws IOException {
       throw new UnsupportedOperationException();
     }
@@ -196,11 +190,6 @@ public class References {
           return values;
         }
       };
-    }
-
-    @Override
-    public Iterable<TableMeta> tableDeps() {
-      return ImmutableList.of();
     }
   }
 

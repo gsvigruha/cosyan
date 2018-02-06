@@ -13,7 +13,6 @@ import com.cosyan.db.conf.Config;
 import com.cosyan.db.io.IOTestUtil.DummyMaterializedTableMeta;
 import com.cosyan.db.io.IOTestUtil.DummyTableReader;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
-import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;

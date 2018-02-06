@@ -1,16 +1,12 @@
 package com.cosyan.db.lang.expr;
 
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
-
-import java.util.Set;
-
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Dependencies.TableDependencies;
+import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
-import com.google.common.collect.ImmutableSet;
-import com.cosyan.db.model.TableMeta;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,7 +27,7 @@ public class Literals {
     }
 
     @Override
-    public Object getValue(Object[] values, Resources resources) {
+    public Object value(Object[] values, Resources resources) {
       return value;
     }
 
@@ -43,11 +39,6 @@ public class Literals {
     @Override
     public MetaResources readResources() {
       return MetaResources.empty();
-    }
-
-    @Override
-    public Set<TableMeta> tables() {
-      return ImmutableSet.of();
     }
   }
 

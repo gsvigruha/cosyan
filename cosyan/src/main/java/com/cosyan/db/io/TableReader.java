@@ -1,13 +1,12 @@
 package com.cosyan.db.io;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordReader.Record;
+import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
-import com.cosyan.db.model.ColumnMeta.BasicColumn;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
@@ -174,7 +173,7 @@ public abstract class TableReader implements TableIO {
           if (values == null) {
             return null;
           } else {
-            if (!(boolean) whereColumn.getValue(values, resources)) {
+            if (!(boolean) whereColumn.value(values, resources)) {
               values = null;
             }
           }

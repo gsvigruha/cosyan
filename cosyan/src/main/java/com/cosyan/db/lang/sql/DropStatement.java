@@ -7,7 +7,7 @@ import com.cosyan.db.lang.sql.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.model.ColumnMeta.BasicColumn;
+import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.MaterializedTableMeta;

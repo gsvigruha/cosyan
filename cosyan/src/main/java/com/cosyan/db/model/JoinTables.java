@@ -152,7 +152,7 @@ public class JoinTables {
               }
               ImmutableList.Builder<Object> builder = ImmutableList.builder();
               for (ColumnMeta column : mainTableJoinColumns) {
-                Object key = column.getValue(mainTableValues, resources);
+                Object key = column.value(mainTableValues, resources);
                 builder.add(key);
               }
               values = joinValues.get(builder.build());
@@ -195,7 +195,7 @@ public class JoinTables {
             }
             ImmutableList.Builder<Object> builder = ImmutableList.builder();
             for (ColumnMeta column : joinTableJoinColumns) {
-              Object key = column.getValue(joinSourceValues, resources);
+              Object key = column.value(joinSourceValues, resources);
               builder.add(key);
             }
             joinValues.put(builder.build(), joinSourceValues);
@@ -203,11 +203,6 @@ public class JoinTables {
           joined = true;
         }
       };
-    }
-
-    @Override
-    public Iterable<TableMeta> tableDeps() {
-      return ImmutableList.of(mainTable, joinTable);
     }
   }
 }
