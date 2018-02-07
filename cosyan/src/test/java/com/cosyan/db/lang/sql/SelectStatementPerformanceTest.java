@@ -9,7 +9,7 @@ import com.cosyan.db.lang.sql.Result.QueryResult;
 
 public class SelectStatementPerformanceTest extends UnitTestBase {
 
-  private static final int N = 2000;
+  private static final int N = 5000;
 
   @Test
   public void testSelectWithWhereIndexed() {

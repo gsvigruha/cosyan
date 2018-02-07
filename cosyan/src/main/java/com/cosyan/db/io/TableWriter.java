@@ -220,30 +220,20 @@ public class TableWriter extends SeekableTableReader implements TableIO {
 
   public long deleteWithIndex(Resources resources, ColumnMeta whereColumn, VariableEquals clause)
       throws IOException, RuleException {
-    MultiFilteredTableReader reader = new MultiFilteredTableReader(this, whereColumn, resources) {
-      @Override
-      protected void readPositions() throws IOException {
-        IndexReader index = resources.getIndex(tableMeta.tableName(), clause.getIdent().getString());
-        if (index.contains(clause.getValue())) {
-          positions = index.get(clause.getValue());
-        } else {
-          positions = new long[] {};
-        }
-      }
-    };
+    MultiFilteredTableReader reader = indexFilteredReader(resources, whereColumn, clause);
     return delete(reader, resources, whereColumn);
   }
 
   private ImmutableList<Object[]> deleteAndCollectUpdated(
+      RecordProvider recordProvider,
       Resources resources,
       ImmutableMap<Integer, ColumnMeta> updateExprs,
       ColumnMeta whereColumn) throws IOException, RuleException {
     ImmutableList.Builder<Object[]> updatedRecords = ImmutableList.builder();
-    RecordReader reader = recordReader();
     do {
-      Record record = reader.read();
+      Record record = recordProvider.read();
       if (record == RecordReader.EMPTY) {
-        reader.close();
+        recordProvider.close();
         return updatedRecords.build();
       }
       Object[] values = record.getValues();
@@ -261,7 +251,21 @@ public class TableWriter extends SeekableTableReader implements TableIO {
 
   public long update(Resources resources, ImmutableMap<Integer, ColumnMeta> columnExprs, ColumnMeta whereColumn)
       throws IOException, RuleException {
-    ImmutableList<Object[]> valuess = deleteAndCollectUpdated(resources, columnExprs, whereColumn);
+    RecordReader reader = recordReader();
+    ImmutableList<Object[]> valuess = deleteAndCollectUpdated(reader, resources, columnExprs, whereColumn);
+    for (Object[] values : valuess) {
+      insert(resources, values, /* checkReferencingRules= */true);
+    }
+    return valuess.size();
+  }
+
+  public long updateWithIndex(
+      Resources resources,
+      ImmutableMap<Integer, ColumnMeta> columnExprs,
+      ColumnMeta whereColumn,
+      VariableEquals clause) throws IOException, RuleException {
+    MultiFilteredTableReader reader = indexFilteredReader(resources, whereColumn, clause);
+    ImmutableList<Object[]> valuess = deleteAndCollectUpdated(reader, resources, columnExprs, whereColumn);
     for (Object[] values : valuess) {
       insert(resources, values, /* checkReferencingRules= */true);
     }
@@ -292,6 +296,20 @@ public class TableWriter extends SeekableTableReader implements TableIO {
         new RAFBufferedInputStream(file),
         new TreeMapInputStream(recordsToInsert));
     return new RecordReader(columns, rafReader, recordsToDelete);
+  }
+
+  private MultiFilteredTableReader indexFilteredReader(Resources resources, ColumnMeta whereColumn, VariableEquals clause) {
+    return new MultiFilteredTableReader(this, whereColumn, resources) {
+      @Override
+      protected void readPositions() throws IOException {
+        IndexReader index = resources.getIndex(tableMeta.tableName(), clause.getIdent().getString());
+        if (index.contains(clause.getValue())) {
+          positions = index.get(clause.getValue());
+        } else {
+          positions = new long[] {};
+        }
+      }
+    };
   }
 
   @Override

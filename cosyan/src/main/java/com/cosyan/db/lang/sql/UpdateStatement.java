@@ -8,6 +8,8 @@ import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.sql.Result.StatementResult;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.SyntaxTree.Statement;
+import com.cosyan.db.logic.PredicateHelper;
+import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
@@ -42,6 +44,7 @@ public class UpdateStatement {
     private SeekableTableMeta tableMeta;
     private ColumnMeta whereColumn;
     private ImmutableMap<Integer, ColumnMeta> columnExprs;
+    private VariableEquals clause;
 
     @Override
     public MetaResources compile(MetaRepo metaRepo) throws ModelException {
@@ -55,6 +58,7 @@ public class UpdateStatement {
       columnExprs = columnExprsBuilder.build();
       if (where.isPresent()) {
         whereColumn = where.get().compileColumn(tableMeta);
+        clause = PredicateHelper.getBestClause(tableMeta, where.get());
       } else {
         whereColumn = ColumnMeta.TRUE_COLUMN;
       }
@@ -69,7 +73,11 @@ public class UpdateStatement {
       // tables referencing this table have to be re-evaluated as well. We need the rule
       // dependencies for the rules of this table and referencing rules.
       TableWriter writer = resources.writer(tableMeta.tableName());
-      return new StatementResult(writer.update(resources, columnExprs, whereColumn));
+      if (clause == null) {
+        return new StatementResult(writer.update(resources, columnExprs, whereColumn));
+      } else {
+        return new StatementResult(writer.updateWithIndex(resources, columnExprs, whereColumn, clause));
+      }
     }
 
     @Override
