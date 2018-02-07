@@ -27,7 +27,6 @@ import com.cosyan.db.model.AggrTables;
 import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.AggrTables.KeyValueAggrTableMeta;
 import com.cosyan.db.model.AggrTables.NotAggrTableException;
-import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
@@ -202,15 +201,8 @@ public class SelectStatement {
         ColumnMeta whereColumn = where.get().compileColumn(sourceTable);
         assertType(DataTypes.BoolType, whereColumn.getType());
         if (sourceTable instanceof SeekableTableMeta) {
-          ImmutableList<VariableEquals> clauses = PredicateHelper.extractClauses(where.get());
           SeekableTableMeta tableMeta = (SeekableTableMeta) sourceTable;
-          VariableEquals clause = null;
-          for (VariableEquals clauseCandidate : clauses) {
-            BasicColumn column = tableMeta.tableMeta().column(clauseCandidate.getIdent());
-            if ((clause == null && column.isIndexed()) || column.isUnique()) {
-              clause = clauseCandidate;
-            }
-          }
+          VariableEquals clause = PredicateHelper.getBestClause(tableMeta, where.get());
           if (clause != null) {
             return new IndexFilteredTableMeta(tableMeta, whereColumn, clause);
           } else {

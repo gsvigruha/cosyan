@@ -7,6 +7,8 @@ import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.sql.Result.StatementResult;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.SyntaxTree.Statement;
+import com.cosyan.db.logic.PredicateHelper;
+import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
@@ -30,11 +32,16 @@ public class DeleteStatement {
 
     private SeekableTableMeta tableMeta;
     private ColumnMeta whereColumn;
+    private VariableEquals clause;
 
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
       TableWriter writer = resources.writer(tableMeta.tableName());
-      return new StatementResult(writer.delete(resources, whereColumn));
+      if (clause == null) {
+        return new StatementResult(writer.delete(resources, whereColumn));
+      } else {
+        return new StatementResult(writer.deleteWithIndex(resources, whereColumn, clause));
+      }
     }
 
     @Override
@@ -47,6 +54,7 @@ public class DeleteStatement {
       MaterializedTableMeta materializedTableMeta = metaRepo.table(table);
       tableMeta = materializedTableMeta.reader();
       whereColumn = where.compileColumn(tableMeta);
+      clause = PredicateHelper.getBestClause(tableMeta, where);
       return MetaResources.deleteFromTable(materializedTableMeta);
     }
   }

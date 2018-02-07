@@ -4,7 +4,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import com.cosyan.db.io.Indexes.IndexReader;
-import com.cosyan.db.io.RecordReader.Record;
+import com.cosyan.db.io.RecordProvider.Record;
+import com.cosyan.db.io.RecordProvider.RecordReader;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.MaterializedTableMeta;
@@ -137,7 +138,7 @@ public abstract class TableReader implements TableIO {
     }
   }
 
-  public static abstract class MultiFilteredTableReader extends IterableTableReader {
+  public static abstract class MultiFilteredTableReader extends IterableTableReader implements RecordProvider {
 
     protected final SeekableTableReader sourceReader;
     protected final ColumnMeta whereColumn;
@@ -162,27 +163,33 @@ public abstract class TableReader implements TableIO {
 
     @Override
     public Object[] next() throws IOException {
+      return read().getValues();
+    }
+
+    @Override
+    public Record read() throws IOException {
       if (positions == null) {
         readPositions();
         pointer = 0;
       }
-      Object[] values = null;
+      Record record = RecordReader.EMPTY;
+      boolean keepGoing = false;
       do {
         if (pointer < positions.length) {
-          values = sourceReader.get(positions[pointer]).getValues();
-          if (values == null) {
-            return null;
+          record = sourceReader.get(positions[pointer]);
+          if (record == RecordReader.EMPTY) {
+            return record;
           } else {
-            if (!(boolean) whereColumn.value(values, resources)) {
-              values = null;
+            if (!(boolean) whereColumn.value(record.getValues(), resources)) {
+              keepGoing = true;
             }
           }
           pointer++;
         } else {
-          return null;
+          return RecordReader.EMPTY;
         }
-      } while (values == null && !cancelled);
-      return values;
+      } while (keepGoing && !cancelled);
+      return record;
     }
 
     protected abstract void readPositions() throws IOException;

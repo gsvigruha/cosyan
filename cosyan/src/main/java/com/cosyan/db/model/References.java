@@ -28,7 +28,7 @@ import lombok.EqualsAndHashCode;
 public class References {
 
   public static interface ReferencingTable {
-    
+
     public Iterable<Ref> foreignKeyChain();
 
     public ReferencingTable getParent();
@@ -170,7 +170,11 @@ public class References {
 
         @Override
         protected void readPositions() throws IOException {
-          positions = index.get(key);
+          if (index.contains(key)) {
+            positions = index.get(key);
+          } else {
+            positions = new long[] {};
+          }
         }
       };
 

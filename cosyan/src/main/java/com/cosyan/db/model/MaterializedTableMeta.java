@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.cosyan.db.io.RecordReader.Record;
+import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;

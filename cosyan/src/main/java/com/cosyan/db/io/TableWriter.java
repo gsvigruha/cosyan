@@ -11,10 +11,13 @@ import java.util.function.Predicate;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.Indexes.IndexReader;
-import com.cosyan.db.io.RecordReader.Record;
+import com.cosyan.db.io.RecordProvider.Record;
+import com.cosyan.db.io.RecordProvider.RecordReader;
 import com.cosyan.db.io.SeekableInputStream.SeekableSequenceInputStream;
 import com.cosyan.db.io.TableReader.IterableTableReader;
+import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
+import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
@@ -34,6 +37,7 @@ import com.google.common.collect.ImmutableMultimap;
 public class TableWriter extends SeekableTableReader implements TableIO {
 
   private final RandomAccessFile file;
+  private final MaterializedTableMeta tableMeta;
   private final RecordReader reader;
   private final ImmutableList<BasicColumn> columns;
   private final ImmutableMap<String, TableIndex> uniqueIndexes;
@@ -61,6 +65,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       ColumnReverseRuleDependencies reverseRules,
       Optional<PrimaryKey> primaryKey) throws IOException {
     super(tableMeta);
+    this.tableMeta = tableMeta;
     this.file = new RandomAccessFile(fileName, "rw");
     this.reader = new RecordReader(columns, new SeekableSequenceInputStream(
         new RAFBufferedInputStream(file),
@@ -191,13 +196,13 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     }
   }
 
-  public long delete(Resources resources, ColumnMeta whereColumn) throws IOException, RuleException {
+  private long delete(RecordProvider recordProvider, Resources resources, ColumnMeta whereColumn)
+      throws IOException, RuleException {
     long deletedLines = 0L;
-    RecordReader reader = recordReader();
     do {
-      Record record = reader.read();
+      Record record = recordProvider.read();
       if (record == RecordReader.EMPTY) {
-        reader.close();
+        recordProvider.close();
         return deletedLines;
       }
       if (!recordsToDelete.contains(record.getFilePointer())
@@ -206,6 +211,27 @@ public class TableWriter extends SeekableTableReader implements TableIO {
         deletedLines++;
       }
     } while (true);
+  }
+
+  public long delete(Resources resources, ColumnMeta whereColumn) throws IOException, RuleException {
+    RecordReader reader = recordReader();
+    return delete(reader, resources, whereColumn);
+  }
+
+  public long deleteWithIndex(Resources resources, ColumnMeta whereColumn, VariableEquals clause)
+      throws IOException, RuleException {
+    MultiFilteredTableReader reader = new MultiFilteredTableReader(this, whereColumn, resources) {
+      @Override
+      protected void readPositions() throws IOException {
+        IndexReader index = resources.getIndex(tableMeta.tableName(), clause.getIdent().getString());
+        if (index.contains(clause.getValue())) {
+          positions = index.get(clause.getValue());
+        } else {
+          positions = new long[] {};
+        }
+      }
+    };
+    return delete(reader, resources, whereColumn);
   }
 
   private ImmutableList<Object[]> deleteAndCollectUpdated(

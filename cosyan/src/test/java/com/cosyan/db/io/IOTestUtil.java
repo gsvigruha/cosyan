@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.cosyan.db.io.Indexes.IndexReader;
-import com.cosyan.db.io.RecordReader.Record;
+import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.model.BasicColumn;

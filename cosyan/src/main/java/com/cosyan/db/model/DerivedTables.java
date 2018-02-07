@@ -200,7 +200,6 @@ public class DerivedTables {
     private final VariableEquals clause;
     private final SeekableTableMeta sourceTable;
     private final ColumnMeta whereColumn;
-    private MultiFilteredTableReader reader;
 
     public IndexFilteredTableMeta(
         SeekableTableMeta sourceTable,
@@ -237,7 +236,11 @@ public class DerivedTables {
         @Override
         protected void readPositions() throws IOException {
           IndexReader index = resources.getIndex(sourceTable.tableName(), clause.getIdent().getString());
-          positions = index.get(clause.getValue());
+          if (index.contains(clause.getValue())) {
+            positions = index.get(clause.getValue());
+          } else {
+            positions = new long[] {};
+          }
         }
       };
     }

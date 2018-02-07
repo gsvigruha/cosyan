@@ -11,7 +11,10 @@ import com.cosyan.db.lang.expr.Literals.Literal;
 import com.cosyan.db.lang.expr.Literals.LongLiteral;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
 import com.cosyan.db.lang.sql.Tokens;
+import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Ident;
+import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
@@ -24,6 +27,18 @@ public class PredicateHelper {
     private final Object value;
   }
 
+  public static VariableEquals getBestClause(SeekableTableMeta tableMeta, Expression where) throws ModelException {
+    ImmutableList<VariableEquals> clauses = PredicateHelper.extractClauses(where);
+    VariableEquals clause = null;
+    for (VariableEquals clauseCandidate : clauses) {
+      BasicColumn column = tableMeta.tableMeta().column(clauseCandidate.getIdent());
+      if ((clause == null && column.isIndexed()) || column.isUnique()) {
+        clause = clauseCandidate;
+      }
+    }
+    return clause;
+  }
+  
   public static ImmutableList<VariableEquals> extractClauses(Expression expression) {
     List<VariableEquals> predicates = new ArrayList<>();
     extractClauses(expression, predicates);

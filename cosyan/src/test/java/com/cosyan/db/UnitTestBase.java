@@ -95,6 +95,25 @@ public abstract class UnitTestBase {
     return query(sql, session);
   }
 
+  public static StatementResult stmt(String sql, Session session) {
+    Result result = session.execute(sql);
+    if (result instanceof TransactionResult) {
+      return (StatementResult) Iterables.getOnlyElement(((TransactionResult) result).getResults());
+    } else if (result instanceof ErrorResult) {
+      ErrorResult crash = (ErrorResult) result;
+      crash.getError().printStackTrace();
+      throw new RuntimeException(crash.getError());
+    } else {
+      CrashResult crash = (CrashResult) result;
+      crash.getError().printStackTrace();
+      throw new RuntimeException(crash.getError());
+    }
+  }
+
+  public static StatementResult stmt(String sql) {
+    return stmt(sql, session);
+  }
+
   protected void assertHeader(String[] expected, QueryResult result) {
     assertEquals(ImmutableList.copyOf(expected), result.getHeader());
   }
