@@ -1,5 +1,6 @@
 package com.cosyan.db.model;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -66,7 +67,8 @@ public class Dependencies {
     public Iterable<? extends TransitiveTableDependency> childDeps() {
       return Iterables.concat(
           deps.values(),
-          rules.values().stream().flatMap(rule -> rule.getDeps().getDeps().values().stream()).collect(Collectors.toList()));
+          rules.values().stream().flatMap(rule -> rule.getDeps().getDeps().values().stream())
+              .collect(Collectors.toList()));
     }
   }
 
@@ -100,7 +102,7 @@ public class Dependencies {
       }
       tableDependency.columnDeps.put(column.getName(), column);
     }
-    
+
     public TableDependencies add(TableDependencies other) {
       for (Map.Entry<String, TableDependency> entry : other.deps.entrySet()) {
         if (this.deps.containsKey(entry.getKey())) {
@@ -155,6 +157,10 @@ public class Dependencies {
         rules = reverseDep.getRules();
       }
       rules.put(rule.getName(), rule);
+    }
+    
+    public Collection<ReverseRuleDependency> allReverseRuleDepenencies() {
+      return columnDeps.values().stream().flatMap(r -> r.values().stream()).collect(Collectors.toList());
     }
   }
 }

@@ -62,5 +62,7 @@ public class BuiltinFunctionsTest extends DummyTestBase {
     assertResult("round(1.5)", 2L);
     assertResult("ceil(1.1)", 2L);
     assertResult("floor(1.7)", 1L);
+    assertResult("sin(0.0)", 0.0);
+    assertResult("cos(0.0)", 1.0);
   }
 }

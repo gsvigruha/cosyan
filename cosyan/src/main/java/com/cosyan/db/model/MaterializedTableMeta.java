@@ -40,6 +40,7 @@ public class MaterializedTableMeta {
   private final Map<String, ReverseForeignKey> reverseForeignKeys;
   private TableDependencies ruleDependencies;
   private ColumnReverseRuleDependencies reverseRuleDependencies;
+  private Optional<ColumnMeta> partitioning;
 
   public MaterializedTableMeta(
       String tableName,
@@ -53,6 +54,7 @@ public class MaterializedTableMeta {
     this.reverseForeignKeys = new HashMap<>();
     this.ruleDependencies = new TableDependencies();
     this.reverseRuleDependencies = new ColumnReverseRuleDependencies();
+    this.partitioning = Optional.empty();
   }
 
   public ImmutableList<String> columnNames() {
@@ -150,6 +152,14 @@ public class MaterializedTableMeta {
   public void addReverseRuleDependency(
       BasicColumn column, Iterable<Ref> reverseForeignKeyChain, BooleanRule rule) {
     reverseRuleDependencies.addReverseRuleDependency(column, reverseForeignKeyChain, rule);
+  }
+
+  public Optional<ColumnMeta> getPartitioning() {
+    return partitioning;
+  }
+
+  public void setPartitioning(Optional<ColumnMeta> partitioning) {
+    this.partitioning = partitioning;
   }
 
   public ForeignKey foreignKey(String name) throws ModelException {
@@ -282,7 +292,7 @@ public class MaterializedTableMeta {
 
         @Override
         public Object[] next() throws IOException {
-          return sourceReader.next(); 
+          return sourceReader.next();
         }
       };
     }

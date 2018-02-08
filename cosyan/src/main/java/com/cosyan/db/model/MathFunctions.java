@@ -67,7 +67,7 @@ public class MathFunctions {
 
     @Override
     public Double call(ImmutableList<Object> argValues) {
-      return Math.log((Double) argValues.get(0))/ Math.log((Double) argValues.get(1));
+      return Math.log((Double) argValues.get(0)) / Math.log((Double) argValues.get(1));
     }
   }
 
@@ -101,6 +101,28 @@ public class MathFunctions {
     @Override
     public Long call(ImmutableList<Object> argValues) {
       return (long) Math.floor((Double) argValues.get(0));
+    }
+  }
+
+  public static class Sin extends SimpleFunction<Double> {
+    public Sin() {
+      super("sin", DataTypes.DoubleType, ImmutableList.of(DataTypes.DoubleType));
+    }
+
+    @Override
+    public Double call(ImmutableList<Object> argValues) {
+      return Math.sin((Double) argValues.get(0));
+    }
+  }
+
+  public static class Cos extends SimpleFunction<Double> {
+    public Cos() {
+      super("cos", DataTypes.DoubleType, ImmutableList.of(DataTypes.DoubleType));
+    }
+
+    @Override
+    public Double call(ImmutableList<Object> argValues) {
+      return Math.cos((Double) argValues.get(0));
     }
   }
 }

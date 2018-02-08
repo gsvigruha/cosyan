@@ -22,6 +22,8 @@ public class Tokens {
 
   public static String INDEX = "index";
 
+  public static String PARTITION = "partition";
+
   public static String VARCHAR = "varchar";
 
   public static String INTEGER = "integer";

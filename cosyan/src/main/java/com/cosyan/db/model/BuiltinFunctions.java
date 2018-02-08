@@ -7,6 +7,7 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Aggregators.Aggregator;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.MathFunctions.Ceil;
+import com.cosyan.db.model.MathFunctions.Cos;
 import com.cosyan.db.model.MathFunctions.Exp;
 import com.cosyan.db.model.MathFunctions.Floor;
 import com.cosyan.db.model.MathFunctions.Log;
@@ -15,6 +16,7 @@ import com.cosyan.db.model.MathFunctions.Log2;
 import com.cosyan.db.model.MathFunctions.LogE;
 import com.cosyan.db.model.MathFunctions.Power;
 import com.cosyan.db.model.MathFunctions.Round;
+import com.cosyan.db.model.MathFunctions.Sin;
 import com.cosyan.db.model.StringFunctions.Contains;
 import com.cosyan.db.model.StringFunctions.Length;
 import com.cosyan.db.model.StringFunctions.Lower;
@@ -122,6 +124,8 @@ public class BuiltinFunctions {
       .add(new Round())
       .add(new Ceil())
       .add(new Floor())
+      .add(new Sin())
+      .add(new Cos())
       .build();
 
   public static final ImmutableList<TableFunction> TABLE = ImmutableList.<TableFunction>builder()

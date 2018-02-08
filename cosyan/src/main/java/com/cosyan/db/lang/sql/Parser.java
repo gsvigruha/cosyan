@@ -203,7 +203,15 @@ public class Parser {
           break;
         }
       }
-      return new CreateTable(ident.getString(), columns.build(), constraints.build());
+      Optional<Expression> partitioning;
+      if (tokens.peek().is(Tokens.PARTITION)) {
+        tokens.next();
+        assertNext(tokens, Tokens.BY);
+        partitioning = Optional.of(parseExpression(tokens));
+      } else {
+        partitioning = Optional.empty();
+      }
+      return new CreateTable(ident.getString(), columns.build(), constraints.build(), partitioning);
     } else {
       assertNext(tokens, Tokens.INDEX);
       Ident table = parseIdent(tokens);

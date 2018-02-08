@@ -37,6 +37,7 @@ public class CreateStatement {
     private final String name;
     private final ImmutableList<ColumnDefinition> columnDefinitions;
     private final ImmutableList<ConstraintDefinition> constraints;
+    private final Optional<Expression> partitioning;
 
     @Override
     public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
@@ -80,7 +81,8 @@ public class CreateStatement {
             PrimaryKeyDefinition primaryKeyDefinition = (PrimaryKeyDefinition) constraint;
             String pkColumnName = primaryKeyDefinition.getKeyColumn().getString();
             if (!columns.containsKey(pkColumnName)) {
-              throw new ModelException(String.format("Invalid primary key definition: column '%s' not found.", pkColumnName));
+              throw new ModelException(
+                  String.format("Invalid primary key definition: column '%s' not found.", pkColumnName));
             }
             BasicColumn keyColumn = columns.get(pkColumnName);
             keyColumn.setNullable(false);
@@ -135,6 +137,11 @@ public class CreateStatement {
             metaRepo.registerMultiIndex(tableMeta, column);
           }
         }
+      }
+
+      if (partitioning.isPresent()) {
+        ColumnMeta columnMeta = partitioning.get().compileColumn(tableMeta.reader());
+        tableMeta.setPartitioning(Optional.of(columnMeta));
       }
 
       metaRepo.registerTable(name, tableMeta);

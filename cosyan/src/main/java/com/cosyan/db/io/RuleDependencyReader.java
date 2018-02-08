@@ -2,7 +2,6 @@ package com.cosyan.db.io;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Map;
 
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
@@ -25,9 +24,7 @@ public class RuleDependencyReader {
 
   public void checkReferencingRules(long fileIndex)
       throws IOException, RuleException {
-    for (Map<String, ReverseRuleDependency> values : reverseRules.getColumnDeps().values()) {
-      checkReferencingRules(values.values(), fileIndex);
-    }
+    checkReferencingRules(reverseRules.allReverseRuleDepenencies(), fileIndex);
   }
 
   private void checkReferencingRules(Collection<ReverseRuleDependency> collection, long fileIndex)
