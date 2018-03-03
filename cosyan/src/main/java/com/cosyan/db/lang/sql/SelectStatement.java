@@ -20,9 +20,9 @@ import com.cosyan.db.lang.sql.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.logic.PredicateHelper;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
-import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.model.AggrTables;
 import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.AggrTables.KeyValueAggrTableMeta;
@@ -70,15 +70,15 @@ public class SelectStatement {
 
     private ExposedTableMeta tableMeta;
 
-    public ExposedTableMeta compileTable(MetaRepo metaRepo) throws ModelException {
-      ExposedTableMeta sourceTable = table.compile(metaRepo);
-      ExposedTableMeta filteredTable = filteredTable(metaRepo, sourceTable, where);
+    public ExposedTableMeta compileTable(TableProvider tableProvider) throws ModelException {
+      ExposedTableMeta sourceTable = table.compile(tableProvider);
+      ExposedTableMeta filteredTable = filteredTable(sourceTable, where);
       DerivedTableMeta fullTable;
       if (groupBy.isPresent()) {
-        KeyValueTableMeta intermediateTable = keyValueTable(metaRepo, filteredTable, groupBy.get());
+        KeyValueTableMeta intermediateTable = keyValueTable(filteredTable, groupBy.get());
         AggrTables aggrTable = new KeyValueAggrTableMeta(intermediateTable);
         TableColumns tableColumns = tableColumns(aggrTable, columns);
-        ColumnMeta havingColumn = havingExpression(metaRepo, aggrTable, having);
+        ColumnMeta havingColumn = havingExpression(aggrTable, having);
         aggrTable.setHavingColumn(havingColumn);
         fullTable = new DerivedTableMeta(aggrTable, tableColumns.columns);
       } else {
@@ -94,7 +94,7 @@ public class SelectStatement {
 
       ExposedTableMeta finalTable;
       if (orderBy.isPresent()) {
-        ImmutableList<OrderColumn> orderColumns = orderColumns(metaRepo, distinctTable, orderBy.get());
+        ImmutableList<OrderColumn> orderColumns = orderColumns(distinctTable, orderBy.get());
         finalTable = new SortedTableMeta(distinctTable, orderColumns);
       } else {
         finalTable = distinctTable;
@@ -103,8 +103,8 @@ public class SelectStatement {
     }
 
     @Override
-    public MetaResources compile(MetaRepo metaRepo) throws ModelException {
-      tableMeta = compileTable(metaRepo);
+    public MetaResources compile(TableProvider tableProvider) throws ModelException {
+      tableMeta = compileTable(tableProvider);
       return tableMeta.readResources();
     }
 
@@ -195,7 +195,7 @@ public class SelectStatement {
     }
 
     private ExposedTableMeta filteredTable(
-        MetaRepo metaRepo, ExposedTableMeta sourceTable, Optional<Expression> where)
+        ExposedTableMeta sourceTable, Optional<Expression> where)
         throws ModelException {
       if (where.isPresent()) {
         ColumnMeta whereColumn = where.get().compileColumn(sourceTable);
@@ -216,7 +216,8 @@ public class SelectStatement {
       }
     }
 
-    private ColumnMeta havingExpression(MetaRepo metaRepo, TableMeta sourceTable,
+    private ColumnMeta havingExpression(
+        TableMeta sourceTable,
         Optional<Expression> having) throws ModelException {
       if (having.isPresent()) {
         ColumnMeta havingColumn = having.get().compileColumn(sourceTable);
@@ -228,7 +229,6 @@ public class SelectStatement {
     }
 
     private KeyValueTableMeta keyValueTable(
-        MetaRepo metaRepo,
         ExposedTableMeta sourceTable,
         ImmutableList<Expression> groupBy) throws ModelException {
       ImmutableMap.Builder<String, ColumnMeta> keyColumnsBuilder = ImmutableMap.builder();
@@ -246,7 +246,8 @@ public class SelectStatement {
           keyColumns);
     }
 
-    private ImmutableList<OrderColumn> orderColumns(MetaRepo metaRepo, ExposedTableMeta sourceTable,
+    private ImmutableList<OrderColumn> orderColumns(
+        ExposedTableMeta sourceTable,
         ImmutableList<Expression> orderBy) throws ModelException {
       ImmutableList.Builder<OrderColumn> orderColumnsBuilder = ImmutableList.builder();
       for (Expression expr : orderBy) {
@@ -264,7 +265,7 @@ public class SelectStatement {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static abstract class Table extends Node {
-    public abstract ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException;
+    public abstract ExposedTableMeta compile(TableProvider tableProvider) throws ModelException;
   }
 
   @Data
@@ -272,8 +273,8 @@ public class SelectStatement {
   public static class TableRef extends Table {
     private final Ident ident;
 
-    public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
-      return metaRepo.table(ident).reader();
+    public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
+      return tableProvider.table(ident).reader();
     }
   }
 
@@ -282,8 +283,8 @@ public class SelectStatement {
   public static class TableExpr extends Table {
     private final Select select;
 
-    public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
-      return select.compileTable(metaRepo);
+    public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
+      return select.compileTable(tableProvider);
     }
   }
 
@@ -295,9 +296,9 @@ public class SelectStatement {
     private final Table right;
     private final Expression onExpr;
 
-    public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
-      ExposedTableMeta leftTable = left.compile(metaRepo);
-      ExposedTableMeta rightTable = right.compile(metaRepo);
+    public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
+      ExposedTableMeta leftTable = left.compile(tableProvider);
+      ExposedTableMeta rightTable = right.compile(tableProvider);
       ImmutableList.Builder<ColumnMeta> leftJoinColumns = ImmutableList.builder();
       ImmutableList.Builder<ColumnMeta> rightJoinColumns = ImmutableList.builder();
       ImmutableList<BinaryExpression> exprs = ImmutableList
@@ -356,8 +357,8 @@ public class SelectStatement {
     private final Table table;
 
     @Override
-    public ExposedTableMeta compile(MetaRepo metaRepo) throws ModelException {
-      return new AliasedTableMeta(ident, table.compile(metaRepo));
+    public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
+      return new AliasedTableMeta(ident, table.compile(tableProvider));
     }
   }
 

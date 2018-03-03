@@ -4,7 +4,7 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 
-public interface MetaRepoReader {
+public interface TableProvider {
 
   public MaterializedTableMeta table(Ident ident) throws ModelException;
 }

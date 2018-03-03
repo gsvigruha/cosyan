@@ -9,9 +9,9 @@ import com.cosyan.db.lang.expr.Literals.Literal;
 import com.cosyan.db.lang.sql.Result.StatementResult;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.SyntaxTree.Statement;
-import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
@@ -36,8 +36,8 @@ public class InsertIntoStatement {
     private ImmutableMap<Ident, Integer> indexes;
 
     @Override
-    public MetaResources compile(MetaRepo metaRepo) throws ModelException {
-      tableMeta = metaRepo.table(table);
+    public MetaResources compile(TableProvider tableProvider) throws ModelException {
+      tableMeta = tableProvider.table(table);
       ImmutableMap.Builder<Ident, Integer> indexesBuilder = ImmutableMap.builder();
       if (columns.isPresent()) {
         for (int i = 0; i < columns.get().size(); i++) {

@@ -136,7 +136,7 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateReferencingRuleMultipleLevel() throws Exception {
     execute("create table t12 (a varchar, b integer, constraint pk_a primary key (a));");
     execute("create table t13 (c varchar, d varchar, constraint pk_c primary key (c), "
-        + "constraint fk_d foreign key (d) references t12(a))");
+        + "constraint fk_d foreign key (d) references t12(a));");
     execute("create table t14 (e varchar, constraint fk_e foreign key (e) references t13(c), "
         + "constraint c_b check (fk_e.fk_d.b > 1));");
 

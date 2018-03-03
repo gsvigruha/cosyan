@@ -46,7 +46,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 
-public class MetaRepo implements MetaRepoReader {
+public class MetaRepo implements TableProvider {
 
   private final Config config;
   private final HashMap<String, MaterializedTableMeta> tables;

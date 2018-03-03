@@ -47,7 +47,8 @@ public class References {
     if (foreignKeys.containsKey(key)) {
       return new ReferencedSimpleTableMeta(parent, foreignKeys.get(key));
     } else if (reverseForeignKeys.containsKey(key)) {
-      return new ReferencedMultiTableMeta(parent, reverseForeignKeys.get(key));
+      //return new ReferencedMultiTableMeta(parent, reverseForeignKeys.get(key));
+      throw new ModelException(String.format("Reference '%s' is a reverse key.", key));
     }
     throw new ModelException(String.format("Reference '%s' not found in table '%s'.", key, tableName));
   }

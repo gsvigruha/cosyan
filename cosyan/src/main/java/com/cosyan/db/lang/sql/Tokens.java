@@ -42,6 +42,8 @@ public class Tokens {
 
   public static String KEY = "key";
 
+  public static String REF = "ref";
+
   public static String REFERENCES = "references";
 
   public static String REVERSE = "reverse";

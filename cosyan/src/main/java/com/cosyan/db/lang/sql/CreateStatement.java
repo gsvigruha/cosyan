@@ -8,6 +8,7 @@ import java.util.Optional;
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.sql.Result.MetaStatementResult;
+import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.sql.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.meta.MetaRepo;
@@ -195,6 +196,13 @@ public class CreateStatement {
     private final Ident keyColumn;
     private final Ident refTable;
     private final Ident refColumn;
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class RefDefinition extends Node {
+    private final String name;
+    private final Select select;
   }
 
   @Data

@@ -12,15 +12,18 @@ import com.cosyan.db.lang.expr.Literals.DoubleLiteral;
 import com.cosyan.db.lang.expr.Literals.Literal;
 import com.cosyan.db.lang.expr.Literals.LongLiteral;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
-import com.cosyan.db.lang.sql.AlterStatement.AlterTableAddColumn;
-import com.cosyan.db.lang.sql.AlterStatement.AlterTableAlterColumn;
-import com.cosyan.db.lang.sql.AlterStatement.AlterTableDropColumn;
+import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAddColumn;
+import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAlterColumn;
+import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableDropColumn;
+import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddConstraint;
+import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableAddRef;
 import com.cosyan.db.lang.sql.CreateStatement.ColumnDefinition;
 import com.cosyan.db.lang.sql.CreateStatement.ConstraintDefinition;
 import com.cosyan.db.lang.sql.CreateStatement.CreateIndex;
 import com.cosyan.db.lang.sql.CreateStatement.CreateTable;
 import com.cosyan.db.lang.sql.CreateStatement.ForeignKeyDefinition;
 import com.cosyan.db.lang.sql.CreateStatement.PrimaryKeyDefinition;
+import com.cosyan.db.lang.sql.CreateStatement.RefDefinition;
 import com.cosyan.db.lang.sql.CreateStatement.RuleDefinition;
 import com.cosyan.db.lang.sql.DeleteStatement.Delete;
 import com.cosyan.db.lang.sql.DropStatement.DropIndex;
@@ -221,6 +224,13 @@ public class Parser {
     }
   }
 
+  private RefDefinition parseRef(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.REF);
+    Ident ident = parseIdent(tokens);
+    Select select = parseSelect(tokens);
+    return new RefDefinition(ident.getString(), select);
+  }
+
   private MetaStatement parseDrop(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.DROP);
     assertPeek(tokens, Tokens.TABLE, Tokens.INDEX);
@@ -243,8 +253,16 @@ public class Parser {
     Ident ident = parseIdent(tokens);
     if (tokens.peek().is(Tokens.ADD)) {
       tokens.next();
-      ColumnDefinition column = parseColumnDefinition(tokens);
-      return new AlterTableAddColumn(ident, column);
+      if (tokens.peek().equals(Tokens.REF)) {
+        RefDefinition ref = parseRef(tokens);
+        return new AlterTableAddRef(ident, ref);
+      } else if (tokens.peek().equals(Tokens.CONSTRAINT)) {
+        ConstraintDefinition constraint = parseConstraint(tokens);
+        return new AlterTableAddConstraint(ident, constraint);
+      } else {
+        ColumnDefinition column = parseColumnDefinition(tokens);
+        return new AlterTableAddColumn(ident, column);
+      }
     } else if (tokens.peek().is(Tokens.DROP)) {
       tokens.next();
       Ident columnName = parseIdent(tokens);

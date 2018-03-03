@@ -18,7 +18,7 @@ import com.cosyan.db.model.Rule;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-public class AlterStatement {
+public class AlterStatementColumns {
 
   @Data
   @EqualsAndHashCode(callSuper = true)

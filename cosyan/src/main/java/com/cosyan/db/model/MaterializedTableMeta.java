@@ -10,6 +10,7 @@ import java.util.Optional;
 import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
+import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.Dependencies.ColumnReverseRuleDependencies;
@@ -30,7 +31,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-public class MaterializedTableMeta {
+public class MaterializedTableMeta implements TableProvider {
 
   private final String tableName;
   private final List<BasicColumn> columns;
@@ -296,5 +297,11 @@ public class MaterializedTableMeta {
         }
       };
     }
+  }
+
+  @Override
+  public MaterializedTableMeta table(Ident ident) throws ModelException {
+    // TODO Auto-generated method stub
+    return null;
   }
 }
