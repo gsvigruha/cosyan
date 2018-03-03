@@ -67,17 +67,9 @@ public class CreateStatement {
         }
       }
 
-      List<RuleDefinition> ruleDefinitions = Lists.newArrayList();
-      List<ForeignKeyDefinition> foreignKeyDefinitions = Lists.newArrayList();
       Optional<PrimaryKey> primaryKey = Optional.empty();
       for (ConstraintDefinition constraint : constraints) {
-        if (columns.containsKey(constraint.getName())) {
-          throw new ModelException("Name collision for constraint '" + constraint.getName() + "'.");
-        }
-        if (constraint instanceof RuleDefinition) {
-          RuleDefinition ruleDefinition = (RuleDefinition) constraint;
-          ruleDefinitions.add(ruleDefinition);
-        } else if (constraint instanceof PrimaryKeyDefinition) {
+        if (constraint instanceof PrimaryKeyDefinition) {
           if (!primaryKey.isPresent()) {
             PrimaryKeyDefinition primaryKeyDefinition = (PrimaryKeyDefinition) constraint;
             String pkColumnName = primaryKeyDefinition.getKeyColumn().getString();
@@ -93,19 +85,54 @@ public class CreateStatement {
           } else {
             throw new ModelException("There can only be one primary key.");
           }
-        } else if (constraint instanceof ForeignKeyDefinition) {
-          ForeignKeyDefinition foreignKey = (ForeignKeyDefinition) constraint;
-          foreignKeyDefinitions.add(foreignKey);
         }
       }
-
       MaterializedTableMeta tableMeta = new MaterializedTableMeta(
           name,
           columns.values(),
           primaryKey);
+      addConstraints(metaRepo, tableMeta, constraints);
+
+      for (BasicColumn column : columns.values()) {
+        if (column.isIndexed()) {
+          if (column.isUnique()) {
+            metaRepo.registerUniqueIndex(tableMeta, column);
+          } else {
+            metaRepo.registerMultiIndex(tableMeta, column);
+          }
+        }
+      }
+
+      if (partitioning.isPresent()) {
+        ColumnMeta columnMeta = partitioning.get().compileColumn(tableMeta.reader());
+        tableMeta.setPartitioning(Optional.of(columnMeta));
+      }
+
+      metaRepo.registerTable(name, tableMeta);
+      return new MetaStatementResult();
+    }
+
+    public static void addConstraints(
+        MetaRepo metaRepo,
+        MaterializedTableMeta tableMeta,
+        List<ConstraintDefinition> constraints)
+        throws ModelException {
+      List<RuleDefinition> ruleDefinitions = Lists.newArrayList();
+      List<ForeignKeyDefinition> foreignKeyDefinitions = Lists.newArrayList();
+      for (ConstraintDefinition constraint : constraints) {
+        if (constraint instanceof RuleDefinition) {
+          RuleDefinition ruleDefinition = (RuleDefinition) constraint;
+          ruleDefinitions.add(ruleDefinition);
+        } else if (constraint instanceof ForeignKeyDefinition) {
+          ForeignKeyDefinition foreignKey = (ForeignKeyDefinition) constraint;
+          foreignKeyDefinitions.add(foreignKey);
+        } else {
+          throw new ModelException(String.format("Invalid constraint %s.", constraint));
+        }
+      }
 
       for (ForeignKeyDefinition foreignKeyDefinition : foreignKeyDefinitions) {
-        BasicColumn keyColumn = columns.get(foreignKeyDefinition.getKeyColumn().getString());
+        BasicColumn keyColumn = tableMeta.column(foreignKeyDefinition.getKeyColumn());
         MaterializedTableMeta refTable = metaRepo.table(foreignKeyDefinition.getRefTable());
         BasicColumn refColumn = refTable.columns().get(foreignKeyDefinition.getRefColumn().getString());
         if (!refColumn.isUnique()) {
@@ -129,24 +156,6 @@ public class CreateStatement {
         }
         tableMeta.addRule(rule.toBooleanRule());
       }
-
-      for (BasicColumn column : columns.values()) {
-        if (column.isIndexed()) {
-          if (column.isUnique()) {
-            metaRepo.registerUniqueIndex(tableMeta, column);
-          } else {
-            metaRepo.registerMultiIndex(tableMeta, column);
-          }
-        }
-      }
-
-      if (partitioning.isPresent()) {
-        ColumnMeta columnMeta = partitioning.get().compileColumn(tableMeta.reader());
-        tableMeta.setPartitioning(Optional.of(columnMeta));
-      }
-
-      metaRepo.registerTable(name, tableMeta);
-      return new MetaStatementResult();
     }
   }
 

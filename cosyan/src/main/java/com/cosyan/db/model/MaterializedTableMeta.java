@@ -39,6 +39,7 @@ public class MaterializedTableMeta implements TableProvider {
   private Optional<PrimaryKey> primaryKey;
   private final Map<String, ForeignKey> foreignKeys;
   private final Map<String, ReverseForeignKey> reverseForeignKeys;
+  private final Map<String, TableRef> refs;
   private TableDependencies ruleDependencies;
   private ColumnReverseRuleDependencies reverseRuleDependencies;
   private Optional<ColumnMeta> partitioning;
@@ -53,6 +54,7 @@ public class MaterializedTableMeta implements TableProvider {
     this.rules = new HashMap<>();
     this.foreignKeys = new HashMap<>();
     this.reverseForeignKeys = new HashMap<>();
+    this.refs = new HashMap<>();
     this.ruleDependencies = new TableDependencies();
     this.reverseRuleDependencies = new ColumnReverseRuleDependencies();
     this.partitioning = Optional.empty();
@@ -143,6 +145,11 @@ public class MaterializedTableMeta implements TableProvider {
     columns.add(basicColumn);
   }
 
+  public void addRef(TableRef ref) throws ModelException {
+    checkName(ref.getName());
+    refs.put(ref.getName(), ref);
+  }
+
   public void addRule(BooleanRule rule) throws ModelException {
     checkName(rule.name());
     rules.put(rule.name(), rule);
@@ -222,6 +229,17 @@ public class MaterializedTableMeta implements TableProvider {
     return MetaResources.readTable(this);
   }
 
+  @Override
+  public MaterializedTableMeta table(Ident ident) throws ModelException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public boolean isEmpty() {
+    // TODO Auto-generated method stub
+    return false;
+  }
+
   public static class SeekableTableMeta extends ExposedTableMeta implements ReferencingTable {
 
     private final MaterializedTableMeta tableMeta;
@@ -297,11 +315,5 @@ public class MaterializedTableMeta implements TableProvider {
         }
       };
     }
-  }
-
-  @Override
-  public MaterializedTableMeta table(Ident ident) throws ModelException {
-    // TODO Auto-generated method stub
-    return null;
   }
 }
