@@ -126,6 +126,8 @@ public class CreateStatement {
         } else if (constraint instanceof ForeignKeyDefinition) {
           ForeignKeyDefinition foreignKey = (ForeignKeyDefinition) constraint;
           foreignKeyDefinitions.add(foreignKey);
+        } else if (constraint instanceof PrimaryKeyDefinition) {
+          // Pass.
         } else {
           throw new ModelException(String.format("Invalid constraint %s.", constraint));
         }

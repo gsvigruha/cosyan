@@ -17,7 +17,7 @@ import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
-import com.cosyan.db.model.TableMeta.IterableTableMeta;
+import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -43,11 +43,14 @@ public class References {
       String tableName,
       String key,
       Map<String, ForeignKey> foreignKeys,
-      Map<String, ReverseForeignKey> reverseForeignKeys) throws ModelException {
+      Map<String, ReverseForeignKey> reverseForeignKeys,
+      Map<String, TableRef> refs) throws ModelException {
     if (foreignKeys.containsKey(key)) {
       return new ReferencedSimpleTableMeta(parent, foreignKeys.get(key));
+    } else if (refs.containsKey(key)) {
+      return refs.get(key).getTableMeta();
     } else if (reverseForeignKeys.containsKey(key)) {
-      //return new ReferencedMultiTableMeta(parent, reverseForeignKeys.get(key));
+      // return new ReferencedMultiTableMeta(parent, reverseForeignKeys.get(key));
       throw new ModelException(String.format("Reference '%s' is a reverse key.", key));
     }
     throw new ModelException(String.format("Reference '%s' not found in table '%s'.", key, tableName));
@@ -89,7 +92,8 @@ public class References {
           foreignKey.getTable().tableName(),
           ident.getString(),
           foreignKey.getRefTable().foreignKeys(),
-          foreignKey.getRefTable().reverseForeignKeys());
+          foreignKey.getRefTable().reverseForeignKeys(),
+          foreignKey.getRefTable().refs());
     }
 
     @Override
@@ -116,7 +120,7 @@ public class References {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class ReferencedMultiTableMeta extends IterableTableMeta implements ReferencingTable {
+  public static class ReferencedMultiTableMeta extends ExposedTableMeta implements ReferencingTable {
 
     @Nullable
     private final ReferencingTable parent;
@@ -152,7 +156,8 @@ public class References {
           reverseForeignKey.getTable().tableName(),
           ident.getString(),
           reverseForeignKey.getRefTable().foreignKeys(),
-          reverseForeignKey.getRefTable().reverseForeignKeys());
+          reverseForeignKey.getRefTable().reverseForeignKeys(),
+          reverseForeignKey.getRefTable().refs());
     }
 
     @Override
@@ -195,6 +200,11 @@ public class References {
           return values;
         }
       };
+    }
+
+    @Override
+    public ImmutableList<String> columnNames() {
+      return sourceTable.columnNames();
     }
   }
 

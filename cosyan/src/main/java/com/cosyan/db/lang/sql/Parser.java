@@ -253,10 +253,10 @@ public class Parser {
     Ident ident = parseIdent(tokens);
     if (tokens.peek().is(Tokens.ADD)) {
       tokens.next();
-      if (tokens.peek().equals(Tokens.REF)) {
+      if (tokens.peek().is(Tokens.REF)) {
         RefDefinition ref = parseRef(tokens);
         return new AlterTableAddRef(ident, ref);
-      } else if (tokens.peek().equals(Tokens.CONSTRAINT)) {
+      } else if (tokens.peek().is(Tokens.CONSTRAINT)) {
         ConstraintDefinition constraint = parseConstraint(tokens);
         return new AlterTableAddConstraint(ident, constraint);
       } else {

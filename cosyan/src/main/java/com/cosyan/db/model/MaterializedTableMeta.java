@@ -10,8 +10,8 @@ import java.util.Optional;
 import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
-import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.Dependencies.ColumnReverseRuleDependencies;
 import com.cosyan.db.model.Dependencies.ReverseRuleDependency;
@@ -22,6 +22,7 @@ import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
+import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.References.ReferencingTable;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
@@ -31,7 +32,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-public class MaterializedTableMeta implements TableProvider {
+public class MaterializedTableMeta {
 
   private final String tableName;
   private final List<BasicColumn> columns;
@@ -43,6 +44,7 @@ public class MaterializedTableMeta implements TableProvider {
   private TableDependencies ruleDependencies;
   private ColumnReverseRuleDependencies reverseRuleDependencies;
   private Optional<ColumnMeta> partitioning;
+  private long cnt;
 
   public MaterializedTableMeta(
       String tableName,
@@ -58,6 +60,7 @@ public class MaterializedTableMeta implements TableProvider {
     this.ruleDependencies = new TableDependencies();
     this.reverseRuleDependencies = new ColumnReverseRuleDependencies();
     this.partitioning = Optional.empty();
+    this.cnt = 0;
   }
 
   public ImmutableList<String> columnNames() {
@@ -124,6 +127,10 @@ public class MaterializedTableMeta implements TableProvider {
 
   public Map<String, ReverseForeignKey> reverseForeignKeys() {
     return Collections.unmodifiableMap(reverseForeignKeys);
+  }
+
+  public Map<String, TableRef> refs() {
+    return Collections.unmodifiableMap(refs);
   }
 
   private void checkName(String name) throws ModelException {
@@ -229,18 +236,11 @@ public class MaterializedTableMeta implements TableProvider {
     return MetaResources.readTable(this);
   }
 
-  @Override
-  public MaterializedTableMeta table(Ident ident) throws ModelException {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
   public boolean isEmpty() {
-    // TODO Auto-generated method stub
-    return false;
+    return cnt == 0;
   }
 
-  public static class SeekableTableMeta extends ExposedTableMeta implements ReferencingTable {
+  public static class SeekableTableMeta extends ExposedTableMeta implements ReferencingTable, TableProvider {
 
     private final MaterializedTableMeta tableMeta;
 
@@ -274,7 +274,8 @@ public class MaterializedTableMeta implements TableProvider {
           tableMeta.tableName(),
           ident.getString(),
           tableMeta.foreignKeys(),
-          tableMeta.reverseForeignKeys());
+          tableMeta.reverseForeignKeys(),
+          tableMeta.refs());
     }
 
     @Override
@@ -303,6 +304,15 @@ public class MaterializedTableMeta implements TableProvider {
     @Override
     public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
       return sourceValues;
+    }
+
+    @Override
+    public ExposedTableMeta tableMeta(Ident ident) throws ModelException {
+      if (tableMeta.hasReverseForeignKey(ident.getString())) {
+        return new ReferencedMultiTableMeta(this, tableMeta.reverseForeignKey(ident.getString()));
+      } else {
+        throw new ModelException(String.format("Table '%s' not found.", ident.getString()));
+      }
     }
 
     @Override

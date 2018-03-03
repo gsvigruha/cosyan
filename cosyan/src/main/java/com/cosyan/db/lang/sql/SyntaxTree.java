@@ -27,7 +27,7 @@ public class SyntaxTree {
   }
 
   public static interface Statement {
-    public MetaResources compile(TableProvider tableProvider) throws ModelException;
+    public MetaResources compile(MetaRepo metaRepo) throws ModelException;
 
     public Result execute(Resources resources) throws RuleException, IOException;
 

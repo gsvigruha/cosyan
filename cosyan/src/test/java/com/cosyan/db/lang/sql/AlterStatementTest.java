@@ -201,4 +201,12 @@ public class AlterStatementTest extends UnitTestBase {
     ErrorResult result = error("select a, b from t12;");
     assertEquals("Column 'b' not found in table 't12'.", result.getError().getMessage());
   }
+
+  @Test
+  public void testAlterTableAddConstraint() throws Exception {
+    execute("create table t13 (a integer);");
+    execute("alter table t13 add constraint c1 check (a > 0);");
+    ErrorResult result = error("insert into t13 values (0);");
+    assertEquals("Constraint check c1 failed.", result.getError().getMessage());
+  }
 }

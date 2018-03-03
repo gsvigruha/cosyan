@@ -34,6 +34,7 @@ import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableIndex.LongTableIndex;
 import com.cosyan.db.model.TableIndex.StringTableIndex;
+import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.LongTableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.StringTableMultiIndex;
@@ -97,6 +98,10 @@ public class MetaRepo implements TableProvider {
   }
 
   @Override
+  public ExposedTableMeta tableMeta(Ident ident) throws ModelException {
+    return table(ident).reader();
+  }
+
   public MaterializedTableMeta table(Ident ident) throws ModelException {
     if (!tables.containsKey(ident.getString())) {
       throw new ModelException("Table '" + ident.getString() + "' does not exist.");

@@ -46,8 +46,6 @@ public class DerivedTables {
     private final IterableTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
 
-    private Object[] values;
-
     @Override
     public ImmutableList<String> columnNames() {
       return columns.keySet().asList();
@@ -94,7 +92,7 @@ public class DerivedTables {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class ReferencedDerivedTableMeta extends TableMeta {
+  public static class ReferencedDerivedTableMeta extends ExposedTableMeta {
     private final TableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
 
@@ -112,6 +110,9 @@ public class DerivedTables {
           for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
             values[i++] = entry.getValue().value(sourceValues, resources);
           }
+          System.out.println("c: " + sourceTable.getClass());
+          System.out.println(ImmutableList.copyOf(sourceValues));
+          System.out.println(ImmutableList.copyOf(values));
           return values;
         }
       };
@@ -125,7 +126,7 @@ public class DerivedTables {
 
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
-      throw new UnsupportedOperationException();
+      return null;
     }
 
     @Override

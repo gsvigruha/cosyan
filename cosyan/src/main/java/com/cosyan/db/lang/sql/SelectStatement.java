@@ -20,6 +20,7 @@ import com.cosyan.db.lang.sql.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.logic.PredicateHelper;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
+import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.meta.TableProvider;
@@ -103,8 +104,8 @@ public class SelectStatement {
     }
 
     @Override
-    public MetaResources compile(TableProvider tableProvider) throws ModelException {
-      tableMeta = compileTable(tableProvider);
+    public MetaResources compile(MetaRepo metaRepo) throws ModelException {
+      tableMeta = compileTable(metaRepo);
       return tableMeta.readResources();
     }
 
@@ -274,7 +275,7 @@ public class SelectStatement {
     private final Ident ident;
 
     public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
-      return tableProvider.table(ident).reader();
+      return tableProvider.tableMeta(ident);
     }
   }
 

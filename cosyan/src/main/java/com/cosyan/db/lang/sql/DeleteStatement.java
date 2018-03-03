@@ -9,9 +9,9 @@ import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.SyntaxTree.Statement;
 import com.cosyan.db.logic.PredicateHelper;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
+import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
-import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
@@ -50,8 +50,8 @@ public class DeleteStatement {
     }
 
     @Override
-    public MetaResources compile(TableProvider tableProvider) throws ModelException {
-      MaterializedTableMeta materializedTableMeta = tableProvider.table(table);
+    public MetaResources compile(MetaRepo metaRepo) throws ModelException {
+      MaterializedTableMeta materializedTableMeta = metaRepo.table(table);
       tableMeta = materializedTableMeta.reader();
       whereColumn = where.compileColumn(tableMeta);
       clause = PredicateHelper.getBestClause(tableMeta, where);
