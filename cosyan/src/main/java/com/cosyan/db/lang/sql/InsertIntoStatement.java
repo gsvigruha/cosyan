@@ -46,7 +46,10 @@ public class InsertIntoStatement {
         }
       }
       indexes = indexesBuilder.build();
-      return MetaResources.insertIntoTable(tableMeta).merge(tableMeta.ruleDependenciesReadResources());
+      return MetaResources
+          .insertIntoTable(tableMeta)
+          .merge(tableMeta.ruleDependenciesReadResources())
+          .merge(tableMeta.reverseRuleDependenciesReadResources());
     }
 
     @Override
@@ -70,7 +73,7 @@ public class InsertIntoStatement {
             fullValues[i] = values.get(i).getValue();
           }
         }
-        writer.insert(resources, fullValues, /* checkReferencingRules= */false);
+        writer.insert(resources, fullValues, /* checkReferencingRules= */true);
       }
       return new StatementResult(valuess.size());
     }

@@ -110,9 +110,6 @@ public class DerivedTables {
           for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
             values[i++] = entry.getValue().value(sourceValues, resources);
           }
-          System.out.println("c: " + sourceTable.getClass());
-          System.out.println(ImmutableList.copyOf(sourceValues));
-          System.out.println(ImmutableList.copyOf(values));
           return values;
         }
       };

@@ -158,7 +158,7 @@ public class Dependencies {
       }
       rules.put(rule.getName(), rule);
     }
-    
+
     public Collection<ReverseRuleDependency> allReverseRuleDepenencies() {
       return columnDeps.values().stream().flatMap(r -> r.values().stream()).collect(Collectors.toList());
     }

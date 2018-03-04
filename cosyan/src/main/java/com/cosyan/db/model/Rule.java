@@ -19,6 +19,7 @@ public class Rule {
 
   private final String name;
   private final Expression expr;
+  protected final boolean nullIsTrue;
   protected final transient SeekableTableMeta table;
   protected final transient ColumnMeta column;
   private final transient TableDependencies deps;
@@ -29,6 +30,7 @@ public class Rule {
     this.expr = expr;
     this.deps = deps;
     this.table = table;
+    this.nullIsTrue = true;
   }
 
   public String name() {
@@ -71,7 +73,11 @@ public class Rule {
 
     public boolean check(Resources resources, long fileIndex) throws IOException {
       Object[] values = table.get(resources, fileIndex).getValues();
-      return (boolean) column.value(values, resources);
+      Object check = column.value(values, resources);
+      if (check == DataTypes.NULL) {
+        return nullIsTrue;
+      }
+      return (boolean) check;
     }
   }
 }

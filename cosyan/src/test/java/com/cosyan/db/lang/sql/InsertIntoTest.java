@@ -186,4 +186,25 @@ public class InsertIntoTest extends UnitTestBase {
       assertError(RuleException.class, "Constraint check c_a failed.", result);
     }
   }
+
+  @Test
+  public void testRuleReferencingOtherMultiTable() throws Exception {
+    execute("create table t19 (a varchar, constraint pk_a primary key (a));");
+    execute("create table t20 (a varchar, constraint fk_a foreign key (a) references t19(a));");
+    execute("alter table t19 add ref s select count(a) as c from rev_fk_a;");
+    execute("alter table t19 add constraint c_1 check (s.c <= 2);");
+
+    execute("insert into t19 values ('x');");
+    execute("insert into t20 values ('x'), ('x');");
+
+    {
+      QueryResult result = query("select fk_a.a from t20;");
+      assertHeader(new String[] { "a" }, result);
+      assertValues(new Object[][] { { "x" }, { "x" } }, result);
+    }
+    {
+      ErrorResult result = error("insert into t20 values ('x');");
+      assertError(RuleException.class, "Referencing constraint check t19.c_1 failed.", result);
+    }
+  }
 }
