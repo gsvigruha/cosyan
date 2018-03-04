@@ -117,4 +117,26 @@ public class DeleteTest extends UnitTestBase {
         { "w", 7L, 8.0 }
     }, r2);
   }
+
+  @Test
+  public void testDeleteReferencedByRules_MultiTable() throws Exception {
+    execute("create table t8 (a varchar, constraint pk_a primary key (a));");
+    execute("create table t9 (b varchar, c integer, constraint fk_a foreign key (b) references t8(a));");
+    execute("alter table t8 add ref s select sum(c) as sc from rev_fk_a;");
+    execute("alter table t8 add constraint c_c check (s.sc > 1);");
+
+    execute("insert into t8 values ('x');");
+    execute("insert into t9 values ('x', 3);");
+    execute("insert into t9 values ('x', 2);");
+    execute("insert into t9 values ('x', 1);");
+
+    execute("delete from t9 where c = 3;");
+    QueryResult r1 = query("select b, c, fk_a.a from t9;");
+    assertValues(new Object[][] { { "x", 2L, "x" }, { "x", 1L, "x" } }, r1);
+
+    ErrorResult e1 = error("delete from t9 where c = 2;");
+    assertEquals("Referencing constraint check t8.c_c failed.", e1.getError().getMessage());
+    QueryResult r2 = query("select b, c, fk_a.a from t9;");
+    assertValues(new Object[][] { { "x", 2L, "x" }, { "x", 1L, "x" } }, r2);
+  }
 }

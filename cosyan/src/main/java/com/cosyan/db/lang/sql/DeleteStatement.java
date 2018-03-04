@@ -55,7 +55,9 @@ public class DeleteStatement {
       tableMeta = materializedTableMeta.reader();
       whereColumn = where.compileColumn(tableMeta);
       clause = PredicateHelper.getBestClause(tableMeta, where);
-      return MetaResources.deleteFromTable(materializedTableMeta);
+      return MetaResources
+          .deleteFromTable(materializedTableMeta)
+          .merge(materializedTableMeta.reverseRuleDependenciesReadResources());
     }
   }
 }

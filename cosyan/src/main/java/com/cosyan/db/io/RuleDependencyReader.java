@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 import com.cosyan.db.io.Indexes.IndexReader;
+import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.Dependencies.ColumnReverseRuleDependencies;
@@ -22,18 +23,17 @@ public class RuleDependencyReader {
     this.reverseRules = reverseRules;
   }
 
-  public void checkReferencingRules(long fileIndex)
+  public void checkReferencingRules(Record record)
       throws IOException, RuleException {
-    checkReferencingRules(reverseRules.allReverseRuleDepenencies(), fileIndex);
+    checkReferencingRules(reverseRules.allReverseRuleDepenencies(), record);
   }
 
-  private void checkReferencingRules(Collection<ReverseRuleDependency> collection, long fileIndex)
+  private void checkReferencingRules(Collection<ReverseRuleDependency> collection, Record record)
       throws IOException, RuleException {
     for (ReverseRuleDependency dep : collection) {
       Ref reverseForeignKey = dep.getForeignKey();
 
-      SeekableTableReader reader = resources.reader(reverseForeignKey.getTable().tableName());
-      Object[] newSourceValues = reader.get(fileIndex).getValues();
+      Object[] newSourceValues = record.getValues();
       Object key = newSourceValues[reverseForeignKey.getColumn().getIndex()];
       IndexReader index = resources.getIndex(reverseForeignKey);
       long[] pointers = index.get(key);
@@ -44,7 +44,8 @@ public class RuleDependencyReader {
                 String.format("Referencing constraint check %s.%s failed.", rule.getTable().tableName(), rule.name()));
           }
         }
-        checkReferencingRules(dep.getDeps().values(), pointer);
+        SeekableTableReader reader = resources.reader(reverseForeignKey.getRefTable().tableName());
+        checkReferencingRules(dep.getDeps().values(), reader.get(pointer));
       }
     }
   }

@@ -125,7 +125,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     }
     if (checkReferencingRules) {
       RuleDependencyReader ruleDependencyReader = new RuleDependencyReader(resources, reverseRules);
-      ruleDependencyReader.checkReferencingRules(fileIndex);
+      ruleDependencyReader.checkReferencingRules(new Record(fileIndex, values));
     }
   }
 
@@ -175,7 +175,9 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     file.close();
   }
 
-  private void delete(Record record, Predicate<Integer> checkReversedForeignIndex) throws IOException, RuleException {
+  private void delete(Record record, Resources resources, Predicate<Integer> checkReversedForeignIndex,
+      boolean checkReverseRuleDependencies)
+      throws IOException, RuleException {
     recordsToDelete.add(record.getFilePointer());
     for (BasicColumn column : columns) {
       Object value = record.getValues()[column.getIndex()];
@@ -183,16 +185,22 @@ public class TableWriter extends SeekableTableReader implements TableIO {
         uniqueIndexes.get(column.getName()).delete(value);
       }
       if (multiIndexes.containsKey(column.getName())) {
-        multiIndexes.get(column.getName()).delete(value);
+        multiIndexes.get(column.getName()).delete(value, record.getFilePointer());
       }
-      if (checkReversedForeignIndex.test(column.getIndex()) && reversedForeignIndexes.containsKey(column.getName())) {
-        for (IndexReader reverseForeignIndex : reversedForeignIndexes.get(column.getName())) {
-          if (reverseForeignIndex.contains(value)) {
-            throw new RuleException(String.format(
-                "Foreign key violation, key value '%s' has references.", value));
+      if (checkReversedForeignIndex.test(column.getIndex())) {
+        if (reversedForeignIndexes.containsKey(column.getName())) {
+          for (IndexReader reverseForeignIndex : reversedForeignIndexes.get(column.getName())) {
+            if (reverseForeignIndex.contains(value)) {
+              throw new RuleException(String.format(
+                  "Foreign key violation, key value '%s' has references.", value));
+            }
           }
         }
       }
+    }
+    if (checkReverseRuleDependencies) {
+      RuleDependencyReader ruleDependencyReader = new RuleDependencyReader(resources, reverseRules);
+      ruleDependencyReader.checkReferencingRules(record);
     }
   }
 
@@ -207,7 +215,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       }
       if (!recordsToDelete.contains(record.getFilePointer())
           && (boolean) whereColumn.value(record.getValues(), resources)) {
-        delete(record, Predicates.alwaysTrue());
+        delete(record, resources, Predicates.alwaysTrue(), /* checkReverseRuleDependencies= */true);
         deletedLines++;
       }
     } while (true);
@@ -238,7 +246,9 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       }
       Object[] values = record.getValues();
       if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.value(values, resources)) {
-        delete(record, (columnIndex) -> updateExprs.containsKey(columnIndex));
+        delete(record, resources, (columnIndex) -> updateExprs.containsKey(columnIndex), /*
+                                                                                          * checkReverseRuleDependencies=
+                                                                                          */false);
         Object[] newValues = new Object[values.length];
         System.arraycopy(values, 0, newValues, 0, values.length);
         for (Map.Entry<Integer, ColumnMeta> updateExpr : updateExprs.entrySet()) {
@@ -298,7 +308,8 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     return new RecordReader(columns, rafReader, recordsToDelete);
   }
 
-  private MultiFilteredTableReader indexFilteredReader(Resources resources, ColumnMeta whereColumn, VariableEquals clause) {
+  private MultiFilteredTableReader indexFilteredReader(Resources resources, ColumnMeta whereColumn,
+      VariableEquals clause) {
     return new MultiFilteredTableReader(this, whereColumn, resources) {
       @Override
       protected void readPositions() throws IOException {
