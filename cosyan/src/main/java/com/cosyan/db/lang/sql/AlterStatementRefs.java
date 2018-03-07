@@ -42,7 +42,8 @@ public class AlterStatementRefs {
               TableMeta.wholeTableKeys), srcTableMeta.getReverseForeignKey());
       // Columns have aggregations, recompile with an AggrTable.
       TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
-      ReferencedDerivedTableMeta refTableMeta = new ReferencedDerivedTableMeta(aggrTable, tableColumns.getColumns());
+      ReferencedDerivedTableMeta refTableMeta = new ReferencedDerivedTableMeta(
+          aggrTable, tableColumns.getColumns(), srcTableMeta.getReverseForeignKey());
       tableMeta.addRef(new TableRef(ref.getName(), ref.getSelect(), refTableMeta));
       return new MetaStatementResult();
     }

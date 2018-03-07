@@ -6,8 +6,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import com.cosyan.db.lang.sql.Parser.ParserException;
-import com.cosyan.db.lang.sql.SelectStatement;
-import com.cosyan.db.lang.sql.SelectStatement.Select.TableColumns;
 import com.cosyan.db.lang.sql.SyntaxTree;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.AggrTables;
@@ -21,12 +19,8 @@ import com.cosyan.db.model.ColumnMeta.DerivedColumnWithDeps;
 import com.cosyan.db.model.CompiledObject;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Dependencies.TableDependencies;
-import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
-import com.cosyan.db.model.DerivedTables.ReferencedDerivedTableMeta;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.References.ReferencedAggrTableMeta;
-import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -124,25 +118,6 @@ public class FuncCallExpression extends Expression {
     return aggrColumn;
   }
 
-  private TableMeta tableFunction(ReferencedMultiTableMeta tableMeta) throws ModelException {
-    if (ident.getString().equals("select")) {
-      try {
-        TableColumns tableColumns = SelectStatement.Select.tableColumns(tableMeta, args);
-        return new DerivedTableMeta(tableMeta, tableColumns.getColumns());
-      } catch (NotAggrTableException e) {
-        ReferencedAggrTableMeta aggrTable = new ReferencedAggrTableMeta(
-            new KeyValueTableMeta(
-                tableMeta,
-                TableMeta.wholeTableKeys), tableMeta.getReverseForeignKey());
-        // Columns have aggregations, recompile with an AggrTable.
-        TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, args);
-        return new ReferencedDerivedTableMeta(aggrTable, tableColumns.getColumns());
-      }
-    } else {
-      throw new ModelException("Wrong func");
-    }
-  }
-
   @Override
   public CompiledObject compile(TableMeta sourceTable)
       throws ModelException {
@@ -178,12 +153,6 @@ public class FuncCallExpression extends Expression {
               return tableMeta.table(ident);
             } else {
               return tableMeta.column(ident);
-            }
-          } else {
-            if (tableMeta instanceof ReferencedMultiTableMeta) {
-              return tableFunction((ReferencedMultiTableMeta) tableMeta);
-            } else {
-              throw new ModelException("Cannot call function on table.");
             }
           }
         } else if (obj instanceof ColumnMeta) {

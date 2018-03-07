@@ -69,7 +69,7 @@ public class BinaryExpression extends Expression {
       // Left and rightColumn is not used elsewhere so mutability is ok.
       return leftColumn.tableDependencies().add(rightColumn.tableDependencies());
     }
-    
+
     protected abstract Object getValueImpl(Object left, Object right);
   }
 

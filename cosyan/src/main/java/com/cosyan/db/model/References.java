@@ -146,6 +146,7 @@ public class References {
       }
       TableDependencies deps = new TableDependencies();
       deps.addTableDependency(this, column);
+      deps.addTableDependency(this, column);
       return new IndexColumn(this, column.getIndex(), column.getType(), deps);
     }
 

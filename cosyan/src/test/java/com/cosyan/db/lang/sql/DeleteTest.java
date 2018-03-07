@@ -139,4 +139,29 @@ public class DeleteTest extends UnitTestBase {
     QueryResult r2 = query("select b, c, fk_a.a from t9;");
     assertValues(new Object[][] { { "x", 2L, "x" }, { "x", 1L, "x" } }, r2);
   }
+
+  @Test
+  public void testDeleteReferencedByRules_MultiTableMultipleLevels() throws Exception {
+    execute("create table t10 (a varchar, constraint pk_a primary key (a));");
+    execute("create table t11 (b varchar, c varchar, "
+        + "constraint pk_b primary key (b), "
+        + "constraint fk_c foreign key (c) references t10(a));");
+    execute("create table t12 (d varchar, e integer, constraint fk_d foreign key (d) references t11(b));");
+    execute("alter table t11 add ref s select sum(e) as se from rev_fk_d;");
+    execute("alter table t10 add ref s select sum(s.se) as sse from rev_fk_c;");
+    execute("alter table t10 add constraint c_c check (s.sse > 0);");
+
+    execute("insert into t10 values ('x');");
+    execute("insert into t11 values ('a', 'x');");
+    execute("insert into t12 values ('a', 2), ('a', 3), ('a', -1);");
+
+    execute("delete from t12 where e = 3;");
+    QueryResult r1 = query("select e, fk_d.fk_c.a from t12;");
+    assertValues(new Object[][] { { 2L, "x" }, { -1L, "x" } }, r1);
+
+    ErrorResult e1 = error("delete from t12 where e = 2;");
+    assertEquals("Referencing constraint check t10.c_c failed.", e1.getError().getMessage());
+    QueryResult r2 = query("select e, fk_d.fk_c.a from t12;");
+    assertValues(new Object[][] { { 2L, "x" }, { -1L, "x" } }, r2);
+  }
 }

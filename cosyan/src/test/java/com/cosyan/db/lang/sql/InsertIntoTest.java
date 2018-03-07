@@ -207,4 +207,28 @@ public class InsertIntoTest extends UnitTestBase {
       assertError(RuleException.class, "Referencing constraint check t19.c_1 failed.", result);
     }
   }
+
+  @Test
+  public void testRuleReferencingOtherMultiTable_MultipleLevels() throws Exception {
+    execute("create table t21 (a varchar, constraint pk_a primary key (a));");
+    execute("create table t22 (b varchar, c varchar, "
+        + "constraint pk_b primary key (b), "
+        + "constraint fk_c foreign key (c) references t21(a));");
+    execute("create table t23 (d varchar, e integer, constraint fk_d foreign key (d) references t22(b));");
+    execute("alter table t22 add ref s select sum(e) as se from rev_fk_d;");
+    execute("alter table t21 add ref s select sum(s.se) as sse from rev_fk_c;");
+    execute("alter table t21 add constraint c_c check (s.sse <= 1);");
+
+    execute("insert into t21 values ('x');");
+    execute("insert into t22 values ('a', 'x');");
+    execute("insert into t23 values ('a', 1);");
+
+    QueryResult r1 = query("select e, fk_d.fk_c.a from t23;");
+    assertValues(new Object[][] { { 1L, "x" } }, r1);
+
+    ErrorResult e1 = error("insert into t23 values ('a', 1);");
+    assertEquals("Referencing constraint check t21.c_c failed.", e1.getError().getMessage());
+    QueryResult r2 = query("select e, fk_d.fk_c.a from t23;");
+    assertValues(new Object[][] { { 1L, "x" } }, r2);
+  }
 }

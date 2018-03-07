@@ -165,7 +165,7 @@ public class MaterializedTableMeta {
   }
 
   public void addReverseRuleDependency(
-      BasicColumn column, Iterable<Ref> reverseForeignKeyChain, BooleanRule rule) {
+      String column, Iterable<Ref> reverseForeignKeyChain, BooleanRule rule) {
     reverseRuleDependencies.addReverseRuleDependency(column, reverseForeignKeyChain, rule);
   }
 

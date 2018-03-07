@@ -1,6 +1,7 @@
 package com.cosyan.db.lang.sql;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -121,13 +122,13 @@ public class CreateStatementTest extends UnitTestBase {
     assertEquals(1, t11.ruleDependencies().size());
     assertEquals(0, t11.reverseRuleDependencies().getColumnDeps().size());
     assertEquals("fk_a", t11.ruleDependencies().get("fk_a").getForeignKey().getName());
-    assertEquals("b", t11.ruleDependencies().get("fk_a").getColumnDeps().get("b").getName());
+    assertTrue("b", t11.ruleDependencies().get("fk_a").getColumnDeps().contains("b"));
 
     MaterializedTableMeta t10 = metaRepo.table(new Ident("t10"));
     assertEquals(0, t10.ruleDependencies().size());
     assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().size());
     assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().get("b").size());
-    assertEquals("rev_fk_a", t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getForeignKey().getName());
+    assertEquals("rev_fk_a", t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getKey().getName());
     assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getRules().size());
     assertEquals("c_b", t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getRules().get("c_b").getName());
   }

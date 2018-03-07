@@ -31,11 +31,11 @@ public class RuleDependencyReader {
   private void checkReferencingRules(Collection<ReverseRuleDependency> collection, Record record)
       throws IOException, RuleException {
     for (ReverseRuleDependency dep : collection) {
-      Ref reverseForeignKey = dep.getForeignKey();
+      Ref ref = dep.getKey();
 
       Object[] newSourceValues = record.getValues();
-      Object key = newSourceValues[reverseForeignKey.getColumn().getIndex()];
-      IndexReader index = resources.getIndex(reverseForeignKey);
+      Object key = newSourceValues[ref.getColumn().getIndex()];
+      IndexReader index = resources.getIndex(ref);
       long[] pointers = index.get(key);
       for (long pointer : pointers) {
         for (BooleanRule rule : dep.getRules().values()) {
@@ -44,7 +44,7 @@ public class RuleDependencyReader {
                 String.format("Referencing constraint check %s.%s failed.", rule.getTable().tableName(), rule.name()));
           }
         }
-        SeekableTableReader reader = resources.reader(reverseForeignKey.getRefTable().tableName());
+        SeekableTableReader reader = resources.reader(ref.getRefTable().tableName());
         checkReferencingRules(dep.getDeps().values(), reader.get(pointer));
       }
     }
