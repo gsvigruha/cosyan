@@ -24,13 +24,19 @@ public class Rule {
   protected final transient ColumnMeta column;
   private final transient TableDependencies deps;
 
-  public Rule(String name, SeekableTableMeta table, ColumnMeta column, Expression expr, TableDependencies deps) {
+  public Rule(
+      String name,
+      SeekableTableMeta table,
+      ColumnMeta column,
+      Expression expr,
+      boolean nullIsTrue,
+      TableDependencies deps) {
     this.name = name;
     this.column = column;
     this.expr = expr;
     this.deps = deps;
     this.table = table;
-    this.nullIsTrue = true;
+    this.nullIsTrue = nullIsTrue;
   }
 
   public String name() {
@@ -61,13 +67,13 @@ public class Rule {
   }
 
   public BooleanRule toBooleanRule() {
-    return new BooleanRule(name, table, column, expr, deps);
+    return new BooleanRule(name, table, column, expr, nullIsTrue, deps);
   }
 
   public static class BooleanRule extends Rule {
     public BooleanRule(String name, SeekableTableMeta table, ColumnMeta column, Expression expr,
-        TableDependencies deps) {
-      super(name, table, column, expr, deps);
+        boolean nullIsTrue, TableDependencies deps) {
+      super(name, table, column, expr, nullIsTrue, deps);
       assert column.getType() == DataTypes.BoolType;
     }
 

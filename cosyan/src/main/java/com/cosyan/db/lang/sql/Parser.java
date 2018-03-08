@@ -284,7 +284,13 @@ public class Parser {
       assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
       Expression expr = parseExpression(tokens, 0);
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-      return new RuleDefinition(ident.getString(), expr);
+      boolean nullIsTrue = true;
+      if (tokens.peek().is(Tokens.NOT)) {
+        tokens.next();
+        assertNext(tokens, Tokens.NULL);
+        nullIsTrue = false;
+      }
+      return new RuleDefinition(ident.getString(), expr, nullIsTrue);
     } else if (tokens.peek().is(Tokens.PRIMARY)) {
       tokens.next();
       assertNext(tokens, Tokens.KEY);

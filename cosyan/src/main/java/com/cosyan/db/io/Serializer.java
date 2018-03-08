@@ -170,6 +170,7 @@ public class Serializer {
     for (Rule rule : tableMeta.rules().values()) {
       refStream.writeUTF(rule.name());
       refStream.writeUTF(rule.print());
+      refStream.writeBoolean(rule.isNullIsTrue());
     }
   }
 
@@ -230,7 +231,8 @@ public class Serializer {
     for (int i = 0; i < numSimpleChecks; i++) {
       String name = refStream.readUTF();
       Expression expr = parser.parseExpression(lexer.tokenize(refStream.readUTF()));
-      RuleDefinition ruleDefinition = new RuleDefinition(name, expr);
+      boolean nullIsTrue = refStream.readBoolean();
+      RuleDefinition ruleDefinition = new RuleDefinition(name, expr, nullIsTrue);
       tableMeta.addRule(ruleDefinition.compile(tableMeta).toBooleanRule());
     }
   }

@@ -179,6 +179,7 @@ public class CreateStatement {
   public static class RuleDefinition extends Node implements ConstraintDefinition {
     private final String name;
     private final Expression expr;
+    private final boolean nullIsTrue;
 
     @Override
     public String toString() {
@@ -188,7 +189,7 @@ public class CreateStatement {
     public Rule compile(MaterializedTableMeta tableMeta) throws ModelException {
       SeekableTableMeta table = tableMeta.reader();
       ColumnMeta column = expr.compileColumn(table);
-      return new Rule(name, table, column, expr, column.tableDependencies());
+      return new Rule(name, table, column, expr, nullIsTrue, column.tableDependencies());
     }
   }
 
