@@ -9,6 +9,7 @@ import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.sql.Result.ErrorResult;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
@@ -130,7 +131,8 @@ public class CreateStatementTest extends UnitTestBase {
     assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().get("b").size());
     assertEquals("rev_fk_a", t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getKey().getName());
     assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getRules().size());
-    assertEquals("c_b", t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getRules().get("c_b").getName());
+    assertEquals("c_b",
+        t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getRules().get("c_b").getName());
   }
 
   @Test
@@ -152,5 +154,32 @@ public class CreateStatementTest extends UnitTestBase {
     MaterializedTableMeta t14 = metaRepo.table(new Ident("t14"));
     assertEquals(1, t14.ruleDependencies().size());
     assertEquals(0, t14.reverseRuleDependencies().getColumnDeps().size());
+  }
+
+  @Test
+  public void testCreateRefTableTableDeps() throws Exception {
+    execute("create table t15 (a varchar, constraint pk_a primary key (a));");
+    execute("create table t16 (b varchar, c integer, constraint fk_a foreign key (b) references t15(a));");
+    execute("alter table t15 add ref s select sum(c) as sb from rev_fk_a;");
+
+    MaterializedTableMeta t15 = metaRepo.table(new Ident("t15"));
+    TableDependencies deps = t15.reader().table(new Ident("s")).column(new Ident("sb")).tableDependencies();
+    assertEquals(1, deps.getDeps().size());
+    assertEquals(0, deps.getDeps().get("rev_fk_a").getDeps().size());
+  }
+
+  @Test
+  public void testCreateRefTableTableDepsMultipleLevel() throws Exception {
+    execute("create table t17 (a varchar, constraint pk_a primary key (a));");
+    execute("create table t18 (b varchar, constraint pk_a primary key (b), constraint fk_a foreign key (b) references t17(a));");
+    execute("create table t19 (c varchar, d integer, constraint fk_b foreign key (c) references t18(b));");
+    execute("alter table t18 add ref s select sum(d) as sd from rev_fk_b;");
+    execute("alter table t17 add ref s select sum(s.sd) as ssd from rev_fk_a;");
+
+    MaterializedTableMeta t17 = metaRepo.table(new Ident("t17"));
+    TableDependencies deps = t17.reader().table(new Ident("s")).column(new Ident("ssd")).tableDependencies();
+    assertEquals(1, deps.getDeps().size());
+    assertEquals(1, deps.getDeps().get("rev_fk_a").getDeps().size());
+    assertEquals(0, deps.getDeps().get("rev_fk_a").getDeps().get("rev_fk_b").getDeps().size());
   }
 }
