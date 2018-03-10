@@ -1,7 +1,6 @@
 package com.cosyan.db.lang.sql;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -121,18 +120,17 @@ public class CreateStatementTest extends UnitTestBase {
     assertEquals("c_b", rule.getName());
 
     assertEquals(1, t11.ruleDependencies().size());
-    assertEquals(0, t11.reverseRuleDependencies().getColumnDeps().size());
+    assertEquals(0, t11.reverseRuleDependencies().getDeps().size());
     assertEquals("fk_a", t11.ruleDependencies().get("fk_a").getForeignKey().getName());
-    assertTrue("b", t11.ruleDependencies().get("fk_a").getColumnDeps().contains("b"));
 
     MaterializedTableMeta t10 = metaRepo.table(new Ident("t10"));
     assertEquals(0, t10.ruleDependencies().size());
-    assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().size());
-    assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().get("b").size());
-    assertEquals("rev_fk_a", t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getKey().getName());
-    assertEquals(1, t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getRules().size());
+    assertEquals(1, t10.reverseRuleDependencies().getDeps().size());
+    assertEquals(1, t10.reverseRuleDependencies().getDeps().size());
+    assertEquals("rev_fk_a", t10.reverseRuleDependencies().getDeps().get("rev_fk_a").getKey().getName());
+    assertEquals(1, t10.reverseRuleDependencies().getDeps().get("rev_fk_a").getRules().size());
     assertEquals("c_b",
-        t10.reverseRuleDependencies().getColumnDeps().get("b").get("rev_fk_a").getRules().get("c_b").getName());
+        t10.reverseRuleDependencies().getDeps().get("rev_fk_a").getRules().get("c_b").getName());
   }
 
   @Test
@@ -145,15 +143,15 @@ public class CreateStatementTest extends UnitTestBase {
 
     MaterializedTableMeta t12 = metaRepo.table(new Ident("t12"));
     assertEquals(0, t12.ruleDependencies().size());
-    assertEquals(1, t12.reverseRuleDependencies().getColumnDeps().size());
+    assertEquals(1, t12.reverseRuleDependencies().getDeps().size());
 
     MaterializedTableMeta t13 = metaRepo.table(new Ident("t13"));
     assertEquals(0, t13.ruleDependencies().size());
-    assertEquals(0, t13.reverseRuleDependencies().getColumnDeps().size());
+    assertEquals(1, t13.reverseRuleDependencies().getDeps().size());
 
     MaterializedTableMeta t14 = metaRepo.table(new Ident("t14"));
     assertEquals(1, t14.ruleDependencies().size());
-    assertEquals(0, t14.reverseRuleDependencies().getColumnDeps().size());
+    assertEquals(0, t14.reverseRuleDependencies().getDeps().size());
   }
 
   @Test
@@ -171,7 +169,8 @@ public class CreateStatementTest extends UnitTestBase {
   @Test
   public void testCreateRefTableTableDepsMultipleLevel() throws Exception {
     execute("create table t17 (a varchar, constraint pk_a primary key (a));");
-    execute("create table t18 (b varchar, constraint pk_a primary key (b), constraint fk_a foreign key (b) references t17(a));");
+    execute(
+        "create table t18 (b varchar, constraint pk_a primary key (b), constraint fk_a foreign key (b) references t17(a));");
     execute("create table t19 (c varchar, d integer, constraint fk_b foreign key (c) references t18(b));");
     execute("alter table t18 add ref s select sum(d) as sd from rev_fk_b;");
     execute("alter table t17 add ref s select sum(s.sd) as ssd from rev_fk_a;");

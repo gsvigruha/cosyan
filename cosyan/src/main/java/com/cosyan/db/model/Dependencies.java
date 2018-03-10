@@ -1,11 +1,8 @@
 package com.cosyan.db.model;
 
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.cosyan.db.model.DerivedTables.ReferencedDerivedTableMeta;
@@ -14,6 +11,7 @@ import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.References.ReferencedSimpleTableMeta;
 import com.cosyan.db.model.Rule.BooleanRule;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 
 import lombok.Data;
@@ -32,7 +30,6 @@ public class Dependencies {
   public static class TableDependency implements TransitiveTableDependency {
     private final Ref foreignKey;
     private final Map<String, TableDependency> deps = new HashMap<>();
-    private final Set<String> columnDeps = new HashSet<>();
 
     public void merge(TableDependency other) {
       assert this.foreignKey == other.foreignKey;
@@ -76,7 +73,6 @@ public class Dependencies {
     }
   }
 
-  @Data
   public static class TableDependencies {
 
     private final Map<String, TableDependency> deps = new HashMap<>();
@@ -100,28 +96,22 @@ public class Dependencies {
 
     public void addTableDependency(ReferencedSimpleTableMeta table, BasicColumn column) {
       Map<String, TableDependency> actDeps = deps;
-      TableDependency tableDependency = null;
       for (Ref foreignKey : table.foreignKeyChain()) {
         if (!actDeps.containsKey(foreignKey.getName())) {
           actDeps.put(foreignKey.getName(), new TableDependency(foreignKey));
         }
-        tableDependency = actDeps.get(foreignKey.getName());
-        actDeps = tableDependency.getDeps();
+        actDeps = actDeps.get(foreignKey.getName()).getDeps();
       }
-      tableDependency.columnDeps.add(column.getName());
     }
 
     public void addTableDependency(ReferencedMultiTableMeta tableMeta, BasicColumn column) {
       Map<String, TableDependency> actDeps = deps;
-      TableDependency tableDependency = null;
       for (Ref foreignKey : tableMeta.foreignKeyChain()) {
         if (!actDeps.containsKey(foreignKey.getName())) {
           actDeps.put(foreignKey.getName(), new TableDependency(foreignKey));
         }
-        tableDependency = actDeps.get(foreignKey.getName());
-        actDeps = tableDependency.getDeps();
+        actDeps = actDeps.get(foreignKey.getName()).getDeps();
       }
-      tableDependency.columnDeps.add(column.getName());
     }
 
     public TableDependencies add(TableDependencies other) {
@@ -148,26 +138,23 @@ public class Dependencies {
         BooleanRule rule) {
       Ref reverseForeignKey = tableDependency.getForeignKey().getReverse();
       reverseForeignKeyChain.addFirst(reverseForeignKey);
-      for (String column : tableDependency.columnDeps) {
-        reverseForeignKey.getTable().addReverseRuleDependency(column, reverseForeignKeyChain, rule);
-      }
+      reverseForeignKey.getTable().addReverseRuleDependency(reverseForeignKeyChain, rule);
       for (TableDependency childDep : tableDependency.getDeps().values()) {
         LinkedList<Ref> newReverseForeignKeyChain = new LinkedList<>(reverseForeignKeyChain);
         addAllReverseRuleDependencies(childDep, newReverseForeignKeyChain, rule);
       }
     }
+
+    public ImmutableMap<String, TableDependency> getDeps() {
+      return ImmutableMap.copyOf(deps);
+    }
   }
 
-  @Data
-  public static class ColumnReverseRuleDependencies {
-    private final Map<String, Map<String, ReverseRuleDependency>> columnDeps = new HashMap<>();
+  public static class ReverseRuleDependencies {
+    private final Map<String, ReverseRuleDependency> deps = new HashMap<>();
 
-    public void addReverseRuleDependency(String column, Iterable<Ref> foreignKeyChain,
-        BooleanRule rule) {
-      if (!columnDeps.containsKey(column)) {
-        columnDeps.put(column, new HashMap<>());
-      }
-      Map<String, ReverseRuleDependency> actDeps = columnDeps.get(column);
+    public void addReverseRuleDependency(Iterable<Ref> foreignKeyChain, BooleanRule rule) {
+      Map<String, ReverseRuleDependency> actDeps = deps;
       Map<String, BooleanRule> rules = null;
       for (Ref foreignKey : foreignKeyChain) {
         if (!actDeps.containsKey(foreignKey.getName())) {
@@ -180,8 +167,8 @@ public class Dependencies {
       rules.put(rule.getName(), rule);
     }
 
-    public Collection<ReverseRuleDependency> allReverseRuleDepenencies() {
-      return columnDeps.values().stream().flatMap(r -> r.values().stream()).collect(Collectors.toList());
+    public Map<String, ReverseRuleDependency> getDeps() {
+      return deps;
     }
   }
 }

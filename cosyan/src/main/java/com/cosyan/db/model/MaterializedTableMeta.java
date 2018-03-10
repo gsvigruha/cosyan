@@ -13,7 +13,7 @@ import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
-import com.cosyan.db.model.Dependencies.ColumnReverseRuleDependencies;
+import com.cosyan.db.model.Dependencies.ReverseRuleDependencies;
 import com.cosyan.db.model.Dependencies.ReverseRuleDependency;
 import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.Dependencies.TableDependency;
@@ -42,7 +42,7 @@ public class MaterializedTableMeta {
   private final Map<String, ReverseForeignKey> reverseForeignKeys;
   private final Map<String, TableRef> refs;
   private TableDependencies ruleDependencies;
-  private ColumnReverseRuleDependencies reverseRuleDependencies;
+  private ReverseRuleDependencies reverseRuleDependencies;
   private Optional<ColumnMeta> partitioning;
   private long cnt;
 
@@ -58,7 +58,7 @@ public class MaterializedTableMeta {
     this.reverseForeignKeys = new HashMap<>();
     this.refs = new HashMap<>();
     this.ruleDependencies = new TableDependencies();
-    this.reverseRuleDependencies = new ColumnReverseRuleDependencies();
+    this.reverseRuleDependencies = new ReverseRuleDependencies();
     this.partitioning = Optional.empty();
     this.cnt = 0;
   }
@@ -113,7 +113,7 @@ public class MaterializedTableMeta {
     return Collections.unmodifiableMap(ruleDependencies.getDeps());
   }
 
-  public ColumnReverseRuleDependencies reverseRuleDependencies() {
+  public ReverseRuleDependencies reverseRuleDependencies() {
     return reverseRuleDependencies;
   }
 
@@ -164,9 +164,8 @@ public class MaterializedTableMeta {
     rule.getDeps().addAllReverseRuleDependencies(rule);
   }
 
-  public void addReverseRuleDependency(
-      String column, Iterable<Ref> reverseForeignKeyChain, BooleanRule rule) {
-    reverseRuleDependencies.addReverseRuleDependency(column, reverseForeignKeyChain, rule);
+  public void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, BooleanRule rule) {
+    reverseRuleDependencies.addReverseRuleDependency(reverseForeignKeyChain, rule);
   }
 
   public Optional<ColumnMeta> getPartitioning() {
@@ -206,8 +205,8 @@ public class MaterializedTableMeta {
 
   public MetaResources reverseRuleDependenciesReadResources() {
     MetaResources readResources = MetaResources.readTable(this);
-    for (Map<String, ReverseRuleDependency> dependencies : reverseRuleDependencies.getColumnDeps().values()) {
-      readResources = readResources.merge(readResources(dependencies.values()));
+    for (ReverseRuleDependency dependency : reverseRuleDependencies.getDeps().values()) {
+      readResources = readResources.merge(readResources(dependency));
     }
     return readResources;
   }

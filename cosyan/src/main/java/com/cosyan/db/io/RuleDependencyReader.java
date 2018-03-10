@@ -7,7 +7,7 @@ import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.meta.MetaRepo.RuleException;
-import com.cosyan.db.model.Dependencies.ColumnReverseRuleDependencies;
+import com.cosyan.db.model.Dependencies.ReverseRuleDependencies;
 import com.cosyan.db.model.Dependencies.ReverseRuleDependency;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Rule.BooleanRule;
@@ -16,16 +16,16 @@ import com.cosyan.db.transaction.Resources;
 public class RuleDependencyReader {
 
   private final Resources resources;
-  private final ColumnReverseRuleDependencies reverseRules;
+  private final ReverseRuleDependencies reverseRules;
 
-  public RuleDependencyReader(Resources resources, ColumnReverseRuleDependencies reverseRules) {
+  public RuleDependencyReader(Resources resources, ReverseRuleDependencies reverseRules) {
     this.resources = resources;
     this.reverseRules = reverseRules;
   }
 
   public void checkReferencingRules(Record record)
       throws IOException, RuleException {
-    checkReferencingRules(reverseRules.allReverseRuleDepenencies(), record);
+    checkReferencingRules(reverseRules.getDeps().values(), record);
   }
 
   private void checkReferencingRules(Collection<ReverseRuleDependency> collection, Record record)

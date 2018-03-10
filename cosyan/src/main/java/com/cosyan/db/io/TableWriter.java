@@ -22,7 +22,7 @@ import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.Dependencies.ColumnReverseRuleDependencies;
+import com.cosyan.db.model.Dependencies.ReverseRuleDependencies;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.Rule.BooleanRule;
@@ -45,7 +45,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   private final ImmutableMultimap<String, IndexReader> foreignIndexes;
   private final ImmutableMultimap<String, IndexReader> reversedForeignIndexes;
   private final ImmutableMap<String, BooleanRule> rules;
-  private final ColumnReverseRuleDependencies reverseRules;
+  private final ReverseRuleDependencies reverseRules;
   private final Optional<PrimaryKey> primaryKey;
 
   private final long fileIndex0;
@@ -62,7 +62,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       ImmutableMultimap<String, IndexReader> foreignIndexes,
       ImmutableMultimap<String, IndexReader> reversedForeignIndexes,
       ImmutableMap<String, BooleanRule> rules,
-      ColumnReverseRuleDependencies reverseRules,
+      ReverseRuleDependencies reverseRules,
       Optional<PrimaryKey> primaryKey) throws IOException {
     super(tableMeta);
     this.tableMeta = tableMeta;
