@@ -231,4 +231,26 @@ public class InsertIntoTest extends UnitTestBase {
     QueryResult r2 = query("select e, fk_d.fk_c.a from t23;");
     assertValues(new Object[][] { { 1L, "x" } }, r2);
   }
+
+  @Test
+  public void testRuleReferencingOtherMultiTable_GlobalTableDependency() throws Exception {
+    execute("create table t24 (a varchar, constraint pk_a primary key (a));");
+    execute("create table t25 (a varchar, constraint fk_a foreign key (a) references t24(a));");
+    // The rule does not reference any columns.
+    execute("alter table t24 add ref s select count(1) as c from rev_fk_a;");
+    execute("alter table t24 add constraint c_1 check (s.c <= 2);");
+
+    execute("insert into t24 values ('x');");
+    execute("insert into t25 values ('x'), ('x');");
+
+    {
+      QueryResult result = query("select fk_a.a from t25;");
+      assertHeader(new String[] { "a" }, result);
+      assertValues(new Object[][] { { "x" }, { "x" } }, result);
+    }
+    {
+      ErrorResult result = error("insert into t25 values ('x');");
+      assertError(RuleException.class, "Referencing constraint check t24.c_1 failed.", result);
+    }
+  }
 }

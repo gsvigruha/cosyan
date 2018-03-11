@@ -121,7 +121,7 @@ public class CreateStatementTest extends UnitTestBase {
 
     assertEquals(1, t11.ruleDependencies().size());
     assertEquals(0, t11.reverseRuleDependencies().getDeps().size());
-    assertEquals("fk_a", t11.ruleDependencies().get("fk_a").getForeignKey().getName());
+    assertEquals("fk_a", t11.ruleDependencies().get("fk_a").getRef().getName());
 
     MaterializedTableMeta t10 = metaRepo.table(new Ident("t10"));
     assertEquals(0, t10.ruleDependencies().size());

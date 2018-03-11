@@ -28,11 +28,11 @@ public class Dependencies {
 
   @Data
   public static class TableDependency implements TransitiveTableDependency {
-    private final Ref foreignKey;
+    private final Ref ref;
     private final Map<String, TableDependency> deps = new HashMap<>();
 
     public void merge(TableDependency other) {
-      assert this.foreignKey == other.foreignKey;
+      assert this.ref == other.ref;
       for (Map.Entry<String, TableDependency> entry : other.deps.entrySet()) {
         if (this.deps.containsKey(entry.getKey())) {
           this.deps.get(entry.getKey()).merge(entry.getValue());
@@ -44,32 +44,12 @@ public class Dependencies {
 
     @Override
     public MaterializedTableMeta table() {
-      return foreignKey.getRefTable();
+      return ref.getRefTable();
     }
 
     @Override
     public Iterable<? extends TransitiveTableDependency> childDeps() {
       return deps.values();
-    }
-  }
-
-  @Data
-  public static class ReverseRuleDependency implements TransitiveTableDependency {
-    private final Ref key;
-    private final Map<String, ReverseRuleDependency> deps = new HashMap<>();
-    private final Map<String, BooleanRule> rules = new HashMap<>();
-
-    @Override
-    public MaterializedTableMeta table() {
-      return key.getRefTable();
-    }
-
-    @Override
-    public Iterable<? extends TransitiveTableDependency> childDeps() {
-      return Iterables.concat(
-          deps.values(),
-          rules.values().stream().flatMap(rule -> rule.getDeps().getDeps().values().stream())
-              .collect(Collectors.toList()));
     }
   }
 
@@ -86,7 +66,7 @@ public class Dependencies {
       deps.put(reverseForeignKey.getName(), new TableDependency(reverseForeignKey));
       TableDependency tableDependency = deps.get(reverseForeignKey.getName());
       for (Map.Entry<String, TableDependency> other : tableDependencies.getDeps().entrySet()) {
-        if (other.getValue().getForeignKey().equals(reverseForeignKey)) {
+        if (other.getValue().getRef().equals(reverseForeignKey)) {
           deps.put(other.getKey(), other.getValue());
         } else {
           tableDependency.getDeps().put(other.getKey(), other.getValue());
@@ -94,7 +74,7 @@ public class Dependencies {
       }
     }
 
-    public void addTableDependency(ReferencedSimpleTableMeta table, BasicColumn column) {
+    public void addTableDependency(ReferencedSimpleTableMeta table) {
       Map<String, TableDependency> actDeps = deps;
       for (Ref foreignKey : table.foreignKeyChain()) {
         if (!actDeps.containsKey(foreignKey.getName())) {
@@ -104,7 +84,7 @@ public class Dependencies {
       }
     }
 
-    public void addTableDependency(ReferencedMultiTableMeta tableMeta, BasicColumn column) {
+    public void addTableDependency(ReferencedMultiTableMeta tableMeta) {
       Map<String, TableDependency> actDeps = deps;
       for (Ref foreignKey : tableMeta.foreignKeyChain()) {
         if (!actDeps.containsKey(foreignKey.getName())) {
@@ -114,7 +94,7 @@ public class Dependencies {
       }
     }
 
-    public TableDependencies add(TableDependencies other) {
+    public TableDependencies addToThis(TableDependencies other) {
       for (Map.Entry<String, TableDependency> entry : other.deps.entrySet()) {
         if (this.deps.containsKey(entry.getKey())) {
           this.deps.get(entry.getKey()).merge(entry.getValue());
@@ -136,9 +116,9 @@ public class Dependencies {
         TableDependency tableDependency,
         LinkedList<Ref> reverseForeignKeyChain,
         BooleanRule rule) {
-      Ref reverseForeignKey = tableDependency.getForeignKey().getReverse();
-      reverseForeignKeyChain.addFirst(reverseForeignKey);
-      reverseForeignKey.getTable().addReverseRuleDependency(reverseForeignKeyChain, rule);
+      Ref reverseRef = tableDependency.getRef().getReverse();
+      reverseForeignKeyChain.addFirst(reverseRef);
+      reverseRef.getTable().addReverseRuleDependency(reverseForeignKeyChain, rule);
       for (TableDependency childDep : tableDependency.getDeps().values()) {
         LinkedList<Ref> newReverseForeignKeyChain = new LinkedList<>(reverseForeignKeyChain);
         addAllReverseRuleDependencies(childDep, newReverseForeignKeyChain, rule);
@@ -147,6 +127,26 @@ public class Dependencies {
 
     public ImmutableMap<String, TableDependency> getDeps() {
       return ImmutableMap.copyOf(deps);
+    }
+  }
+
+  @Data
+  public static class ReverseRuleDependency implements TransitiveTableDependency {
+    private final Ref key;
+    private final Map<String, ReverseRuleDependency> deps = new HashMap<>();
+    private final Map<String, BooleanRule> rules = new HashMap<>();
+
+    @Override
+    public MaterializedTableMeta table() {
+      return key.getRefTable();
+    }
+
+    @Override
+    public Iterable<? extends TransitiveTableDependency> childDeps() {
+      return Iterables.concat(
+          deps.values(),
+          rules.values().stream().flatMap(rule -> rule.getDeps().getDeps().values().stream())
+              .collect(Collectors.toList()));
     }
   }
 

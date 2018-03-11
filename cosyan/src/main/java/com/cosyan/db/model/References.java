@@ -81,7 +81,7 @@ public class References {
         return null;
       }
       TableDependencies deps = new TableDependencies();
-      deps.addTableDependency(this, column);
+      deps.addTableDependency(this);
       return new IndexColumn(this, column.getIndex(), column.getType(), deps);
     }
 
@@ -145,8 +145,7 @@ public class References {
         return null;
       }
       TableDependencies deps = new TableDependencies();
-      deps.addTableDependency(this, column);
-      deps.addTableDependency(this, column);
+      deps.addTableDependency(this);
       return new IndexColumn(this, column.getIndex(), column.getType(), deps);
     }
 

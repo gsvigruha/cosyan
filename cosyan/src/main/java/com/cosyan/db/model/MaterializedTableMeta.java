@@ -160,7 +160,7 @@ public class MaterializedTableMeta {
   public void addRule(BooleanRule rule) throws ModelException {
     checkName(rule.name());
     rules.put(rule.name(), rule);
-    ruleDependencies.add(rule.getDeps());
+    ruleDependencies.addToThis(rule.getDeps());
     rule.getDeps().addAllReverseRuleDependencies(rule);
   }
 

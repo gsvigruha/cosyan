@@ -66,8 +66,10 @@ public class BinaryExpression extends Expression {
 
     @Override
     public TableDependencies tableDependencies() {
-      // Left and rightColumn is not used elsewhere so mutability is ok.
-      return leftColumn.tableDependencies().add(rightColumn.tableDependencies());
+      TableDependencies deps = new TableDependencies();
+      deps.addToThis(leftColumn.tableDependencies());
+      deps.addToThis(rightColumn.tableDependencies());
+      return deps;
     }
 
     protected abstract Object getValueImpl(Object left, Object right);
