@@ -335,6 +335,13 @@ public class TableReaderTest extends DummyTestBase {
   }
 
   @Test
+  public void testInnerJoinOnExpr() throws Exception {
+    ExposedTableReader reader = query("select count(1) as cnt from left inner join right on length(a) = length(x);");
+    assertEquals(ImmutableMap.of("cnt", 6L), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
   public void testLeftJoin() throws Exception {
     ExposedTableReader reader = query("select * from left left join right on a = x;");
     assertEquals(ImmutableMap.of("a", "a", "b", 1L, "x", "a", "y", 2L), reader.readColumns());

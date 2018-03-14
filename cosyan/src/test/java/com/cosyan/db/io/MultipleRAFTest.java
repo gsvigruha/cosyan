@@ -24,7 +24,8 @@ public class MultipleRAFTest {
     }
     for (int i = 0; i < 100; i++) {
       System.out.println(fs[i].read());
+      fs[i].close();
     }
-
+    f1.close();
   }
 }

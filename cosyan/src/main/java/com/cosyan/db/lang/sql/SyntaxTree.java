@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.meta.MetaRepo;
-import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.DataTypes.DataType;
