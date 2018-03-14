@@ -227,7 +227,9 @@ public class Parser {
   private RefDefinition parseRef(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.REF);
     Ident ident = parseIdent(tokens);
+    assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
     Select select = parseSelect(tokens);
+    assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
     return new RefDefinition(ident.getString(), select);
   }
 

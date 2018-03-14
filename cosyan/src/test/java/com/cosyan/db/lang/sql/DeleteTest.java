@@ -122,7 +122,7 @@ public class DeleteTest extends UnitTestBase {
   public void testDeleteReferencedByRules_MultiTable() throws Exception {
     execute("create table t8 (a varchar, constraint pk_a primary key (a));");
     execute("create table t9 (b varchar, c integer, constraint fk_a foreign key (b) references t8(a));");
-    execute("alter table t8 add ref s select sum(c) as sc from rev_fk_a;");
+    execute("alter table t8 add ref s (select sum(c) as sc from rev_fk_a);");
     execute("alter table t8 add constraint c_c check (s.sc > 1);");
 
     execute("insert into t8 values ('x');");
@@ -147,8 +147,8 @@ public class DeleteTest extends UnitTestBase {
         + "constraint pk_b primary key (b), "
         + "constraint fk_c foreign key (c) references t10(a));");
     execute("create table t12 (d varchar, e integer, constraint fk_d foreign key (d) references t11(b));");
-    execute("alter table t11 add ref s select sum(e) as se from rev_fk_d;");
-    execute("alter table t10 add ref s select sum(s.se) as sse from rev_fk_c;");
+    execute("alter table t11 add ref s (select sum(e) as se from rev_fk_d);");
+    execute("alter table t10 add ref s (select sum(s.se) as sse from rev_fk_c);");
     execute("alter table t10 add constraint c_c check (s.sse > 0);");
 
     execute("insert into t10 values ('x');");

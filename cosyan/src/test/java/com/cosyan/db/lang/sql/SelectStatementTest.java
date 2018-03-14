@@ -87,7 +87,7 @@ public class SelectStatementTest extends UnitTestBase {
   public void testReverseForeignKeys() {
     execute("create table t10 (a1 varchar, constraint pk_a primary key (a1));");
     execute("create table t11 (a2 varchar, b2 integer, constraint fk_a foreign key (a2) references t10(a1));");
-    execute("alter table t10 add ref s select sum(b2) as sb, count(b2) as cb from rev_fk_a;");
+    execute("alter table t10 add ref s (select sum(b2) as sb, count(b2) as cb from rev_fk_a);");
     execute("insert into t10 values ('x');");
     execute("insert into t11 values ('x', 1), ('x', 5);");
 
@@ -107,7 +107,7 @@ public class SelectStatementTest extends UnitTestBase {
     execute("create table t13 (a2 varchar, a3 varchar,"
         + "constraint fk_v foreign key (a2) references t12(a1),"
         + "constraint fk_w foreign key (a3) references t14(a4));");
-    execute("alter table t12 add ref s select sum(fk_w.b4) as sb from rev_fk_v;");
+    execute("alter table t12 add ref s (select sum(fk_w.b4) as sb from rev_fk_v);");
 
     execute("insert into t12 values ('x'), ('y');");
     execute("insert into t14 values ('a', 1), ('b', 5);");
@@ -116,5 +116,20 @@ public class SelectStatementTest extends UnitTestBase {
     QueryResult r1 = query("select a1, s.sb from t12;");
     assertHeader(new String[] { "a1", "sb" }, r1);
     assertValues(new Object[][] { { "x", 2L }, { "y", 5L } }, r1);
+  }
+
+  @Test
+  public void testReverseForeignKeyWithWhere() {
+    execute("create table t15 (a1 varchar, constraint pk_a primary key (a1));");
+    execute("create table t16 (a2 varchar, b2 integer, c2 integer,"
+        + "constraint fk_a foreign key (a2) references t15(a1));");
+    execute("alter table t15 add ref s (select sum(b2) as sb from rev_fk_a where c2 >= 2);");
+
+    execute("insert into t15 values ('x');");
+    execute("insert into t16 values ('x', 1, 1), ('x', 2, 2), ('x', 3, 3);");
+
+    QueryResult r1 = query("select a1, s.sb from t15;");
+    assertHeader(new String[] { "a1", "sb" }, r1);
+    assertValues(new Object[][] { { "x", 5L } }, r1);
   }
 }

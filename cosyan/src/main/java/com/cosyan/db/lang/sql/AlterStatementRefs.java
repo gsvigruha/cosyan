@@ -9,6 +9,8 @@ import com.cosyan.db.lang.sql.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.model.ColumnMeta;
+import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.DerivedTables.ReferencedDerivedTableMeta;
 import com.cosyan.db.model.Ident;
@@ -16,6 +18,7 @@ import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.References.ReferencedAggrTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.TableMeta;
+import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableRef;
 
 import lombok.Data;
@@ -35,11 +38,20 @@ public class AlterStatementRefs {
       if (!tableMeta.isEmpty()) {
         throw new ModelException(String.format("Cannot add ref to a non-empty table."));
       }
-      ReferencedMultiTableMeta srcTableMeta = (ReferencedMultiTableMeta) ref.getSelect().getTable().compile(tableMeta.reader());
+      ReferencedMultiTableMeta srcTableMeta = (ReferencedMultiTableMeta) ref.getSelect().getTable()
+          .compile(tableMeta.reader());
+      ExposedTableMeta derivedTable;
+      if (ref.getSelect().getWhere().isPresent()) {
+        ColumnMeta whereColumn = ref.getSelect().getWhere().get().compileColumn(srcTableMeta);
+        derivedTable = new FilteredTableMeta(srcTableMeta, whereColumn);
+      } else {
+        derivedTable = srcTableMeta;
+      }
       ReferencedAggrTableMeta aggrTable = new ReferencedAggrTableMeta(
           new KeyValueTableMeta(
-              srcTableMeta,
-              TableMeta.wholeTableKeys), srcTableMeta.getReverseForeignKey());
+              derivedTable,
+              TableMeta.wholeTableKeys),
+          srcTableMeta.getReverseForeignKey());
       // Columns have aggregations, recompile with an AggrTable.
       TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
       ReferencedDerivedTableMeta refTableMeta = new ReferencedDerivedTableMeta(
