@@ -24,6 +24,6 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
       execute("insert into t2 values ('abc" + j + "' ," + j + ");");
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with index one per transaction inserted in " + t);
+    System.out.println("Records with rules inserted in " + t);
   }
 }
