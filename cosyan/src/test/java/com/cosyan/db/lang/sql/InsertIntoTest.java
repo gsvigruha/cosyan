@@ -253,4 +253,26 @@ public class InsertIntoTest extends UnitTestBase {
       assertError(RuleException.class, "Referencing constraint check t24.c_1 failed.", result);
     }
   }
+
+  @Test
+  public void testRuleReferencingOtherMultiTable_Where() throws Exception {
+    execute("create table t26 (a varchar, constraint pk_a primary key (a));");
+    execute("create table t27 (a varchar, b integer, c integer, "
+        + "constraint fk_a foreign key (a) references t26(a));");
+    execute("alter table t26 add ref s (select sum(b) as sb from rev_fk_a where c = 2);");
+    execute("alter table t26 add constraint c_1 check (s.sb <= 2);");
+
+    execute("insert into t26 values ('x');");
+    execute("insert into t27 values ('x', 2, 2), ('x', 2, 1);");
+
+    {
+      QueryResult result = query("select fk_a.a, b, c from t27;");
+      assertHeader(new String[] { "a", "b", "c" }, result);
+      assertValues(new Object[][] { { "x", 2L, 2L }, { "x", 2L, 1L } }, result);
+    }
+    {
+      ErrorResult result = error("insert into t27 values ('x', 1, 2);");
+      assertError(RuleException.class, "Referencing constraint check t26.c_1 failed.", result);
+    }
+  }
 }
