@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.sql.Result.QueryResult;
+import com.cosyan.db.model.DataTypes;
 
 public class SelectStatementTest extends UnitTestBase {
 
@@ -131,5 +132,36 @@ public class SelectStatementTest extends UnitTestBase {
     QueryResult r1 = query("select a1, s.sb from t15;");
     assertHeader(new String[] { "a1", "sb" }, r1);
     assertValues(new Object[][] { { "x", 5L } }, r1);
+  }
+
+  @Test
+  public void testNullableForeignKey() {
+    execute("create table t17 (a1 varchar, constraint pk_a primary key (a1));");
+    execute("create table t18 (a2 varchar, b2 integer, constraint fk_a foreign key (a2) references t17(a1));");
+
+    execute("insert into t17 values ('x');");
+    execute("insert into t18 values ('x', 1);");
+    execute("insert into t18 (b2) values (2);");
+
+    QueryResult r1 = query("select a2, b2, fk_a.a1 from t18;");
+    assertHeader(new String[] { "a2", "b2", "a1" }, r1);
+    assertValues(new Object[][] {
+        { "x", 1L, "x" },
+        { DataTypes.NULL, 2L, DataTypes.NULL } }, r1);
+  }
+
+  @Test
+  public void testNullableReverseForeignKey() {
+    execute("create table t19 (a1 varchar, constraint pk_a primary key (a1));");
+    execute("create table t20 (a2 varchar, b2 integer, constraint fk_a foreign key (a2) references t19(a1));");
+    execute("alter table t19 add ref s (select sum(b2) as sb from rev_fk_a);");
+
+    execute("insert into t19 values ('x');");
+    execute("insert into t20 values ('x', 1);");
+    execute("insert into t20 (b2) values (2);");
+
+    QueryResult r1 = query("select a1, s.sb from t19;");
+    assertHeader(new String[] { "a1", "sb" }, r1);
+    assertValues(new Object[][] { { "x", 1L } }, r1);
   }
 }

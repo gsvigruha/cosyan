@@ -89,4 +89,24 @@ public class Literals {
       return String.valueOf(value);
     }
   }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class NullLiteral extends Expression implements Literal {
+
+    @Override
+    public DerivedColumn compile(TableMeta sourceTable) {
+      return new LiteralColumn(DataTypes.NULL, DataTypes.NULL);
+    }
+
+    @Override
+    public String print() {
+      return "null";
+    }
+
+    @Override
+    public Object getValue() {
+      return DataTypes.NULL;
+    }
+  }
 }

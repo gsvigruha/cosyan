@@ -99,14 +99,14 @@ public class TableWriter extends SeekableTableReader implements TableIO {
           throw new RuleException(e);
         }
       }
-      if (multiIndexes.containsKey(column.getName())) {
+      if (value != DataTypes.NULL && multiIndexes.containsKey(column.getName())) {
         try {
           multiIndexes.get(column.getName()).put(value, fileIndex);
         } catch (IndexException e) {
           throw new RuleException(e);
         }
       }
-      if (foreignIndexes.containsKey(column.getName())) {
+      if (value != DataTypes.NULL && foreignIndexes.containsKey(column.getName())) {
         for (IndexReader foreignIndex : foreignIndexes.get(column.getName())) {
           if (!foreignIndex.contains(value)) {
             throw new RuleException(String.format(

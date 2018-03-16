@@ -11,6 +11,7 @@ import com.cosyan.db.lang.expr.FuncCallExpression;
 import com.cosyan.db.lang.expr.Literals.DoubleLiteral;
 import com.cosyan.db.lang.expr.Literals.Literal;
 import com.cosyan.db.lang.expr.Literals.LongLiteral;
+import com.cosyan.db.lang.expr.Literals.NullLiteral;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAddColumn;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAlterColumn;
@@ -426,6 +427,9 @@ public class Parser {
     } else if (token.is(Tokens.ASTERISK)) {
       tokens.next();
       expr = new AsteriskExpression();
+    } else if (token.is(Tokens.NULL)) {
+      tokens.next();
+      expr = new NullLiteral();
     } else if (token.isIdent()) {
       Ident ident = new Ident(tokens.next().getString());
       expr = parseFuncCallExpression(ident, null, tokens);

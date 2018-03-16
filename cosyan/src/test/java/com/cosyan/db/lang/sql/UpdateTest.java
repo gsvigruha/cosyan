@@ -8,6 +8,7 @@ import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.sql.Result.ErrorResult;
 import com.cosyan.db.lang.sql.Result.QueryResult;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.TableIndex;
 import com.cosyan.db.model.TableMultiIndex;
@@ -290,5 +291,24 @@ public class UpdateTest extends UnitTestBase {
     assertEquals("Referencing constraint check t23.c_c failed.", e1.getError().getMessage());
     QueryResult r2 = query("select b, c, fk_a.a from t24;");
     assertValues(new Object[][] { { "x", 2L, "x" }, { "x", 2L, "x" } }, r2);
+  }
+
+  @Test
+  public void testUpdateForeignKeyToNull() {
+    execute("create table t25 (a1 varchar, b1 integer, constraint pk_a primary key (a1));");
+    execute("create table t26 (a2 varchar, b2 varchar, constraint fk_a foreign key (a2) references t25(a1));");
+
+    execute("insert into t25 values ('x', 1);");
+    execute("insert into t26 values ('x', 'a');");
+
+    QueryResult r1 = query("select a2, b2, fk_a.b1 from t26;");
+    assertHeader(new String[] { "a2", "b2", "b1" }, r1);
+    assertValues(new Object[][] { { "x", "a", 1L } }, r1);
+
+    execute("update t26 set a2 = null;");
+
+    QueryResult r2 = query("select a2, b2, fk_a.b1 from t26;");
+    assertHeader(new String[] { "a2", "b2", "b1" }, r2);
+    assertValues(new Object[][] { { DataTypes.NULL, "a", DataTypes.NULL } }, r2);
   }
 }

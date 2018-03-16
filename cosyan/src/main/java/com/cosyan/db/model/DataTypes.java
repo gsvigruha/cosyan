@@ -90,7 +90,11 @@ public class DataTypes {
     }
   };
 
-  public static final class NullType implements Comparable<Object> {
+  public static final class NullType extends DataType<Object> implements Comparable<Object> {
+    public NullType() {
+      super("null");
+    }
+
     @Override
     public boolean equals(Object o) {
       return o == NULL;
@@ -109,6 +113,11 @@ public class DataTypes {
     @Override
     public String toString() {
       return "null";
+    }
+
+    @Override
+    public DataType<?> toListType() throws ModelException {
+      throw new ModelException("Cannot create a list of nulls.");
     }
   }
 

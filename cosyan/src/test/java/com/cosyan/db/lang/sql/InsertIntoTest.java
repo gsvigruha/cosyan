@@ -275,4 +275,32 @@ public class InsertIntoTest extends UnitTestBase {
       assertError(RuleException.class, "Referencing constraint check t26.c_1 failed.", result);
     }
   }
+
+  @Test
+  public void testNullableForeignKeyInRule() {
+    execute("create table t28 (a1 varchar, b1 integer, constraint pk_a primary key (a1));");
+    execute("create table t29 (a2 varchar, b2 varchar,"
+        + "constraint fk_a foreign key (a2) references t28(a1),"
+        + "constraint c_1 check (fk_a.b1 > 0));");
+
+    execute("insert into t28 values ('x', 1);");
+    execute("insert into t29 values ('x', 'a');");
+    execute("insert into t29 (b2) values ('b');");
+
+    QueryResult r1 = query("select a2, b2, fk_a.b1 from t29;");
+    assertHeader(new String[] { "a2", "b2", "b1" }, r1);
+    assertValues(new Object[][] {
+        { "x", "a", 1L },
+        { DataTypes.NULL, "b", DataTypes.NULL } }, r1);
+  }
+
+  @Test
+  public void testInsertNull() {
+    execute("create table t30 (a1 varchar, b1 integer);");
+    execute("insert into t30 values ('x', null);");
+
+    QueryResult r1 = query("select a1, b1 from t30;");
+    assertHeader(new String[] { "a1", "b1" }, r1);
+    assertValues(new Object[][] { { "x", DataTypes.NULL } }, r1);
+  }
 }

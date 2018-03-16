@@ -1,6 +1,7 @@
 package com.cosyan.db.model;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 
 import javax.annotation.Nullable;
@@ -106,10 +107,16 @@ public class References {
     public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
       Object[] parentValues = parent.values(sourceValues, resources);
       Object key = parentValues[foreignKey.getColumn().getIndex()];
-      IndexReader index = resources.getIndex(foreignKey);
-      long filePointer = index.get(key)[0];
-      SeekableTableReader reader = resources.reader(foreignKey.getRefTable().tableName());
-      return reader.get(filePointer).getValues();
+      if (key == DataTypes.NULL) {
+        Object[] values = new Object[foreignKey.getRefTable().columns().size()];
+        Arrays.fill(values, DataTypes.NULL);
+        return values;
+      } else {
+        IndexReader index = resources.getIndex(foreignKey);
+        long filePointer = index.get(key)[0];
+        SeekableTableReader reader = resources.reader(foreignKey.getRefTable().tableName());
+        return reader.get(filePointer).getValues();
+      }
     }
 
     @Override
