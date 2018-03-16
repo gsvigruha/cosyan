@@ -1,5 +1,7 @@
 package com.cosyan.db.lang.sql;
 
+import java.util.StringJoiner;
+
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
@@ -21,6 +23,23 @@ public abstract class Result {
       super(true);
       this.header = ImmutableList.copyOf(header);
       this.values = ImmutableList.copyOf(values);
+    }
+
+    public String prettyPrint() {
+      StringBuilder sb = new StringBuilder();
+      StringJoiner sj = new StringJoiner(",");
+      for (String col : header) {
+        sj.add(col);
+      }
+      sb.append(sj.toString()).append("\n");
+      for (ImmutableList<Object> row : values) {
+        StringJoiner vsj = new StringJoiner(",");
+        for (Object obj : row) {
+          vsj.add(obj.toString());
+        }
+        sb.append(vsj.toString()).append("\n");
+      }
+      return sb.toString();
     }
   }
 
