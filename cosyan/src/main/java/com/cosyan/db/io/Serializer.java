@@ -108,7 +108,7 @@ public class Serializer {
 
   public static byte[] serialize(Object[] values, ImmutableList<BasicColumn> columns)
       throws IOException {
-    ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
+    ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
     serialize(values, columns, bos);
     return bos.toByteArray();
   }

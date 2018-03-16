@@ -9,7 +9,7 @@ import com.cosyan.db.lang.sql.Result.QueryResult;
 public class InsertIntoLargeTest extends UnitTestBase {
 
   @Test
-  @Ignore
+  //@Ignore
   public void testInsertIntoTable() throws Exception {
     execute("create table t1 (a varchar, b integer, c float);");
     long t = System.currentTimeMillis();
