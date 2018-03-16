@@ -129,4 +129,8 @@ public abstract class UnitTestBase {
     assertEquals(clss, result.getError().getClass());
     assertEquals(message, result.getError().getMessage());
   }
+  
+  protected String speed(long t, long n) {
+    return String.format("(%.2f records per sec)", (n * 1000.0) / t);
+  }
 }

@@ -17,7 +17,7 @@ public class InsertStatementPerformanceTest extends UnitTestBase {
       execute("insert into t1 values ('abc" + i + "' ," + i + ");");
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with index one per transaction inserted in " + t);
+    System.out.println("Records with index one per transaction inserted in " + t + " " + speed(t, N));
   }
 
   @Test
@@ -28,7 +28,7 @@ public class InsertStatementPerformanceTest extends UnitTestBase {
       execute("insert into t2 values ('abc" + i + "' ," + i + ");");
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records without index one per transaction inserted in " + t);
+    System.out.println("Records without index one per transaction inserted in " + t + " " + speed(t, N));
   }
 
   @Test
@@ -47,7 +47,7 @@ public class InsertStatementPerformanceTest extends UnitTestBase {
       execute(sb.toString());
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with index many per transaction inserted in " + t);
+    System.out.println("Records with index many per transaction inserted in " + t + " " + speed(t, N));
   }
 
   @Test
@@ -66,6 +66,6 @@ public class InsertStatementPerformanceTest extends UnitTestBase {
       execute(sb.toString());
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records without index many per transaction inserted in " + t);
+    System.out.println("Records without index many per transaction inserted in " + t + " " + speed(t, N));
   }
 }

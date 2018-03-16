@@ -19,7 +19,7 @@ public class SelectStatementPerformanceTest extends UnitTestBase {
       execute("insert into t1 values ('abc" + i + "' ," + i + ");");
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with index inserted in " + t);
+    System.out.println("Records with index inserted in " + t + " " + speed(t, N));
     t = System.currentTimeMillis();
     Random random = new Random();
     for (int i = 0; i < N; i++) {
@@ -28,7 +28,7 @@ public class SelectStatementPerformanceTest extends UnitTestBase {
       assertValues(new Object[][] { { "abc" + r, (long) r } }, result);
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with index queried in " + t);
+    System.out.println("Records with index queried in " + t + " " + speed(t, N));
   }
 
   @Test
@@ -39,7 +39,7 @@ public class SelectStatementPerformanceTest extends UnitTestBase {
       execute("insert into t2 values ('abc" + i + "' ," + i + ");");
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records without index inserted in " + t);
+    System.out.println("Records without index inserted in " + t + " " + speed(t, N));
     t = System.currentTimeMillis();
     Random random = new Random();
     for (int i = 0; i < N; i++) {
@@ -48,6 +48,6 @@ public class SelectStatementPerformanceTest extends UnitTestBase {
       assertValues(new Object[][] { { "abc" + r, (long) r } }, result);
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records without index queried in " + t);
+    System.out.println("Records without index queried in " + t + " " + speed(t, N));
   }
 }

@@ -21,7 +21,7 @@ public class DeleteStatementPerformanceTest extends UnitTestBase {
       execute("insert into t1 values ('abc" + i + "' ," + i + ");");
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with index inserted in " + t);
+    System.out.println("Records with index inserted in " + t + " " + speed(t, N));
     t = System.currentTimeMillis();
     Random random = new Random();
     int deleted = 0;
@@ -32,7 +32,7 @@ public class DeleteStatementPerformanceTest extends UnitTestBase {
     }
     assertTrue(deleted > N / 2);
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with index deleted in " + t);
+    System.out.println("Records with index deleted in " + t + " " + speed(t, N));
   }
 
   @Test
@@ -43,7 +43,7 @@ public class DeleteStatementPerformanceTest extends UnitTestBase {
       execute("insert into t2 values ('abc" + i + "' ," + i + ");");
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records without index inserted in " + t);
+    System.out.println("Records without index inserted in " + t + " " + speed(t, N));
     t = System.currentTimeMillis();
     Random random = new Random();
     int deleted = 0;
@@ -54,6 +54,6 @@ public class DeleteStatementPerformanceTest extends UnitTestBase {
     }
     assertTrue(deleted > N / 2);
     t = System.currentTimeMillis() - t;
-    System.out.println("Records without index deleted in " + t);
+    System.out.println("Records without index deleted in " + t + " " + speed(t, N));
   }
 }
