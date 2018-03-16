@@ -27,7 +27,9 @@ public class DocTest extends UnitTestBase {
 
   @Test
   public void testDocs() throws IOException {
-    File file = new File(getClass().getClassLoader().getResource("doc/rules/foreign_keys.md").getFile());
+    String fileName = "doc/rules/foreign_keys.md";
+    System.out.print("Testing doc " + fileName + ": ");
+    File file = new File(getClass().getClassLoader().getResource(fileName).getFile());
     BufferedReader reader = new BufferedReader(new FileReader(file));
     String line;
     while ((line = reader.readLine()) != null) {
@@ -36,11 +38,14 @@ public class DocTest extends UnitTestBase {
       } else if (line.equals("<!-- TEST -->")) {
         QueryResult result = query(readCode(reader));
         assertEquals(readCode(reader), result.prettyPrint());
+        System.out.print(".");
       } else if (line.equals("<!-- ERROR -->")) {
         ErrorResult error = error(readCode(reader));
         assertEquals(readCode(reader).trim(), error.getError().getMessage().trim());
+        System.out.print(".");
       }
     }
     reader.close();
+    System.out.println("\nDoc test " + fileName + " passed.");
   }
 }

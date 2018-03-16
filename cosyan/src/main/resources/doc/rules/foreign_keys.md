@@ -1,5 +1,6 @@
-# Use foreign keys to look up data.
+# Use foreign keys to reference lookup tables
 
+Let's create a customer table:
 <!-- RUN -->
 ```
 create table customer (
@@ -9,6 +10,8 @@ create table customer (
   constraint pk_id primary key (id));
 ```
 
+Let's create a transaction table with a foreign key to the customer table and a rule
+testing that only adults buy alcohol.
 <!-- RUN -->
 ```
 create table transaction (
@@ -19,12 +22,15 @@ create table transaction (
   constraint c_adult check (not (category = 'alcohol') or customer.age >= 21));
 ```
 
+Let's add two customers, one adult and one under age.
 <!-- RUN -->
 ```
 insert into customer values (1, 'Adam', 25), (2, 'Bob', 16);
 insert into transaction values ('food', 1.0, 2), ('alcohol', 1.0, 1);
 ```
 
+Querying the table shows that both transactions are added. Columns from the customer
+table can be referred directly using the `customer` foreign key.
 <!-- TEST -->
 ```
 select category, amount, customer.age from transaction;
@@ -35,6 +41,7 @@ food,1.0,16
 alcohol,1.0,25
 ```
 
+Adding a transaction with under age Bob buying alcohol should fail.
 <!-- ERROR -->
 ```
 insert into transaction values ('alcohol', 1.0, 2);
