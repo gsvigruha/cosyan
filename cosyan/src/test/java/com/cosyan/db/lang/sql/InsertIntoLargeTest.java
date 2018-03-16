@@ -9,11 +9,11 @@ import com.cosyan.db.lang.sql.Result.QueryResult;
 public class InsertIntoLargeTest extends UnitTestBase {
 
   @Test
-  //@Ignore
+  @Ignore
   public void testInsertIntoTable() throws Exception {
     execute("create table t1 (a varchar, b integer, c float);");
     long t = System.currentTimeMillis();
-    for (int i = 0; i < 5000; i++) {
+    for (int i = 0; i < 1000; i++) {
       StringBuilder sb = new StringBuilder();
       sb.append("insert into t1 values ('abcdefghijkl', 123456789, 2.0)");
       for (int j = 0; j < 999; j++) {

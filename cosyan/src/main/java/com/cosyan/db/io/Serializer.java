@@ -117,12 +117,12 @@ public class Serializer {
       throws IOException {
     DataOutputStream stream = new DataOutputStream(out);
     stream.writeByte(1);
-    ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
+    ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
     DataOutputStream recordStream = new DataOutputStream(bos);
-    int i = 0;
-    for (BasicColumn column : columns) {
+    for (int i = 0; i < columns.size(); i++) {
+      BasicColumn column = columns.get(i);
       if (!column.isDeleted()) {
-        Serializer.writeColumn(values[i++], column.getType(), recordStream);
+        Serializer.writeColumn(values[i], column.getType(), recordStream);
       } else {
         recordStream.writeByte(0);
       }
