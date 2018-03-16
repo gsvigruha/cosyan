@@ -11,7 +11,7 @@ import com.cosyan.db.lang.sql.Result.StatementResult;
 
 public class DeleteStatementPerformanceTest extends UnitTestBase {
 
-  private static final int N = 5000;
+  private static final int N = 20000;
 
   @Test
   public void testDeleteWithWhereIndexed() {

@@ -7,7 +7,7 @@ import com.cosyan.db.UnitTestBase;
 public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
 
   private static final int N1 = 1000;
-  private static final int N2 = 10000;
+  private static final int N2 = 20000;
 
   @Test
   public void testInsertWithLookupTable() {
