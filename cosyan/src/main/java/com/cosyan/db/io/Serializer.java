@@ -119,10 +119,10 @@ public class Serializer {
     stream.writeByte(1);
     ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
     DataOutputStream recordStream = new DataOutputStream(bos);
-    for (int i = 0; i < columns.size(); i++) {
-      BasicColumn column = columns.get(i);
+    int i = 0;
+    for (BasicColumn column : columns) {
       if (!column.isDeleted()) {
-        Serializer.writeColumn(values[i], column.getType(), recordStream);
+        Serializer.writeColumn(values[i++], column.getType(), recordStream);
       } else {
         recordStream.writeByte(0);
       }
