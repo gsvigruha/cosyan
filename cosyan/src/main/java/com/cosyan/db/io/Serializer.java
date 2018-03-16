@@ -1,6 +1,5 @@
 package com.cosyan.db.io;
 
-import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
