@@ -24,7 +24,7 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
       execute("insert into t2 values ('abc" + j + "' ," + j + ");");
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with lookup rules inserted in " + t + " "+ speed(t, N2));
+    System.out.println("Records with lookup rules inserted in " + t + " " + speed(t, N2));
   }
 
   @Test
@@ -45,5 +45,23 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
     }
     t = System.currentTimeMillis() - t;
     System.out.println("Records with aggregating rules inserted in " + t + " " + speed(t, N2));
+  }
+
+  @Test
+  public void testInsertWithLookupTable_MultipleFields() {
+    execute("create table t5 (a varchar, b integer, c integer, d integer, constraint pk_a primary key (a));");
+    for (int i = 0; i < N1; i++) {
+      execute("insert into t5 values ('abc" + i + "' ," + i + ", " + i + ", " + i + ");");
+    }
+    execute("create table t6 (a varchar, "
+        + "constraint fk_a foreign key (a) references t5(a),"
+        + "constraint c_1 check (fk_a.b * 2 = fk_a.c + fk_a.d));");
+    long t = System.currentTimeMillis();
+    for (int i = 0; i < N2; i++) {
+      int j = i % N1;
+      execute("insert into t6 values ('abc" + j + "');");
+    }
+    t = System.currentTimeMillis() - t;
+    System.out.println("Records with lookup rules inserted in " + t + " " + speed(t, N2));
   }
 }
