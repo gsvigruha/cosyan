@@ -32,7 +32,6 @@ public class RuleDependencyReader {
       throws IOException, RuleException {
     for (ReverseRuleDependency dep : collection) {
       Ref ref = dep.getKey();
-
       Object[] newSourceValues = record.getValues();
       Object key = newSourceValues[ref.getColumn().getIndex()];
       IndexReader index = resources.getIndex(ref);
