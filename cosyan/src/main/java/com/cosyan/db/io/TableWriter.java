@@ -1,5 +1,6 @@
 package com.cosyan.db.io;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.LinkedHashSet;
@@ -133,9 +134,11 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   public void commit() throws IOException {
     try {
       file.seek(fileIndex0);
+      ByteArrayOutputStream b = new ByteArrayOutputStream(1024);
       for (byte[] data : recordsToInsert.values()) {
-        file.write(data);
+        b.write(data);
       }
+      file.write(b.toByteArray());
       for (Long pos : recordsToDelete) {
         file.seek(pos);
         file.writeByte(0);
