@@ -493,6 +493,14 @@ public class TableReaderTest extends DummyTestBase {
     assertEquals(null, reader.readColumns());
   }
 
+  @Test
+  public void testCase() throws Exception {
+    ExposedTableReader reader = query("select case when a = 'abc' then b else c end as a from table;");
+    assertEquals(ImmutableMap.of("a", 1L), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", 6.7), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
   @Test(expected = ModelException.class)
   public void testAggrInAggr() throws Exception {
     query("select sum(sum(b)) from large;");

@@ -100,6 +100,16 @@ public class Tokens {
 
   public static String AS = "as";
 
+  public static String CASE = "case";
+
+  public static String WHEN = "when";
+
+  public static String THEN = "then";
+
+  public static String ELSE = "else";
+
+  public static String END = "end";
+
   public static char SPACE = ' ';
 
   public static char TAB = '\t';

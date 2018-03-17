@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.cosyan.db.lang.expr.BinaryExpression;
+import com.cosyan.db.lang.expr.CaseExpression;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.Expression.UnaryExpression;
 import com.cosyan.db.lang.expr.FuncCallExpression;
@@ -430,6 +431,8 @@ public class Parser {
     } else if (token.is(Tokens.NULL)) {
       tokens.next();
       expr = new NullLiteral();
+    } else if (token.is(Tokens.CASE)) {
+      expr = parseCase(tokens);
     } else if (token.isIdent()) {
       Ident ident = new Ident(tokens.next().getString());
       expr = parseFuncCallExpression(ident, null, tokens);
@@ -452,6 +455,22 @@ public class Parser {
     } else {
       return expr;
     }
+  }
+
+  private Expression parseCase(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.CASE);
+    ImmutableList.Builder<Expression> conditions = ImmutableList.builder();
+    ImmutableList.Builder<Expression> values = ImmutableList.builder();
+    while (tokens.peek().is(Tokens.WHEN)) {
+      tokens.next();
+      conditions.add(parseExpression(tokens));
+      assertNext(tokens, Tokens.THEN);
+      values.add(parseExpression(tokens));
+    }
+    assertNext(tokens, Tokens.ELSE);
+    Expression elseValue = parseExpression(tokens);
+    assertNext(tokens, Tokens.END);
+    return new CaseExpression(conditions.build(), values.build(), elseValue);
   }
 
   private FuncCallExpression parseFuncCallExpression(Ident ident, Expression parent, PeekingIterator<Token> tokens)
