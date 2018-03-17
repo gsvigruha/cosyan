@@ -1,5 +1,8 @@
 # Use reverse foreign keys to reference multiple records
 
+Foreign keys define a many to one connection, but every foreign key implicitly
+defines a reverse one to many connection as well. This can be exploited to define
+views and rules for aggregates.
 
 Let's create a product type table.
 <!-- RUN -->
