@@ -47,5 +47,5 @@ Adding a transaction with under age Bob buying alcohol should fail.
 insert into transaction values ('alcohol', 1.0, 2);
 ```
 ```
-Constraint check c_adult failed: ((category = 'alcohol') impl (customer.age >= 21)).
+Constraint check c_adult failed.
 ```

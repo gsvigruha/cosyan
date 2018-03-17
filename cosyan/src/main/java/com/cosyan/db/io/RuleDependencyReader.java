@@ -41,8 +41,8 @@ public class RuleDependencyReader {
         for (BooleanRule rule : dep.getRules().values()) {
           if (!rule.check(resources, pointer)) {
             throw new RuleException(
-                String.format("Referencing constraint check %s.%s failed: %s.",
-                    rule.getTable().tableName(), rule.name(), rule.print(resources, pointer)));
+                String.format("Referencing constraint check %s.%s failed.",
+                    rule.getTable().tableName(), rule.name()));
           }
         }
         SeekableTableReader reader = resources.reader(ref.getRefTable().tableName());
