@@ -52,5 +52,4 @@ public class TreeMapInputStream extends SeekableInputStream {
       return read();
     }
   }
-
 }

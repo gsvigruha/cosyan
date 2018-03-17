@@ -10,8 +10,10 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
+import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.lang.sql.Result.ErrorResult;
 import com.cosyan.db.lang.sql.Result.QueryResult;
+import com.cosyan.db.meta.MetaRepo.ModelException;
 
 public class DocTest extends UnitTestBase {
 
@@ -25,9 +27,7 @@ public class DocTest extends UnitTestBase {
     return sb.toString();
   }
 
-  @Test
-  public void testDocs() throws IOException {
-    String fileName = "doc/rules/foreign_keys.md";
+  private void runDocFile(String fileName) throws IOException {
     System.out.print("Testing doc " + fileName + ": ");
     File file = new File(getClass().getClassLoader().getResource(fileName).getFile());
     BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -47,5 +47,17 @@ public class DocTest extends UnitTestBase {
     }
     reader.close();
     System.out.println("\nDoc test " + fileName + " passed.");
+  }
+
+  @Test
+  public void testForeignKeys() throws IOException, ModelException, ParserException {
+    setUp();
+    runDocFile("doc/rules/foreign_keys.md");
+  }
+
+  @Test
+  public void testReverseForeignKeys() throws IOException, ModelException, ParserException {
+    setUp();
+    runDocFile("doc/rules/reverse_foreign_keys.md");
   }
 }

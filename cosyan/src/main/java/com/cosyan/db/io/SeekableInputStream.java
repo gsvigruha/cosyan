@@ -64,7 +64,7 @@ public abstract class SeekableInputStream extends InputStream {
       actStream = streams.get(0);
       while (position >= actStream.length()) {
         if (i == streams.size() - 1) {
-          throw new IOException("Position out of range.");
+          throw new IOException("Position " + position + " out of range.");
         }
         position -= actStream.length();
         actStream = streams.get(++i);

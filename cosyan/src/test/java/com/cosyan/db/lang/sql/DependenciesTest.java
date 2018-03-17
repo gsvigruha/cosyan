@@ -85,4 +85,28 @@ public class DependenciesTest extends UnitTestBase {
     assertEquals("rev_fk_a_1", t5.reverseRuleDependencies().getDeps().get("rev_fk_a_1").getKey().getName());
     assertEquals("rev_fk_a_2", t5.reverseRuleDependencies().getDeps().get("rev_fk_a_2").getKey().getName());
   }
+
+  @Test
+  public void testCreateReferencingRule_MultipleLevels() throws Exception {
+    execute("create table t7 (a1 varchar, constraint pk_a primary key (a1));");
+    execute("create table t8 (a2 varchar, b2 varchar, "
+        + "constraint pk_a primary key (a2),"
+        + "constraint fk_b2 foreign key (b2) references t7(a1));");
+    execute("create table t9 (b3 varchar, constraint fk_b3 foreign key (b3) references t8(a2));");
+    execute("alter table t8 add ref s (select sum(1) as s from rev_fk_b3));");
+    execute("alter table t7 add ref s (select sum(s.s) as s from rev_fk_b2));");
+    execute("alter table t7 add constraint c check (s.s <= 10);");
+
+    MaterializedTableMeta t7 = metaRepo.table(new Ident("t7"));
+    assertEquals(1, t7.ruleDependencies().size());
+    assertEquals(0, t7.reverseRuleDependencies().getDeps().size());
+
+    MaterializedTableMeta t8 = metaRepo.table(new Ident("t8"));
+    assertEquals(0, t8.ruleDependencies().size());
+    assertEquals(1, t8.reverseRuleDependencies().getDeps().size());
+
+    MaterializedTableMeta t9 = metaRepo.table(new Ident("t9"));
+    assertEquals(0, t9.ruleDependencies().size());
+    assertEquals(1, t9.reverseRuleDependencies().getDeps().size());
+  }
 }

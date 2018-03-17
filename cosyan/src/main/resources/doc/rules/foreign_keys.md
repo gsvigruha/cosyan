@@ -39,7 +39,7 @@ create table transaction (
 ```
 For the second rule we add two constraints, one checking that the customer _has_ an account
 and one to check the account type. This is needed because of the way SQL handles expressions
-with `null`-s in them. Another way to handle this with one constraint would be
+with `null`s in them. Another way to handle this with one constraint would be
 `amount >= 100 impl case when customer.membership.type is null then false else customer.membership.type = 'gold' end`.
 
 Let's add two customers with some transactions, one adult and one under age. Neither of them

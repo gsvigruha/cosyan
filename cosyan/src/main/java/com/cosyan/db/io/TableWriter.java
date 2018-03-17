@@ -116,7 +116,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       }
     }
     byte[] data = Serializer.serialize(values, columns);
-    recordsToInsert.put(actFileIndex, data);
+    recordsToInsert.put(fileIndex, data);
     actFileIndex += data.length;
     for (Map.Entry<String, BooleanRule> rule : rules.entrySet()) {
       if (!rule.getValue().check(resources, fileIndex)) {

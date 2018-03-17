@@ -38,10 +38,13 @@ public class RuleDependencyReader {
       long[] pointers = index.get(key);
       for (long pointer : pointers) {
         for (BooleanRule rule : dep.getRules().values()) {
-          if (!rule.check(resources, pointer)) {
-            throw new RuleException(
-                String.format("Referencing constraint check %s.%s failed.",
-                    rule.getTable().tableName(), rule.name()));
+          if (rule.getTable().tableName().equals(ref.getRefTable().tableName())) {
+            // TODO: investigate this. Why do we have extra rules here?
+            if (!rule.check(resources, pointer)) {
+              throw new RuleException(
+                  String.format("Referencing constraint check %s.%s failed.",
+                      rule.getTable().tableName(), rule.name()));
+            }
           }
         }
         SeekableTableReader reader = resources.reader(ref.getRefTable().tableName());

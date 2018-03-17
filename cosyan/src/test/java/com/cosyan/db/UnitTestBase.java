@@ -45,11 +45,11 @@ public abstract class UnitTestBase {
     Result result = session.execute(sql);
     if (result instanceof ErrorResult) {
       ((ErrorResult) result).getError().printStackTrace();
-      fail();
+      fail(sql);
     }
     if (result instanceof CrashResult) {
       ((CrashResult) result).getError().printStackTrace();
-      fail();
+      fail(sql);
     }
   }
 
@@ -61,7 +61,11 @@ public abstract class UnitTestBase {
     Result result = session.execute(sql);
     if (result instanceof CrashResult) {
       ((CrashResult) result).getError().printStackTrace();
-      fail();
+      fail(sql);
+    }
+    if (result instanceof TransactionResult) {
+      System.err.println("Query '" + sql + "' did not produce an error.");
+      fail(sql);
     }
     return (ErrorResult) result;
   }
