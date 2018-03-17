@@ -1,6 +1,7 @@
 package com.cosyan.db.lang.expr;
 
 import java.io.IOException;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
@@ -94,6 +95,15 @@ public class FuncCallExpression extends Expression {
           }
         }
         return function.call(params);
+      }
+
+      @Override
+      public String print(Object[] values, Resources resources) throws IOException {
+        StringJoiner sj = new StringJoiner(", ");
+        for (ColumnMeta column : argColumns) {
+          sj.add(column.print(values, resources));
+        }
+        return function.getIdent() + "(" + sj.toString() + ")";
       }
     };
   }

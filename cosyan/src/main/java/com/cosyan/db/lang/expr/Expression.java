@@ -56,6 +56,11 @@ public abstract class Expression extends Node {
           public Object value(Object[] values, Resources resources) throws IOException {
             return !((Boolean) exprColumn.value(values, resources));
           }
+
+          @Override
+          public String print(Object[] values, Resources resources) throws IOException {
+            return "not " + exprColumn.print(values, resources);
+          }
         };
       } else if (token.is(Tokens.ASC)) {
         ColumnMeta exprColumn = expr.compileColumn(sourceTable);
@@ -74,6 +79,11 @@ public abstract class Expression extends Node {
           public Object value(Object[] values, Resources resources) throws IOException {
             return exprColumn.value(values, resources) != DataTypes.NULL;
           }
+
+          @Override
+          public String print(Object[] values, Resources resources) throws IOException {
+            return exprColumn.print(values, resources) + " is not null";
+          }
         };
       } else if (token.is(Token.concat(Tokens.IS, Tokens.NULL).getString())) {
         ColumnMeta exprColumn = expr.compileColumn(sourceTable);
@@ -85,6 +95,11 @@ public abstract class Expression extends Node {
           @Override
           public Object value(Object[] values, Resources resources) throws IOException {
             return exprColumn.value(values, resources) == DataTypes.NULL;
+          }
+
+          @Override
+          public String print(Object[] values, Resources resources) throws IOException {
+            return exprColumn.print(values, resources) + " is null";
           }
         };
       } else {

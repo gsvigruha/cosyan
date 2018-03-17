@@ -60,6 +60,13 @@ public class BinaryExpression extends Expression {
     }
 
     @Override
+    public String print(Object[] values, Resources resources) throws IOException {
+      String l = leftColumn.print(values, resources);
+      String r = rightColumn.print(values, resources);
+      return "(" + l + " " + token + " " + r + ")";
+    }
+
+    @Override
     public MetaResources readResources() {
       return leftColumn.readResources().merge(rightColumn.readResources());
     }

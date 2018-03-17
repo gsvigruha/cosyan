@@ -17,6 +17,8 @@ public abstract class ColumnMeta implements CompiledObject {
 
   public abstract Object value(Object[] values, Resources resources) throws IOException;
 
+  public abstract String print(Object[] values, Resources resources) throws IOException;
+
   public abstract TableDependencies tableDependencies();
 
   public abstract MetaResources readResources();
@@ -40,6 +42,11 @@ public abstract class ColumnMeta implements CompiledObject {
     @Override
     public Object value(Object[] values, Resources resources) throws IOException {
       return sourceTable.values(values, resources)[index];
+    }
+
+    @Override
+    public String print(Object[] values, Resources resources) throws IOException {
+      return String.valueOf(sourceTable.values(values, resources)[index]);
     }
 
     @Override
@@ -106,8 +113,13 @@ public abstract class ColumnMeta implements CompiledObject {
     }
 
     @Override
-    public Object value(Object[] sourceValues, Resources resources) throws IOException {
-      return sourceTable.values(sourceValues, resources)[index];
+    public Object value(Object[] values, Resources resources) throws IOException {
+      return sourceTable.values(values, resources)[index];
+    }
+
+    @Override
+    public String print(Object[] values, Resources resources) throws IOException {
+      return String.valueOf(sourceTable.values(values, resources)[index]);
     }
 
     public Object getInnerValue(Object[] values, Resources resources) throws IOException {
@@ -146,6 +158,11 @@ public abstract class ColumnMeta implements CompiledObject {
     }
 
     @Override
+    public String print(Object[] values, Resources resources) throws IOException {
+      return "order by " + baseColumn.print(values, resources) + (asc ? " asc" : " desc");
+    }
+
+    @Override
     public MetaResources readResources() {
       return baseColumn.readResources();
     }
@@ -166,6 +183,11 @@ public abstract class ColumnMeta implements CompiledObject {
     @Override
     public Object value(Object[] values, Resources resources) {
       return true;
+    }
+
+    @Override
+    public String print(Object[] values, Resources resources) throws IOException {
+      return "true";
     }
 
     @Override

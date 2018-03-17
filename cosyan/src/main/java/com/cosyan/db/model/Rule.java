@@ -85,5 +85,9 @@ public class Rule {
       }
       return (boolean) check;
     }
+
+    public String print(Resources resources, long fileIndex) throws IOException {
+      return getExpr().print();
+    }
   }
 }

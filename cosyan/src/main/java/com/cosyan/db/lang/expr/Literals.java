@@ -1,5 +1,7 @@
 package com.cosyan.db.lang.expr;
 
+import java.io.IOException;
+
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
@@ -15,20 +17,27 @@ public class Literals {
 
   public static interface Literal {
     public Object getValue();
+
+    public String print();
   }
 
   private static class LiteralColumn extends DerivedColumn {
 
-    private Object value;
+    private Literal literal;
 
-    public LiteralColumn(DataType<?> type, Object value) {
+    public LiteralColumn(DataType<?> type, Literal literal) {
       super(type);
-      this.value = value;
+      this.literal = literal;
     }
 
     @Override
     public Object value(Object[] values, Resources resources) {
-      return value;
+      return literal.getValue();
+    }
+
+    @Override
+    public String print(Object[] values, Resources resources) throws IOException {
+      return literal.print();
     }
 
     @Override
@@ -49,7 +58,7 @@ public class Literals {
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) {
-      return new LiteralColumn(DataTypes.StringType, value);
+      return new LiteralColumn(DataTypes.StringType, this);
     }
 
     @Override
@@ -65,7 +74,7 @@ public class Literals {
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) {
-      return new LiteralColumn(DataTypes.LongType, value);
+      return new LiteralColumn(DataTypes.LongType, this);
     }
 
     @Override
@@ -81,7 +90,7 @@ public class Literals {
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) {
-      return new LiteralColumn(DataTypes.DoubleType, value);
+      return new LiteralColumn(DataTypes.DoubleType, this);
     }
 
     @Override
@@ -96,7 +105,7 @@ public class Literals {
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) {
-      return new LiteralColumn(DataTypes.NULL, DataTypes.NULL);
+      return new LiteralColumn(DataTypes.NULL, this);
     }
 
     @Override

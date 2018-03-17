@@ -19,7 +19,7 @@ create table transaction (
   amount float,
   customer_id integer,
   constraint customer foreign key (customer_id) references customer(id),
-  constraint c_adult check (not (category = 'alcohol') or customer.age >= 21));
+  constraint c_adult check (category = 'alcohol' impl customer.age >= 21));
 ```
 
 Let's add two customers, one adult and one under age.
@@ -47,5 +47,5 @@ Adding a transaction with under age Bob buying alcohol should fail.
 insert into transaction values ('alcohol', 1.0, 2);
 ```
 ```
-Constraint check c_adult failed.
+Constraint check c_adult failed: ((category = 'alcohol') impl (customer.age >= 21)).
 ```
