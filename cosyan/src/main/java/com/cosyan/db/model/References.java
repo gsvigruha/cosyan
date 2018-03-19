@@ -112,10 +112,8 @@ public class References {
         Arrays.fill(values, DataTypes.NULL);
         return values;
       } else {
-        IndexReader index = resources.getIndex(foreignKey);
-        long filePointer = index.get(key)[0];
         SeekableTableReader reader = resources.reader(foreignKey.getRefTable().tableName());
-        return reader.get(filePointer).getValues();
+        return reader.get(key, resources).getValues();
       }
     }
 

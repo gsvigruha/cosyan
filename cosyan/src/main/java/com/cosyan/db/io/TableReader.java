@@ -62,7 +62,7 @@ public abstract class TableReader implements TableIO {
 
   public static abstract class SeekableTableReader implements TableIO {
 
-    private final MaterializedTableMeta tableMeta;
+    protected final MaterializedTableMeta tableMeta;
 
     public SeekableTableReader(
         MaterializedTableMeta tableMeta) {
@@ -72,6 +72,8 @@ public abstract class TableReader implements TableIO {
     public abstract void close() throws IOException;
 
     public abstract Record get(long position) throws IOException;
+
+    public abstract Record get(Object key, Resources resources) throws IOException;
 
     public abstract IterableTableReader iterableReader(Resources resources) throws IOException;
 
@@ -112,6 +114,13 @@ public abstract class TableReader implements TableIO {
     public Record get(long position) throws IOException {
       reader.seek(position);
       return reader.read();
+    }
+
+    @Override
+    public Record get(Object key, Resources resources) throws IOException {
+      IndexReader index = resources.getPrimaryKeyIndex(tableMeta.tableName());
+      long filePointer = index.get(key)[0];
+      return get(filePointer);
     }
 
     @Override

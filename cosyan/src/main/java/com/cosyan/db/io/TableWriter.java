@@ -305,6 +305,13 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     return reader.read();
   }
 
+  @Override
+  public Record get(Object key, Resources resources) throws IOException {
+    IndexReader index = resources.getPrimaryKeyIndex(tableMeta.tableName());
+    long filePointer = index.get(key)[0];
+    return get(filePointer);
+  }
+
   private RecordReader recordReader() throws IOException {
     SeekableSequenceInputStream rafReader = new SeekableSequenceInputStream(
         new RAFBufferedInputStream(file),

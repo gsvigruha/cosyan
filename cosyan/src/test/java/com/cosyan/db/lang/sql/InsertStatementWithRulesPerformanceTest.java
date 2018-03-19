@@ -24,7 +24,7 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
       execute("insert into t2 values ('abc" + j + "' ," + j + ");");
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with lookup rules inserted in " + t + " " + speed(t, N2));
+    System.out.println("Records with lookup rules (1 col) inserted in " + t + " " + speed(t, N2));
   }
 
   @Test
@@ -62,6 +62,6 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
       execute("insert into t6 values ('abc" + j + "');");
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with lookup rules inserted in " + t + " " + speed(t, N2));
+    System.out.println("Records with lookup rules (3 col) inserted in " + t + " " + speed(t, N2));
   }
 }

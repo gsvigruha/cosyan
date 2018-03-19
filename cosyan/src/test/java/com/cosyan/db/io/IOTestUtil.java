@@ -67,6 +67,11 @@ public class IOTestUtil {
     public IndexReader getIndex(String name) {
       throw new UnsupportedOperationException();
     }
+
+    @Override
+    public Record get(Object key, Resources resources) throws IOException {
+      throw new UnsupportedOperationException();
+    }
   }
 
   @Data

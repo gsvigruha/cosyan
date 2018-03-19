@@ -71,6 +71,13 @@ public class MaterializedTableMeta {
     return columnsMap(columns);
   }
 
+  public BasicColumn pkColumn() throws ModelException {
+    if (!primaryKey.isPresent()) {
+      throw new ModelException(String.format("Table '%s' has no primary key.", tableName));
+    }
+    return primaryKey.get().getColumn();
+  }
+
   public static ImmutableMap<String, BasicColumn> columnsMap(List<BasicColumn> columns) {
     // Need to keep iteration order;
     ImmutableMap.Builder<String, BasicColumn> builder = ImmutableMap.builder();

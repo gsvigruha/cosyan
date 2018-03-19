@@ -310,9 +310,12 @@ public class Parser {
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
       assertNext(tokens, Tokens.REFERENCES);
       Ident refTable = parseIdent(tokens);
-      assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
-      Ident refColumn = parseIdent(tokens);
-      assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+      Optional<Ident> refColumn = Optional.empty();
+      if (tokens.peek().is(Tokens.PARENT_OPEN)) {
+        tokens.next();
+        refColumn = Optional.of(parseIdent(tokens));
+        assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+      }
       if (tokens.peek().is(Tokens.REVERSE)) {
         tokens.next();
         Ident reverseIdent = parseIdent(tokens);

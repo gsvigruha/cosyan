@@ -41,7 +41,7 @@ public class DropStatementTest extends UnitTestBase {
 
   @Test
   public void testCanNotDropTableWithReference() throws Exception {
-    execute("create table t3 (a varchar unique);");
+    execute("create table t3 (a varchar, constraint pk_a primary key (a));");
     execute("create table t4 (a varchar, constraint fk_a foreign key (a) references t3(a));");
 
     ErrorResult e = error("drop table t3;");

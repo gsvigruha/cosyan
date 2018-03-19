@@ -136,10 +136,13 @@ public class CreateStatement {
       for (ForeignKeyDefinition foreignKeyDefinition : foreignKeyDefinitions) {
         BasicColumn keyColumn = tableMeta.column(foreignKeyDefinition.getKeyColumn());
         MaterializedTableMeta refTable = metaRepo.table(foreignKeyDefinition.getRefTable());
-        BasicColumn refColumn = refTable.columns().get(foreignKeyDefinition.getRefColumn().getString());
-        if (!refColumn.isUnique()) {
-          throw new ModelException("Foreign key reference column has to be unique.");
+        BasicColumn refColumn = refTable.pkColumn();
+        if (foreignKeyDefinition.getRefColumn().isPresent()
+            && !foreignKeyDefinition.getRefColumn().get().getString().equals(refColumn.getName())) {
+          throw new ModelException(
+              "Foreign key reference column has to be the primary key column of the referenced table.");
         }
+        assert refColumn.isUnique() && !refColumn.isNullable();
         // Unique keys are indexed by default, so no need to change refColumn.
         keyColumn.setIndexed(true);
         tableMeta.addForeignKey(new ForeignKey(
@@ -207,7 +210,7 @@ public class CreateStatement {
     private final String revName;
     private final Ident keyColumn;
     private final Ident refTable;
-    private final Ident refColumn;
+    private final Optional<Ident> refColumn;
   }
 
   @Data

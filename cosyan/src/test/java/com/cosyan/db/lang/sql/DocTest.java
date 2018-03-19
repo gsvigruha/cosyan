@@ -60,10 +60,4 @@ public class DocTest extends UnitTestBase {
     setUp();
     runDocFile("doc/rules/reverse_foreign_keys.md");
   }
-
-  @Test
-  public void testNetworks() throws IOException, ModelException, ParserException {
-    setUp();
-    runDocFile("doc/rules/networks.md");
-  }
 }

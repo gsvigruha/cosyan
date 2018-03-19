@@ -48,7 +48,7 @@ public class AlterStatementTest extends UnitTestBase {
 
   @Test
   public void testDropColumnWithConstraints() throws Exception {
-    execute("create table t3 (a integer, b integer unique, constraint c_a check(a > 1));");
+    execute("create table t3 (a integer, b integer, constraint pk_b primary key (b), constraint c_a check(a > 1));");
     {
       ErrorResult result = error("alter table t3 drop a;");
       assertEquals("Cannot drop column 'a', check 'c_a [(a > 1)]' fails.\n" +
