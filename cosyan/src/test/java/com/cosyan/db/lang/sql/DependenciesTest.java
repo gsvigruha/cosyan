@@ -117,11 +117,21 @@ public class DependenciesTest extends UnitTestBase {
     assertEquals("c", rev.getDeps().get("fk_b2").rule("c").getName());
 
     execute("alter table t9 add constraint cs check (fk_b3.fk_b2.s.s <= 10);");
+    TableDependencies csDeps = t9.rules().get("cs").getDeps();
+    assertEquals(0, csDeps.getDeps()
+        .get("fk_b3").getDeps()
+        .get("fk_b2").getDeps()
+        .get("rev_fk_b2").getDeps()
+        .get("rev_fk_b3").getDeps().size());
 
     assertEquals(0, t8.ruleDependencies().size());
     assertEquals(2, t8.reverseRuleDependencies().getDeps().size());
     assertEquals(1, t8.reverseRuleDependencies().getDeps().get("fk_b2").rules().size());
+    assertEquals(1, t8.reverseRuleDependencies().getDeps().get("rev_fk_b3").rules().size());
+
     assertEquals(1, t7.ruleDependencies().size());
     assertEquals(1, t7.reverseRuleDependencies().getDeps().size());
+    assertEquals(0, t7.reverseRuleDependencies().getDeps().get("rev_fk_b2").rules().size());
+    assertEquals(1, t7.reverseRuleDependencies().getDeps().get("rev_fk_b2").getDeps().get("rev_fk_b3").rules().size());
   }
 }
