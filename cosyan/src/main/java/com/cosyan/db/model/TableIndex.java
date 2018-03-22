@@ -54,14 +54,24 @@ public abstract class TableIndex implements IndexReader {
 
     @Override
     public long[] get(Object key) throws IOException {
-      return new long[] { get0(key) };
+      long filePointer = get0(key);
+      if (filePointer < 0) {
+        return new long[0];
+      } else {
+        return new long[] { filePointer };
+      }
     }
 
     @Override
     public long get0(Object key) throws IOException {
-      return index.get((Long) key);
+      Long filePointer = index.get((Long) key);
+      if (filePointer == null) {
+        return -1;
+      } else {
+        return filePointer;
+      }
     }
-    
+
     @Override
     public void commit() throws IOException {
       index.commit();
@@ -108,12 +118,22 @@ public abstract class TableIndex implements IndexReader {
 
     @Override
     public long[] get(Object key) throws IOException {
-      return new long[] { get0(key) };
+      long filePointer = get0(key);
+      if (filePointer < 0) {
+        return new long[0];
+      } else {
+        return new long[] { filePointer };
+      }
     }
-    
+
     @Override
     public long get0(Object key) throws IOException {
-      return index.get((String) key);
+      Long filePointer = index.get((String) key);
+      if (filePointer == null) {
+        return -1;
+      } else {
+        return filePointer;
+      }
     }
 
     @Override

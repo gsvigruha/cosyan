@@ -218,11 +218,7 @@ public class References {
 
         @Override
         protected void readPositions() throws IOException {
-          if (index.contains(key)) {
-            positions = index.get(key);
-          } else {
-            positions = new long[] {};
-          }
+          positions = index.get(key);
         }
       };
 

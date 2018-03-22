@@ -238,11 +238,7 @@ public class DerivedTables {
         @Override
         protected void readPositions() throws IOException {
           IndexReader index = resources.getIndex(sourceTable.tableName(), clause.getIdent().getString());
-          if (index.contains(clause.getValue())) {
-            positions = index.get(clause.getValue());
-          } else {
-            positions = new long[] {};
-          }
+          positions = index.get(clause.getValue());
         }
       };
     }

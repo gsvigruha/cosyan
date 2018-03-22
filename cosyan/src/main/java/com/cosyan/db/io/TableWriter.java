@@ -325,11 +325,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       @Override
       protected void readPositions() throws IOException {
         IndexReader index = resources.getIndex(tableMeta.tableName(), clause.getIdent().getString());
-        if (index.contains(clause.getValue())) {
-          positions = index.get(clause.getValue());
-        } else {
-          positions = new long[] {};
-        }
+        positions = index.get(clause.getValue());
       }
     };
   }

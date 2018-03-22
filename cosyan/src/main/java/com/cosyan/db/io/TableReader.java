@@ -118,8 +118,8 @@ public abstract class TableReader implements TableIO {
 
     @Override
     public Record get(Object key, Resources resources) throws IOException {
-      IndexReader index = resources.getPrimaryKeyIndex(tableMeta.tableName());
-      long filePointer = index.get(key)[0];
+      TableIndex index = resources.getPrimaryKeyIndex(tableMeta.tableName());
+      long filePointer = index.get0(key);
       return get(filePointer);
     }
 
