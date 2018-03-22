@@ -40,6 +40,7 @@ public class Dependencies {
         if (this.deps.containsKey(entry.getKey())) {
           this.deps.get(entry.getKey()).merge(entry.getValue());
         } else {
+          assert ref.getRefTable() == entry.getValue().ref.getTable();
           this.deps.put(entry.getKey(), entry.getValue());
         }
       }
@@ -100,7 +101,6 @@ public class Dependencies {
         }
         actDeps = actDeps.get(foreignKey.getName()).deps;
       }
-      // TODO: double check this.
       actDeps.putAll(tableDependencies.getDeps());
     }
 
