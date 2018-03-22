@@ -25,7 +25,7 @@ public class DependenciesTest extends UnitTestBase {
 
     assertEquals(1, t2.ruleDependencies().size());
     assertEquals(0, t2.reverseRuleDependencies().getDeps().size());
-    assertEquals("fk_a", t2.ruleDependencies().get("fk_a").getRef().getName());
+    assertEquals("fk_a", t2.ruleDependencies().get("fk_a").ref().getName());
 
     MaterializedTableMeta t1 = metaRepo.table(new Ident("t1"));
     assertEquals(0, t1.ruleDependencies().size());
@@ -48,11 +48,11 @@ public class DependenciesTest extends UnitTestBase {
     Rule rule = t3.rules().get("c_1");
     TableDependencies deps = rule.getColumn().tableDependencies();
     assertEquals(1, deps.getDeps().size());
-    assertEquals(0, deps.getDeps().get("rev_fk_a").getDeps().size());
+    assertEquals(0, deps.getDeps().get("rev_fk_a").size());
 
     assertEquals(1, t3.ruleDependencies().size());
     assertEquals(0, t3.reverseRuleDependencies().getDeps().size());
-    assertEquals("rev_fk_a", t3.ruleDependencies().get("rev_fk_a").getRef().getName());
+    assertEquals("rev_fk_a", t3.ruleDependencies().get("rev_fk_a").ref().getName());
 
     MaterializedTableMeta t4 = metaRepo.table(new Ident("t4"));
     assertEquals(0, t4.ruleDependencies().size());
@@ -72,13 +72,13 @@ public class DependenciesTest extends UnitTestBase {
     Rule rule = t6.rules().get("c");
     TableDependencies deps = rule.getColumn().tableDependencies();
     assertEquals(2, deps.getDeps().size());
-    assertEquals(0, deps.getDeps().get("fk_a_1").getDeps().size());
-    assertEquals(0, deps.getDeps().get("fk_a_2").getDeps().size());
+    assertEquals(0, deps.getDeps().get("fk_a_1").size());
+    assertEquals(0, deps.getDeps().get("fk_a_2").size());
 
     assertEquals(2, t6.ruleDependencies().size());
     assertEquals(0, t6.reverseRuleDependencies().getDeps().size());
-    assertEquals("fk_a_1", t6.ruleDependencies().get("fk_a_1").getRef().getName());
-    assertEquals("fk_a_2", t6.ruleDependencies().get("fk_a_2").getRef().getName());
+    assertEquals("fk_a_1", t6.ruleDependencies().get("fk_a_1").ref().getName());
+    assertEquals("fk_a_2", t6.ruleDependencies().get("fk_a_2").ref().getName());
 
     MaterializedTableMeta t5 = metaRepo.table(new Ident("t5"));
     assertEquals(0, t5.ruleDependencies().size());
@@ -119,10 +119,10 @@ public class DependenciesTest extends UnitTestBase {
     execute("alter table t9 add constraint cs check (fk_b3.fk_b2.s.s <= 10);");
     TableDependencies csDeps = t9.rules().get("cs").getDeps();
     assertEquals(0, csDeps.getDeps()
-        .get("fk_b3").getDeps()
-        .get("fk_b2").getDeps()
-        .get("rev_fk_b2").getDeps()
-        .get("rev_fk_b3").getDeps().size());
+        .get("fk_b3")
+        .dep("fk_b2")
+        .dep("rev_fk_b2")
+        .dep("rev_fk_b3").size());
 
     assertEquals(0, t8.ruleDependencies().size());
     assertEquals(2, t8.reverseRuleDependencies().getDeps().size());

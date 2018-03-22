@@ -121,7 +121,7 @@ public class CreateStatementTest extends UnitTestBase {
 
     assertEquals(1, t11.ruleDependencies().size());
     assertEquals(0, t11.reverseRuleDependencies().getDeps().size());
-    assertEquals("fk_a", t11.ruleDependencies().get("fk_a").getRef().getName());
+    assertEquals("fk_a", t11.ruleDependencies().get("fk_a").ref().getName());
 
     MaterializedTableMeta t10 = metaRepo.table(new Ident("t10"));
     assertEquals(0, t10.ruleDependencies().size());
@@ -163,7 +163,7 @@ public class CreateStatementTest extends UnitTestBase {
     MaterializedTableMeta t15 = metaRepo.table(new Ident("t15"));
     TableDependencies deps = t15.reader().table(new Ident("s")).column(new Ident("sb")).tableDependencies();
     assertEquals(1, deps.getDeps().size());
-    assertEquals(0, deps.getDeps().get("rev_fk_a").getDeps().size());
+    assertEquals(0, deps.getDeps().get("rev_fk_a").size());
   }
 
   @Test
@@ -178,8 +178,8 @@ public class CreateStatementTest extends UnitTestBase {
     MaterializedTableMeta t17 = metaRepo.table(new Ident("t17"));
     TableDependencies deps = t17.reader().table(new Ident("s")).column(new Ident("ssd")).tableDependencies();
     assertEquals(1, deps.getDeps().size());
-    assertEquals(1, deps.getDeps().get("rev_fk_a").getDeps().size());
-    assertEquals(0, deps.getDeps().get("rev_fk_a").getDeps().get("rev_fk_b").getDeps().size());
+    assertEquals(1, deps.getDeps().get("rev_fk_a").size());
+    assertEquals(0, deps.getDeps().get("rev_fk_a").dep("rev_fk_b").size());
   }
 
   @Test
