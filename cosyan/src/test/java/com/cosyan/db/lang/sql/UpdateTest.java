@@ -311,4 +311,31 @@ public class UpdateTest extends UnitTestBase {
     assertHeader(new String[] { "a2", "b2", "b1" }, r2);
     assertValues(new Object[][] { { DataTypes.NULL, "a", DataTypes.NULL } }, r2);
   }
+
+  @Test
+  public void testUpdateImmutableColumn() {
+    execute("create table t27 (a varchar immutable, b varchar);");
+
+    execute("insert into t27 values ('x', 'y');");
+
+    QueryResult r1 = query("select a, b from t27;");
+    assertHeader(new String[] { "a", "b" }, r1);
+    assertValues(new Object[][] { { "x", "y" } }, r1);
+
+    execute("update t27 set b = 'z';");
+
+    QueryResult r2 = query("select a, b from t27;");
+    assertHeader(new String[] { "a", "b" }, r2);
+    assertValues(new Object[][] { { "x", "z" } }, r2);
+
+    ErrorResult e1 = error("update t27 set a = 'z';");
+    assertEquals("Column 't27.a' is immutable.", e1.getError().getMessage());
+
+    execute("alter table t27 drop a;");
+    execute("alter table t27 add a varchar;");
+
+    QueryResult r3 = query("select a, b from t27;");
+    assertHeader(new String[] { "a", "b" }, r3);
+    assertValues(new Object[][] { { DataTypes.NULL, "z" } }, r3);
+  }
 }

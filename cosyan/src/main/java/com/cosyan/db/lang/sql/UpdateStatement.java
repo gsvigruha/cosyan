@@ -13,6 +13,7 @@ import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
@@ -52,6 +53,11 @@ public class UpdateStatement {
       tableMeta = materializedTableMeta.reader();
       ImmutableMap.Builder<Integer, ColumnMeta> columnExprsBuilder = ImmutableMap.builder();
       for (SetExpression update : updates) {
+        BasicColumn column = materializedTableMeta.column(update.getIdent());
+        if (column.isImmutable()) {
+          throw new ModelException(String.format(
+              "Column '%s.%s' is immutable.", materializedTableMeta.tableName(), column.getName()));
+        }
         ColumnMeta columnExpr = update.getValue().compileColumn(tableMeta);
         columnExprsBuilder.put(tableMeta.column(update.getIdent()).index(), columnExpr);
       }
@@ -69,8 +75,10 @@ public class UpdateStatement {
 
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
-      // The rules must be re-evaluated for updated records. In addition, rules of other
-      // tables referencing this table have to be re-evaluated as well. We need the rule
+      // The rules must be re-evaluated for updated records. In addition, rules of
+      // other
+      // tables referencing this table have to be re-evaluated as well. We need the
+      // rule
       // dependencies for the rules of this table and referencing rules.
       TableWriter writer = resources.writer(tableMeta.tableName());
       if (clause == null) {
