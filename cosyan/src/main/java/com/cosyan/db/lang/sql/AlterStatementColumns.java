@@ -43,6 +43,7 @@ public class AlterStatementColumns {
           column.getType(),
           column.isNullable(),
           column.isUnique(),
+          /* indexed= */column.isUnique(),
           column.isImmutable());
       tableMeta.addColumn(basicColumn);
       if (basicColumn.isIndexed()) {

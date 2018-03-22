@@ -22,15 +22,15 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateTable() throws Exception {
     execute("create table t1 (a varchar not null, b integer, c float, d boolean, e timestamp);");
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, false, false),
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, false, false, false),
         tableMeta.column(new Ident("a")));
-    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, false, false),
+    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, false, false, false),
         tableMeta.column(new Ident("b")));
-    assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false, false),
+    assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false, false, false),
         tableMeta.column(new Ident("c")));
-    assertEquals(new BasicColumn(3, "d", DataTypes.BoolType, true, false, false),
+    assertEquals(new BasicColumn(3, "d", DataTypes.BoolType, true, false, false, false),
         tableMeta.column(new Ident("d")));
-    assertEquals(new BasicColumn(4, "e", DataTypes.DateType, true, false, false),
+    assertEquals(new BasicColumn(4, "e", DataTypes.DateType, true, false, false, false),
         tableMeta.column(new Ident("e")));
   }
 
@@ -38,9 +38,9 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateTableUniqueColumns() throws Exception {
     execute("create table t2 (a varchar unique not null, b integer unique);");
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t2"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true, false),
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true, true, false),
         tableMeta.column(new Ident("a")));
-    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, true, false),
+    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, true, true, false),
         tableMeta.column(new Ident("b")));
   }
 
@@ -180,5 +180,13 @@ public class CreateStatementTest extends UnitTestBase {
     assertEquals(1, deps.getDeps().size());
     assertEquals(1, deps.getDeps().get("rev_fk_a").getDeps().size());
     assertEquals(0, deps.getDeps().get("rev_fk_a").getDeps().get("rev_fk_b").getDeps().size());
+  }
+
+  @Test
+  public void testCreateTableImmutableColumn() throws Exception {
+    execute("create table t20 (a varchar immutable);");
+    MaterializedTableMeta t20 = metaRepo.table(new Ident("t20"));
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false, false, true),
+        t20.column(new Ident("a")));
   }
 }

@@ -20,9 +20,9 @@ public class AlterStatementTest extends UnitTestBase {
     execute("alter table t1 drop b;");
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
     assertEquals(2, tableMeta.columns().size());
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false, false),
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false),
         tableMeta.column(new Ident("a")));
-    assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false, false),
+    assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false, false, false),
         tableMeta.column(new Ident("c")));
   }
 
@@ -76,11 +76,11 @@ public class AlterStatementTest extends UnitTestBase {
     execute("alter table t5 add c float;");
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t5"));
     assertEquals(3, tableMeta.columns().size());
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false, false),
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false),
         tableMeta.column(new Ident("a")));
-    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, false, false),
+    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, false, false, false),
         tableMeta.column(new Ident("b")));
-    assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false, false),
+    assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false, false, false),
         tableMeta.column(new Ident("c")));
   }
 

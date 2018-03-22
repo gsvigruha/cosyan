@@ -22,7 +22,7 @@ public class BuiltinFunctionsTest extends DummyTestBase {
     DummyTestBase.setUp();
     register(new DummyMaterializedTableMeta("table", 
         ImmutableMap.of(
-            "a", new BasicColumn(0, "a", DataTypes.StringType)),
+            "a", new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false)),
         new Object[][] {
             new Object[] { "abcABC" } }));
     DummyTestBase.finalizeResources();

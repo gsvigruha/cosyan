@@ -16,20 +16,6 @@ public class BasicColumn {
   private boolean deleted;
   private boolean immutable;
 
-  public BasicColumn(int index, String name, DataType<?> type) {
-    this(index, name, type, true, false, false, false);
-  }
-
-  public BasicColumn(
-      int index,
-      String name,
-      DataType<?> type,
-      boolean nullable,
-      boolean unique,
-      boolean immutable) {
-    this(index, name, type, nullable, unique, /* indexed= */unique, immutable);
-  }
-
   public BasicColumn(
       int index,
       String name,

@@ -55,6 +55,7 @@ public class CreateStatement {
             column.getType(),
             column.isNullable(),
             column.isUnique(),
+            /* indexed= */column.isUnique(),
             column.isImmutable() || column.getType() == DataTypes.IDType);
         columns.put(column.getName(), basicColumn);
       }
