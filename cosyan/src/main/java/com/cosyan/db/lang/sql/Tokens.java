@@ -36,6 +36,8 @@ public class Tokens {
 
   public static String UNIQUE = "unique";
 
+  public static String IMMUTABLE = "immutable";
+
   public static String PRIMARY = "primary";
 
   public static String FOREIGN = "foreign";
@@ -109,6 +111,8 @@ public class Tokens {
   public static String ELSE = "else";
 
   public static String END = "end";
+
+  public static String ID = "id";
 
   public static char SPACE = ' ';
 

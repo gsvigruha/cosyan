@@ -14,18 +14,10 @@ public class BasicColumn {
   private boolean unique;
   private boolean indexed;
   private boolean deleted;
+  private boolean immutable;
 
   public BasicColumn(int index, String name, DataType<?> type) {
-    this(index, name, type, true, false, false);
-  }
-
-  public BasicColumn(
-      int index,
-      String name,
-      DataType<?> type,
-      boolean nullable,
-      boolean unique) {
-    this(index, name, type, nullable, unique, /* indexed= */unique);
+    this(index, name, type, true, false, false, false);
   }
 
   public BasicColumn(
@@ -34,14 +26,27 @@ public class BasicColumn {
       DataType<?> type,
       boolean nullable,
       boolean unique,
-      boolean indexed) {
+      boolean immutable) {
+    this(index, name, type, nullable, unique, /* indexed= */unique, immutable);
+  }
+
+  public BasicColumn(
+      int index,
+      String name,
+      DataType<?> type,
+      boolean nullable,
+      boolean unique,
+      boolean indexed,
+      boolean immutable) {
     this.type = type;
     this.index = index;
     this.name = name;
     this.nullable = nullable;
     this.unique = unique;
     this.indexed = indexed;
+    this.immutable = immutable;
     this.deleted = false;
     assert !unique || indexed;
+    assert immutable || type != DataTypes.IDType;
   }
 }

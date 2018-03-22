@@ -55,6 +55,13 @@ public class DataTypes {
     }
   };
 
+  public static final DataType<Long> IDType = new DataType<Long>("id") {
+    @Override
+    public DataType<?> toListType() {
+      return IDListType;
+    }
+  };
+
   public static final DataType<String[]> StringListType = new DataType<String[]>("varchar_list") {
     @Override
     public DataType<?> toListType() throws ModelException {
@@ -84,6 +91,13 @@ public class DataTypes {
   };
 
   public static final DataType<Date[]> DateListType = new DataType<Date[]>("timestamp_list") {
+    @Override
+    public DataType<?> toListType() throws ModelException {
+      throw new ModelException("Cannot create a list of lists.");
+    }
+  };
+
+  public static final DataType<Long[]> IDListType = new DataType<Long[]>("id_list") {
     @Override
     public DataType<?> toListType() throws ModelException {
       throw new ModelException("Cannot create a list of lists.");

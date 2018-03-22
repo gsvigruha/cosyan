@@ -8,6 +8,7 @@ import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.Rule;
+import com.cosyan.db.model.Dependencies.ReverseRuleDependency;
 import com.cosyan.db.model.Dependencies.TableDependencies;
 
 public class DependenciesTest extends UnitTestBase {
@@ -31,8 +32,8 @@ public class DependenciesTest extends UnitTestBase {
     assertEquals(1, t1.reverseRuleDependencies().getDeps().size());
     assertEquals(1, t1.reverseRuleDependencies().getDeps().size());
     assertEquals("rev_fk_a", t1.reverseRuleDependencies().getDeps().get("rev_fk_a").getKey().getName());
-    assertEquals(1, t1.reverseRuleDependencies().getDeps().get("rev_fk_a").getRules().size());
-    assertEquals("c_b", t1.reverseRuleDependencies().getDeps().get("rev_fk_a").getRules().get("c_b").getName());
+    assertEquals(1, t1.reverseRuleDependencies().getDeps().get("rev_fk_a").rules().size());
+    assertEquals("c_b", t1.reverseRuleDependencies().getDeps().get("rev_fk_a").rule("c_b").getName());
   }
 
   @Test
@@ -93,7 +94,7 @@ public class DependenciesTest extends UnitTestBase {
         + "constraint pk_a primary key (a2),"
         + "constraint fk_b2 foreign key (b2) references t7(a1));");
     execute("create table t9 (b3 varchar, constraint fk_b3 foreign key (b3) references t8(a2));");
-    execute("alter table t8 add ref s (select sum(1) as s from rev_fk_b3));");
+    execute("alter table t8 add ref s (select count(b3) as s from rev_fk_b3));");
     execute("alter table t7 add ref s (select sum(s.s) as s from rev_fk_b2));");
     execute("alter table t7 add constraint c check (s.s <= 10);");
 
@@ -104,9 +105,23 @@ public class DependenciesTest extends UnitTestBase {
     MaterializedTableMeta t8 = metaRepo.table(new Ident("t8"));
     assertEquals(0, t8.ruleDependencies().size());
     assertEquals(1, t8.reverseRuleDependencies().getDeps().size());
+    assertEquals(1, t8.reverseRuleDependencies().getDeps().get("fk_b2").rules().size());
+    assertEquals("c", t8.reverseRuleDependencies().getDeps().get("fk_b2").rule("c").getName());
 
     MaterializedTableMeta t9 = metaRepo.table(new Ident("t9"));
     assertEquals(0, t9.ruleDependencies().size());
     assertEquals(1, t9.reverseRuleDependencies().getDeps().size());
+    ReverseRuleDependency rev = t9.reverseRuleDependencies().getDeps().get("fk_b3");
+    assertEquals(0, rev.rules().size());
+    assertEquals(1, rev.getDeps().size());
+    assertEquals("c", rev.getDeps().get("fk_b2").rule("c").getName());
+
+    execute("alter table t9 add constraint cs check (fk_b3.fk_b2.s.s <= 10);");
+
+    assertEquals(0, t8.ruleDependencies().size());
+    assertEquals(2, t8.reverseRuleDependencies().getDeps().size());
+    assertEquals(1, t8.reverseRuleDependencies().getDeps().get("fk_b2").rules().size());
+    assertEquals(1, t7.ruleDependencies().size());
+    assertEquals(1, t7.reverseRuleDependencies().getDeps().size());
   }
 }

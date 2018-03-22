@@ -22,15 +22,15 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateTable() throws Exception {
     execute("create table t1 (a varchar not null, b integer, c float, d boolean, e timestamp);");
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, false),
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, false, false),
         tableMeta.column(new Ident("a")));
-    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, false),
+    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, false, false),
         tableMeta.column(new Ident("b")));
-    assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false),
+    assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false, false),
         tableMeta.column(new Ident("c")));
-    assertEquals(new BasicColumn(3, "d", DataTypes.BoolType, true, false),
+    assertEquals(new BasicColumn(3, "d", DataTypes.BoolType, true, false, false),
         tableMeta.column(new Ident("d")));
-    assertEquals(new BasicColumn(4, "e", DataTypes.DateType, true, false),
+    assertEquals(new BasicColumn(4, "e", DataTypes.DateType, true, false, false),
         tableMeta.column(new Ident("e")));
   }
 
@@ -38,9 +38,9 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateTableUniqueColumns() throws Exception {
     execute("create table t2 (a varchar unique not null, b integer unique);");
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t2"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true),
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true, false),
         tableMeta.column(new Ident("a")));
-    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, true),
+    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, true, false),
         tableMeta.column(new Ident("b")));
   }
 
@@ -48,7 +48,7 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateTablePrimaryKey() throws Exception {
     execute("create table t3 (a varchar, constraint pk_a primary key (a));");
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t3"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true, true),
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true, true, false),
         tableMeta.column(new Ident("a")));
   }
 
@@ -57,9 +57,9 @@ public class CreateStatementTest extends UnitTestBase {
     execute("create table t4 (a varchar, constraint pk_a primary key (a));");
     execute("create table t5 (a varchar, b varchar, constraint fk_b foreign key (b) references t4(a));");
     MaterializedTableMeta t5 = metaRepo.table(new Ident("t5"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false, false),
+    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false),
         t5.column(new Ident("a")));
-    assertEquals(new BasicColumn(1, "b", DataTypes.StringType, true, false, true),
+    assertEquals(new BasicColumn(1, "b", DataTypes.StringType, true, false, true, false),
         t5.column(new Ident("b")));
     MaterializedTableMeta t4 = metaRepo.table(new Ident("t4"));
     assertEquals(ImmutableMap.of("fk_b", new ForeignKey(
@@ -128,9 +128,9 @@ public class CreateStatementTest extends UnitTestBase {
     assertEquals(1, t10.reverseRuleDependencies().getDeps().size());
     assertEquals(1, t10.reverseRuleDependencies().getDeps().size());
     assertEquals("rev_fk_a", t10.reverseRuleDependencies().getDeps().get("rev_fk_a").getKey().getName());
-    assertEquals(1, t10.reverseRuleDependencies().getDeps().get("rev_fk_a").getRules().size());
+    assertEquals(1, t10.reverseRuleDependencies().getDeps().get("rev_fk_a").rules().size());
     assertEquals("c_b",
-        t10.reverseRuleDependencies().getDeps().get("rev_fk_a").getRules().get("c_b").getName());
+        t10.reverseRuleDependencies().getDeps().get("rev_fk_a").rule("c_b").getName());
   }
 
   @Test

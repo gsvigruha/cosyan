@@ -346,7 +346,14 @@ public class Parser {
     } else {
       nullable = true;
     }
-    return new ColumnDefinition(ident.getString(), type, nullable, unique);
+    boolean immutable;
+    if (tokens.peek().is(Tokens.IMMUTABLE)) {
+      tokens.next();
+      immutable = true;
+    } else {
+      immutable = false;
+    }
+    return new ColumnDefinition(ident.getString(), type, nullable, unique, immutable);
   }
 
   private DataType<?> parseDataType(PeekingIterator<Token> tokens) throws ParserException {

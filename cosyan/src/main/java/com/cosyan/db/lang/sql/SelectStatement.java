@@ -39,7 +39,6 @@ import com.cosyan.db.model.DerivedTables.DistinctTableMeta;
 import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.IndexFilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
-import com.cosyan.db.model.DerivedTables.ReferencedDerivedTableMeta;
 import com.cosyan.db.model.DerivedTables.SortedTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.JoinTables.JoinTableMeta;
@@ -168,14 +167,8 @@ public class SelectStatement {
           CompiledObject obj = expr.compile(sourceTable);
           if (obj instanceof ColumnMeta) {
             tableColumns.put(expr.getName("_c" + (i++)), (ColumnMeta) obj);
-          } else if (obj instanceof ReferencedDerivedTableMeta) {
-            ReferencedDerivedTableMeta tableMeta = (ReferencedDerivedTableMeta) obj;
-            for (String name : tableMeta.columnNames()) {
-              tableColumns.put(name, tableMeta.column(new Ident(name)));
-            }
-            tables.add(tableMeta);
           } else {
-            throw new ModelException("Expected table or column.");
+            throw new ModelException("Expected column.");
           }
         }
       }

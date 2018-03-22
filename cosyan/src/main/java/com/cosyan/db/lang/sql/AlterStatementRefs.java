@@ -12,7 +12,7 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
-import com.cosyan.db.model.DerivedTables.ReferencedDerivedTableMeta;
+import com.cosyan.db.model.DerivedTables.ReferencingDerivedTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.References.ReferencedAggrTableMeta;
@@ -54,7 +54,7 @@ public class AlterStatementRefs {
           srcTableMeta.getReverseForeignKey());
       // Columns have aggregations, recompile with an AggrTable.
       TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
-      ReferencedDerivedTableMeta refTableMeta = new ReferencedDerivedTableMeta(
+      ReferencingDerivedTableMeta refTableMeta = new ReferencingDerivedTableMeta(
           aggrTable, tableColumns.getColumns(), srcTableMeta.getReverseForeignKey());
       tableMeta.addRef(new TableRef(ref.getName(), ref.getSelect(), refTableMeta));
       return new MetaStatementResult();

@@ -54,7 +54,8 @@ public class CreateStatement {
             column.getName(),
             column.getType(),
             column.isNullable(),
-            column.isUnique());
+            column.isUnique(),
+            column.isImmutable() || column.getType() == DataTypes.IDType);
         columns.put(column.getName(), basicColumn);
       }
 
@@ -171,6 +172,7 @@ public class CreateStatement {
     private final DataType<?> type;
     private final boolean nullable;
     private final boolean unique;
+    private final boolean immutable;
   }
 
   public interface ConstraintDefinition {

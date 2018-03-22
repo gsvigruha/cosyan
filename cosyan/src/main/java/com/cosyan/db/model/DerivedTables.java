@@ -94,7 +94,7 @@ public class DerivedTables {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class ReferencedDerivedTableMeta extends ExposedTableMeta {
+  public static class ReferencingDerivedTableMeta extends ExposedTableMeta {
     private final TableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
     private final ReverseForeignKey reverseForeignKey;

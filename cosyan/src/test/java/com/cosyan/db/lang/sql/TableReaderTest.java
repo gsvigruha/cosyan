@@ -70,9 +70,9 @@ public class TableReaderTest extends DummyTestBase {
 
     register(new DummyMaterializedTableMeta("null",
         ImmutableMap.of(
-            "a", new BasicColumn(0, "a", DataTypes.StringType, true, false),
-            "b", new BasicColumn(1, "b", DataTypes.LongType, true, false),
-            "c", new BasicColumn(2, "c", DataTypes.DoubleType, true, false)),
+            "a", new BasicColumn(0, "a", DataTypes.StringType, true, false, false),
+            "b", new BasicColumn(1, "b", DataTypes.LongType, true, false, false),
+            "c", new BasicColumn(2, "c", DataTypes.DoubleType, true, false, false)),
         new Object[][] {
             new Object[] { DataTypes.NULL, 1L, 2.0 },
             new Object[] { "b", DataTypes.NULL, 4.0 },

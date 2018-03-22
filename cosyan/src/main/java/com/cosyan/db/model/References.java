@@ -15,6 +15,7 @@ import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
+import com.cosyan.db.model.DerivedTables.ReferencingDerivedTableMeta;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
@@ -49,12 +50,48 @@ public class References {
     if (foreignKeys.containsKey(key)) {
       return new ReferencedSimpleTableMeta(parent, foreignKeys.get(key));
     } else if (refs.containsKey(key)) {
-      return refs.get(key).getTableMeta();
+      return new ReferencedDerivedTableMeta(parent, refs.get(key).getTableMeta());
     } else if (reverseForeignKeys.containsKey(key)) {
       // return new ReferencedMultiTableMeta(parent, reverseForeignKeys.get(key));
       throw new ModelException(String.format("Reference '%s' is a reverse key.", key));
     }
     throw new ModelException(String.format("Reference '%s' not found in table '%s'.", key, tableName));
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class ReferencedDerivedTableMeta extends TableMeta implements ReferencingTable {
+
+    @Nullable
+    private final ReferencingTable parent;
+    private final ReferencingDerivedTableMeta refTable;
+
+    @Override
+    public IterableTableReader reader(Object key, Resources resources) throws IOException {
+      return refTable.reader(key, resources);
+    }
+
+    @Override
+    protected IndexColumn getColumn(Ident ident) throws ModelException {
+      IndexColumn column = refTable.column(ident);
+      TableDependencies deps = new TableDependencies(this, column.tableDependencies());
+      return new IndexColumn(refTable, column.index(), column.getType(), deps);
+    }
+
+    @Override
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      return null;
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return refTable.readResources();
+    }
+
+    @Override
+    public Iterable<Ref> foreignKeyChain() {
+      return parent.foreignKeyChain();
+    }
   }
 
   @Data
