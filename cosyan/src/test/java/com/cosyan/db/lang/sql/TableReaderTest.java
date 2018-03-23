@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableMap;
 public class TableReaderTest extends DummyTestBase {
 
   private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+  private static final SimpleDateFormat sdf2 = new SimpleDateFormat("yyyyMMdd hhmmss");
 
   @BeforeClass
   public static void setUp() throws IOException, ModelException, ParserException, ParseException {
@@ -521,13 +522,36 @@ public class TableReaderTest extends DummyTestBase {
   }
 
   @Test
-  public void testDateFunctions() throws Exception {
+  public void testDateFunctions1() throws Exception {
     ExposedTableReader reader = query("select "
         + "a > date('2017-01-15') as x, "
         + "a > date('2017-01-15 00:00:00') as y, "
         + "date('20170115') as z from dates;");
     assertEquals(ImmutableMap.of("x", false, "y", false, "z", DataTypes.NULL), reader.readColumns());
     assertEquals(ImmutableMap.of("x", true, "y", true, "z", DataTypes.NULL), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testDateFunctions_Add() throws Exception {
+    ExposedTableReader reader = query("select "
+        + "add_years(a, 1) as a, "
+        + "add_months(a, 1) as b, "
+        + "add_weeks(a, 1) as c, "
+        + "add_days(a, 1) as d, "
+        + "add_hours(a, 1) as e, "
+        + "add_minutes(a, 1) as f, "
+        + "add_seconds(a, 1) as g "
+        + "from dates;");
+    assertEquals(ImmutableMap.builder()
+        .put("a", sdf.parse("20180101"))
+        .put("b", sdf.parse("20170201"))
+        .put("c", sdf.parse("20170108"))
+        .put("d", sdf.parse("20170102"))
+        .put("e", sdf2.parse("20170101 010000"))
+        .put("f", sdf2.parse("20170101 000100"))
+        .put("g", sdf2.parse("20170101 000001")).build(), reader.readColumns());
+    reader.readColumns();
     assertEquals(null, reader.readColumns());
   }
 

@@ -6,6 +6,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Aggregators.Aggregator;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.DateFunctions.AddDays;
+import com.cosyan.db.model.DateFunctions.AddHours;
+import com.cosyan.db.model.DateFunctions.AddMinutes;
+import com.cosyan.db.model.DateFunctions.AddMonths;
+import com.cosyan.db.model.DateFunctions.AddSeconds;
+import com.cosyan.db.model.DateFunctions.AddWeeks;
+import com.cosyan.db.model.DateFunctions.AddYears;
 import com.cosyan.db.model.DateFunctions.Date;
 import com.cosyan.db.model.MathFunctions.Ceil;
 import com.cosyan.db.model.MathFunctions.Cos;
@@ -129,6 +136,13 @@ public class BuiltinFunctions {
       .add(new Cos())
       // Date
       .add(new Date())
+      .add(new AddYears())
+      .add(new AddMonths())
+      .add(new AddWeeks())
+      .add(new AddDays())
+      .add(new AddHours())
+      .add(new AddSeconds())
+      .add(new AddMinutes())
       .build();
 
   public static final ImmutableList<TableFunction> TABLE = ImmutableList.<TableFunction>builder()
