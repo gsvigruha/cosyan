@@ -4,6 +4,8 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -19,8 +21,10 @@ import com.google.common.collect.ImmutableMap;
 
 public class TableReaderTest extends DummyTestBase {
 
+  private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParserException {
+  public static void setUp() throws IOException, ModelException, ParserException, ParseException {
     DummyTestBase.setUp();
 
     register(new DummyMaterializedTableMeta("table",
@@ -77,6 +81,13 @@ public class TableReaderTest extends DummyTestBase {
             new Object[] { DataTypes.NULL, 1L, 2.0 },
             new Object[] { "b", DataTypes.NULL, 4.0 },
             new Object[] { "c", 5L, DataTypes.NULL } }));
+
+    register(new DummyMaterializedTableMeta("dates",
+        ImmutableMap.of(
+            "a", new BasicColumn(0, "a", DataTypes.DateType, true, false, false, false)),
+        new Object[][] {
+            new Object[] { sdf.parse("20170101") },
+            new Object[] { sdf.parse("20170201") } }));
     finalizeResources();
   }
 
@@ -498,6 +509,25 @@ public class TableReaderTest extends DummyTestBase {
     ExposedTableReader reader = query("select case when a = 'abc' then b else c end as a from table;");
     assertEquals(ImmutableMap.of("a", 1L), reader.readColumns());
     assertEquals(ImmutableMap.of("a", 6.7), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testDates() throws Exception {
+    ExposedTableReader reader = query("select a from dates;");
+    assertEquals(ImmutableMap.of("a", sdf.parse("20170101")), reader.readColumns());
+    assertEquals(ImmutableMap.of("a", sdf.parse("20170201")), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testDateFunctions() throws Exception {
+    ExposedTableReader reader = query("select "
+        + "a > date('2017-01-15') as x, "
+        + "a > date('2017-01-15 00:00:00') as y, "
+        + "date('20170115') as z from dates;");
+    assertEquals(ImmutableMap.of("x", false, "y", false, "z", DataTypes.NULL), reader.readColumns());
+    assertEquals(ImmutableMap.of("x", true, "y", true, "z", DataTypes.NULL), reader.readColumns());
     assertEquals(null, reader.readColumns());
   }
 

@@ -2,6 +2,7 @@ package com.cosyan.db;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -36,7 +37,7 @@ public abstract class DummyTestBase {
   private static Resources resources;
 
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParserException {
+  public static void setUp() throws IOException, ModelException, ParserException, ParseException {
     FileUtils.cleanDirectory(new File("/tmp/data"));
     Properties props = new Properties();
     props.setProperty(Config.DATA_DIR, "/tmp/data");

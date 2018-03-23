@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Aggregators.Aggregator;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.DateFunctions.Date;
 import com.cosyan.db.model.MathFunctions.Ceil;
 import com.cosyan.db.model.MathFunctions.Cos;
 import com.cosyan.db.model.MathFunctions.Exp;
@@ -56,7 +57,7 @@ public class BuiltinFunctions {
       this.returnType = returnType;
     }
 
-    public abstract T call(ImmutableList<Object> argValues);
+    public abstract Object call(ImmutableList<Object> argValues);
   }
 
   @Data
@@ -126,6 +127,8 @@ public class BuiltinFunctions {
       .add(new Floor())
       .add(new Sin())
       .add(new Cos())
+      // Date
+      .add(new Date())
       .build();
 
   public static final ImmutableList<TableFunction> TABLE = ImmutableList.<TableFunction>builder()
