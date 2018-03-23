@@ -52,6 +52,37 @@ diff
 48600
 ```
 
+Malformatted dates result in `null`s.
 
+<!-- TEST -->
+```
+select date('20170102') - d as diff from dates where d >= date('2017-01-01');
+```
+```
+diff
+null
+null
+```
 
-
+<!-- TEST -->
+```
+select
+  get_year(d) as d1,
+  get_month(d) as d2,
+  get_week_of_year(d) as d3,
+  get_week_of_month(d) as d4,
+  get_day(d) as d5,
+  get_day_of_year(d) as d6,
+  get_day_of_month(d) as d7,
+  get_day_of_week(d) as d8,
+  get_hour(d) as d9,
+  get_minute(d) as d10,
+  get_second(d) as d11
+from dates;
+```
+```
+d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,d11
+2017,1,1,1,1,1,1,1,0,0,0
+2017,1,1,1,1,1,1,1,10,30,0
+1960,1,1,1,1,1,1,6,0,0,0
+```

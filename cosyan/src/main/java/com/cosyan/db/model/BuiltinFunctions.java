@@ -14,6 +14,17 @@ import com.cosyan.db.model.DateFunctions.AddSeconds;
 import com.cosyan.db.model.DateFunctions.AddWeeks;
 import com.cosyan.db.model.DateFunctions.AddYears;
 import com.cosyan.db.model.DateFunctions.Date;
+import com.cosyan.db.model.DateFunctions.GetDay;
+import com.cosyan.db.model.DateFunctions.GetDayOfMonth;
+import com.cosyan.db.model.DateFunctions.GetDayOfWeek;
+import com.cosyan.db.model.DateFunctions.GetDayOfYear;
+import com.cosyan.db.model.DateFunctions.GetHour;
+import com.cosyan.db.model.DateFunctions.GetMinute;
+import com.cosyan.db.model.DateFunctions.GetMonth;
+import com.cosyan.db.model.DateFunctions.GetSecond;
+import com.cosyan.db.model.DateFunctions.GetWeekOfMonth;
+import com.cosyan.db.model.DateFunctions.GetWeekOfYear;
+import com.cosyan.db.model.DateFunctions.GetYear;
 import com.cosyan.db.model.MathFunctions.Ceil;
 import com.cosyan.db.model.MathFunctions.Cos;
 import com.cosyan.db.model.MathFunctions.Exp;
@@ -143,12 +154,23 @@ public class BuiltinFunctions {
       .add(new AddHours())
       .add(new AddSeconds())
       .add(new AddMinutes())
+      .add(new GetYear())
+      .add(new GetMonth())
+      .add(new GetWeekOfYear())
+      .add(new GetWeekOfMonth())
+      .add(new GetDay())
+      .add(new GetDayOfYear())
+      .add(new GetDayOfMonth())
+      .add(new GetDayOfWeek())
+      .add(new GetHour())
+      .add(new GetMinute())
+      .add(new GetSecond())
       .build();
 
   public static final ImmutableList<TableFunction> TABLE = ImmutableList.<TableFunction>builder()
       .add(new SelectFunction("select"))
       .build();
-      
+
   public static final ImmutableSet<String> AGGREGATION_NAMES;
   static {
     ImmutableSet.Builder<String> builder = ImmutableSet.builder();
@@ -190,7 +212,7 @@ public class BuiltinFunctions {
     }
     return aggrFunctions.get(ident).compile(argType);
   }
-  
+
   public static TableFunction tableFunction(String ident) throws ModelException {
     if (!tableFunctions.containsKey(ident)) {
       throw new ModelException("Function " + ident + " does not exist.");
