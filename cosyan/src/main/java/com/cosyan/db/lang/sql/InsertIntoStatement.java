@@ -12,7 +12,10 @@ import com.cosyan.db.lang.sql.SyntaxTree.Statement;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.DateFunctions;
+import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -52,9 +55,19 @@ public class InsertIntoStatement {
           .merge(tableMeta.reverseRuleDependenciesReadResources());
     }
 
+    private Object convert(Object value, DataType<?> dataType) {
+      if (dataType == DataTypes.DateType) {
+        return DateFunctions.convert((String) value);
+      } else {
+        return value;
+      }
+    }
+
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
-      Object[] fullValues = new Object[tableMeta.columns().size()];
+      ImmutableList<BasicColumn> cols = ImmutableList.copyOf(tableMeta.columns().values());
+      Object[] fullValues = new Object[cols.size()];
+
       // The rules must be evaluated for new records. This requires dependent table
       // readers.
       TableWriter writer = resources.writer(tableMeta.tableName());
@@ -63,14 +76,14 @@ public class InsertIntoStatement {
           Arrays.fill(fullValues, DataTypes.NULL);
           for (int i = 0; i < columns.get().size(); i++) {
             int idx = indexes.get(columns.get().get(i));
-            fullValues[idx] = values.get(i).getValue();
+            fullValues[idx] = convert(values.get(i).getValue(), cols.get(i).getType());
           }
         } else {
           if (values.size() != fullValues.length) {
             throw new RuleException("Expected '" + fullValues.length + "' values but got '" + values.size() + "'.");
           }
           for (int i = 0; i < values.size(); i++) {
-            fullValues[i] = values.get(i).getValue();
+            fullValues[i] = convert(values.get(i).getValue(), cols.get(i).getType());
           }
         }
         writer.insert(resources, fullValues, /* checkReferencingRules= */true);

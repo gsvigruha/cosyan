@@ -258,6 +258,13 @@ public class BinaryExpression extends Expression {
           return (Long) l - (Double) r;
         }
       };
+    } else if (leftColumn.getType() == DataTypes.DateType && rightColumn.getType() == DataTypes.DateType) {
+      return new BinaryColumn(DataTypes.LongType, leftColumn, rightColumn) {
+        @Override
+        public Object getValueImpl(Object l, Object r) {
+          return (((Date) l).getTime() - ((Date) r).getTime()) / 1000;
+        }
+      };
     } else {
       throw new ModelException("Unsupported binary expression " + token.getString() +
           " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");

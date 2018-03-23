@@ -1,7 +1,9 @@
 package com.cosyan.db.lang.sql;
 
+import java.util.Date;
 import java.util.StringJoiner;
 
+import com.cosyan.db.model.DateFunctions;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
@@ -35,7 +37,11 @@ public abstract class Result {
       for (ImmutableList<Object> row : values) {
         StringJoiner vsj = new StringJoiner(",");
         for (Object obj : row) {
-          vsj.add(obj.toString());
+          if (obj instanceof Date) {
+            vsj.add(DateFunctions.sdf1.format((Date) obj));
+          } else {
+            vsj.add(obj.toString());
+          }
         }
         sb.append(vsj.toString()).append("\n");
       }
