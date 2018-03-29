@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
@@ -67,6 +68,7 @@ public class DocTest extends UnitTestBase {
     runDocFile("doc/rules/date_time.md");
   }
 
+  @Ignore
   @Test
   public void testNetworks() throws IOException, ModelException, ParserException {
     setUp();

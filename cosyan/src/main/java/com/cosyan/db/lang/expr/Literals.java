@@ -19,14 +19,16 @@ public class Literals {
     public Object getValue();
 
     public String print();
+
+    public DataType<?> getType();
   }
 
   private static class LiteralColumn extends DerivedColumn {
 
     private Literal literal;
 
-    public LiteralColumn(DataType<?> type, Literal literal) {
-      super(type);
+    public LiteralColumn(Literal literal) {
+      super(literal.getType());
       this.literal = literal;
     }
 
@@ -58,12 +60,17 @@ public class Literals {
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) {
-      return new LiteralColumn(DataTypes.StringType, this);
+      return new LiteralColumn(this);
     }
 
     @Override
     public String print() {
       return "'" + value + "'";
+    }
+
+    @Override
+    public DataType<?> getType() {
+      return DataTypes.StringType;
     }
   }
 
@@ -74,12 +81,17 @@ public class Literals {
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) {
-      return new LiteralColumn(DataTypes.LongType, this);
+      return new LiteralColumn(this);
     }
 
     @Override
     public String print() {
       return String.valueOf(value);
+    }
+
+    @Override
+    public DataType<?> getType() {
+      return DataTypes.LongType;
     }
   }
 
@@ -90,12 +102,17 @@ public class Literals {
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) {
-      return new LiteralColumn(DataTypes.DoubleType, this);
+      return new LiteralColumn(this);
     }
 
     @Override
     public String print() {
       return String.valueOf(value);
+    }
+
+    @Override
+    public DataType<?> getType() {
+      return DataTypes.DoubleType;
     }
   }
 
@@ -105,7 +122,7 @@ public class Literals {
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) {
-      return new LiteralColumn(DataTypes.NULL, this);
+      return new LiteralColumn(this);
     }
 
     @Override
@@ -115,6 +132,11 @@ public class Literals {
 
     @Override
     public Object getValue() {
+      return DataTypes.NULL;
+    }
+
+    @Override
+    public DataType<?> getType() {
       return DataTypes.NULL;
     }
   }

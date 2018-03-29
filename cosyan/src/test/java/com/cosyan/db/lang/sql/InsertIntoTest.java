@@ -303,4 +303,19 @@ public class InsertIntoTest extends UnitTestBase {
     assertHeader(new String[] { "a1", "b1" }, r1);
     assertValues(new Object[][] { { "x", DataTypes.NULL } }, r1);
   }
+
+  @Test
+  public void testInsertWrongType() {
+    execute("create table t31 (a varchar, b integer, c float, d timestamp, e boolean);");
+    ErrorResult e1 = error("insert into t31 values (1, null, null, null, null);");
+    assertError(RuleException.class, "Expected 'varchar' but got 'integer'.", e1);
+    ErrorResult e2 = error("insert into t31 values (null, 'x', null, null, null);");
+    assertError(RuleException.class, "Expected 'integer' but got 'varchar'.", e2);
+    ErrorResult e3 = error("insert into t31 values (null, null, 1, null, null);");
+    assertError(RuleException.class, "Expected 'float' but got 'integer'.", e3);
+    ErrorResult e4 = error("insert into t31 values (null, null,  null, 1, null);");
+    assertError(RuleException.class, "Expected 'varchar' but got 'integer'.", e4);
+    ErrorResult e5 = error("insert into t31 values (null, null, null, null, 'x');");
+    assertError(RuleException.class, "Expected 'boolean' but got 'varchar'.", e5);
+  }
 }

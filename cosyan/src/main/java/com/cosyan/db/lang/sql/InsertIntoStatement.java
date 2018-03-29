@@ -14,7 +14,6 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.DateFunctions;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
@@ -55,12 +54,11 @@ public class InsertIntoStatement {
           .merge(tableMeta.reverseRuleDependenciesReadResources());
     }
 
-    private Object convert(Object value, DataType<?> dataType) {
-      if (dataType == DataTypes.DateType) {
-        return DateFunctions.convert((String) value);
-      } else {
-        return value;
+    private Object check(DataType<?> dataType, Literal literal) throws RuleException {
+      if (literal.getValue() != DataTypes.NULL && literal.getType() != dataType.inputType()) {
+        throw new RuleException(String.format("Expected '%s' but got '%s'.", dataType.inputType(), literal.getType()));
       }
+      return dataType.convert(literal.getValue());
     }
 
     @Override
@@ -76,14 +74,14 @@ public class InsertIntoStatement {
           Arrays.fill(fullValues, DataTypes.NULL);
           for (int i = 0; i < columns.get().size(); i++) {
             int idx = indexes.get(columns.get().get(i));
-            fullValues[idx] = convert(values.get(i).getValue(), cols.get(i).getType());
+            fullValues[idx] = check(cols.get(idx).getType(), values.get(i));
           }
         } else {
           if (values.size() != fullValues.length) {
             throw new RuleException("Expected '" + fullValues.length + "' values but got '" + values.size() + "'.");
           }
           for (int i = 0; i < values.size(); i++) {
-            fullValues[i] = convert(values.get(i).getValue(), cols.get(i).getType());
+            fullValues[i] = check(cols.get(i).getType(), values.get(i));
           }
         }
         writer.insert(resources, fullValues, /* checkReferencingRules= */true);

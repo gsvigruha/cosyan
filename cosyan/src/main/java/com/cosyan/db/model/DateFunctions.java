@@ -12,12 +12,16 @@ public class DateFunctions {
   public static final SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
   private static final SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd");
 
-  public static Object convert(String arg) {
+  public static Object convert(Object arg) {
+    if (arg == DataTypes.NULL) {
+      return arg;
+    }
+    String sarg = (String) arg;
     try {
-      return sdf1.parse(arg);
+      return sdf1.parse(sarg);
     } catch (ParseException e1) {
       try {
-        return sdf2.parse(arg);
+        return sdf2.parse(sarg);
       } catch (ParseException e2) {
         return DataTypes.NULL;
       }
