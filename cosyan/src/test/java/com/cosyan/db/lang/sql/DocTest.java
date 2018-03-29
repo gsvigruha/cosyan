@@ -66,4 +66,10 @@ public class DocTest extends UnitTestBase {
     setUp();
     runDocFile("doc/rules/date_time.md");
   }
+
+  @Test
+  public void testNetworks() throws IOException, ModelException, ParserException {
+    setUp();
+    runDocFile("doc/rules/networks.md");
+  }
 }
