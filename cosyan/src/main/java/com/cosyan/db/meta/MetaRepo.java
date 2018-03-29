@@ -16,6 +16,7 @@ import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.index.ByteTrie.LongIndex;
 import com.cosyan.db.index.ByteTrie.StringIndex;
+import com.cosyan.db.index.IDIndex;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Indexes.IndexReader;
@@ -32,6 +33,7 @@ import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.TableIndex;
+import com.cosyan.db.model.TableIndex.IDTableIndex;
 import com.cosyan.db.model.TableIndex.LongTableIndex;
 import com.cosyan.db.model.TableIndex.StringTableIndex;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
@@ -211,6 +213,9 @@ public class MetaRepo implements TableProvider {
       } else if (column.getType() == DataTypes.LongType) {
         uniqueIndexes.put(indexName, new LongTableIndex(new LongIndex(path)));
         lockManager.registerLock(indexName);
+      } else if (column.getType() == DataTypes.IDType) {
+        uniqueIndexes.put(indexName, new IDTableIndex(new IDIndex(path)));
+        lockManager.registerLock(indexName);
       } else {
         throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
             " and " + DataTypes.LongType + " types, not " + column.getType() + ".");
@@ -227,7 +232,7 @@ public class MetaRepo implements TableProvider {
     if (column.getType() == DataTypes.StringType) {
       multiIndexes.put(indexName, new StringTableMultiIndex(new StringMultiIndex(path)));
       lockManager.registerLock(indexName);
-    } else if (column.getType() == DataTypes.LongType) {
+    } else if (column.getType() == DataTypes.LongType || column.getType() == DataTypes.IDType) {
       multiIndexes.put(indexName, new LongTableMultiIndex(new LongMultiIndex(path)));
       lockManager.registerLock(indexName);
     } else {

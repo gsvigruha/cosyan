@@ -13,7 +13,7 @@ import com.cosyan.db.index.ByteTrie.IndexException;
 
 public class IDIndex {
 
-  private static final int SIZE = 65536;
+  private static final int SIZE = 4096;
 
   private final TreeMap<Long, long[]> cachedIndices = new TreeMap<>();
 
