@@ -1,6 +1,7 @@
 package com.cosyan.db.lang.sql;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 
 import com.cosyan.db.io.TableWriter;
@@ -15,6 +16,8 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
+import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
@@ -27,6 +30,12 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 public class UpdateStatement {
+
+  public static void check(DataType<?> columnType, DataType<?> exprType) throws ModelException {
+    if (exprType != DataTypes.NULL && columnType != exprType.inputType()) {
+      throw new ModelException(String.format("Expected '%s' but got '%s'.", columnType, exprType.inputType()));
+    }
+  }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
@@ -62,6 +71,10 @@ public class UpdateStatement {
         columnExprsBuilder.put(tableMeta.column(update.getIdent()).index(), columnExpr);
       }
       columnExprs = columnExprsBuilder.build();
+      for (Map.Entry<Integer, ColumnMeta> entry : columnExprs.entrySet()) {
+        check(tableMeta.tableMeta().allColumns().get(entry.getKey()).getType(),
+            entry.getValue().getType());
+      }
       if (where.isPresent()) {
         whereColumn = where.get().compileColumn(tableMeta);
         clause = PredicateHelper.getBestClause(tableMeta, where.get());

@@ -34,6 +34,10 @@ public class Tokens {
 
   public static String TIMESTAMP = "timestamp";
 
+  public static String TRUE = "true";
+
+  public static String FALSE = "false";
+
   public static String UNIQUE = "unique";
 
   public static String IMMUTABLE = "immutable";
@@ -285,6 +289,10 @@ public class Tokens {
       return false;
     }
 
+    public boolean isBoolean() {
+      return false;
+    }
+
     public boolean isIdent() {
       return false;
     }
@@ -319,6 +327,17 @@ public class Tokens {
 
     @Override
     public boolean isFloat() {
+      return true;
+    }
+  }
+
+  public static class BooleanToken extends Token {
+    public BooleanToken(String string) {
+      super(string);
+    }
+
+    @Override
+    public boolean isBoolean() {
       return true;
     }
   }

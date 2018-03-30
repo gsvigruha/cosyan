@@ -9,6 +9,7 @@ import com.cosyan.db.lang.expr.CaseExpression;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.Expression.UnaryExpression;
 import com.cosyan.db.lang.expr.FuncCallExpression;
+import com.cosyan.db.lang.expr.Literals.BooleanLiteral;
 import com.cosyan.db.lang.expr.Literals.DoubleLiteral;
 import com.cosyan.db.lang.expr.Literals.Literal;
 import com.cosyan.db.lang.expr.Literals.LongLiteral;
@@ -455,6 +456,9 @@ public class Parser {
     } else if (token.isString()) {
       tokens.next();
       expr = new StringLiteral(token.getString());
+    } else if (token.isBoolean()) {
+      tokens.next();
+      expr = new BooleanLiteral(Boolean.valueOf(token.getString()));
     } else {
       throw new ParserException("Expected literal but got " + token.getString() + ".");
     }

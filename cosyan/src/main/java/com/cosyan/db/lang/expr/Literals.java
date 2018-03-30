@@ -118,6 +118,27 @@ public class Literals {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
+  public static class BooleanLiteral extends Expression implements Literal {
+    private final Boolean value;
+
+    @Override
+    public DerivedColumn compile(TableMeta sourceTable) {
+      return new LiteralColumn(this);
+    }
+
+    @Override
+    public String print() {
+      return "'" + value + "'";
+    }
+
+    @Override
+    public DataType<?> getType() {
+      return DataTypes.BoolType;
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
   public static class NullLiteral extends Expression implements Literal {
 
     @Override

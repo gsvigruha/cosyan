@@ -27,6 +27,13 @@ import lombok.EqualsAndHashCode;
 
 public class InsertIntoStatement {
 
+  public static Object check(DataType<?> dataType, Literal literal) throws RuleException {
+    if (literal.getValue() != DataTypes.NULL && literal.getType() != dataType.inputType()) {
+      throw new RuleException(String.format("Expected '%s' but got '%s'.", dataType.inputType(), literal.getType()));
+    }
+    return dataType.convert(literal.getValue());
+  }
+
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class InsertInto extends Node implements Statement {
@@ -52,13 +59,6 @@ public class InsertIntoStatement {
           .insertIntoTable(tableMeta)
           .merge(tableMeta.ruleDependenciesReadResources())
           .merge(tableMeta.reverseRuleDependenciesReadResources());
-    }
-
-    private Object check(DataType<?> dataType, Literal literal) throws RuleException {
-      if (literal.getValue() != DataTypes.NULL && literal.getType() != dataType.inputType()) {
-        throw new RuleException(String.format("Expected '%s' but got '%s'.", dataType.inputType(), literal.getType()));
-      }
-      return dataType.convert(literal.getValue());
     }
 
     @Override

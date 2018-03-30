@@ -7,6 +7,7 @@ import org.junit.Test;
 import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.sql.Result.ErrorResult;
 import com.cosyan.db.lang.sql.Result.QueryResult;
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
@@ -337,5 +338,21 @@ public class UpdateTest extends UnitTestBase {
     QueryResult r3 = query("select a, b from t27;");
     assertHeader(new String[] { "a", "b" }, r3);
     assertValues(new Object[][] { { DataTypes.NULL, "z" } }, r3);
+  }
+
+  @Test
+  public void testUpdateWrongType() {
+    execute("create table t28 (a varchar, b integer, c float, d timestamp, e boolean);");
+    execute("insert into t28 values('x', 1, 1.0, '2017-01-01', true);");
+    ErrorResult e1 = error("update t28 set a = 1;");
+    assertError(ModelException.class, "Expected 'varchar' but got 'integer'.", e1);
+    ErrorResult e2 = error("update t28 set b = 1.0;");
+    assertError(ModelException.class, "Expected 'integer' but got 'float'.", e2);
+    ErrorResult e3 = error("update t28 set c = 'x';");
+    assertError(ModelException.class, "Expected 'float' but got 'varchar'.", e3);
+    ErrorResult e4 = error("update t28 set d = 1;");
+    assertError(ModelException.class, "Expected 'timestamp' but got 'integer'.", e4);
+    ErrorResult e5 = error("update t28 set e = 'x';");
+    assertError(ModelException.class, "Expected 'boolean' but got 'varchar'.", e5);
   }
 }

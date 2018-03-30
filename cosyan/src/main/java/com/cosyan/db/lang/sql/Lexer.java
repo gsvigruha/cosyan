@@ -3,6 +3,7 @@ package com.cosyan.db.lang.sql;
 import java.util.ArrayList;
 
 import com.cosyan.db.lang.sql.Parser.ParserException;
+import com.cosyan.db.lang.sql.Tokens.BooleanToken;
 import com.cosyan.db.lang.sql.Tokens.FloatToken;
 import com.cosyan.db.lang.sql.Tokens.IdentToken;
 import com.cosyan.db.lang.sql.Tokens.IntToken;
@@ -69,7 +70,12 @@ public class Lexer {
         }
       } else if (state == STATE_IDENT) {
         if (Tokens.isDelimiter(c) || c == Tokens.DOT) {
-          builder.add(new IdentToken(sql.substring(literalStartIndex, i)));
+          String str = sql.substring(literalStartIndex, i);
+          if (str.equals(Tokens.TRUE) || str.equals(Tokens.FALSE)) {
+            builder.add(new BooleanToken(str));
+          } else {
+            builder.add(new IdentToken(str));
+          }
           state = STATE_DEFAULT;
           literalStartIndex = i;
           i--;
