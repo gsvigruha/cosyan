@@ -18,6 +18,7 @@ import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
+import com.cosyan.db.model.References.ReferencedAggrTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMeta.IterableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -95,7 +96,7 @@ public class DerivedTables {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class ReferencingDerivedTableMeta extends ExposedTableMeta {
-    private final TableMeta sourceTable;
+    private final ReferencedAggrTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
     private final ReverseForeignKey reverseForeignKey;
 
@@ -273,6 +274,11 @@ public class DerivedTables {
     @Override
     public IterableTableReader reader(Object key, Resources resources) throws IOException {
       return sourceTable.reader(key, resources);
+    }
+
+    @Override
+    public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
+      return sourceTable.values(sourceValues, resources);
     }
   }
 

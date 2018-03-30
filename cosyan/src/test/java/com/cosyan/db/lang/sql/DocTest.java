@@ -1,13 +1,12 @@
 package com.cosyan.db.lang.sql;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
@@ -68,7 +67,6 @@ public class DocTest extends UnitTestBase {
     runDocFile("doc/rules/date_time.md");
   }
 
-  @Ignore
   @Test
   public void testNetworks() throws IOException, ModelException, ParserException {
     setUp();

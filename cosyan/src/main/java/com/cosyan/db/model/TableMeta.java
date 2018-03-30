@@ -37,9 +37,9 @@ public abstract class TableMeta implements CompiledObject {
   public IterableTableReader reader(Resources resources) throws IOException {
     return reader(null, resources);
   }
-  
+
   public abstract IterableTableReader reader(Object key, Resources resources) throws IOException;
-  
+
   public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
     return sourceValues;
   }

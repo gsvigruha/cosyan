@@ -72,10 +72,15 @@ public class References {
     }
 
     @Override
+    public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
+      return refTable.values(parent.values(sourceValues, resources), resources);
+    }
+
+    @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
       IndexColumn column = refTable.column(ident);
       TableDependencies deps = new TableDependencies(this, column.tableDependencies());
-      return new IndexColumn(refTable, column.index(), column.getType(), deps);
+      return new IndexColumn(this, column.index(), column.getType(), deps);
     }
 
     @Override
