@@ -1,7 +1,7 @@
 package com.cosyan.db.model;
 
 import com.cosyan.db.lang.sql.SelectStatement.Select;
-import com.cosyan.db.model.DerivedTables.ReferencingDerivedTableMeta;
+import com.cosyan.db.model.References.ReferencingDerivedTableMeta;
 
 import lombok.Data;
 

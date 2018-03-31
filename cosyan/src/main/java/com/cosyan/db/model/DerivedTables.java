@@ -13,11 +13,8 @@ import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
-import com.cosyan.db.model.Dependencies.TableDependencies;
-import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMeta.IterableTableMeta;
@@ -90,49 +87,6 @@ public class DerivedTables {
           return values;
         }
       };
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class ReferencingDerivedTableMeta extends TableMeta {
-    private final GlobalAggrTableMeta sourceTable;
-    private final ImmutableMap<String, ColumnMeta> columns;
-    private final ReverseForeignKey reverseForeignKey;
-
-    @Override
-    protected IndexColumn getColumn(Ident ident) throws ModelException {
-      ColumnMeta column = columns.get(ident.getString());
-      TableDependencies deps = new TableDependencies(this, column.tableDependencies());
-      return new IndexColumn(sourceTable, indexOf(columns.keySet(), ident), column.getType(), deps);
-    }
-
-    @Override
-    protected TableMeta getRefTable(Ident ident) throws ModelException {
-      return null;
-    }
-
-    @Override
-    public MetaResources readResources() {
-      return sourceTable.readResources().merge(MetaResources.readTable(reverseForeignKey.getRefTable()));
-    }
-
-    public ImmutableList<String> columnNames() {
-      return columns.keySet().asList();
-    }
-
-    @Override
-    public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
-      Object key = sourceValues[reverseForeignKey.getColumn().getIndex()];
-      IterableTableReader reader = sourceTable.reader(key, resources);
-      Object[] aggrValues = reader.next();
-      reader.close();
-      Object[] values = new Object[columns.size()];
-      int i = 0;
-      for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-        values[i++] = entry.getValue().value(aggrValues, resources);
-      }
-      return values;
     }
   }
 
