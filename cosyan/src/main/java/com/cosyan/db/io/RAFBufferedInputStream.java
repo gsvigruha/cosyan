@@ -11,7 +11,7 @@ public class RAFBufferedInputStream extends SeekableInputStream {
 
   private final byte[] buffer;
 
-  private final long length;
+  private long length;
 
   private int pointer;
 

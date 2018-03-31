@@ -90,6 +90,7 @@ public class CreateStatement {
         }
       }
       MaterializedTableMeta tableMeta = new MaterializedTableMeta(
+          metaRepo.config(),
           name,
           columns.values(),
           primaryKey);

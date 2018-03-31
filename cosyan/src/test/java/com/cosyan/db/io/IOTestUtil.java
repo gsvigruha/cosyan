@@ -6,6 +6,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
+import com.cosyan.db.conf.Config;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.TableReader.IterableTableReader;
@@ -80,8 +82,8 @@ public class IOTestUtil {
 
     private final Object[][] data;
 
-    public DummyMaterializedTableMeta(String name, ImmutableMap<String, BasicColumn> columns, Object[][] data) {
-      super(name, columns.values(), Optional.empty());
+    public DummyMaterializedTableMeta(Config config, String name, ImmutableMap<String, BasicColumn> columns, Object[][] data) throws IOException, ConfigException {
+      super(config, name, columns.values(), Optional.empty());
       this.data = data;
     }
 

@@ -123,7 +123,7 @@ public abstract class UnitTestBase {
   }
 
   protected void assertValues(Object[][] expected, QueryResult result) {
-    assertEquals(expected.length, result.getValues().size());
+    assertEquals("Wrong row number:", expected.length, result.getValues().size());
     for (int i = 0; i < expected.length; i++) {
       assertEquals(ImmutableList.copyOf(expected[i]), result.getValues().get(i));
     }

@@ -2,7 +2,6 @@ package com.cosyan.db;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -30,14 +29,14 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 
 public abstract class DummyTestBase {
-  private static MetaRepo metaRepo;
+  protected static MetaRepo metaRepo;
   private static Parser parser;
   private static Lexer lexer;
   private static Map<String, SeekableTableReader> readers;
   private static Resources resources;
 
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParserException, ParseException {
+  public static void setUp() throws Exception {
     FileUtils.cleanDirectory(new File("/tmp/data"));
     Properties props = new Properties();
     props.setProperty(Config.DATA_DIR, "/tmp/data");

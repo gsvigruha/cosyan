@@ -3,8 +3,6 @@ package com.cosyan.db.lang.sql;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
-import java.io.IOException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 import org.junit.BeforeClass;
@@ -13,7 +11,6 @@ import org.junit.Test;
 import com.cosyan.db.DummyTestBase;
 import com.cosyan.db.io.IOTestUtil.DummyMaterializedTableMeta;
 import com.cosyan.db.io.TableReader.ExposedTableReader;
-import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
@@ -25,10 +22,10 @@ public class TableReaderTest extends DummyTestBase {
   private static final SimpleDateFormat sdf2 = new SimpleDateFormat("yyyyMMdd hhmmss");
 
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParserException, ParseException {
+  public static void setUp() throws Exception {
     DummyTestBase.setUp();
 
-    register(new DummyMaterializedTableMeta("table",
+    register(new DummyMaterializedTableMeta(metaRepo.config(), "table",
         ImmutableMap.of(
             "a", new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false),
             "b", new BasicColumn(1, "b", DataTypes.LongType, true, false, false, false),
@@ -37,7 +34,7 @@ public class TableReaderTest extends DummyTestBase {
             new Object[] { "abc", 1L, 1.0 },
             new Object[] { "xyz", 5L, 6.7 } }));
 
-    register(new DummyMaterializedTableMeta("large",
+    register(new DummyMaterializedTableMeta(metaRepo.config(), "large",
         ImmutableMap.of(
             "a", new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false),
             "b", new BasicColumn(1, "b", DataTypes.LongType, true, false, false, false),
@@ -48,7 +45,7 @@ public class TableReaderTest extends DummyTestBase {
             new Object[] { "b", 5L, 6.0 },
             new Object[] { "b", 7L, 8.0 } }));
 
-    register(new DummyMaterializedTableMeta("left",
+    register(new DummyMaterializedTableMeta(metaRepo.config(), "left",
         ImmutableMap.of(
             "a", new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false),
             "b", new BasicColumn(1, "b", DataTypes.LongType, true, false, false, false)),
@@ -57,7 +54,7 @@ public class TableReaderTest extends DummyTestBase {
             new Object[] { "b", 1L },
             new Object[] { "c", 5L } }));
 
-    register(new DummyMaterializedTableMeta("right",
+    register(new DummyMaterializedTableMeta(metaRepo.config(), "right",
         ImmutableMap.of(
             "x", new BasicColumn(0, "x", DataTypes.StringType, true, false, false, false),
             "y", new BasicColumn(1, "y", DataTypes.LongType, true, false, false, false)),
@@ -65,7 +62,7 @@ public class TableReaderTest extends DummyTestBase {
             new Object[] { "a", 2L },
             new Object[] { "c", 6L } }));
 
-    register(new DummyMaterializedTableMeta("dupl",
+    register(new DummyMaterializedTableMeta(metaRepo.config(), "dupl",
         ImmutableMap.of(
             "x", new BasicColumn(0, "x", DataTypes.StringType, true, false, false, false),
             "y", new BasicColumn(1, "y", DataTypes.LongType, true, false, false, false)),
@@ -73,7 +70,7 @@ public class TableReaderTest extends DummyTestBase {
             new Object[] { "a", 1L },
             new Object[] { "a", 5L } }));
 
-    register(new DummyMaterializedTableMeta("null",
+    register(new DummyMaterializedTableMeta(metaRepo.config(), "null",
         ImmutableMap.of(
             "a", new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false),
             "b", new BasicColumn(1, "b", DataTypes.LongType, true, false, false, false),
@@ -83,7 +80,7 @@ public class TableReaderTest extends DummyTestBase {
             new Object[] { "b", DataTypes.NULL, 4.0 },
             new Object[] { "c", 5L, DataTypes.NULL } }));
 
-    register(new DummyMaterializedTableMeta("dates",
+    register(new DummyMaterializedTableMeta(metaRepo.config(), "dates",
         ImmutableMap.of(
             "a", new BasicColumn(0, "a", DataTypes.DateType, true, false, false, false)),
         new Object[][] {

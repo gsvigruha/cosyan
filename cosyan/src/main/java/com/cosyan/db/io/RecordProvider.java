@@ -37,11 +37,12 @@ public interface RecordProvider {
   public class RecordReader implements RecordProvider {
 
     private final ImmutableList<BasicColumn> columns;
-    private final Set<Long> recordsToDelete;
+    protected final Set<Long> recordsToDelete;
     private final int numColumns;
-    private final SeekableInputStream inputStream;
+    protected final SeekableInputStream inputStream;
     private final DataInput dataInput;
-    private long pointer;
+
+    protected long pointer;
 
     public RecordReader(
         ImmutableList<BasicColumn> columns,
@@ -98,6 +99,23 @@ public interface RecordProvider {
       } while (true);
     }
 
+    @Override
+    public void close() throws IOException {
+      inputStream.close();
+    }
+  }
+
+  public class SeekableRecordReader extends RecordReader {
+
+    public SeekableRecordReader(ImmutableList<BasicColumn> columns, SeekableInputStream inputStream) {
+      super(columns, inputStream);
+    }
+
+    public SeekableRecordReader(ImmutableList<BasicColumn> columns, SeekableInputStream inputStream,
+        Set<Long> recordsToDelete) {
+      super(columns, inputStream, recordsToDelete);
+    }
+
     public void seek(long position) throws IOException {
       if (recordsToDelete.contains(position)) {
         throw new IOException("Record " + position + " is deleted.");
@@ -110,9 +128,9 @@ public interface RecordProvider {
       return pointer;
     }
 
-    @Override
-    public void close() throws IOException {
-      inputStream.close();
+    public void reset() throws IOException {
+      pointer = 0;
+      inputStream.reset();
     }
   }
 }

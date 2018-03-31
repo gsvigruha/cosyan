@@ -6,6 +6,7 @@ import java.io.RandomAccessFile;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.RecordProvider.RecordReader;
+import com.cosyan.db.io.RecordProvider.SeekableRecordReader;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.MaterializedTableMeta;
@@ -86,7 +87,7 @@ public abstract class TableReader implements TableIO {
 
   public static class MaterializedTableReader extends SeekableTableReader {
 
-    private final RecordReader reader;
+    private final SeekableRecordReader reader;
     private final RAFBufferedInputStream bufferedRAF;
     private final ImmutableMap<String, IndexReader> indexes;
     private final String fileName;
@@ -95,12 +96,13 @@ public abstract class TableReader implements TableIO {
     public MaterializedTableReader(
         MaterializedTableMeta tableMeta,
         String fileName,
+        RandomAccessFile file,
         ImmutableList<BasicColumn> columns,
         ImmutableMap<String, IndexReader> indexes) throws IOException {
       super(tableMeta);
       this.indexes = indexes;
-      this.bufferedRAF = new RAFBufferedInputStream(new RandomAccessFile(fileName, "r"));
-      this.reader = new RecordReader(columns, bufferedRAF);
+      this.bufferedRAF = new RAFBufferedInputStream(file);
+      this.reader = new SeekableRecordReader(columns, bufferedRAF);
       this.fileName = fileName;
       this.columns = columns;
     }

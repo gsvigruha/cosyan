@@ -42,7 +42,7 @@ public abstract class SeekableInputStream extends InputStream {
   public static class SeekableSequenceInputStream extends SeekableInputStream {
 
     private final ImmutableList<SeekableInputStream> streams;
-    private final long length;
+    private long length;
 
     private SeekableInputStream actStream;
     private int actStreamPointer;

@@ -202,6 +202,7 @@ public class Serializer {
       primaryKey = Optional.empty();
     }
     return new MaterializedTableMeta(
+        metaRepo.config(),
         tableName,
         columns.values(),
         primaryKey);

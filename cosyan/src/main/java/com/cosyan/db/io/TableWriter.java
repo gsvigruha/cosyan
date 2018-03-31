@@ -14,6 +14,7 @@ import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.RecordProvider.RecordReader;
+import com.cosyan.db.io.RecordProvider.SeekableRecordReader;
 import com.cosyan.db.io.SeekableInputStream.SeekableSequenceInputStream;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
@@ -37,9 +38,10 @@ import com.google.common.collect.ImmutableMultimap;
 
 public class TableWriter extends SeekableTableReader implements TableIO {
 
-  private final RandomAccessFile file;
+  private final String fileName;
+  private final SeekableOutputStream writer;
   private final MaterializedTableMeta tableMeta;
-  private final RecordReader reader;
+  private final SeekableRecordReader reader;
   private final ImmutableList<BasicColumn> columns;
   private final ImmutableMap<String, TableIndex> uniqueIndexes;
   private final ImmutableMap<String, TableMultiIndex> multiIndexes;
@@ -57,6 +59,8 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   public TableWriter(
       MaterializedTableMeta tableMeta,
       String fileName,
+      SeekableOutputStream fileWriter,
+      SeekableInputStream fileReader,
       ImmutableList<BasicColumn> columns,
       ImmutableMap<String, TableIndex> uniqueIndexes,
       ImmutableMap<String, TableMultiIndex> multiIndexes,
@@ -67,9 +71,10 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       Optional<PrimaryKey> primaryKey) throws IOException {
     super(tableMeta);
     this.tableMeta = tableMeta;
-    this.file = new RandomAccessFile(fileName, "rw");
-    this.reader = new RecordReader(columns, new SeekableSequenceInputStream(
-        new RAFBufferedInputStream(file),
+    this.fileName = fileName;
+    this.writer = fileWriter;
+    this.reader = new SeekableRecordReader(columns, new SeekableSequenceInputStream(
+        fileReader,
         new TreeMapInputStream(recordsToInsert)),
         recordsToDelete);
     this.columns = columns;
@@ -80,7 +85,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     this.rules = rules;
     this.reverseRules = reverseRules;
     this.primaryKey = primaryKey;
-    this.fileIndex0 = file.length();
+    this.fileIndex0 = fileReader.length();
     this.actFileIndex = fileIndex0;
   }
 
@@ -133,19 +138,23 @@ public class TableWriter extends SeekableTableReader implements TableIO {
 
   public void commit() throws IOException {
     try {
-      file.seek(fileIndex0);
-      ByteArrayOutputStream b = new ByteArrayOutputStream(1024);
-      for (byte[] data : recordsToInsert.values()) {
-        b.write(data);
+      if (recordsToInsert.size() > 1) {
+        ByteArrayOutputStream finalBuffer = new ByteArrayOutputStream(1024);
+        for (byte[] data : recordsToInsert.values()) {
+          finalBuffer.write(data);
+        }
+        writer.write(fileIndex0, finalBuffer.toByteArray());
+      } else {
+        for (byte[] data : recordsToInsert.values()) {
+          writer.write(fileIndex0, data);
+        }
       }
-      file.write(b.toByteArray());
       for (Long pos : recordsToDelete) {
-        file.seek(pos);
-        file.writeByte(0);
+        writer.write(pos, new byte[] { 0 });
       }
     } catch (IOException e) {
       rollback();
-      file.getChannel().truncate(fileIndex0);
+      writer.getChannel().truncate(fileIndex0);
       throw e;
     }
     for (TableIndex index : uniqueIndexes.values()) {
@@ -176,7 +185,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   }
 
   public void close() throws IOException {
-    file.close();
+    writer.close();
   }
 
   private void delete(Record record, Resources resources, Predicate<Integer> checkReversedForeignIndex,
@@ -226,8 +235,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   }
 
   public long delete(Resources resources, ColumnMeta whereColumn) throws IOException, RuleException {
-    RecordReader reader = recordReader();
-    return delete(reader, resources, whereColumn);
+    return delete(recordReader(), resources, whereColumn);
   }
 
   public long deleteWithIndex(Resources resources, ColumnMeta whereColumn, VariableEquals clause)
@@ -265,8 +273,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
 
   public long update(Resources resources, ImmutableMap<Integer, ColumnMeta> columnExprs, ColumnMeta whereColumn)
       throws IOException, RuleException {
-    RecordReader reader = recordReader();
-    ImmutableList<Object[]> valuess = deleteAndCollectUpdated(reader, resources, columnExprs, whereColumn);
+    ImmutableList<Object[]> valuess = deleteAndCollectUpdated(recordReader(), resources, columnExprs, whereColumn);
     for (Object[] values : valuess) {
       insert(resources, values, /* checkReferencingRules= */true);
     }
@@ -314,7 +321,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
 
   private RecordReader recordReader() throws IOException {
     SeekableSequenceInputStream rafReader = new SeekableSequenceInputStream(
-        new RAFBufferedInputStream(file),
+        new RAFBufferedInputStream(new RandomAccessFile(fileName, "r")),
         new TreeMapInputStream(recordsToInsert));
     return new RecordReader(columns, rafReader, recordsToDelete);
   }

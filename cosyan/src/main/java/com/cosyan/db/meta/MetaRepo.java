@@ -99,6 +99,10 @@ public class MetaRepo implements TableProvider {
     }
   }
 
+  public Config config() {
+    return config;
+  }
+
   @Override
   public ExposedTableMeta tableMeta(Ident ident) throws ModelException {
     return table(ident).reader();
@@ -109,10 +113,6 @@ public class MetaRepo implements TableProvider {
       throw new ModelException("Table '" + ident.getString() + "' does not exist.");
     }
     return tables.get(ident.getString());
-  }
-
-  private String fileName(MaterializedTableMeta table) throws IOException {
-    return config.tableDir() + File.separator + table.tableName();
   }
 
   public ImmutableMap<String, IndexReader> collectIndexReaders(MaterializedTableMeta table) {
@@ -268,7 +268,9 @@ public class MetaRepo implements TableProvider {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
         writers.put(resource.getTableMeta().tableName(), new TableWriter(
             tableMeta,
-            fileName(tableMeta),
+            tableMeta.fileName(),
+            tableMeta.fileWriter(),
+            tableMeta.fileReader(),
             tableMeta.allColumns(),
             collectUniqueIndexes(tableMeta),
             collectMultiIndexes(tableMeta),
@@ -281,7 +283,8 @@ public class MetaRepo implements TableProvider {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
         readers.put(resource.getTableMeta().tableName(), new MaterializedTableReader(
             tableMeta,
-            config.tableDir() + File.separator + tableMeta.tableName(),
+            tableMeta.fileName(),
+            tableMeta.raf(),
             tableMeta.allColumns(),
             collectIndexReaders(tableMeta)));
       }

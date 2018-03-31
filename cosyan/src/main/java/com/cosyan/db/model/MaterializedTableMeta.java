@@ -1,13 +1,21 @@
 package com.cosyan.db.model;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.cosyan.db.conf.Config;
+import com.cosyan.db.io.MemoryBufferedSeekableFileStream;
+import com.cosyan.db.io.RAFBufferedInputStream;
 import com.cosyan.db.io.RecordProvider.Record;
+import com.cosyan.db.io.SeekableInputStream;
+import com.cosyan.db.io.SeekableOutputStream;
+import com.cosyan.db.io.SeekableOutputStream.RAFSeekableOutputStream;
 import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -34,7 +42,10 @@ import com.google.common.collect.Lists;
 
 public class MaterializedTableMeta {
 
+  private final Config config;
   private final String tableName;
+  private final RandomAccessFile raf;
+  private final SeekableOutputStream fileWriter;
   private final List<BasicColumn> columns;
   private final Map<String, BooleanRule> rules;
   private Optional<PrimaryKey> primaryKey;
@@ -47,10 +58,13 @@ public class MaterializedTableMeta {
   private long cnt;
 
   public MaterializedTableMeta(
+      Config config,
       String tableName,
       Iterable<BasicColumn> columns,
-      Optional<PrimaryKey> primaryKey) {
+      Optional<PrimaryKey> primaryKey) throws IOException {
+    this.config = config;
     this.tableName = tableName;
+    this.raf = new RandomAccessFile(fileName(), "rw");
     this.columns = Lists.newArrayList(columns);
     this.primaryKey = primaryKey;
     this.rules = new HashMap<>();
@@ -61,6 +75,29 @@ public class MaterializedTableMeta {
     this.reverseRuleDependencies = new ReverseRuleDependencies();
     this.partitioning = Optional.empty();
     this.cnt = 0;
+
+    if (true) {
+      fileWriter = new RAFSeekableOutputStream(raf);
+    } else {
+      MemoryBufferedSeekableFileStream mbsfs = new MemoryBufferedSeekableFileStream(raf);
+      fileWriter = mbsfs;
+    }
+  }
+
+  public String fileName() {
+    return config.tableDir() + File.separator + tableName();
+  }
+
+  public RandomAccessFile raf() {
+    return raf;
+  }
+
+  public SeekableOutputStream fileWriter() {
+    return fileWriter;
+  }
+
+  public SeekableInputStream fileReader() throws IOException {
+    return new RAFBufferedInputStream(raf);
   }
 
   public ImmutableList<String> columnNames() {

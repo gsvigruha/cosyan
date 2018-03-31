@@ -3,7 +3,6 @@ package com.cosyan.db.model;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.text.ParseException;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -19,9 +18,9 @@ import com.google.common.collect.ImmutableMap;
 public class BuiltinFunctionsTest extends DummyTestBase {
 
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParserException, ParseException {
+  public static void setUp() throws Exception {
     DummyTestBase.setUp();
-    register(new DummyMaterializedTableMeta("table", 
+    register(new DummyMaterializedTableMeta(metaRepo.config(), "table", 
         ImmutableMap.of(
             "a", new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false)),
         new Object[][] {
