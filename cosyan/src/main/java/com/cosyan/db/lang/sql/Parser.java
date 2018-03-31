@@ -48,6 +48,7 @@ import com.cosyan.db.lang.sql.UpdateStatement.Update;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
+import com.cosyan.db.model.MaterializedTableMeta;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.PeekingIterator;
@@ -189,6 +190,14 @@ public class Parser {
 
   private MetaStatement parseCreate(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.CREATE);
+    MaterializedTableMeta.Type type = MaterializedTableMeta.Type.LOG;
+    if (tokens.peek().is(Tokens.LOG)) {
+      tokens.next();
+      type = MaterializedTableMeta.Type.LOG;
+    } else if (tokens.peek().is(Tokens.LOOKUP)) {
+      tokens.next();
+      type = MaterializedTableMeta.Type.LOOKUP;
+    }
     assertPeek(tokens, Tokens.TABLE, Tokens.INDEX);
     if (tokens.peek().is(Tokens.TABLE)) {
       tokens.next();
@@ -217,7 +226,7 @@ public class Parser {
       } else {
         partitioning = Optional.empty();
       }
-      return new CreateTable(ident.getString(), columns.build(), constraints.build(), partitioning);
+      return new CreateTable(ident.getString(), type, columns.build(), constraints.build(), partitioning);
     } else {
       assertNext(tokens, Tokens.INDEX);
       Ident table = parseIdent(tokens);

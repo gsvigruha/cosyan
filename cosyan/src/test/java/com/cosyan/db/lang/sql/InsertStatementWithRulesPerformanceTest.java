@@ -10,7 +10,7 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
   private static final int N2 = 10000;
 
   @Test
-  public void testInsertWithLookupTable() {
+  public void testInsertWithRefRule() {
     execute("create table t1 (a varchar, b integer, constraint pk_a primary key (a));");
     for (int i = 0; i < N1; i++) {
       execute("insert into t1 values ('abc" + i + "' ," + i + ");");
@@ -24,7 +24,7 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
       execute("insert into t2 values ('abc" + j + "' ," + j + ");");
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with lookup rules (1 col) inserted in " + t + " " + speed(t, N2));
+    System.out.println("Records with ref rules to log table (1 col) inserted in " + t + " " + speed(t, N2));
   }
 
   @Test
@@ -48,7 +48,7 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
   }
 
   @Test
-  public void testInsertWithLookupTable_MultipleFields() {
+  public void testInsertWithRefRule_MultipleFields() {
     execute("create table t5 (a varchar, b integer, c integer, d integer, constraint pk_a primary key (a));");
     for (int i = 0; i < N1; i++) {
       execute("insert into t5 values ('abc" + i + "' ," + i + ", " + i + ", " + i + ");");
@@ -62,6 +62,24 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
       execute("insert into t6 values ('abc" + j + "');");
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with lookup rules (3 col) inserted in " + t + " " + speed(t, N2));
+    System.out.println("Records with ref rules to log table (3 col) inserted in " + t + " " + speed(t, N2));
+  }
+
+  @Test
+  public void testInsertWithRefRule_MultipleFields_LookupTable() {
+    execute("create lookup table t7 (a varchar, b integer, c integer, d integer, constraint pk_a primary key (a));");
+    for (int i = 0; i < N1; i++) {
+      execute("insert into t7 values ('abc" + i + "' ," + i + ", " + i + ", " + i + ");");
+    }
+    execute("create table t8 (a varchar, "
+        + "constraint fk_a foreign key (a) references t7(a),"
+        + "constraint c_1 check (fk_a.b * 2 = fk_a.c + fk_a.d));");
+    long t = System.currentTimeMillis();
+    for (int i = 0; i < N2; i++) {
+      int j = i % N1;
+      execute("insert into t8 values ('abc" + j + "');");
+    }
+    t = System.currentTimeMillis() - t;
+    System.out.println("Records with ref rules to lookup table (3 col) inserted in " + t + " " + speed(t, N2));
   }
 }

@@ -318,4 +318,13 @@ public class InsertIntoTest extends UnitTestBase {
     ErrorResult e5 = error("insert into t31 values (null, null, null, null, 'x');");
     assertError(RuleException.class, "Expected 'boolean' but got 'varchar'.", e5);
   }
+
+  @Test
+  public void testLookupTable() {
+    execute("create lookup table t32 (a varchar);");
+    execute("insert into t32 values ('x'), ('y');");
+    QueryResult r1 = query("select a from t32;");
+    assertHeader(new String[] { "a" }, r1);
+    assertValues(new Object[][] { { "x" }, {"y" } }, r1);
+  }
 }

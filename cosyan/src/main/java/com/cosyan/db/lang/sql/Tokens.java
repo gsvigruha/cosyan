@@ -18,6 +18,10 @@ public class Tokens {
 
   public static String MODIFY = "modify";
 
+  public static String LOOKUP = "lookup";
+
+  public static String LOG = "log";
+
   public static String TABLE = "table";
 
   public static String INDEX = "index";

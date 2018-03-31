@@ -141,6 +141,7 @@ public class Serializer {
       OutputStream refOut) throws IOException {
     DataOutputStream tableStream = new DataOutputStream(tableOut);
     DataOutputStream refStream = new DataOutputStream(refOut);
+    tableStream.writeByte(tableMeta.type().ordinal());
     tableStream.writeInt(tableMeta.columns().size());
     for (BasicColumn column : tableMeta.columns().values()) {
       tableStream.writeUTF(column.getName());
@@ -178,6 +179,7 @@ public class Serializer {
   public static MaterializedTableMeta readTableMeta(
       String tableName, InputStream tableIn, MetaRepo metaRepo) throws IOException, ParserException, ModelException {
     DataInputStream tableStream = new DataInputStream(tableIn);
+    MaterializedTableMeta.Type type = MaterializedTableMeta.Type.values()[tableStream.readByte()];
     int numColumns = tableStream.readInt();
     LinkedHashMap<String, BasicColumn> columns = Maps.newLinkedHashMap();
     for (int i = 0; i < numColumns; i++) {
@@ -205,7 +207,8 @@ public class Serializer {
         metaRepo.config(),
         tableName,
         columns.values(),
-        primaryKey);
+        primaryKey,
+        type);
   }
 
   public static void readTableReferences(

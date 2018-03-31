@@ -88,7 +88,7 @@ public abstract class TableReader implements TableIO {
   public static class MaterializedTableReader extends SeekableTableReader {
 
     private final SeekableRecordReader reader;
-    private final RAFBufferedInputStream bufferedRAF;
+    private final SeekableInputStream fileReader;
     private final ImmutableMap<String, IndexReader> indexes;
     private final String fileName;
     private final ImmutableList<BasicColumn> columns;
@@ -96,20 +96,20 @@ public abstract class TableReader implements TableIO {
     public MaterializedTableReader(
         MaterializedTableMeta tableMeta,
         String fileName,
-        RandomAccessFile file,
+        SeekableInputStream fileReader,
         ImmutableList<BasicColumn> columns,
         ImmutableMap<String, IndexReader> indexes) throws IOException {
       super(tableMeta);
       this.indexes = indexes;
-      this.bufferedRAF = new RAFBufferedInputStream(file);
-      this.reader = new SeekableRecordReader(columns, bufferedRAF);
+      this.fileReader = fileReader;
+      this.reader = new SeekableRecordReader(columns, fileReader);
       this.fileName = fileName;
       this.columns = columns;
     }
 
     @Override
     public void close() throws IOException {
-      bufferedRAF.close();
+      fileReader.close();
     }
 
     @Override

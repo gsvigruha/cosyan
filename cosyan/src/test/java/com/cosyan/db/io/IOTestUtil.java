@@ -83,7 +83,7 @@ public class IOTestUtil {
     private final Object[][] data;
 
     public DummyMaterializedTableMeta(Config config, String name, ImmutableMap<String, BasicColumn> columns, Object[][] data) throws IOException, ConfigException {
-      super(config, name, columns.values(), Optional.empty());
+      super(config, name, columns.values(), Optional.empty(), MaterializedTableMeta.Type.LOG);
       this.data = data;
     }
 

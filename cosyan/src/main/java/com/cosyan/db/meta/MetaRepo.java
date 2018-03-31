@@ -284,7 +284,7 @@ public class MetaRepo implements TableProvider {
         readers.put(resource.getTableMeta().tableName(), new MaterializedTableReader(
             tableMeta,
             tableMeta.fileName(),
-            tableMeta.raf(),
+            tableMeta.fileReader(),
             tableMeta.allColumns(),
             collectIndexReaders(tableMeta)));
       }

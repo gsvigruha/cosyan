@@ -42,8 +42,13 @@ import com.google.common.collect.Lists;
 
 public class MaterializedTableMeta {
 
+  public static enum Type {
+    LOG, LOOKUP
+  }
+
   private final Config config;
   private final String tableName;
+  private final Type type;
   private final RandomAccessFile raf;
   private final SeekableOutputStream fileWriter;
   private final List<BasicColumn> columns;
@@ -61,9 +66,11 @@ public class MaterializedTableMeta {
       Config config,
       String tableName,
       Iterable<BasicColumn> columns,
-      Optional<PrimaryKey> primaryKey) throws IOException {
+      Optional<PrimaryKey> primaryKey,
+      Type type) throws IOException {
     this.config = config;
     this.tableName = tableName;
+    this.type = type;
     this.raf = new RandomAccessFile(fileName(), "rw");
     this.columns = Lists.newArrayList(columns);
     this.primaryKey = primaryKey;
@@ -76,7 +83,7 @@ public class MaterializedTableMeta {
     this.partitioning = Optional.empty();
     this.cnt = 0;
 
-    if (true) {
+    if (type == Type.LOG) {
       fileWriter = new RAFSeekableOutputStream(raf);
     } else {
       MemoryBufferedSeekableFileStream mbsfs = new MemoryBufferedSeekableFileStream(raf);
@@ -88,6 +95,10 @@ public class MaterializedTableMeta {
     return config.tableDir() + File.separator + tableName();
   }
 
+  public Type type() {
+    return type;
+  }
+
   public RandomAccessFile raf() {
     return raf;
   }
@@ -97,7 +108,11 @@ public class MaterializedTableMeta {
   }
 
   public SeekableInputStream fileReader() throws IOException {
-    return new RAFBufferedInputStream(raf);
+    if (type == Type.LOG) {
+      return new RAFBufferedInputStream(raf);
+    } else {
+      return new MemoryBufferedSeekableFileStream(raf);
+    }
   }
 
   public ImmutableList<String> columnNames() {

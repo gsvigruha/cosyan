@@ -36,6 +36,7 @@ public class CreateStatement {
   @EqualsAndHashCode(callSuper = true)
   public static class CreateTable extends Node implements MetaStatement {
     private final String name;
+    private final MaterializedTableMeta.Type type;
     private final ImmutableList<ColumnDefinition> columnDefinitions;
     private final ImmutableList<ConstraintDefinition> constraints;
     private final Optional<Expression> partitioning;
@@ -93,7 +94,8 @@ public class CreateStatement {
           metaRepo.config(),
           name,
           columns.values(),
-          primaryKey);
+          primaryKey,
+          type);
       addConstraints(metaRepo, tableMeta, constraints);
 
       for (BasicColumn column : columns.values()) {

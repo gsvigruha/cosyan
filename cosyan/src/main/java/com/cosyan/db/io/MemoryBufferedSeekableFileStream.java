@@ -21,12 +21,16 @@ public class MemoryBufferedSeekableFileStream extends SeekableInputStream implem
       throw new IOException();
     }
     this.buffer = new byte[(int) fileSize];
+    file.seek(0);
     file.read(buffer);
     this.pointer = 0;
   }
 
   @Override
   public int read() throws IOException {
+    if (pointer == buffer.length) {
+      return -1;
+    }
     return buffer[pointer++] & 0xff;
   }
 
@@ -49,8 +53,14 @@ public class MemoryBufferedSeekableFileStream extends SeekableInputStream implem
   public void write(long position, byte[] value) throws IOException {
     file.seek(position);
     file.write(value);
-    System.arraycopy(value, 0, buffer, (int) position, value.length);
-    pointer = (int) (position + value.length);
+    if (position + value.length < buffer.length) {
+      System.arraycopy(value, 0, buffer, (int) position, value.length);
+      pointer = (int) (position + value.length);
+    } else {
+      long fileSize = file.length();
+      this.buffer = new byte[(int) fileSize];
+      file.read(buffer);
+    }
   }
 
   @Override
