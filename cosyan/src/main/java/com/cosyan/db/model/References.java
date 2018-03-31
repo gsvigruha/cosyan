@@ -267,9 +267,7 @@ public class References {
       IterableTableReader reader = reader(key, resources);
       Object[] values = reader.next();
       reader.close();
-      Object[] result = new Object[values.length - 1];
-      System.arraycopy(values, 1, result, 0, result.length);
-      return result;
+      return values;
     }
   }
 }

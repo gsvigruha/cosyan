@@ -5,6 +5,7 @@
 create table people (
   id integer,
   name varchar,
+  age integer,
   constraint pk_id primary key (id));
 ```
 
@@ -20,27 +21,36 @@ create table relationship (
 
 <!-- RUN -->
 ```
-alter table people add ref w (select sum(weight) as sw1 from og);
+alter table people add ref neighbors (
+  select
+    max(dst.age) as max_age,
+    sum(dst.age * weight) / sum(weight) as avg_age
+  from og
+);
 ```
 <!-- RUN -->
 ```
-alter table people add ref w2 (select sum(dst.w.sw1) as sw2 from og);
+alter table people add ref neighbors_2 (
+  select
+    max(dst.neighbors.max_age) as max_age
+  from og
+);
 ```
 
 <!-- RUN -->
 ```
-insert into people values (1, 'Adam'), (2, 'Bob'), (3, 'Cecil'), (4, 'Dave');
-insert into relationship values (1, 2, 1.0), (2, 3, 10.0), (2, 4, 100.0);
+insert into people values (1, 'Adam', 30), (2, 'Bob', 40), (3, 'Cecil', 20), (4, 'Dave', 50);
+insert into relationship values (1, 2, 1.0), (2, 3, 2.0), (2, 4, 3.0);
 ```
 
 <!-- TEST -->
 ```
-select name, w.sw1, w2.sw2 from people;
+select name, neighbors.max_age, neighbors.avg_age, neighbors_2.max_age as max_age_2 from people;
 ```
 ```
-name,sw1,sw2
-Adam,1.0,110.0
-Bob,110.0,null
-Cecil,null,null
-Dave,null,null
+name,max_age,avg_age,max_age_2
+Adam,40,40.0,50
+Bob,50,38.0,null
+Cecil,null,null,null
+Dave,null,null,null
 ```

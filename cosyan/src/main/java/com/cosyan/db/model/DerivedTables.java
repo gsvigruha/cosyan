@@ -101,22 +101,7 @@ public class DerivedTables {
     private final ReverseForeignKey reverseForeignKey;
 
     public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
-
-        @Override
-        public Object[] next() throws IOException {
-          Object[] sourceValues = sourceReader.next();
-          if (sourceValues == null) {
-            return null;
-          }
-          Object[] values = new Object[columns.size()];
-          int i = 0;
-          for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-            values[i++] = entry.getValue().value(sourceValues, resources);
-          }
-          return values;
-        }
-      };
+      throw new UnsupportedOperationException();
     }
 
     @Override
@@ -142,7 +127,12 @@ public class DerivedTables {
 
     @Override
     public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
-      return sourceTable.values(sourceValues, resources);
+      Object[] values = new Object[columns.size()];
+      int i = 0;
+      for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
+        values[i++] = entry.getValue().value(sourceValues, resources);
+      }
+      return values;
     }
   }
 
@@ -274,11 +264,6 @@ public class DerivedTables {
     @Override
     public IterableTableReader reader(Object key, Resources resources) throws IOException {
       return sourceTable.reader(key, resources);
-    }
-
-    @Override
-    public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
-      return sourceTable.values(sourceValues, resources);
     }
   }
 
