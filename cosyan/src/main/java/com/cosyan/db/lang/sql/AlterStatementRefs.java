@@ -9,13 +9,13 @@ import com.cosyan.db.lang.sql.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.sql.SyntaxTree.Node;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.DerivedTables.ReferencingDerivedTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.References.ReferencedAggrTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
@@ -47,11 +47,10 @@ public class AlterStatementRefs {
       } else {
         derivedTable = srcTableMeta;
       }
-      ReferencedAggrTableMeta aggrTable = new ReferencedAggrTableMeta(
+      GlobalAggrTableMeta aggrTable = new GlobalAggrTableMeta(
           new KeyValueTableMeta(
               derivedTable,
-              TableMeta.wholeTableKeys),
-          srcTableMeta.getReverseForeignKey());
+              TableMeta.wholeTableKeys));
       // Columns have aggregations, recompile with an AggrTable.
       TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
       ReferencingDerivedTableMeta refTableMeta = new ReferencingDerivedTableMeta(

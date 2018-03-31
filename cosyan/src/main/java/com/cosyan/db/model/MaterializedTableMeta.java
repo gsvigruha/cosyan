@@ -308,11 +308,6 @@ public class MaterializedTableMeta {
     }
 
     @Override
-    public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
-      return sourceValues;
-    }
-
-    @Override
     public ExposedTableMeta tableMeta(Ident ident) throws ModelException {
       if (tableMeta.hasReverseForeignKey(ident.getString())) {
         return new ReferencedMultiTableMeta(this, tableMeta.reverseForeignKey(ident.getString()));

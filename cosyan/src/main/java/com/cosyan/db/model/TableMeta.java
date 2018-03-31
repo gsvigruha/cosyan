@@ -34,15 +34,7 @@ public abstract class TableMeta implements CompiledObject {
     }
   }
 
-  public IterableTableReader reader(Resources resources) throws IOException {
-    return reader(null, resources);
-  }
-
-  public abstract IterableTableReader reader(Object key, Resources resources) throws IOException;
-
-  public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
-    return sourceValues;
-  }
+  public abstract Object[] values(Object[] sourceValues, Resources resources) throws IOException;
 
   public TableMeta table(Ident ident) throws ModelException {
     TableMeta table = getRefTable(ident);
@@ -74,6 +66,16 @@ public abstract class TableMeta implements CompiledObject {
 
   public static abstract class IterableTableMeta extends TableMeta {
 
+    public IterableTableReader reader(Resources resources) throws IOException {
+      return reader(null, resources);
+    }
+
+    public abstract IterableTableReader reader(Object key, Resources resources) throws IOException;
+
+    // Iterable tables cannot override this function.
+    public final Object[] values(Object[] sourceValues, Resources resources) throws IOException {
+      return sourceValues;
+    }
   }
 
   public static abstract class ExposedTableMeta extends IterableTableMeta {

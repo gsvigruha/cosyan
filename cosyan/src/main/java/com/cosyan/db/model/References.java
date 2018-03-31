@@ -11,10 +11,8 @@ import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.Dependencies.TableDependencies;
-import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.DerivedTables.ReferencingDerivedTableMeta;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.Ref;
@@ -65,11 +63,6 @@ public class References {
     @Nullable
     private final ReferencingTable parent;
     private final ReferencingDerivedTableMeta refTable;
-
-    @Override
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      return refTable.reader(key, resources);
-    }
 
     @Override
     public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
@@ -158,11 +151,6 @@ public class References {
         return reader.get(key, resources).getValues();
       }
     }
-
-    @Override
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      throw new UnsupportedOperationException();
-    }
   }
 
   @Data
@@ -215,32 +203,13 @@ public class References {
 
     @Override
     public IterableTableReader reader(final Object key, Resources resources) throws IOException {
-
       String table = reverseForeignKey.getRefTable().tableName();
       final IndexReader index = resources.getIndex(reverseForeignKey);
-      MultiFilteredTableReader reader = new MultiFilteredTableReader(resources.reader(table), ColumnMeta.TRUE_COLUMN,
-          resources) {
+      return new MultiFilteredTableReader(resources.reader(table), ColumnMeta.TRUE_COLUMN, resources) {
 
         @Override
         protected void readPositions() throws IOException {
           positions = index.get(key);
-        }
-      };
-
-      return new IterableTableReader() {
-
-        @Override
-        public void close() throws IOException {
-          reader.close();
-        }
-
-        @Override
-        public Object[] next() throws IOException {
-          Object[] values = reader.next();
-          if (values == null) {
-            return null;
-          }
-          return values;
         }
       };
     }
@@ -248,26 +217,6 @@ public class References {
     @Override
     public ImmutableList<String> columnNames() {
       return sourceTable.columnNames();
-    }
-  }
-
-  public static class ReferencedAggrTableMeta extends GlobalAggrTableMeta {
-    private final ReverseForeignKey reverseForeignKey;
-
-    public ReferencedAggrTableMeta(
-        KeyValueTableMeta sourceTable,
-        ReverseForeignKey reverseForeignKey) {
-      super(sourceTable);
-      this.reverseForeignKey = reverseForeignKey;
-    }
-
-    @Override
-    public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
-      Object key = sourceValues[reverseForeignKey.getColumn().getIndex()];
-      IterableTableReader reader = reader(key, resources);
-      Object[] values = reader.next();
-      reader.close();
-      return values;
     }
   }
 }
