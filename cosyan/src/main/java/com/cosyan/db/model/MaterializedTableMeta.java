@@ -111,7 +111,9 @@ public class MaterializedTableMeta {
     if (type == Type.LOG) {
       return new RAFBufferedInputStream(raf);
     } else {
-      return new MemoryBufferedSeekableFileStream(raf);
+      MemoryBufferedSeekableFileStream mbsfs = (MemoryBufferedSeekableFileStream) fileWriter;
+      mbsfs.reset();
+      return mbsfs;
     }
   }
 
