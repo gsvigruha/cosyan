@@ -58,7 +58,7 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
         + "constraint c_1 check (fk_a.b * 2 = fk_a.c + fk_a.d));");
     long t = System.currentTimeMillis();
     for (int i = 0; i < N2; i++) {
-      int j = i % N1;
+      int j = (i * 193) % N1;
       execute("insert into t6 values ('abc" + j + "');");
     }
     t = System.currentTimeMillis() - t;
@@ -76,7 +76,7 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
         + "constraint c_1 check (fk_a.b * 2 = fk_a.c + fk_a.d));");
     long t = System.currentTimeMillis();
     for (int i = 0; i < N2; i++) {
-      int j = i % N1;
+      int j = (i * 193) % N1;
       execute("insert into t8 values ('abc" + j + "');");
     }
     t = System.currentTimeMillis() - t;

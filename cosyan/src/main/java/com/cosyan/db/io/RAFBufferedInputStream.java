@@ -22,7 +22,6 @@ public class RAFBufferedInputStream extends SeekableInputStream {
     this.buffer = new byte[DEFAULT_BUFFER_SIZE];
     this.pointer = DEFAULT_BUFFER_SIZE;
     this.totalPointer = 0;
-    file.seek(0);
     length = file.length();
   }
 
