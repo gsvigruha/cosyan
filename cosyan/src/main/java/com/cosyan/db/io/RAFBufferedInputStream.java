@@ -57,9 +57,15 @@ public class RAFBufferedInputStream extends SeekableInputStream {
 
   @Override
   public void seek(long position) throws IOException {
-    pointer = buffer.length;
-    totalPointer = position;
-    file.seek(position);
+    long bufferStart = totalPointer - pointer;
+    if (position <= bufferStart || position >= bufferStart + buffer.length) {
+      pointer = buffer.length;
+      totalPointer = position;
+      file.seek(position);
+    } else {
+      totalPointer = position;
+      pointer = (int) (totalPointer - bufferStart);
+    }
   }
 
   public Object position() {
