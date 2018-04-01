@@ -61,6 +61,7 @@ public class MaterializedTableMeta {
   private ReverseRuleDependencies reverseRuleDependencies;
   private Optional<ColumnMeta> partitioning;
   private long cnt;
+  private SeekableInputStream fileReader;
 
   public MaterializedTableMeta(
       Config config,
@@ -85,9 +86,11 @@ public class MaterializedTableMeta {
 
     if (type == Type.LOG) {
       fileWriter = new RAFSeekableOutputStream(raf);
+      fileReader = new RAFBufferedInputStream(raf);
     } else {
       MemoryBufferedSeekableFileStream mbsfs = new MemoryBufferedSeekableFileStream(raf);
       fileWriter = mbsfs;
+      fileReader = mbsfs;
     }
   }
 
@@ -108,13 +111,8 @@ public class MaterializedTableMeta {
   }
 
   public SeekableInputStream fileReader() throws IOException {
-    if (type == Type.LOG) {
-      return new RAFBufferedInputStream(raf);
-    } else {
-      MemoryBufferedSeekableFileStream mbsfs = (MemoryBufferedSeekableFileStream) fileWriter;
-      mbsfs.reset();
-      return mbsfs;
-    }
+    fileReader.reset();
+    return fileReader;
   }
 
   public ImmutableList<String> columnNames() {

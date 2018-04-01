@@ -325,6 +325,6 @@ public class InsertIntoTest extends UnitTestBase {
     execute("insert into t32 values ('x'), ('y');");
     QueryResult r1 = query("select a from t32;");
     assertHeader(new String[] { "a" }, r1);
-    assertValues(new Object[][] { { "x" }, {"y" } }, r1);
+    assertValues(new Object[][] { { "x" }, { "y" } }, r1);
   }
 }

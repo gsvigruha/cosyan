@@ -71,4 +71,10 @@ public class RAFBufferedInputStream extends SeekableInputStream {
   public Object position() {
     return totalPointer;
   }
+
+  public void reset() throws IOException {
+    pointer = buffer.length;
+    totalPointer = 0;
+    length = file.length();
+  }
 }
