@@ -8,6 +8,7 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
 
   private static final int N1 = 5000;
   private static final int N2 = 20000;
+  private static final int T = 1000;
 
   @Test
   public void testInsertWithRefRule() {
@@ -19,9 +20,13 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
         + "constraint fk_a foreign key (a) references t1(a),"
         + "constraint c_1 check (fk_a.b = c));");
     long t = System.currentTimeMillis();
-    for (int i = 0; i < N2; i++) {
-      int j = i % N1;
-      execute("insert into t2 values ('abc" + j + "' ," + j + ");");
+    for (int i = 0; i < N2 / T; i++) {
+      StringBuffer sb = new StringBuffer();
+      for (int n = 0; n < T; n++) {
+        int j = (n + i * T) % N1;
+        sb.append("insert into t2 values ('abc" + j + "' ," + j + ");");
+      }
+      execute(sb.toString());
     }
     t = System.currentTimeMillis() - t;
     System.out.println("Records with ref rules to log table (1 col) inserted in " + t + " " + speed(t, N2));
@@ -39,9 +44,13 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
       execute("insert into t3 values ('abc" + i + "');");
     }
     long t = System.currentTimeMillis();
-    for (int i = 0; i < N2; i++) {
-      int j = i % N1;
-      execute("insert into t4 values ('abc" + j + "', 1);");
+    for (int i = 0; i < N2 / T; i++) {
+      StringBuffer sb = new StringBuffer();
+      for (int n = 0; n < T; n++) {
+        int j = (n + i * T) % N1;
+        sb.append("insert into t4 values ('abc" + j + "', 1);");
+      }
+      execute(sb.toString());
     }
     t = System.currentTimeMillis() - t;
     System.out.println("Records with aggregating rules inserted in " + t + " " + speed(t, N2));
@@ -57,9 +66,13 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
         + "constraint fk_a foreign key (a) references t5(a),"
         + "constraint c_1 check (fk_a.b * 2 = fk_a.c + fk_a.d));");
     long t = System.currentTimeMillis();
-    for (int i = 0; i < N2; i++) {
-      int j = (i * 193) % N1;
-      execute("insert into t6 values ('abc" + j + "');");
+    for (int i = 0; i < N2 / T; i++) {
+      StringBuffer sb = new StringBuffer();
+      for (int n = 0; n < T; n++) {
+        int j = ((n + i * T) * 193) % N1;
+        sb.append("insert into t6 values ('abc" + j + "');");
+      }
+      execute(sb.toString());
     }
     t = System.currentTimeMillis() - t;
     System.out.println("Records with ref rules to log table (3 col) inserted in " + t + " " + speed(t, N2));
@@ -75,9 +88,13 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
         + "constraint fk_a foreign key (a) references t7(a),"
         + "constraint c_1 check (fk_a.b * 2 = fk_a.c + fk_a.d));");
     long t = System.currentTimeMillis();
-    for (int i = 0; i < N2; i++) {
-      int j = (i * 193) % N1;
-      execute("insert into t8 values ('abc" + j + "');");
+    for (int i = 0; i < N2 / T; i++) {
+      StringBuffer sb = new StringBuffer();
+      for (int n = 0; n < T; n++) {
+        int j = ((n + i * T) * 193) % N1;
+        sb.append("insert into t8 values ('abc" + j + "');");
+      }
+      execute(sb.toString());
     }
     t = System.currentTimeMillis() - t;
     System.out.println("Records with ref rules to lookup table (3 col) inserted in " + t + " " + speed(t, N2));
