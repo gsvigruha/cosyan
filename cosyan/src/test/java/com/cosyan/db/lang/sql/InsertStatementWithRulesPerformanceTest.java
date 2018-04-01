@@ -3,6 +3,7 @@ package com.cosyan.db.lang.sql;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
+import com.cosyan.db.lang.sql.Result.QueryResult;
 
 public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
 
@@ -33,7 +34,7 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
   }
 
   @Test
-  public void testInsertWithReverseRefRule() {
+  public void testInsertWithReverseRefRule_N4() {
     execute("create table t3 (a varchar, constraint pk_a primary key (a));");
     execute("create table t4 (a varchar, b integer, "
         + "constraint fk_a foreign key (a) references t3(a));");
@@ -53,7 +54,9 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
       execute(sb.toString());
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with aggregating rules inserted in " + t + " " + speed(t, N2));
+    System.out.println("Records with aggregating rules (4N) inserted in " + t + " " + speed(t, N2));
+    QueryResult r = query("select sum(s.sb)/count(s.sb) from t3;");
+    assertValues(new Object[][] { { 4L } }, r);
   }
 
   @Test
@@ -98,5 +101,32 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
     }
     t = System.currentTimeMillis() - t;
     System.out.println("Records with ref rules to lookup table (3 col) inserted in " + t + " " + speed(t, N2));
+  }
+
+  @Test
+  public void testInsertWithReverseRefRule_N40() {
+    execute("create table t9 (a varchar, constraint pk_a primary key (a));");
+    execute("create table t10 (a varchar, b integer, "
+        + "constraint fk_a foreign key (a) references t9(a));");
+    execute("alter table t9 add ref s (select sum(b) as sb from rev_fk_a);");
+    execute("alter table t9 add constraint c_1 check (s.sb <= 100);");
+
+    int N1_2 = N1 / 10;
+    for (int i = 0; i < N1_2; i++) {
+      execute("insert into t9 values ('abc" + i + "');");
+    }
+    long t = System.currentTimeMillis();
+    for (int i = 0; i < N2 / T; i++) {
+      StringBuffer sb = new StringBuffer();
+      for (int n = 0; n < T; n++) {
+        int j = (n + i * T) % N1_2;
+        sb.append("insert into t10 values ('abc" + j + "', 1);");
+      }
+      execute(sb.toString());
+    }
+    t = System.currentTimeMillis() - t;
+    System.out.println("Records with aggregating rules (40N) inserted in " + t + " " + speed(t, N2));
+    QueryResult r = query("select sum(s.sb)/count(s.sb) from t9;");
+    assertValues(new Object[][] { { 40L } }, r);
   }
 }
