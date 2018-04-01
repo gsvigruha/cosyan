@@ -106,6 +106,83 @@ public class Aggregators {
     }
   }
 
+  public static class Avg extends AggrFunction {
+    public Avg() {
+      super("avg");
+    }
+
+    @Override
+    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
+      if (argType == DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+
+          @Override
+          public Aggregator<Double, Double> create() {
+            return new Aggregator<Double, Double>() {
+
+              private Double sum = null;
+              private Long cnt = 0L;
+
+              @Override
+              public void addImpl(Double x) {
+                if (sum == null) {
+                  sum = x;
+                } else {
+                  sum += x;
+                }
+                cnt++;
+              }
+
+              @Override
+              public Double finishImpl() {
+                return sum / cnt;
+              }
+
+              @Override
+              public boolean isNull() {
+                return sum == null;
+              }
+            };
+          }
+        };
+      } else if (argType == DataTypes.LongType) {
+        return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
+
+          @Override
+          public Aggregator<Long, Long> create() {
+            return new Aggregator<Long, Long>() {
+
+              private Long sum = null;
+              private Long cnt = 0L;
+
+              @Override
+              public void addImpl(Long x) {
+                if (sum == null) {
+                  sum = x;
+                } else {
+                  sum += x;
+                }
+                cnt++;
+              }
+
+              @Override
+              public Long finishImpl() {
+                return sum / cnt;
+              }
+
+              @Override
+              public boolean isNull() {
+                return sum == null;
+              }
+            };
+          }
+        };
+      } else {
+        throw new ModelException("Invalid type for sum: '" + argType + "'.");
+      }
+    }
+  }
+
   public static class Count extends AggrFunction {
     public Count() {
       super("count");
