@@ -10,6 +10,7 @@ import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.Expression.UnaryExpression;
 import com.cosyan.db.lang.expr.FuncCallExpression;
 import com.cosyan.db.lang.expr.Literals.BooleanLiteral;
+import com.cosyan.db.lang.expr.Literals.DateLiteral;
 import com.cosyan.db.lang.expr.Literals.DoubleLiteral;
 import com.cosyan.db.lang.expr.Literals.Literal;
 import com.cosyan.db.lang.expr.Literals.LongLiteral;
@@ -47,6 +48,7 @@ import com.cosyan.db.lang.sql.UpdateStatement.SetExpression;
 import com.cosyan.db.lang.sql.UpdateStatement.Update;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.DateFunctions;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.google.common.collect.ImmutableList;
@@ -453,6 +455,14 @@ public class Parser {
       expr = new NullLiteral();
     } else if (token.is(Tokens.CASE)) {
       expr = parseCase(tokens);
+    } else if (token.is(Tokens.DT)) {
+      tokens.next();
+      Token value = tokens.next();
+      Object date = DateFunctions.convert(value.getString());
+      if (date == DataTypes.NULL) {
+        throw new ParserException(String.format("Expected a valid date string but got '%s'.", value.getString()));
+      }
+      expr = new DateLiteral((java.util.Date) date);
     } else if (token.isIdent()) {
       Ident ident = new Ident(tokens.next().getString());
       expr = parseFuncCallExpression(ident, null, tokens);

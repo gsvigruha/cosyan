@@ -38,6 +38,8 @@ public class Tokens {
 
   public static String TIMESTAMP = "timestamp";
 
+  public static String DT = "dt";
+
   public static String TRUE = "true";
 
   public static String FALSE = "false";

@@ -343,7 +343,7 @@ public class UpdateTest extends UnitTestBase {
   @Test
   public void testUpdateWrongType() {
     execute("create table t28 (a varchar, b integer, c float, d timestamp, e boolean);");
-    execute("insert into t28 values('x', 1, 1.0, '2017-01-01', true);");
+    execute("insert into t28 values('x', 1, 1.0, dt '2017-01-01', true);");
     ErrorResult e1 = error("update t28 set a = 1;");
     assertError(ModelException.class, "Expected 'varchar' but got 'integer'.", e1);
     ErrorResult e2 = error("update t28 set b = 1.0;");

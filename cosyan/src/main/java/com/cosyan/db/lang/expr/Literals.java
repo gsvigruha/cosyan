@@ -1,6 +1,7 @@
 package com.cosyan.db.lang.expr;
 
 import java.io.IOException;
+import java.util.Date;
 
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
@@ -134,6 +135,27 @@ public class Literals {
     @Override
     public DataType<?> getType() {
       return DataTypes.BoolType;
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class DateLiteral extends Expression implements Literal {
+    private final Date value;
+
+    @Override
+    public DerivedColumn compile(TableMeta sourceTable) {
+      return new LiteralColumn(this);
+    }
+
+    @Override
+    public String print() {
+      return String.valueOf(value);
+    }
+
+    @Override
+    public DataType<?> getType() {
+      return DataTypes.DateType;
     }
   }
 

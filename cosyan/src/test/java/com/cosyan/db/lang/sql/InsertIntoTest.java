@@ -314,7 +314,7 @@ public class InsertIntoTest extends UnitTestBase {
     ErrorResult e3 = error("insert into t31 values (null, null, 1, null, null);");
     assertError(RuleException.class, "Expected 'float' but got 'integer'.", e3);
     ErrorResult e4 = error("insert into t31 values (null, null,  null, 1, null);");
-    assertError(RuleException.class, "Expected 'varchar' but got 'integer'.", e4);
+    assertError(RuleException.class, "Expected 'timestamp' but got 'integer'.", e4);
     ErrorResult e5 = error("insert into t31 values (null, null, null, null, 'x');");
     assertError(RuleException.class, "Expected 'boolean' but got 'varchar'.", e5);
   }

@@ -28,10 +28,10 @@ import lombok.EqualsAndHashCode;
 public class InsertIntoStatement {
 
   public static Object check(DataType<?> dataType, Literal literal) throws RuleException {
-    if (literal.getValue() != DataTypes.NULL && literal.getType() != dataType.inputType()) {
-      throw new RuleException(String.format("Expected '%s' but got '%s'.", dataType.inputType(), literal.getType()));
+    if (literal.getValue() != DataTypes.NULL && literal.getType() != dataType) {
+      throw new RuleException(String.format("Expected '%s' but got '%s'.", dataType, literal.getType()));
     }
-    return dataType.convert(literal.getValue());
+    return literal.getValue();
   }
 
   @Data

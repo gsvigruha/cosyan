@@ -9,7 +9,7 @@ create table dates (d timestamp);
 Add some data.
 <!-- RUN -->
 ```
-insert into dates values('2017-01-01'), ('2017-01-01 10:30:00'), ('1960-01-01');
+insert into dates values(dt '2017-01-01'), (dt '2017-01-01 10:30:00'), (dt '1960-01-01');
 ```
 
 <!-- TEST -->

@@ -32,8 +32,8 @@ import lombok.EqualsAndHashCode;
 public class UpdateStatement {
 
   public static void check(DataType<?> columnType, DataType<?> exprType) throws ModelException {
-    if (exprType != DataTypes.NULL && columnType != exprType.inputType()) {
-      throw new ModelException(String.format("Expected '%s' but got '%s'.", columnType, exprType.inputType()));
+    if (exprType != DataTypes.NULL && columnType != exprType) {
+      throw new ModelException(String.format("Expected '%s' but got '%s'.", columnType, exprType));
     }
   }
 

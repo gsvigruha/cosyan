@@ -7,4 +7,5 @@ import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 public interface TableProvider {
 
   public ExposedTableMeta tableMeta(Ident ident) throws ModelException;
+
 }

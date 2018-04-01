@@ -3,7 +3,6 @@ package com.cosyan.db.model;
 import java.util.Date;
 
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.meta.MetaRepo.RuleException;
 
 import lombok.Data;
 
@@ -19,14 +18,6 @@ public class DataTypes {
     }
 
     public abstract DataType<?> toListType() throws ModelException;
-
-    public Object convert(Object value) throws RuleException {
-      return value;
-    }
-
-    public DataType<?> inputType() {
-      return this;
-    }
   }
 
   public static final DataType<String> StringType = new DataType<String>("varchar") {
@@ -61,16 +52,6 @@ public class DataTypes {
     @Override
     public DataType<?> toListType() {
       return DateListType;
-    }
-
-    @Override
-    public Object convert(Object value) throws RuleException {
-      return DateFunctions.convert(value);
-    }
-
-    @Override
-    public DataType<?> inputType() {
-      return StringType;
     }
   };
 
