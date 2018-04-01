@@ -104,14 +104,14 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
   }
 
   @Test
-  public void testInsertWithReverseRefRule_N40() {
+  public void testInsertWithReverseRefRule_N400() {
     execute("create table t9 (a varchar, constraint pk_a primary key (a));");
     execute("create table t10 (a varchar, b integer, "
         + "constraint fk_a foreign key (a) references t9(a));");
     execute("alter table t9 add ref s (select sum(b) as sb from rev_fk_a);");
-    execute("alter table t9 add constraint c_1 check (s.sb <= 100);");
+    execute("alter table t9 add constraint c_1 check (s.sb <= 1000);");
 
-    int N1_2 = N1 / 10;
+    int N1_2 = N1 / 100;
     for (int i = 0; i < N1_2; i++) {
       execute("insert into t9 values ('abc" + i + "');");
     }
@@ -125,8 +125,8 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
       execute(sb.toString());
     }
     t = System.currentTimeMillis() - t;
-    System.out.println("Records with aggregating rules (40N) inserted in " + t + " " + speed(t, N2));
+    System.out.println("Records with aggregating rules (400N) inserted in " + t + " " + speed(t, N2));
     QueryResult r = query("select sum(s.sb)/count(s.sb) from t9;");
-    assertValues(new Object[][] { { 40L } }, r);
+    assertValues(new Object[][] { { 400L } }, r);
   }
 }
