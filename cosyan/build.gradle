@@ -1,0 +1,35 @@
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  compile "org.projectlombok:lombok:1.16.16"
+  compile "com.google.guava:guava:21.0"
+  compile "com.google.code.findbugs:jsr305:3.0.2"
+  compile "org.apache.commons:commons-csv:1.4"
+  compile "commons-lang:commons-lang:2.6"
+  compile "commons-io:commons-io:2.5"
+  compile "com.googlecode.json-simple:json-simple:1.1.1"
+  compile "log4j:log4j:1.2.17"
+  compile "org.eclipse.jetty:jetty-servlet:9.4.0.M1"
+  testCompile "junit:junit:4.12"
+}
+
+test {
+  testLogging {
+    showStandardStreams = true
+  }
+}
+
+task unitTest( type: Test ) {
+  testLogging {
+    showStandardStreams = true
+  }
+  exclude '**/*PerformanceTest*'
+  exclude '**/*Lock*Test*'
+}
