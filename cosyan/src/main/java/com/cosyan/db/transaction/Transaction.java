@@ -53,13 +53,19 @@ public class Transaction {
     }
   }
 
+  protected MetaResources collectResources(MetaRepo metaRepo) throws ModelException {
+    MetaResources metaResources = MetaResources.empty();
+    for (Statement statement : statements) {
+      metaResources = metaResources.merge(statement.compile(metaRepo));
+    }
+    return metaResources;
+  }
+
   public Result execute(MetaRepo metaRepo, TransactionJournal journal) {
     metaRepo.metaRepoReadLock();
-    MetaResources metaResources = MetaResources.empty();
+    MetaResources metaResources;
     try {
-      for (Statement statement : statements) {
-        metaResources = metaResources.merge(statement.compile(metaRepo));
-      }
+      metaResources = collectResources(metaRepo);
     } catch (ModelException e) {
       return new ErrorResult(e);
     } finally {
