@@ -66,4 +66,22 @@ public class MetaResourcesTest extends UnitTestBase {
     assertFalse(res.get("t5").isWrite());
     assertFalse(res.get("t5.a").isWrite());
   }
+
+  @Test
+  public void testSelectFromRef() throws Exception {
+    execute("create table t6 (a varchar, constraint pk_a primary key (a));");
+    execute("create table t7 (a varchar, b integer, constraint fk_a foreign key (a) references t6);");
+    execute("alter table t6 add ref s (select sum(b) as b from rev_fk_a);");
+    Map<String, Resource> res1 = resources("select a from t6;");
+    assertEquals(2, res1.size());
+    assertFalse(res1.get("t6").isWrite());
+    assertFalse(res1.get("t6.a").isWrite());
+
+    Map<String, Resource> res2 = resources("select s.b from t6;");
+    assertEquals(4, res2.size());
+    assertFalse(res2.get("t6").isWrite());
+    assertFalse(res2.get("t6.a").isWrite());
+    assertFalse(res2.get("t7").isWrite());
+    assertFalse(res2.get("t7.a").isWrite());
+  }
 }
