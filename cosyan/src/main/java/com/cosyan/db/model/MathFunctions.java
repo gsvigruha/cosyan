@@ -82,6 +82,18 @@ public class MathFunctions {
     }
   }
 
+  public static class RoundTo extends SimpleFunction<Double> {
+    public RoundTo() {
+      super("round_to", DataTypes.DoubleType, ImmutableList.of(DataTypes.DoubleType, DataTypes.LongType));
+    }
+
+    @Override
+    public Double call(ImmutableList<Object> argValues) {
+      double exp = Math.pow(10, (Long) argValues.get(1));
+      return Math.round((Double) argValues.get(0) * exp) / exp;
+    }
+  }
+
   public static class Ceil extends SimpleFunction<Long> {
     public Ceil() {
       super("ceil", DataTypes.LongType, ImmutableList.of(DataTypes.DoubleType));

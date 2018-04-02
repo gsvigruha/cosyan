@@ -56,7 +56,7 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
     t = System.currentTimeMillis() - t;
     System.out.println("Records with aggregating rules (4N) inserted in " + t + " " + speed(t, N2));
     QueryResult r = query("select avg(s.sb) from t3;");
-    assertValues(new Object[][] { { 4L } }, r);
+    assertValues(new Object[][] { { 4.0 } }, r);
   }
 
   @Test
@@ -127,6 +127,6 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
     t = System.currentTimeMillis() - t;
     System.out.println("Records with aggregating rules (400N) inserted in " + t + " " + speed(t, N2));
     QueryResult r = query("select avg(s.sb) from t9;");
-    assertValues(new Object[][] { { 400L } }, r);
+    assertValues(new Object[][] { { 400.0 } }, r);
   }
 }

@@ -146,19 +146,19 @@ public class Aggregators {
           }
         };
       } else if (argType == DataTypes.LongType) {
-        return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
+        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override
-          public Aggregator<Long, Long> create() {
-            return new Aggregator<Long, Long>() {
+          public Aggregator<Double, Long> create() {
+            return new Aggregator<Double, Long>() {
 
-              private Long sum = null;
+              private Double sum = null;
               private Long cnt = 0L;
 
               @Override
               public void addImpl(Long x) {
                 if (sum == null) {
-                  sum = x;
+                  sum = (double) x;
                 } else {
                   sum += x;
                 }
@@ -166,7 +166,7 @@ public class Aggregators {
               }
 
               @Override
-              public Long finishImpl() {
+              public Double finishImpl() {
                 return sum / cnt;
               }
 
@@ -178,7 +178,121 @@ public class Aggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for sum: '" + argType + "'.");
+        throw new ModelException("Invalid type for avg: '" + argType + "'.");
+      }
+    }
+  }
+
+  public static abstract class StdDevAggregator<T> extends Aggregator<Double, T> {
+
+    protected Double sum = null;
+    protected Double sum2 = null;
+    protected Long cnt = 0L;
+
+    protected void addItem(Double x) {
+      if (sum == null) {
+        sum = 0.0;
+        sum2 = 0.0;
+      }
+      sum += x;
+      sum2 += x * x;
+      cnt++;
+    }
+
+    @Override
+    public boolean isNull() {
+      return sum == null;
+    }
+  }
+
+  public static class StdDev extends AggrFunction {
+    public static abstract class StdDevSampleAggregator<T> extends StdDevAggregator<T> {
+      @Override
+      public Double finishImpl() {
+        return Math.sqrt((cnt * sum2 - sum * sum) / (cnt * (cnt - 1)));
+      }
+    }
+
+    public StdDev() {
+      super("stddev");
+    }
+
+    @Override
+    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
+      if (argType == DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+
+          @Override
+          public Aggregator<Double, Double> create() {
+            return new StdDevSampleAggregator<Double>() {
+              @Override
+              public void addImpl(Double x) {
+                addItem(x);
+              }
+            };
+          }
+        };
+      } else if (argType == DataTypes.LongType) {
+        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+
+          @Override
+          public Aggregator<Double, Long> create() {
+            return new StdDevSampleAggregator<Long>() {
+              @Override
+              public void addImpl(Long x) {
+                addItem((double) x);
+              }
+            };
+          }
+        };
+      } else {
+        throw new ModelException("Invalid type for stddev: '" + argType + "'.");
+      }
+    }
+  }
+
+  public static class StdDevPop extends AggrFunction {
+    public static abstract class StdDevPopAggregator<T> extends StdDevAggregator<T> {
+      @Override
+      public Double finishImpl() {
+        return Math.sqrt(cnt * sum2 - sum * sum) / cnt;
+      }
+    }
+
+    public StdDevPop() {
+      super("stddev_pop");
+    }
+
+    @Override
+    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
+      if (argType == DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+
+          @Override
+          public Aggregator<Double, Double> create() {
+            return new StdDevPopAggregator<Double>() {
+              @Override
+              public void addImpl(Double x) {
+                addItem(x);
+              }
+            };
+          }
+        };
+      } else if (argType == DataTypes.LongType) {
+        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+
+          @Override
+          public Aggregator<Double, Long> create() {
+            return new StdDevPopAggregator<Long>() {
+              @Override
+              public void addImpl(Long x) {
+                addItem((double) x);
+              }
+            };
+          }
+        };
+      } else {
+        throw new ModelException("Invalid type for stddev_pop: '" + argType + "'.");
       }
     }
   }

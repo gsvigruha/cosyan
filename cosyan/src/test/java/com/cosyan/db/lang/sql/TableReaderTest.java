@@ -432,6 +432,15 @@ public class TableReaderTest extends DummyTestBase {
   }
 
   @Test
+  public void testStdDev() throws Exception {
+    ExposedTableReader reader = query("select "
+        + "round_to(stddev(b), 3) as b1, round_to(stddev(c), 3) as c1,"
+        + "round_to(stddev_pop(b), 3) as b2, round_to(stddev_pop(c), 3) as c2 from large;");
+    assertEquals(ImmutableMap.of("b1", 2.582, "c1", 2.582, "b2", 2.236, "c2", 2.236), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
   public void testOrderByNull() throws Exception {
     ExposedTableReader reader = query("select * from null order by b;");
     assertEquals(ImmutableMap.of("a", "b", "b", DataTypes.NULL, "c", 4.0), reader.readColumns());

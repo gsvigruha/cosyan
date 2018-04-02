@@ -35,6 +35,7 @@ import com.cosyan.db.model.MathFunctions.Log2;
 import com.cosyan.db.model.MathFunctions.LogE;
 import com.cosyan.db.model.MathFunctions.Power;
 import com.cosyan.db.model.MathFunctions.Round;
+import com.cosyan.db.model.MathFunctions.RoundTo;
 import com.cosyan.db.model.MathFunctions.Sin;
 import com.cosyan.db.model.StringFunctions.Contains;
 import com.cosyan.db.model.StringFunctions.Length;
@@ -120,6 +121,8 @@ public class BuiltinFunctions {
       .add(new Aggregators.Sum())
       .add(new Aggregators.Count())
       .add(new Aggregators.Avg())
+      .add(new Aggregators.StdDev())
+      .add(new Aggregators.StdDevPop())
       .add(new Aggregators.CountDistinct())
       .add(new Aggregators.Max())
       .add(new Aggregators.Min())
@@ -142,6 +145,7 @@ public class BuiltinFunctions {
       .add(new LogE())
       .add(new Log10())
       .add(new Round())
+      .add(new RoundTo())
       .add(new Ceil())
       .add(new Floor())
       .add(new Sin())
