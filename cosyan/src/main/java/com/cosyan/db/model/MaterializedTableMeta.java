@@ -31,7 +31,7 @@ import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
-import com.cosyan.db.model.References.ReferencingTable;
+import com.cosyan.db.model.References.ReferencedTable;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -298,7 +298,7 @@ public class MaterializedTableMeta {
     return cnt == 0;
   }
 
-  public static class SeekableTableMeta extends ExposedTableMeta implements ReferencingTable, TableProvider {
+  public static class SeekableTableMeta extends ExposedTableMeta implements ReferencedTable, TableProvider {
 
     private final MaterializedTableMeta tableMeta;
 
@@ -352,11 +352,6 @@ public class MaterializedTableMeta {
     @Override
     public Iterable<Ref> foreignKeyChain() {
       return ImmutableList.of();
-    }
-
-    @Override
-    public ReferencingTable getParent() {
-      return null;
     }
 
     @Override

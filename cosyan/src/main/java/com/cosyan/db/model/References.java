@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 
-import javax.annotation.Nullable;
-
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
@@ -28,19 +26,34 @@ import lombok.EqualsAndHashCode;
 
 public class References {
 
-  public static interface ReferencingTable {
+  /**
+   * A table referenced form another table through a chain of foreign keys or
+   * reverse foreign keys. A chain of references uniquely identifies a
+   * ReferencedTable.
+   * 
+   * @author gsvigruha
+   */
+  public static interface ReferencedTable {
 
+    /**
+     * The chain of references (foreign keys or reverse foreign keys) leading to
+     * this table.
+     */
     public Iterable<Ref> foreignKeyChain();
 
-    public ReferencingTable getParent();
-
+    /**
+     * Returns all transitive read resources needed to for this table.
+     */
     public MetaResources readResources();
 
+    /**
+     * Returns the referenced values based on sourceValues.
+     */
     public Object[] values(Object[] sourceValues, Resources resources) throws IOException;
   }
 
   public static TableMeta getRefTable(
-      ReferencingTable parent,
+      ReferencedTable parent,
       String tableName,
       String key,
       Map<String, ForeignKey> foreignKeys,
@@ -49,18 +62,17 @@ public class References {
     if (foreignKeys.containsKey(key)) {
       return new ReferencedSimpleTableMeta(parent, foreignKeys.get(key));
     } else if (refs.containsKey(key)) {
-      return new ReferencedDerivedTableMeta(parent, refs.get(key).getTableMeta());
+      return new ReferencedRefTableMeta(parent, refs.get(key).getTableMeta());
     }
     throw new ModelException(String.format("Reference '%s' not found in table '%s'.", key, tableName));
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class ReferencedDerivedTableMeta extends TableMeta implements ReferencingTable {
+  public static class ReferencedRefTableMeta extends TableMeta implements ReferencedTable {
 
-    @Nullable
-    private final ReferencingTable parent;
-    private final ReferencingDerivedTableMeta refTable;
+    private final ReferencedTable parent;
+    private final RefTableMeta refTable;
 
     @Override
     public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
@@ -76,7 +88,7 @@ public class References {
 
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
-      return null;
+      return refTable.getRefTable(ident);
     }
 
     @Override
@@ -92,20 +104,19 @@ public class References {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class ReferencedSimpleTableMeta extends TableMeta implements ReferencingTable {
+  public static class ReferencedSimpleTableMeta extends TableMeta implements ReferencedTable {
 
-    @Nullable
-    private final ReferencingTable parent;
+    private final ReferencedTable parent;
     private final ForeignKey foreignKey;
 
-    public ReferencedSimpleTableMeta(ReferencingTable parent, ForeignKey foreignKey) {
+    public ReferencedSimpleTableMeta(ReferencedTable parent, ForeignKey foreignKey) {
       this.parent = parent;
       this.foreignKey = foreignKey;
     }
 
+    @Override
     public Iterable<Ref> foreignKeyChain() {
-      return parent == null ? ImmutableList.of(foreignKey)
-          : ImmutableList.<Ref>builder().addAll(parent.foreignKeyChain()).add(foreignKey).build();
+      return ImmutableList.<Ref>builder().addAll(parent.foreignKeyChain()).add(foreignKey).build();
     }
 
     @Override
@@ -132,8 +143,7 @@ public class References {
 
     @Override
     public MetaResources readResources() {
-      MetaResources parentResources = parent == null ? MetaResources.empty() : parent.readResources();
-      return parentResources.merge(MetaResources.readTable(foreignKey.getRefTable()));
+      return parent.readResources().merge(MetaResources.readTable(foreignKey.getRefTable()));
     }
 
     @Override
@@ -153,22 +163,21 @@ public class References {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class ReferencedMultiTableMeta extends ExposedTableMeta implements ReferencingTable {
+  public static class ReferencedMultiTableMeta extends ExposedTableMeta implements ReferencedTable {
 
-    @Nullable
-    private final ReferencingTable parent;
+    private final ReferencedTable parent;
     private final ReverseForeignKey reverseForeignKey;
     private final MaterializedTableMeta sourceTable;
 
-    public ReferencedMultiTableMeta(ReferencingTable parent, ReverseForeignKey reverseForeignKey) {
+    public ReferencedMultiTableMeta(ReferencedTable parent, ReverseForeignKey reverseForeignKey) {
       this.parent = parent;
       this.reverseForeignKey = reverseForeignKey;
       this.sourceTable = getReverseForeignKey().getRefTable();
     }
 
+    @Override
     public Iterable<Ref> foreignKeyChain() {
-      return parent == null ? ImmutableList.of(reverseForeignKey)
-          : ImmutableList.<Ref>builder().addAll(parent.foreignKeyChain()).add(reverseForeignKey).build();
+      return ImmutableList.<Ref>builder().addAll(parent.foreignKeyChain()).add(reverseForeignKey).build();
     }
 
     @Override
@@ -195,8 +204,7 @@ public class References {
 
     @Override
     public MetaResources readResources() {
-      MetaResources parentResources = parent == null ? MetaResources.empty() : parent.readResources();
-      return parentResources.merge(MetaResources.readTable(reverseForeignKey.getRefTable()));
+      return parent.readResources().merge(MetaResources.readTable(reverseForeignKey.getRefTable()));
     }
 
     @Override
@@ -220,7 +228,7 @@ public class References {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class ReferencingDerivedTableMeta extends TableMeta {
+  public static class RefTableMeta extends TableMeta {
     private final GlobalAggrTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
     private final ReverseForeignKey reverseForeignKey;
@@ -234,6 +242,7 @@ public class References {
 
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
+      // Cannot reference any further tables from a ref, only access its fields.
       return null;
     }
 

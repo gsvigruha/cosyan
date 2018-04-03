@@ -8,10 +8,10 @@ import java.util.stream.Collectors;
 
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
-import com.cosyan.db.model.References.ReferencedDerivedTableMeta;
+import com.cosyan.db.model.References.ReferencedRefTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.References.ReferencedSimpleTableMeta;
-import com.cosyan.db.model.References.ReferencingDerivedTableMeta;
+import com.cosyan.db.model.References.RefTableMeta;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -77,7 +77,7 @@ public class Dependencies {
       deps = new HashMap<>();
     }
 
-    public TableDependencies(ReferencingDerivedTableMeta tableMeta,
+    public TableDependencies(RefTableMeta tableMeta,
         TableDependencies tableDependencies) {
       deps = new HashMap<>();
       ReverseForeignKey reverseForeignKey = tableMeta.getReverseForeignKey();
@@ -92,7 +92,7 @@ public class Dependencies {
       }
     }
 
-    public TableDependencies(ReferencedDerivedTableMeta table, TableDependencies tableDependencies) {
+    public TableDependencies(ReferencedRefTableMeta table, TableDependencies tableDependencies) {
       deps = new HashMap<>();
       Map<String, TableDependency> actDeps = deps;
       for (Ref foreignKey : table.foreignKeyChain()) {
