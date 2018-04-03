@@ -1,7 +1,8 @@
 package com.cosyan.db.io;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordProvider.Record;
@@ -127,8 +128,7 @@ public abstract class TableReader implements TableIO {
 
     @Override
     public IterableTableReader iterableReader(Resources resources) throws IOException {
-      RAFBufferedInputStream rafReader = new RAFBufferedInputStream(new RandomAccessFile(fileName, "r"));
-      RecordReader reader = new RecordReader(columns, rafReader);
+      RecordReader reader = new RecordReader(columns, new BufferedInputStream(new FileInputStream(fileName)));
       return new IterableTableReader() {
 
         @Override
@@ -138,7 +138,7 @@ public abstract class TableReader implements TableIO {
 
         @Override
         public void close() throws IOException {
-          rafReader.close();
+          reader.close();
         }
       };
     }

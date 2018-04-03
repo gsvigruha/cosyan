@@ -4,6 +4,7 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Set;
 
 import com.cosyan.db.model.BasicColumn;
@@ -39,14 +40,14 @@ public interface RecordProvider {
     private final ImmutableList<BasicColumn> columns;
     protected final Set<Long> recordsToDelete;
     private final int numColumns;
-    protected final SeekableInputStream inputStream;
+    private final InputStream inputStream;
     private final DataInput dataInput;
 
     protected long pointer;
 
     public RecordReader(
         ImmutableList<BasicColumn> columns,
-        SeekableInputStream inputStream,
+        InputStream inputStream,
         Set<Long> recordsToDelete) {
       this.columns = columns;
       this.recordsToDelete = recordsToDelete;
@@ -58,7 +59,7 @@ public interface RecordProvider {
 
     public RecordReader(
         ImmutableList<BasicColumn> columns,
-        SeekableInputStream inputStream) {
+        InputStream inputStream) {
       this(columns, inputStream, ImmutableSet.of());
     }
 
@@ -107,13 +108,16 @@ public interface RecordProvider {
 
   public class SeekableRecordReader extends RecordReader {
 
+    private final SeekableInputStream inputStream;
+
     public SeekableRecordReader(ImmutableList<BasicColumn> columns, SeekableInputStream inputStream) {
-      super(columns, inputStream);
+      this(columns, inputStream, ImmutableSet.of());
     }
 
     public SeekableRecordReader(ImmutableList<BasicColumn> columns, SeekableInputStream inputStream,
         Set<Long> recordsToDelete) {
       super(columns, inputStream, recordsToDelete);
+      this.inputStream = inputStream;
     }
 
     public void seek(long position) throws IOException {

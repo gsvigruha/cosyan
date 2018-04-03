@@ -84,4 +84,50 @@ public class MetaResourcesTest extends UnitTestBase {
     assertFalse(res2.get("t7").isWrite());
     assertFalse(res2.get("t7.a").isWrite());
   }
+
+  @Test
+  public void testModifyWithRules() throws Exception {
+    execute("create table t8 (a varchar, b integer, constraint pk_a primary key (a));");
+    execute("create table t9 (a varchar, constraint fk_a foreign key (a) references t8,"
+        + "constraint c_1 check (fk_a.b > 0));");
+    Map<String, Resource> res1 = resources("insert into t8 values ('x', 1);");
+    assertEquals(4, res1.size());
+    assertTrue(res1.get("t8").isWrite());
+    assertTrue(res1.get("t8.a").isWrite());
+    assertFalse(res1.get("t9").isWrite());
+    assertFalse(res1.get("t9.a").isWrite());
+
+    Map<String, Resource> res2 = resources("delete from t8 where a = 'x';");
+    assertEquals(4, res2.size());
+    assertTrue(res2.get("t8").isWrite());
+    assertTrue(res2.get("t8.a").isWrite());
+    assertFalse(res2.get("t9").isWrite());
+    assertFalse(res2.get("t9.a").isWrite());
+
+    Map<String, Resource> res3 = resources("update t8 set a = 'x';");
+    assertEquals(4, res1.size());
+    assertTrue(res3.get("t8").isWrite());
+    assertTrue(res3.get("t8.a").isWrite());
+    assertFalse(res3.get("t9").isWrite());
+    assertFalse(res3.get("t9.a").isWrite());
+
+    Map<String, Resource> res4 = resources("insert into t9 values ('x');");
+    assertEquals(4, res4.size());
+    assertTrue(res4.get("t9").isWrite());
+    assertTrue(res4.get("t9.a").isWrite());
+    assertFalse(res4.get("t8").isWrite());
+    assertFalse(res4.get("t8.a").isWrite());
+
+    Map<String, Resource> res5 = resources("delete from t9 where a = 'x';");
+    assertEquals(2, res5.size());
+    assertTrue(res5.get("t9").isWrite());
+    assertTrue(res5.get("t9.a").isWrite());
+
+    Map<String, Resource> res6 = resources("update t9 set a = 'x';");
+    assertEquals(4, res6.size());
+    assertTrue(res6.get("t9").isWrite());
+    assertTrue(res6.get("t9.a").isWrite());
+    assertFalse(res6.get("t8").isWrite());
+    assertFalse(res6.get("t8.a").isWrite());
+  }
 }

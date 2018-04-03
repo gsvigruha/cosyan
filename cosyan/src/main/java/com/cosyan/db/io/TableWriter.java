@@ -1,8 +1,11 @@
 package com.cosyan.db.io;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -235,7 +238,12 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   }
 
   public long delete(Resources resources, ColumnMeta whereColumn) throws IOException, RuleException {
-    return delete(recordReader(), resources, whereColumn);
+    RecordReader reader = recordReader();
+    try {
+      return delete(reader, resources, whereColumn);
+    } finally {
+      reader.close();
+    }
   }
 
   public long deleteWithIndex(Resources resources, ColumnMeta whereColumn, VariableEquals clause)
@@ -273,11 +281,16 @@ public class TableWriter extends SeekableTableReader implements TableIO {
 
   public long update(Resources resources, ImmutableMap<Integer, ColumnMeta> columnExprs, ColumnMeta whereColumn)
       throws IOException, RuleException {
-    ImmutableList<Object[]> valuess = deleteAndCollectUpdated(recordReader(), resources, columnExprs, whereColumn);
-    for (Object[] values : valuess) {
-      insert(resources, values, /* checkReferencingRules= */true);
+    RecordReader reader = recordReader();
+    try {
+      ImmutableList<Object[]> valuess = deleteAndCollectUpdated(reader, resources, columnExprs, whereColumn);
+      for (Object[] values : valuess) {
+        insert(resources, values, /* checkReferencingRules= */true);
+      }
+      return valuess.size();
+    } finally {
+      reader.close();
     }
-    return valuess.size();
   }
 
   public long updateWithIndex(
@@ -320,8 +333,9 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   }
 
   private RecordReader recordReader() throws IOException {
-    SeekableSequenceInputStream rafReader = new SeekableSequenceInputStream(
-        new RAFBufferedInputStream(new RandomAccessFile(fileName, "r")),
+    @SuppressWarnings("resource") // RecordReader closes SequenceInputStream.
+    InputStream rafReader = new SequenceInputStream(
+        new BufferedInputStream(new FileInputStream(fileName)),
         new TreeMapInputStream(recordsToInsert));
     return new RecordReader(columns, rafReader, recordsToDelete);
   }
