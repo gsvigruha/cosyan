@@ -6,15 +6,15 @@ import java.util.Properties;
 import org.junit.BeforeClass;
 
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
-import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
-import com.cosyan.db.lang.sql.SyntaxTree.Statement;
 import com.cosyan.db.lock.LockManager;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
+import com.cosyan.db.session.IParser.ParserException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 

@@ -1,7 +1,7 @@
 package com.cosyan.db.transaction;
 
-import com.cosyan.db.lang.sql.SyntaxTree.MetaStatement;
-import com.cosyan.db.lang.sql.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
+import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 
 public class TransactionHandler {
 

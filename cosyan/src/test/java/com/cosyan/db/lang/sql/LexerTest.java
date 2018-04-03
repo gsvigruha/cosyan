@@ -4,12 +4,11 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import com.cosyan.db.lang.sql.Lexer;
-import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.lang.sql.Tokens.FloatToken;
 import com.cosyan.db.lang.sql.Tokens.IntToken;
 import com.cosyan.db.lang.sql.Tokens.StringToken;
 import com.cosyan.db.lang.sql.Tokens.Token;
+import com.cosyan.db.session.IParser.ParserException;
 import com.google.common.collect.ImmutableList;
 
 public class LexerTest {

@@ -3,10 +3,10 @@ package com.cosyan.db.transaction;
 import java.io.IOException;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.lang.sql.Result;
-import com.cosyan.db.lang.sql.Result.ErrorResult;
-import com.cosyan.db.lang.sql.Result.MetaStatementResult;
-import com.cosyan.db.lang.sql.SyntaxTree.MetaStatement;
+import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
+import com.cosyan.db.lang.transaction.Result;
+import com.cosyan.db.lang.transaction.Result.ErrorResult;
+import com.cosyan.db.lang.transaction.Result.MetaStatementResult;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;

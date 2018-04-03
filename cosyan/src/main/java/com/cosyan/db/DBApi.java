@@ -3,11 +3,13 @@ package com.cosyan.db;
 import java.io.IOException;
 
 import com.cosyan.db.conf.Config;
-import com.cosyan.db.lang.sql.Parser.ParserException;
+import com.cosyan.db.lang.sql.Lexer;
+import com.cosyan.db.lang.sql.Parser;
 import com.cosyan.db.lock.LockManager;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.session.IParser.ParserException;
 import com.cosyan.db.session.Session;
 import com.cosyan.db.transaction.TransactionHandler;
 
@@ -29,7 +31,7 @@ public class DBApi {
   }
 
   public Session getSession() {
-    return new Session(metaRepo, transactionHandler, transactionJournal);
+    return new Session(metaRepo, transactionHandler, transactionJournal, new Parser(), new Lexer());
   }
 
   public void shutdown() {

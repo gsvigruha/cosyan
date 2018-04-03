@@ -1,13 +1,11 @@
 package com.cosyan.db.session;
 
-import com.cosyan.db.lang.sql.Lexer;
-import com.cosyan.db.lang.sql.Parser;
-import com.cosyan.db.lang.sql.Result;
-import com.cosyan.db.lang.sql.Parser.ParserException;
-import com.cosyan.db.lang.sql.Result.ErrorResult;
 import com.cosyan.db.lang.sql.Tokens.Token;
+import com.cosyan.db.lang.transaction.Result;
+import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.session.IParser.ParserException;
 import com.cosyan.db.transaction.MetaTransaction;
 import com.cosyan.db.transaction.Transaction;
 import com.cosyan.db.transaction.TransactionHandler;
@@ -15,8 +13,8 @@ import com.google.common.collect.PeekingIterator;
 
 public class Session {
 
-  private final Parser parser;
-  private final Lexer lexer;
+  private final IParser parser;
+  private final ILexer lexer;
 
   private final MetaRepo metaRepo;
   private final TransactionHandler transactionHandler;
@@ -25,12 +23,14 @@ public class Session {
   public Session(
       MetaRepo metaRepo,
       TransactionHandler transactionHandler,
-      TransactionJournal transactionJournal) {
+      TransactionJournal transactionJournal,
+      IParser parser,
+      ILexer lexer) {
     this.metaRepo = metaRepo;
     this.transactionHandler = transactionHandler;
     this.transactionJournal = transactionJournal;
-    this.parser = new Parser();
-    this.lexer = new Lexer();
+    this.parser = parser;
+    this.lexer = lexer;
   }
 
   public Result execute(String sql) {

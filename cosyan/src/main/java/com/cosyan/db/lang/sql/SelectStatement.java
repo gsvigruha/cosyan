@@ -1,6 +1,6 @@
 package com.cosyan.db.lang.sql;
 
-import static com.cosyan.db.lang.sql.SyntaxTree.assertType;
+import static com.cosyan.db.lang.expr.SyntaxTree.assertType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,10 +14,11 @@ import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.lang.expr.BinaryExpression;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.FuncCallExpression;
-import com.cosyan.db.lang.sql.Result.QueryResult;
-import com.cosyan.db.lang.sql.SyntaxTree.Node;
-import com.cosyan.db.lang.sql.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.SyntaxTree.Node;
+import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.Tokens.Token;
+import com.cosyan.db.lang.transaction.Result;
+import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.logic.PredicateHelper;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MetaRepo;

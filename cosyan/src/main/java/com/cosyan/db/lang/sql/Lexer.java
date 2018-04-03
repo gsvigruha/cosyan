@@ -2,18 +2,19 @@ package com.cosyan.db.lang.sql;
 
 import java.util.ArrayList;
 
-import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.lang.sql.Tokens.BooleanToken;
 import com.cosyan.db.lang.sql.Tokens.FloatToken;
 import com.cosyan.db.lang.sql.Tokens.IdentToken;
 import com.cosyan.db.lang.sql.Tokens.IntToken;
 import com.cosyan.db.lang.sql.Tokens.StringToken;
 import com.cosyan.db.lang.sql.Tokens.Token;
+import com.cosyan.db.session.ILexer;
+import com.cosyan.db.session.IParser.ParserException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
 
-public class Lexer {
+public class Lexer implements ILexer {
 
   private static final int STATE_DEFAULT = 0;
   private static final int STATE_IN_SINGLE_QUOTE = 1;

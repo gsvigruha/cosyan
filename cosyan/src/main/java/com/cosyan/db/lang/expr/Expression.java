@@ -2,8 +2,7 @@ package com.cosyan.db.lang.expr;
 
 import java.io.IOException;
 
-import com.cosyan.db.lang.sql.SyntaxTree;
-import com.cosyan.db.lang.sql.SyntaxTree.Node;
+import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.Tokens;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.meta.MetaRepo.ModelException;

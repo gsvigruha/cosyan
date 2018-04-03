@@ -6,9 +6,10 @@ import java.util.Optional;
 
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Literals.Literal;
-import com.cosyan.db.lang.sql.Result.StatementResult;
-import com.cosyan.db.lang.sql.SyntaxTree.Node;
-import com.cosyan.db.lang.sql.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.SyntaxTree.Node;
+import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.transaction.Result;
+import com.cosyan.db.lang.transaction.Result.StatementResult;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;

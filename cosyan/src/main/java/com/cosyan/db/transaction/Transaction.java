@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.cosyan.db.lang.sql.Result;
-import com.cosyan.db.lang.sql.Result.CrashResult;
-import com.cosyan.db.lang.sql.Result.ErrorResult;
-import com.cosyan.db.lang.sql.Result.TransactionResult;
-import com.cosyan.db.lang.sql.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.transaction.Result;
+import com.cosyan.db.lang.transaction.Result.CrashResult;
+import com.cosyan.db.lang.transaction.Result.ErrorResult;
+import com.cosyan.db.lang.transaction.Result.TransactionResult;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;

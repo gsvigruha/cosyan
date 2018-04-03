@@ -5,7 +5,7 @@ import java.util.Random;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
-import com.cosyan.db.lang.sql.Result.QueryResult;
+import com.cosyan.db.lang.transaction.Result.QueryResult;
 
 public class SelectStatementPerformanceTest extends UnitTestBase {
 

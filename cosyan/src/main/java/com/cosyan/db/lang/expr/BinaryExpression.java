@@ -1,11 +1,10 @@
 package com.cosyan.db.lang.expr;
 
-import static com.cosyan.db.lang.sql.SyntaxTree.assertType;
+import static com.cosyan.db.lang.expr.SyntaxTree.assertType;
 
 import java.io.IOException;
 import java.util.Date;
 
-import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.lang.sql.Tokens;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -32,7 +31,7 @@ public class BinaryExpression extends Expression {
   public BinaryExpression(
       Token token,
       Expression left,
-      Expression right) throws ParserException {
+      Expression right) {
     this.token = token;
     this.left = left;
     this.right = right;

@@ -10,10 +10,10 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
-import com.cosyan.db.lang.sql.Parser.ParserException;
-import com.cosyan.db.lang.sql.Result.ErrorResult;
-import com.cosyan.db.lang.sql.Result.QueryResult;
+import com.cosyan.db.lang.transaction.Result.ErrorResult;
+import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.session.IParser.ParserException;
 
 public class DocTest extends UnitTestBase {
 

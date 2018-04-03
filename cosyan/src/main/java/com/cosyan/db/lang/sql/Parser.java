@@ -16,6 +16,8 @@ import com.cosyan.db.lang.expr.Literals.Literal;
 import com.cosyan.db.lang.expr.Literals.LongLiteral;
 import com.cosyan.db.lang.expr.Literals.NullLiteral;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
+import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
+import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAddColumn;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAlterColumn;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableDropColumn;
@@ -41,8 +43,6 @@ import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.sql.SelectStatement.Table;
 import com.cosyan.db.lang.sql.SelectStatement.TableExpr;
 import com.cosyan.db.lang.sql.SelectStatement.TableRef;
-import com.cosyan.db.lang.sql.SyntaxTree.MetaStatement;
-import com.cosyan.db.lang.sql.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.sql.UpdateStatement.SetExpression;
 import com.cosyan.db.lang.sql.UpdateStatement.Update;
@@ -51,11 +51,12 @@ import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.DateFunctions;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.session.IParser;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.PeekingIterator;
 
-public class Parser {
+public class Parser implements IParser {
 
   public boolean isMeta(PeekingIterator<Token> tokens) {
     if (tokens.peek().is(Tokens.CREATE) ||
@@ -658,13 +659,5 @@ public class Parser {
 
   private String join(String[] values) {
     return Stream.of(values).collect(Collectors.joining(", "));
-  }
-
-  public static class ParserException extends Exception {
-    private static final long serialVersionUID = 1L;
-
-    public ParserException(String msg) {
-      super(msg);
-    }
   }
 }

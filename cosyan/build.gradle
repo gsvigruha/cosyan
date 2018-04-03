@@ -26,10 +26,17 @@ test {
   }
 }
 
-task unitTest( type: Test ) {
+task unitTest(type: Test) {
   testLogging {
     showStandardStreams = true
   }
   exclude '**/*PerformanceTest*'
   exclude '**/*Lock*Test*'
+}
+
+task dbCore(type: JavaCompile) {
+  source = fileTree(dir: 'src/main/java', excludes: ['com/cosyan/db/lang/sql/*.java', 'com/cosyan/db/DBApi.java'])
+  classpath = configurations.compile
+  destinationDir = file('build/classes/dbCore')
+  dependencyCacheDir = file('build/dependency-cache')
 }

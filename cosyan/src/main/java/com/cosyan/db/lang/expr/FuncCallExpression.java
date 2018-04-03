@@ -6,8 +6,6 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
-import com.cosyan.db.lang.sql.Parser.ParserException;
-import com.cosyan.db.lang.sql.SyntaxTree;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.AggrTables;
 import com.cosyan.db.model.AggrTables.NotAggrTableException;
@@ -39,8 +37,7 @@ public class FuncCallExpression extends Expression {
   private final Expression object;
   private final ImmutableList<Expression> args;
 
-  public FuncCallExpression(Ident ident, @Nullable Expression object, ImmutableList<Expression> args)
-      throws ParserException {
+  public FuncCallExpression(Ident ident, @Nullable Expression object, ImmutableList<Expression> args) {
     this.ident = ident;
     this.object = object;
     this.args = args;

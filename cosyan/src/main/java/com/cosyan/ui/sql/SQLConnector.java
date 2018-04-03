@@ -4,13 +4,13 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import com.cosyan.db.DBApi;
-import com.cosyan.db.lang.sql.Result;
-import com.cosyan.db.lang.sql.Result.CrashResult;
-import com.cosyan.db.lang.sql.Result.ErrorResult;
-import com.cosyan.db.lang.sql.Result.MetaStatementResult;
-import com.cosyan.db.lang.sql.Result.QueryResult;
-import com.cosyan.db.lang.sql.Result.StatementResult;
-import com.cosyan.db.lang.sql.Result.TransactionResult;
+import com.cosyan.db.lang.transaction.Result;
+import com.cosyan.db.lang.transaction.Result.CrashResult;
+import com.cosyan.db.lang.transaction.Result.ErrorResult;
+import com.cosyan.db.lang.transaction.Result.MetaStatementResult;
+import com.cosyan.db.lang.transaction.Result.QueryResult;
+import com.cosyan.db.lang.transaction.Result.StatementResult;
+import com.cosyan.db.lang.transaction.Result.TransactionResult;
 import com.cosyan.db.session.Session;
 
 public class SQLConnector {

@@ -17,7 +17,6 @@ import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.sql.CreateStatement.RuleDefinition;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
-import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
@@ -28,6 +27,7 @@ import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.Rule;
+import com.cosyan.db.session.IParser.ParserException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 

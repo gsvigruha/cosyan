@@ -13,13 +13,13 @@ import com.cosyan.db.lang.expr.FuncCallExpression;
 import com.cosyan.db.lang.expr.Literals.DoubleLiteral;
 import com.cosyan.db.lang.expr.Literals.LongLiteral;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
-import com.cosyan.db.lang.sql.Parser.ParserException;
+import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.SelectStatement.AsteriskExpression;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.sql.SelectStatement.TableRef;
-import com.cosyan.db.lang.sql.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.model.Ident;
+import com.cosyan.db.session.IParser.ParserException;
 import com.google.common.collect.ImmutableList;
 
 public class ParserTest {

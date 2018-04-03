@@ -5,11 +5,11 @@ import java.io.IOException;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
-import com.cosyan.db.lang.sql.Parser.ParserException;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
+import com.cosyan.db.session.IParser.ParserException;
 import com.cosyan.db.transaction.Resources;
 
 import lombok.Data;
