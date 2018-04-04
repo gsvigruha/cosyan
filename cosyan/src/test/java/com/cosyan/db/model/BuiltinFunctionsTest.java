@@ -20,7 +20,7 @@ public class BuiltinFunctionsTest extends DummyTestBase {
   @BeforeClass
   public static void setUp() throws Exception {
     DummyTestBase.setUp();
-    register(new DummyMaterializedTableMeta(metaRepo.config(), "table", 
+    register(new DummyMaterializedTableMeta(metaRepo.config(), "table",
         ImmutableMap.of(
             "a", new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false)),
         new Object[][] {
@@ -49,6 +49,10 @@ public class BuiltinFunctionsTest extends DummyTestBase {
     assertResult("matches(a, '[0-9]*')", false);
     assertResult("replace(a, 'b', 'x')", "axcABC");
     assertResult("a.replace('c', 'x')", "abxABC");
+    assertResult("trim(' abc ')", "abc");
+    assertResult("'xyz'.concat('xyz')", "xyzxyz");
+    assertResult("index_of('xyz', 'x')", 0L);
+    assertResult("last_index_of('aaa', 'a')", 2L);
   }
 
   @Test

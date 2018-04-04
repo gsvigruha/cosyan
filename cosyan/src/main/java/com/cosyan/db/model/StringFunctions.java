@@ -93,4 +93,55 @@ public class StringFunctions {
       return str.replace(oldStr, newStr);
     }
   }
+
+  public static class Trim extends SimpleFunction<String> {
+    public Trim() {
+      super("trim", DataTypes.StringType, ImmutableList.of(DataTypes.StringType));
+    }
+
+    @Override
+    public String call(ImmutableList<Object> argValues) {
+      String str = (String) argValues.get(0);
+      return str.trim();
+    }
+  }
+
+  public static class Concat extends SimpleFunction<String> {
+    public Concat() {
+      super("concat", DataTypes.StringType, ImmutableList.of(DataTypes.StringType, DataTypes.StringType));
+    }
+
+    @Override
+    public String call(ImmutableList<Object> argValues) {
+      String str1 = (String) argValues.get(0);
+      String str2 = (String) argValues.get(1);
+      return str1.concat(str2);
+    }
+  }
+
+  public static class IndexOf extends SimpleFunction<Long> {
+    public IndexOf() {
+      super("index_of", DataTypes.LongType, ImmutableList.of(DataTypes.StringType, DataTypes.StringType));
+    }
+
+    @Override
+    public Long call(ImmutableList<Object> argValues) {
+      String str = (String) argValues.get(0);
+      String substr = (String) argValues.get(1);
+      return (long) str.indexOf(substr);
+    }
+  }
+
+  public static class LastIndexOf extends SimpleFunction<Long> {
+    public LastIndexOf() {
+      super("last_index_of", DataTypes.LongType, ImmutableList.of(DataTypes.StringType, DataTypes.StringType));
+    }
+
+    @Override
+    public Long call(ImmutableList<Object> argValues) {
+      String str = (String) argValues.get(0);
+      String substr = (String) argValues.get(1);
+      return (long) str.lastIndexOf(substr);
+    }
+  }
 }

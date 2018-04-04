@@ -43,6 +43,7 @@ import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.DerivedTables.SortedTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.JoinTables.JoinTableMeta;
+import com.cosyan.db.model.JoinTables.JoinType;
 import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
@@ -302,7 +303,12 @@ public class SelectStatement {
         leftJoinColumns.add(expr.getLeft().compileColumn(leftTable));
         rightJoinColumns.add(expr.getRight().compileColumn(rightTable));
       }
-      return new JoinTableMeta(joinType, leftTable, rightTable, leftJoinColumns.build(), rightJoinColumns.build());
+      return new JoinTableMeta(
+          JoinType.valueOf(joinType.getString().toUpperCase()),
+          leftTable,
+          rightTable,
+          leftJoinColumns.build(),
+          rightJoinColumns.build());
     }
 
     private List<BinaryExpression> decompose(Expression expr, LinkedList<BinaryExpression> collector)

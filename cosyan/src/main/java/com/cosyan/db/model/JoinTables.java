@@ -6,8 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.cosyan.db.io.TableReader.IterableTableReader;
-import com.cosyan.db.lang.sql.Tokens;
-import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.DerivedTables.ShiftedTableMeta;
@@ -21,10 +19,15 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 public class JoinTables {
+
+  public static enum JoinType {
+    INNER, LEFT, RIGHT
+  }
+
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class JoinTableMeta extends ExposedTableMeta {
-    private final Token joinType;
+    private final JoinType joinType;
     private final ExposedTableMeta leftTable;
     private final ExposedTableMeta rightTable;
     private final ImmutableList<ColumnMeta> leftTableJoinColumns;
@@ -37,7 +40,7 @@ public class JoinTables {
     private final boolean mainTableFirst;
     private final boolean innerJoin;
 
-    public JoinTableMeta(Token joinType, ExposedTableMeta leftTable, ExposedTableMeta rightTable,
+    public JoinTableMeta(JoinType joinType, ExposedTableMeta leftTable, ExposedTableMeta rightTable,
         ImmutableList<ColumnMeta> leftTableJoinColumns, ImmutableList<ColumnMeta> rightTableJoinColumns) {
       this.joinType = joinType;
       this.leftTable = leftTable;
@@ -45,21 +48,21 @@ public class JoinTables {
       this.leftTableJoinColumns = leftTableJoinColumns;
       this.rightTableJoinColumns = rightTableJoinColumns;
 
-      if (joinType.is(Tokens.INNER)) {
+      if (joinType == JoinType.INNER) {
         mainTable = leftTable;
         joinTable = rightTable;
         mainTableJoinColumns = leftTableJoinColumns;
         joinTableJoinColumns = rightTableJoinColumns;
         mainTableFirst = true;
         innerJoin = true;
-      } else if (joinType.is(Tokens.LEFT)) {
+      } else if (joinType == JoinType.LEFT) {
         mainTable = leftTable;
         joinTable = rightTable;
         mainTableJoinColumns = leftTableJoinColumns;
         joinTableJoinColumns = rightTableJoinColumns;
         mainTableFirst = true;
         innerJoin = false;
-      } else if (joinType.is(Tokens.RIGHT)) {
+      } else if (joinType == JoinType.RIGHT) {
         mainTable = rightTable;
         joinTable = leftTable;
         mainTableJoinColumns = rightTableJoinColumns;
@@ -68,7 +71,7 @@ public class JoinTables {
         innerJoin = false;
       } else {
         // TODO remove this and resolve in compilation time.
-        throw new RuntimeException("Unknown join type '" + joinType.getString() + "'.");
+        throw new RuntimeException("Unknown join type '" + joinType.name() + "'.");
       }
     }
 
@@ -189,7 +192,7 @@ public class JoinTables {
         private void join() throws IOException {
           joinValues = LinkedListMultimap.create();
           while (!cancelled) {
-            Object[] joinSourceValues = joinReader.next(); 
+            Object[] joinSourceValues = joinReader.next();
             if (joinSourceValues == null) {
               break;
             }

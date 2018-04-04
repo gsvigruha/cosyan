@@ -37,12 +37,16 @@ import com.cosyan.db.model.MathFunctions.Power;
 import com.cosyan.db.model.MathFunctions.Round;
 import com.cosyan.db.model.MathFunctions.RoundTo;
 import com.cosyan.db.model.MathFunctions.Sin;
+import com.cosyan.db.model.StringFunctions.Concat;
 import com.cosyan.db.model.StringFunctions.Contains;
+import com.cosyan.db.model.StringFunctions.IndexOf;
+import com.cosyan.db.model.StringFunctions.LastIndexOf;
 import com.cosyan.db.model.StringFunctions.Length;
 import com.cosyan.db.model.StringFunctions.Lower;
 import com.cosyan.db.model.StringFunctions.Matches;
 import com.cosyan.db.model.StringFunctions.Replace;
 import com.cosyan.db.model.StringFunctions.Substr;
+import com.cosyan.db.model.StringFunctions.Trim;
 import com.cosyan.db.model.StringFunctions.Upper;
 import com.cosyan.db.model.TableFunctions.SelectFunction;
 import com.google.common.collect.ImmutableList;
@@ -137,6 +141,10 @@ public class BuiltinFunctions {
       .add(new Matches())
       .add(new Contains())
       .add(new Replace())
+      .add(new Trim())
+      .add(new Concat())
+      .add(new IndexOf())
+      .add(new LastIndexOf())
       // Math
       .add(new Power())
       .add(new Exp())
