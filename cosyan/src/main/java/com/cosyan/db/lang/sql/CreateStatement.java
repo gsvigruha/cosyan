@@ -114,7 +114,7 @@ public class CreateStatement {
         tableMeta.setPartitioning(Optional.of(columnMeta));
       }
 
-      metaRepo.registerTable(name, tableMeta);
+      metaRepo.registerTable(tableMeta);
       return new MetaStatementResult();
     }
 

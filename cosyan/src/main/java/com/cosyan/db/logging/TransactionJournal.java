@@ -34,7 +34,7 @@ public class TransactionJournal {
   public TransactionJournal(Config config) throws IOException {
     this.config = config;
     Files.createDirectories(Paths.get(config.journalDir()));
-    this.stream = new FileOutputStream(config.journalDir() + File.separator + "transaction.journal");
+    this.stream = new FileOutputStream(config.journalDir() + File.separator + "transaction.journal", /* append= */true);
   }
 
   private synchronized void log(byte event, long trxNumber) {

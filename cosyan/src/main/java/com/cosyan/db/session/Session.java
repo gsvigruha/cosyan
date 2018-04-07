@@ -3,6 +3,7 @@ package com.cosyan.db.session;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
+import com.cosyan.db.logging.MetaJournal;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.session.IParser.ParserException;
@@ -19,18 +20,24 @@ public class Session {
   private final MetaRepo metaRepo;
   private final TransactionHandler transactionHandler;
   private final TransactionJournal transactionJournal;
+  private final MetaJournal metaJournal;
+  private final boolean innerSession;
 
   public Session(
       MetaRepo metaRepo,
       TransactionHandler transactionHandler,
       TransactionJournal transactionJournal,
+      MetaJournal metaJournal,
       IParser parser,
-      ILexer lexer) {
+      ILexer lexer,
+      boolean innerSession) {
     this.metaRepo = metaRepo;
     this.transactionHandler = transactionHandler;
     this.transactionJournal = transactionJournal;
+    this.metaJournal = metaJournal;
     this.parser = parser;
     this.lexer = lexer;
+    this.innerSession = innerSession;
   }
 
   public Result execute(String sql) {
@@ -38,7 +45,11 @@ public class Session {
       PeekingIterator<Token> tokens = lexer.tokenize(sql);
       if (parser.isMeta(tokens)) {
         MetaTransaction transaction = transactionHandler.begin(parser.parseMetaStatement(tokens));
-        return transaction.execute(metaRepo, transactionJournal);
+        if (innerSession) {
+          return transaction.innerExecute(metaRepo);
+        } else {
+          return transaction.execute(metaRepo, transactionJournal, metaJournal, sql);
+        }
       } else {
         Transaction transaction = transactionHandler.begin(parser.parseStatements(tokens));
         return transaction.execute(metaRepo, transactionJournal);

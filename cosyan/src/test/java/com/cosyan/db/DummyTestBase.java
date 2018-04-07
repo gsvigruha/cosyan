@@ -48,7 +48,7 @@ public abstract class DummyTestBase {
 
   public static void register(DummyMaterializedTableMeta table) throws IOException {
     readers.put(table.tableName(), new DummyTableReader(table.columns(), table.getData()));
-    metaRepo.registerTable(table.tableName(), table);
+    metaRepo.registerTable(table);
   }
 
   public static void finalizeResources() {

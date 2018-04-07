@@ -7,12 +7,13 @@ import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.MetaStatementResult;
+import com.cosyan.db.logging.MetaJournal;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 
 public class MetaTransaction {
-  
+
   private final long trxNumber;
   private final MetaStatement metaStatement;
 
@@ -25,15 +26,25 @@ public class MetaTransaction {
     return trxNumber;
   }
 
-  public Result execute(MetaRepo metaRepo, TransactionJournal journal) {
+  public Result execute(MetaRepo metaRepo, TransactionJournal journal, MetaJournal metaJournal, String sql) {
     try {
       metaRepo.metaRepoWriteLock();
       metaStatement.execute(metaRepo);
+      metaJournal.log(sql);
       return new MetaStatementResult();
     } catch (ModelException | IndexException | IOException e) {
       return new ErrorResult(e);
     } finally {
       metaRepo.metaRepoWriteUnlock();
+    }
+  }
+
+  public Result innerExecute(MetaRepo metaRepo) {
+    try {
+      metaStatement.execute(metaRepo);
+      return new MetaStatementResult();
+    } catch (ModelException | IndexException | IOException e) {
+      return new ErrorResult(e);
     }
   }
 }

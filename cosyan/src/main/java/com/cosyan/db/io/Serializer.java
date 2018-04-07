@@ -2,34 +2,17 @@ package com.cosyan.db.io;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.Optional;
 import java.util.zip.CRC32;
 
-import com.cosyan.db.lang.expr.Expression;
-import com.cosyan.db.lang.sql.CreateStatement.RuleDefinition;
-import com.cosyan.db.lang.sql.Lexer;
-import com.cosyan.db.lang.sql.Parser;
-import com.cosyan.db.meta.MetaRepo;
-import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.Keys.ForeignKey;
-import com.cosyan.db.model.Keys.PrimaryKey;
-import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.Rule;
-import com.cosyan.db.session.IParser.ParserException;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 
 public class Serializer {
 
@@ -133,113 +116,5 @@ public class Serializer {
     CRC32 checksum = new CRC32();
     checksum.update(record);
     stream.writeInt((int) checksum.getValue());
-  }
-
-  public static void writeTableMeta(
-      MaterializedTableMeta tableMeta,
-      OutputStream tableOut,
-      OutputStream refOut) throws IOException {
-    DataOutputStream tableStream = new DataOutputStream(tableOut);
-    DataOutputStream refStream = new DataOutputStream(refOut);
-    tableStream.writeByte(tableMeta.type().ordinal());
-    tableStream.writeInt(tableMeta.columns().size());
-    for (BasicColumn column : tableMeta.columns().values()) {
-      tableStream.writeUTF(column.getName());
-      tableStream.writeUTF(column.getType().toString());
-      tableStream.writeBoolean(column.isNullable());
-      tableStream.writeBoolean(column.isUnique());
-      tableStream.writeBoolean(column.isIndexed());
-      tableStream.writeBoolean(column.isImmutable());
-    }
-    if (tableMeta.primaryKey().isPresent()) {
-      PrimaryKey primaryKey = tableMeta.primaryKey().get();
-      tableStream.writeByte(1);
-      tableStream.writeUTF(primaryKey.getName());
-      tableStream.writeUTF(primaryKey.getColumn().getName());
-    } else {
-      tableStream.writeByte(0);
-    }
-
-    refStream.writeInt(tableMeta.foreignKeys().size());
-    for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
-      refStream.writeUTF(foreignKey.getName());
-      refStream.writeUTF(foreignKey.getRevName());
-      refStream.writeUTF(foreignKey.getColumn().getName());
-      refStream.writeUTF(foreignKey.getRefTable().tableName());
-      refStream.writeUTF(foreignKey.getRefColumn().getName());
-    }
-    refStream.writeInt(tableMeta.rules().size());
-    for (Rule rule : tableMeta.rules().values()) {
-      refStream.writeUTF(rule.name());
-      refStream.writeUTF(rule.print());
-      refStream.writeBoolean(rule.isNullIsTrue());
-    }
-  }
-
-  public static MaterializedTableMeta readTableMeta(
-      String tableName, InputStream tableIn, MetaRepo metaRepo) throws IOException, ParserException, ModelException {
-    DataInputStream tableStream = new DataInputStream(tableIn);
-    MaterializedTableMeta.Type type = MaterializedTableMeta.Type.values()[tableStream.readByte()];
-    int numColumns = tableStream.readInt();
-    LinkedHashMap<String, BasicColumn> columns = Maps.newLinkedHashMap();
-    for (int i = 0; i < numColumns; i++) {
-      String columnName = tableStream.readUTF();
-      columns.put(columnName, new BasicColumn(
-          i,
-          columnName,
-          DataTypes.fromString(tableStream.readUTF()),
-          tableStream.readBoolean(),
-          tableStream.readBoolean(),
-          tableStream.readBoolean(),
-          tableStream.readBoolean()));
-    }
-
-    byte hasPrimaryKey = tableStream.readByte();
-    Optional<PrimaryKey> primaryKey;
-    if (hasPrimaryKey == 1) {
-      primaryKey = Optional.of(new PrimaryKey(
-          tableStream.readUTF(),
-          columns.get(tableStream.readUTF())));
-    } else {
-      primaryKey = Optional.empty();
-    }
-    return new MaterializedTableMeta(
-        metaRepo.config(),
-        tableName,
-        columns.values(),
-        primaryKey,
-        type);
-  }
-
-  public static void readTableReferences(
-      MaterializedTableMeta tableMeta, InputStream refIn, MetaRepo metaRepo)
-      throws IOException, ModelException, ParserException {
-    DataInputStream refStream = new DataInputStream(refIn);
-    int numForeignKeys = refStream.readInt();
-    for (int i = 0; i < numForeignKeys; i++) {
-      String name = refStream.readUTF();
-      String revName = refStream.readUTF();
-      String columnName = refStream.readUTF();
-      MaterializedTableMeta refTable = metaRepo.table(new Ident(refStream.readUTF()));
-      ForeignKey foreignKey = new ForeignKey(
-          name,
-          revName,
-          tableMeta,
-          tableMeta.columns().get(columnName),
-          refTable,
-          refTable.columns().get(refStream.readUTF()));
-      tableMeta.addForeignKey(foreignKey);
-    }
-
-    Parser parser = new Parser();
-    Lexer lexer = new Lexer();
-    int numSimpleChecks = refStream.readInt();
-    for (int i = 0; i < numSimpleChecks; i++) {
-      String name = refStream.readUTF();
-      Expression expr = parser.parseExpression(lexer.tokenize(refStream.readUTF()));
-      boolean nullIsTrue = refStream.readBoolean();
-      RuleDefinition ruleDefinition = new RuleDefinition(name, expr, nullIsTrue);
-      tableMeta.addRule(ruleDefinition.compile(tableMeta).toBooleanRule());
-    }
   }
 }

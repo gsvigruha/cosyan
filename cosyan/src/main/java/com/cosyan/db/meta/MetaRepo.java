@@ -1,7 +1,6 @@
 package com.cosyan.db.meta;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -20,7 +19,6 @@ import com.cosyan.db.index.IDIndex;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Indexes.IndexReader;
-import com.cosyan.db.io.Serializer;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
@@ -69,34 +67,7 @@ public class MetaRepo implements TableProvider {
     Files.createDirectories(Paths.get(config.metaDir()));
     Files.createDirectories(Paths.get(config.tableDir()));
     Files.createDirectories(Paths.get(config.indexDir()));
-    // Load tables.
-    ImmutableList<String> tableNames = ImmutableList.copyOf(Files.list(Paths.get(config.metaDir()))
-        .map(path -> path.getFileName().toString())
-        .filter(path -> !path.contains("#"))
-        .iterator());
-    for (String tableName : tableNames) {
-      FileInputStream tableIn = new FileInputStream(config.metaDir() + File.separator + tableName);
-      tables.put(tableName, Serializer.readTableMeta(tableName, tableIn, this));
-      lockManager.registerLock(tableName);
-    }
-    // Load table references (foreign keys).
-    for (String tableName : tableNames) {
-      FileInputStream refIn = new FileInputStream(config.metaDir() + File.separator + tableName + "#ref");
-      Serializer.readTableReferences(tables.get(tableName), refIn, this);
-    }
-    // Load indexes.
-    for (String tableName : tableNames) {
-      MaterializedTableMeta tableMeta = tables.get(tableName);
-      for (BasicColumn column : tableMeta.columns().values()) {
-        if (column.isIndexed()) {
-          if (column.isUnique()) {
-            registerUniqueIndex(tableMeta, column);
-          } else {
-            registerMultiIndex(tableMeta, column);
-          }
-        }
-      }
-    }
+    Files.createDirectories(Paths.get(config.journalDir()));
   }
 
   public Config config() {
@@ -178,14 +149,8 @@ public class MetaRepo implements TableProvider {
     return builder.build();
   }
 
-  public void registerTable(String tableName, MaterializedTableMeta tableMeta) throws IOException {
-    File file = new File(config.tableDir() + File.separator + tableName);
-    file.createNewFile();
-    FileOutputStream tableOut = new FileOutputStream(config.metaDir() + File.separator + tableName);
-    FileOutputStream referencesOut = new FileOutputStream(config.metaDir() + File.separator + tableName + "#ref");
-    Serializer.writeTableMeta(tableMeta, tableOut, referencesOut);
-    tableOut.close();
-    referencesOut.close();
+  public void registerTable(MaterializedTableMeta tableMeta) throws IOException {
+    String tableName = tableMeta.tableName();
     tables.put(tableName, tableMeta);
     lockManager.registerLock(tableName);
   }
@@ -193,9 +158,6 @@ public class MetaRepo implements TableProvider {
   public void dropTable(String tableName) throws IOException {
     tables.remove(tableName);
     lockManager.removeLock(tableName);
-    new File(config.tableDir() + File.separator + tableName).delete();
-    new File(config.metaDir() + File.separator + tableName).delete();
-    new File(config.metaDir() + File.separator + tableName + "#ref").delete();
   }
 
   public boolean hasTable(String tableName) {
