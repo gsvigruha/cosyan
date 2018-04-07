@@ -452,10 +452,11 @@ public class TableReaderTest extends DummyTestBase {
   }
 
   @Test
-  public void testSkewness() throws Exception {
+  public void testSkewnessAndKurtosis() throws Exception {
     ExposedTableReader reader = query("select "
-        + "round_to(skewness(b), 3) as b1, round_to(skewness(c), 3) as c1 from stats;");
-    assertEquals(ImmutableMap.of("b1", -0.493, "c1", 0.967), reader.readColumns());
+        + "round_to(skewness(b), 3) as b1, round_to(skewness(c), 3) as c1,"
+        + "round_to(kurtosis(b), 3) as b2, round_to(kurtosis(c), 3) as c2 from stats;");
+    assertEquals(ImmutableMap.of("b1", -0.493, "c1", 0.967, "b2", 1.619, "c2", 2.122), reader.readColumns());
     assertEquals(null, reader.readColumns());
   }
 

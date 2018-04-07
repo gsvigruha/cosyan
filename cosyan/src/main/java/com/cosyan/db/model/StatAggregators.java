@@ -5,6 +5,7 @@ import com.cosyan.db.model.Aggregators.Aggregator;
 import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.StatAggregators.Skewness.SkewnessAggregator;
 
 public class StatAggregators {
   public static class Sum extends AggrFunction {
@@ -159,24 +160,40 @@ public class StatAggregators {
 
   public static abstract class StdDevAggregator<T> extends Aggregator<Double, T> {
 
-    protected Double sum = null;
+    protected Double sum1 = null;
     protected Double sum2 = null;
-    protected Double cnt = null;
+    protected Double sum0 = null;
 
     protected void addItem(Double x) {
-      if (sum == null) {
-        sum = 0.0;
+      if (sum1 == null) {
+        sum1 = 0.0;
         sum2 = 0.0;
-        cnt = 0.0;
+        sum0 = 0.0;
       }
-      sum += x;
+      sum1 += x;
       sum2 += x * x;
-      cnt++;
+      sum0++;
     }
 
     @Override
     public boolean isNull() {
-      return sum == null;
+      return sum1 == null;
+    }
+
+    protected double sampleMoment2() {
+      return (sum0 * sum2 - sum1 * sum1) / (sum0 * (sum0 - 1));
+    }
+
+    protected double sampleDev() {
+      return Math.sqrt(sampleMoment2());
+    }
+
+    protected double popDev() {
+      return Math.sqrt(sum0 * sum2 - sum1 * sum1) / sum0;
+    }
+
+    protected double popToSampleCoeff() {
+      return (sum0 / (sum0 - 1));
     }
   }
 
@@ -184,7 +201,7 @@ public class StatAggregators {
     public static abstract class StdDevSampleAggregator<T> extends StdDevAggregator<T> {
       @Override
       public Double finishImpl() {
-        return Math.sqrt((cnt * sum2 - sum * sum) / (cnt * (cnt - 1)));
+        return sampleDev();
       }
     }
 
@@ -230,7 +247,7 @@ public class StatAggregators {
     public static abstract class StdDevPopAggregator<T> extends StdDevAggregator<T> {
       @Override
       public Double finishImpl() {
-        return Math.sqrt(cnt * sum2 - sum * sum) / cnt;
+        return popDev();
       }
     }
 
@@ -285,14 +302,17 @@ public class StatAggregators {
         sum3 += x * x * x;
       }
 
+      protected double sampleMoment3() {
+        double mu = sum1 / sum0;
+        double sigmaPop = popDev();
+        return popToSampleCoeff() * (sum3 / sum0 - 3 * mu * sigmaPop * sigmaPop - mu * mu * mu);
+      }
+
       @Override
       public Double finishImpl() {
-        double mu = sum / cnt;
-        double sigmaPop = Math.sqrt(cnt * sum2 - sum * sum) / cnt;
-        double sigmaSample = Math.sqrt((cnt * sum2 - sum * sum) / (cnt * (cnt - 1)));
-        double samplePopRatio = (cnt / (cnt - 1));
-        return samplePopRatio * ((sum3 / cnt - 3 * mu * sigmaPop * sigmaPop - mu * mu * mu)
-            / (sigmaSample * sigmaSample * sigmaSample));
+        double sigmaSample = sampleDev();
+        double sampleMoment3 = sampleMoment3();
+        return sampleMoment3 / (sigmaSample * sigmaSample * sigmaSample);
       }
     }
 
@@ -330,6 +350,74 @@ public class StatAggregators {
         };
       } else {
         throw new ModelException("Invalid type for skewness: '" + argType + "'.");
+      }
+    }
+  }
+
+  public static class Kurtosis extends AggrFunction {
+    public static abstract class KurtosisAggregator<T> extends SkewnessAggregator<T> {
+
+      protected Double sum4 = null;
+
+      protected void addItem(Double x) {
+        super.addItem(x);
+        if (sum4 == null) {
+          sum4 = 0.0;
+        }
+        sum4 += x * x * x * x;
+      }
+
+      protected double sampleMoment4() {
+        double mu = sum1 / sum0;
+        return popToSampleCoeff() * (sum4 / sum0
+            - 4 * (sum3 / sum0) * mu
+            + 6 * (sum2 / sum0) * mu * mu
+            - 4 * (sum1 / sum0) * mu * mu * mu
+            + mu * mu * mu * mu);
+      }
+
+      @Override
+      public Double finishImpl() {
+        double sm2 = sampleMoment2();
+        double sm4 = sampleMoment4();
+        return sm4 / (sm2 * sm2);
+      }
+    }
+
+    public Kurtosis() {
+      super("kurtosis");
+    }
+
+    @Override
+    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
+      if (argType == DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+
+          @Override
+          public Aggregator<Double, Double> create() {
+            return new KurtosisAggregator<Double>() {
+              @Override
+              public void addImpl(Double x) {
+                addItem(x);
+              }
+            };
+          }
+        };
+      } else if (argType == DataTypes.LongType) {
+        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+
+          @Override
+          public Aggregator<Double, Long> create() {
+            return new KurtosisAggregator<Long>() {
+              @Override
+              public void addImpl(Long x) {
+                addItem((double) x);
+              }
+            };
+          }
+        };
+      } else {
+        throw new ModelException("Invalid type for kurtosis: '" + argType + "'.");
       }
     }
   }

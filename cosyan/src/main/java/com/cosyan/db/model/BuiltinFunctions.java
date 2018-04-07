@@ -128,6 +128,7 @@ public class BuiltinFunctions {
       .add(new StatAggregators.StdDev())
       .add(new StatAggregators.StdDevPop())
       .add(new StatAggregators.Skewness())
+      .add(new StatAggregators.Kurtosis())
       .add(new Aggregators.CountDistinct())
       .add(new Aggregators.Max())
       .add(new Aggregators.Min())
