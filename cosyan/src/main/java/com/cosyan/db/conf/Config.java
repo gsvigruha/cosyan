@@ -37,10 +37,6 @@ public class Config {
     return props.getProperty(DATA_DIR);
   }
 
-  public String metaDir() {
-    return props.getProperty(DATA_DIR) + File.separator + "meta";
-  }
-
   public String tableDir() {
     return props.getProperty(DATA_DIR) + File.separator + "table";
   }

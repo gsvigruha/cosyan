@@ -122,11 +122,12 @@ public class BuiltinFunctions {
   }
 
   public static final ImmutableList<AggrFunction> AGGREGATIONS = ImmutableList.<AggrFunction>builder()
-      .add(new Aggregators.Sum())
+      .add(new StatAggregators.Sum())
       .add(new Aggregators.Count())
-      .add(new Aggregators.Avg())
-      .add(new Aggregators.StdDev())
-      .add(new Aggregators.StdDevPop())
+      .add(new StatAggregators.Avg())
+      .add(new StatAggregators.StdDev())
+      .add(new StatAggregators.StdDevPop())
+      .add(new StatAggregators.Skewness())
       .add(new Aggregators.CountDistinct())
       .add(new Aggregators.Max())
       .add(new Aggregators.Min())

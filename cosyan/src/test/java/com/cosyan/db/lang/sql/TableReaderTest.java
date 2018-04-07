@@ -86,6 +86,17 @@ public class TableReaderTest extends DummyTestBase {
         new Object[][] {
             new Object[] { sdf.parse("20170101") },
             new Object[] { sdf.parse("20170201") } }));
+
+    register(new DummyMaterializedTableMeta(metaRepo.config(), "stats",
+        ImmutableMap.of(
+            "b", new BasicColumn(1, "b", DataTypes.LongType, true, false, false, false),
+            "c", new BasicColumn(2, "c", DataTypes.DoubleType, true, false, false, false)),
+        new Object[][] {
+            new Object[] { 1L, 9.0 },
+            new Object[] { 8L, 13.0 },
+            new Object[] { 12L, 40.0 },
+            new Object[] { 11L, 14.0 },
+            new Object[] { 6L, 21.0 } }));
     finalizeResources();
   }
 
@@ -437,6 +448,14 @@ public class TableReaderTest extends DummyTestBase {
         + "round_to(stddev(b), 3) as b1, round_to(stddev(c), 3) as c1,"
         + "round_to(stddev_pop(b), 3) as b2, round_to(stddev_pop(c), 3) as c2 from large;");
     assertEquals(ImmutableMap.of("b1", 2.582, "c1", 2.582, "b2", 2.236, "c2", 2.236), reader.readColumns());
+    assertEquals(null, reader.readColumns());
+  }
+
+  @Test
+  public void testSkewness() throws Exception {
+    ExposedTableReader reader = query("select "
+        + "round_to(skewness(b), 3) as b1, round_to(skewness(c), 3) as c1 from stats;");
+    assertEquals(ImmutableMap.of("b1", -0.493, "c1", 0.967), reader.readColumns());
     assertEquals(null, reader.readColumns());
   }
 

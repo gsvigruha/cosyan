@@ -64,7 +64,6 @@ public class MetaRepo implements TableProvider {
     this.multiIndexes = new HashMap<>();
 
     Files.createDirectories(Paths.get(config.dataDir()));
-    Files.createDirectories(Paths.get(config.metaDir()));
     Files.createDirectories(Paths.get(config.tableDir()));
     Files.createDirectories(Paths.get(config.indexDir()));
     Files.createDirectories(Paths.get(config.journalDir()));
