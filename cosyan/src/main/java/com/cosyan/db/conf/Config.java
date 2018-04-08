@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Optional;
 import java.util.Properties;
 
 public class Config {
@@ -19,9 +18,11 @@ public class Config {
 
   public static final String LDAP_PORT = "LDAP_PORT";
 
+  private final String confDir;
   private final Properties props;
 
-  public Config() throws ConfigException {
+  public Config(String confDir) throws ConfigException {
+    this.confDir = confDir;
     String file = confDir() + File.separator + "cosyan.db.properties";
     try {
       props = new Properties();
@@ -31,14 +32,6 @@ public class Config {
     } catch (IOException e) {
       throw new ConfigException("Error loading config file: " + file + ".");
     }
-  }
-
-  public Config(Properties props) {
-    this.props = props;
-  }
-
-  public String dataDir() {
-    return props.getProperty(DATA_DIR);
   }
 
   public String tableDir() {
@@ -54,7 +47,7 @@ public class Config {
   }
 
   public String confDir() {
-    return Optional.ofNullable(System.getenv("CONF_DIR")).orElse(CONF_DIR_DEFAULT);
+    return confDir;
   }
 
   public String usersFile() {

@@ -1,7 +1,5 @@
 package com.cosyan.ui;
 
-import java.util.Properties;
-
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerList;
@@ -19,9 +17,7 @@ public class WebServer {
   public static void main(String[] args) throws Exception {
     Server server = new Server(7070);
     ServletContextHandler handler = new ServletContextHandler(server, "/cosyan");
-    Properties props = new Properties();
-    props.setProperty(Config.DATA_DIR, "/tmp/webserver");
-    Config config = new Config(props);
+    Config config = new Config("/tmp/webserver");
     DBApi dbApi = new DBApi(config);
 
     handler.addServlet(new ServletHolder(new AdminServlet(dbApi.getMetaRepo())), "/admin");

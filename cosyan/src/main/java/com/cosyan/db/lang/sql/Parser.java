@@ -47,6 +47,7 @@ import com.cosyan.db.lang.sql.SelectStatement.TableRef;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.sql.UpdateStatement.SetExpression;
 import com.cosyan.db.lang.sql.UpdateStatement.Update;
+import com.cosyan.db.lang.sql.Users.CreateUser;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.DateFunctions;
@@ -205,7 +206,7 @@ public class Parser implements IParser {
       tokens.next();
       type = MaterializedTableMeta.Type.LOOKUP;
     }
-    assertPeek(tokens, Tokens.TABLE, Tokens.INDEX);
+    assertPeek(tokens, Tokens.TABLE, Tokens.INDEX, Tokens.USER);
     if (tokens.peek().is(Tokens.TABLE)) {
       tokens.next();
       Ident ident = parseIdent(tokens);
@@ -234,12 +235,19 @@ public class Parser implements IParser {
         partitioning = Optional.empty();
       }
       return new CreateTable(ident.getString(), type, columns.build(), constraints.build(), partitioning);
-    } else {
+    } else if (tokens.peek().is(Tokens.INDEX)) {
       assertNext(tokens, Tokens.INDEX);
       Ident table = parseIdent(tokens);
       assertNext(tokens, String.valueOf(Tokens.DOT));
       Ident column = parseIdent(tokens);
       return new CreateIndex(table, column);
+    } else {
+      assertNext(tokens, Tokens.USER);
+      Ident username = parseIdent(tokens);
+      assertNext(tokens, Tokens.IDENTIFIED);
+      assertNext(tokens, Tokens.BY);
+      StringLiteral password = (StringLiteral) parseLiteral(tokens);
+      return new CreateUser(username, password);
     }
   }
 

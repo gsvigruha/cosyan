@@ -26,6 +26,10 @@ public class Tokens {
 
   public static String INDEX = "index";
 
+  public static String USER = "user";
+
+  public static String IDENTIFIED = "identified";
+
   public static String PARTITION = "partition";
 
   public static String GRANT = "grant";

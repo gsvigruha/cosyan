@@ -1,11 +1,11 @@
 package com.cosyan.db.tools;
 
 import java.io.IOException;
-import java.util.Properties;
 
 import org.junit.BeforeClass;
 
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
@@ -25,10 +25,8 @@ public class CSVConverterTest {
   private static Lexer lexer;
 
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParserException {
-    Properties props = new Properties();
-    props.setProperty(Config.DATA_DIR, "/tmp");
-    metaRepo = new MetaRepo(new Config(props), new LockManager());
+  public static void setUp() throws IOException, ModelException, ParserException, ConfigException {
+    metaRepo = new MetaRepo(new Config("/tmp/data"), new LockManager());
     parser = new Parser();
     lexer = new Lexer();
   }

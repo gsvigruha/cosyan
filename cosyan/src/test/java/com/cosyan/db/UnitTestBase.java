@@ -5,12 +5,12 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
@@ -27,15 +27,16 @@ import com.google.common.collect.Iterables;
 public abstract class UnitTestBase {
   private static Session session;
 
+  protected static Config config;
   protected static DBApi dbApi;
   protected static MetaRepo metaRepo;
 
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParserException {
+  public static void setUp() throws IOException, ModelException, ParserException, ConfigException {
     FileUtils.cleanDirectory(new File("/tmp/data"));
-    Properties props = new Properties();
-    props.setProperty(Config.DATA_DIR, "/tmp/data");
-    Config config = new Config(props);
+    FileUtils.copyFile(new File("src/test/resources/cosyan.db.properties"), new File("/tmp/data/cosyan.db.properties"));
+    FileUtils.copyFile(new File("conf/users"), new File("/tmp/data/users"));
+    config = new Config("/tmp/data");
     dbApi = new DBApi(config);
     metaRepo = dbApi.getMetaRepo();
     session = dbApi.adminSession();

@@ -5,7 +5,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
@@ -13,6 +12,7 @@ import org.junit.Test;
 
 import com.cosyan.db.DBApi;
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.lang.transaction.Result.TransactionResult;
@@ -28,11 +28,10 @@ public class RestartDBTest {
   private static Config config;
 
   @BeforeClass
-  public static void before() throws IOException {
+  public static void before() throws IOException, ConfigException {
     FileUtils.cleanDirectory(new File("/tmp/data"));
-    Properties props = new Properties();
-    props.setProperty(Config.DATA_DIR, "/tmp/data");
-    config = new Config(props);
+    FileUtils.copyFile(new File("src/test/resources/cosyan.db.properties"), new File("/tmp/data/cosyan.db.properties"));
+    config = new Config("/tmp/data");
   }
 
   @Test

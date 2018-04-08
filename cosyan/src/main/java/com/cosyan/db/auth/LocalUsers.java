@@ -41,11 +41,15 @@ public class LocalUsers {
     this.config = config;
   }
 
+  public static String hash(String password) throws NoSuchAlgorithmException {
+    MessageDigest digest = MessageDigest.getInstance("SHA-256");
+    return javax.xml.bind.DatatypeConverter
+        .printHexBinary(digest.digest(password.getBytes(StandardCharsets.UTF_8)));
+  }
+
   public AuthToken auth(String username, String password) throws AuthException {
     try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      String hex = javax.xml.bind.DatatypeConverter
-          .printHexBinary(digest.digest(password.getBytes(StandardCharsets.UTF_8)));
+      String hex = hash(password);
       BufferedReader reader = new BufferedReader(new FileReader(config.usersFile()));
       String line = null;
       try {

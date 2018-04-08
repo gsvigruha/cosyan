@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
@@ -38,9 +37,9 @@ public abstract class DummyTestBase {
   @BeforeClass
   public static void setUp() throws Exception {
     FileUtils.cleanDirectory(new File("/tmp/data"));
-    Properties props = new Properties();
-    props.setProperty(Config.DATA_DIR, "/tmp/data");
-    metaRepo = new MetaRepo(new Config(props), new LockManager());
+    FileUtils.copyFile(new File("src/test/resources/cosyan.db.properties"), new File("/tmp/data/cosyan.db.properties"));
+    FileUtils.copyFile(new File("conf/users"), new File("/tmp/data/users"));
+    metaRepo = new MetaRepo(new Config("/tmp/data"), new LockManager());
     parser = new Parser();
     lexer = new Lexer();
     readers = new HashMap<>();

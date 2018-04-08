@@ -66,9 +66,8 @@ public class MetaRepo implements TableProvider {
     this.tables = new HashMap<>();
     this.uniqueIndexes = new HashMap<>();
     this.multiIndexes = new HashMap<>();
-    this.grants = new Grants();
+    this.grants = new Grants(config);
 
-    Files.createDirectories(Paths.get(config.dataDir()));
     Files.createDirectories(Paths.get(config.tableDir()));
     Files.createDirectories(Paths.get(config.indexDir()));
     Files.createDirectories(Paths.get(config.journalDir()));
@@ -223,6 +222,10 @@ public class MetaRepo implements TableProvider {
 
   public void grant(GrantToken grant, AuthToken authToken) throws GrantException {
     grants.grant(grant, authToken);
+  }
+
+  public void createUser(String username, String password, AuthToken authToken) throws GrantException, IOException {
+    grants.createUser(username, password, authToken);
   }
 
   public OutputStream openForWrite(

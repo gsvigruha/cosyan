@@ -1,8 +1,16 @@
 package com.cosyan.db.meta;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 
 import com.cosyan.db.auth.AuthToken;
+import com.cosyan.db.auth.LocalUsers;
+import com.cosyan.db.conf.Config;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
@@ -37,9 +45,11 @@ public class Grants {
     }
   }
 
+  private final Config config;
   private final Multimap<String, GrantToken> tableGrants;
 
-  public Grants() {
+  public Grants(Config config) {
+    this.config = config;
     tableGrants = HashMultimap.create();
   }
 
@@ -82,6 +92,29 @@ public class Grants {
       }
     }
     throw new GrantException(String.format("User '%s' has no grant right on '%s'.", authToken.username(), table));
+  }
+
+  public void createUser(String username, String password, AuthToken authToken) throws GrantException, IOException {
+    BufferedReader reader = new BufferedReader(new FileReader(config.usersFile()));
+    String line = null;
+    try {
+      while ((line = reader.readLine()) != null) {
+        String[] parts = line.split(":");
+        if (username.equals(parts[0])) {
+          throw new GrantException(String.format("User '%s' already exists.", username));
+        }
+      }
+    } finally {
+      reader.close();
+    }
+    BufferedWriter writer = new BufferedWriter(new FileWriter(config.usersFile(), true));
+    try {
+      writer.write("\n" + username + ":" + LocalUsers.hash(password));
+    } catch (NoSuchAlgorithmException e) {
+      throw new GrantException(e.getMessage());
+    } finally {
+      writer.close();
+    }
   }
 
   public static class GrantException extends Exception {
