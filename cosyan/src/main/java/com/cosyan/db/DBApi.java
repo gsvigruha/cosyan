@@ -2,6 +2,9 @@ package com.cosyan.db;
 
 import java.io.IOException;
 
+import com.cosyan.db.auth.AuthToken;
+import com.cosyan.db.auth.Authenticator;
+import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
@@ -20,12 +23,14 @@ public class DBApi {
   private final TransactionHandler transactionHandler;
   private final TransactionJournal transactionJournal;
   private final MetaJournal metaJournal;
+  private final Authenticator authenticator;
 
   public DBApi(Config config) throws IOException, ModelException, ParserException {
     LockManager lockManager = new LockManager();
     metaRepo = new MetaRepo(config, lockManager);
     transactionHandler = new TransactionHandler();
     transactionJournal = new TransactionJournal(config);
+    authenticator = new Authenticator(config);
     metaJournal = new MetaJournal(config);
     metaJournal.reload(getSession(/* innerSession= */true));
   }
@@ -38,15 +43,28 @@ public class DBApi {
     return getSession(/* innerSession= */false);
   }
 
-  public Session getSession(boolean innerSession) {
+  private Session getSession(boolean innerSession) {
     return new Session(
         metaRepo,
         transactionHandler,
         transactionJournal,
         metaJournal,
+        AuthToken.NO_AUTH,
         new Parser(),
         new Lexer(),
         innerSession);
+  }
+
+  public Session authSession(String username, String password, Authenticator.Method method) throws AuthException {
+    return new Session(
+        metaRepo,
+        transactionHandler,
+        transactionJournal,
+        metaJournal,
+        authenticator.auth(username, password, method),
+        new Parser(),
+        new Lexer(),
+        /* innerSession= */false);
   }
 
   public void shutdown() {

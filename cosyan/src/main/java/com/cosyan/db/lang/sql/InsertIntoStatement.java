@@ -87,6 +87,7 @@ public class InsertIntoStatement {
         }
         writer.insert(resources, fullValues, /* checkReferencingRules= */true);
       }
+      tableMeta.insert(valuess.size());
       return new StatementResult(valuess.size());
     }
 

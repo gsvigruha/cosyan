@@ -9,16 +9,20 @@ import java.util.Properties;
 
 public class Config {
 
-  public static final String CONF_FILE = "CONF_FILE";
+  public static final String CONF_DIR = "CONF_DIR";
 
-  public static final String CONF_FILE_DEFAULT = "conf" + File.separator + "cosyan.db.properties";
+  public static final String CONF_DIR_DEFAULT = "conf";
 
   public static final String DATA_DIR = "DATA_DIR";
+
+  public static final String LDAP_HOST = "LDAP_HOST";
+
+  public static final String LDAP_PORT = "LDAP_PORT";
 
   private final Properties props;
 
   public Config() throws ConfigException {
-    String file = Optional.ofNullable(System.getenv("CONF_FILE")).orElse(CONF_FILE_DEFAULT);
+    String file = confDir() + File.separator + "cosyan.db.properties";
     try {
       props = new Properties();
       props.load(new FileInputStream(new File(file)));
@@ -47,6 +51,18 @@ public class Config {
 
   public String journalDir() {
     return props.getProperty(DATA_DIR) + File.separator + "journal";
+  }
+
+  public String confDir() {
+    return Optional.ofNullable(System.getenv("CONF_DIR")).orElse(CONF_DIR_DEFAULT);
+  }
+
+  public String usersFile() {
+    return confDir() + File.separator + "users";
+  }
+
+  public String get(String key) {
+    return props.getProperty(key);
   }
 
   public static class ConfigException extends Exception {

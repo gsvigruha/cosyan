@@ -53,6 +53,7 @@ public class MetaRepo implements TableProvider {
   private final HashMap<String, MaterializedTableMeta> tables;
   private final HashMap<String, TableIndex> uniqueIndexes;
   private final HashMap<String, TableMultiIndex> multiIndexes;
+  private final Grants grants;
 
   private final LockManager lockManager;
 
@@ -62,6 +63,7 @@ public class MetaRepo implements TableProvider {
     this.tables = new HashMap<>();
     this.uniqueIndexes = new HashMap<>();
     this.multiIndexes = new HashMap<>();
+    this.grants = new Grants();
 
     Files.createDirectories(Paths.get(config.dataDir()));
     Files.createDirectories(Paths.get(config.tableDir()));

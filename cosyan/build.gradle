@@ -17,6 +17,7 @@ dependencies {
   compile "com.googlecode.json-simple:json-simple:1.1.1"
   compile "log4j:log4j:1.2.17"
   compile "org.eclipse.jetty:jetty-servlet:9.4.0.M1"
+  compile: "com.unboundid:unboundid-ldapsdk:4.0.5"
   testCompile "junit:junit:4.12"
 }
 

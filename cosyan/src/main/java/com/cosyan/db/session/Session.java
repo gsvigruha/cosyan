@@ -1,5 +1,6 @@
 package com.cosyan.db.session;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
@@ -21,6 +22,7 @@ public class Session {
   private final TransactionHandler transactionHandler;
   private final TransactionJournal transactionJournal;
   private final MetaJournal metaJournal;
+  private final AuthToken authToken;
   private final boolean innerSession;
 
   public Session(
@@ -28,6 +30,7 @@ public class Session {
       TransactionHandler transactionHandler,
       TransactionJournal transactionJournal,
       MetaJournal metaJournal,
+      AuthToken authToken,
       IParser parser,
       ILexer lexer,
       boolean innerSession) {
@@ -35,6 +38,7 @@ public class Session {
     this.transactionHandler = transactionHandler;
     this.transactionJournal = transactionJournal;
     this.metaJournal = metaJournal;
+    this.authToken = authToken;
     this.parser = parser;
     this.lexer = lexer;
     this.innerSession = innerSession;

@@ -61,6 +61,7 @@ public class MaterializedTableMeta {
   private ReverseRuleDependencies reverseRuleDependencies;
   private Optional<ColumnMeta> partitioning;
   private long cnt;
+  private long lastID;
   private SeekableInputStream fileReader;
 
   public MaterializedTableMeta(
@@ -197,6 +198,15 @@ public class MaterializedTableMeta {
       throw new ModelException(
           String.format("Duplicate column, foreign key or reversed foreign key name in '%s': '%s'.", tableName, name));
     }
+  }
+
+  public void insert(long size) {
+    cnt += size;
+    lastID += size;
+  }
+
+  public void delete(long size) {
+    cnt -= size;
   }
 
   public void addForeignKey(ForeignKey foreignKey) throws ModelException {

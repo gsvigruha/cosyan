@@ -38,11 +38,14 @@ public class DeleteStatement {
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
       TableWriter writer = resources.writer(tableMeta.tableName());
+      long deletedLines;
       if (clause == null) {
-        return new StatementResult(writer.delete(resources, whereColumn));
+        deletedLines = writer.delete(resources, whereColumn);
       } else {
-        return new StatementResult(writer.deleteWithIndex(resources, whereColumn, clause));
+        deletedLines = writer.deleteWithIndex(resources, whereColumn, clause);
       }
+      tableMeta.tableMeta().delete(deletedLines);
+      return new StatementResult(deletedLines);
     }
 
     @Override
