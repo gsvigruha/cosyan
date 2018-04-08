@@ -2,6 +2,7 @@ package com.cosyan.db.lang.sql;
 
 import java.io.IOException;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.CreateStatement.ConstraintDefinition;
@@ -25,7 +26,7 @@ public class AlterStatementConstraints {
     private final ConstraintDefinition constraint;
 
     @Override
-    public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
+    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
       CreateStatement.CreateTable.addConstraints(metaRepo, tableMeta, ImmutableList.of(constraint));
       return new MetaStatementResult();

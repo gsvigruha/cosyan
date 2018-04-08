@@ -2,6 +2,7 @@ package com.cosyan.db.lang.sql;
 
 import java.io.IOException;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.CreateStatement.ColumnDefinition;
@@ -28,7 +29,7 @@ public class AlterStatementColumns {
     private final ColumnDefinition column;
 
     @Override
-    public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
+    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       if (!column.isNullable()) {
         throw new ModelException(
             String.format("Cannot add column '%s', new columns have to be nullable.", column.getName()));
@@ -65,7 +66,7 @@ public class AlterStatementColumns {
     private final Ident column;
 
     @Override
-    public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
+    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
       BasicColumn basicColumn = tableMeta.column(column);
       basicColumn.setDeleted(true);
@@ -112,7 +113,7 @@ public class AlterStatementColumns {
     private final ColumnDefinition column;
 
     @Override
-    public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
+    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
       if (!tableMeta.hasColumn(new Ident(column.getName()))) {
         throw new ModelException(

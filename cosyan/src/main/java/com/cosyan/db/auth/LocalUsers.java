@@ -53,7 +53,7 @@ public class LocalUsers {
           String[] parts = line.split(":");
           if (username.equals(parts[0]) && hex.equals(parts[1])) {
             if (username.equals("admin")) {
-              return AuthToken.NO_AUTH;
+              return AuthToken.ADMIN_AUTH;
             } else {
               return new LocalUserToken(username);
             }

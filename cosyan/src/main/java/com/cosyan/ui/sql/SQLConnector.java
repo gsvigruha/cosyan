@@ -20,7 +20,7 @@ public class SQLConnector {
 
   public SQLConnector(DBApi dbApi) {
     this.dbApi = dbApi;
-    session = dbApi.getSession();
+    session = dbApi.adminSession();
   }
 
   @SuppressWarnings("unchecked")

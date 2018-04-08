@@ -25,5 +25,5 @@ public interface AuthToken {
     }
   }
 
-  public static final AuthToken NO_AUTH = new AdminToken();
+  public static final AuthToken ADMIN_AUTH = new AdminToken();
 }

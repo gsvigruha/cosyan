@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.index.ByteMultiTrie.LongMultiIndex;
 import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
@@ -23,6 +24,8 @@ import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lock.LockManager;
+import com.cosyan.db.meta.Grants.GrantException;
+import com.cosyan.db.meta.Grants.GrantToken;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
@@ -216,6 +219,10 @@ public class MetaRepo implements TableProvider {
     TableMultiIndex index = multiIndexes.remove(indexName);
     lockManager.removeLock(indexName);
     index.drop();
+  }
+
+  public void grant(GrantToken grant, AuthToken authToken) throws GrantException {
+    grants.grant(grant, authToken);
   }
 
   public OutputStream openForWrite(

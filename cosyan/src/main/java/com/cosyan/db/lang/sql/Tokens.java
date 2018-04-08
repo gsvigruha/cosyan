@@ -28,6 +28,14 @@ public class Tokens {
 
   public static String PARTITION = "partition";
 
+  public static String GRANT = "grant";
+
+  public static String TO = "to";
+
+  public static String WITH = "with";
+
+  public static String OPTION = "option";
+
   public static String VARCHAR = "varchar";
 
   public static String INTEGER = "integer";

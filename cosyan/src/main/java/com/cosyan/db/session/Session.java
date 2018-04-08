@@ -50,16 +50,28 @@ public class Session {
       if (parser.isMeta(tokens)) {
         MetaTransaction transaction = transactionHandler.begin(parser.parseMetaStatement(tokens));
         if (innerSession) {
-          return transaction.innerExecute(metaRepo);
+          return transaction.innerExecute(metaRepo, this);
         } else {
-          return transaction.execute(metaRepo, transactionJournal, metaJournal, sql);
+          return transaction.execute(metaRepo, this, sql);
         }
       } else {
         Transaction transaction = transactionHandler.begin(parser.parseStatements(tokens));
-        return transaction.execute(metaRepo, transactionJournal);
+        return transaction.execute(metaRepo, this);
       }
     } catch (ParserException e) {
       return new ErrorResult(e);
     }
+  }
+
+  public MetaJournal metaJournal() {
+    return metaJournal;
+  }
+
+  public AuthToken authToken() {
+    return authToken;
+  }
+
+  public TransactionJournal transactionJournal() {
+    return transactionJournal;
   }
 }

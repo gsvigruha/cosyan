@@ -15,6 +15,7 @@ import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.session.Session;
 import com.google.common.collect.ImmutableList;
 
 public class Transaction {
@@ -61,7 +62,8 @@ public class Transaction {
     return metaResources;
   }
 
-  public Result execute(MetaRepo metaRepo, TransactionJournal journal) {
+  public Result execute(MetaRepo metaRepo, Session session) {
+    TransactionJournal journal = session.transactionJournal();
     metaRepo.metaRepoReadLock();
     MetaResources metaResources;
     try {

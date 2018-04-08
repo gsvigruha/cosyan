@@ -38,7 +38,7 @@ public class RestartDBTest {
   @Test
   public void testTablesAfterRestart() throws IOException, ModelException, ParserException {
     DBApi dbApi = new DBApi(config);
-    dbApi.getSession().execute("create table t1("
+    dbApi.adminSession().execute("create table t1("
         + "a integer,"
         + "constraint pk_a primary key (a),"
         + "constraint c_a check(a > 1));");
@@ -60,14 +60,14 @@ public class RestartDBTest {
   @Test
   public void testTableReferencesAfterRestart() throws IOException, ModelException, ParserException {
     DBApi dbApi = new DBApi(config);
-    dbApi.getSession().execute("create table t2("
+    dbApi.adminSession().execute("create table t2("
         + "a integer,"
         + "constraint pk_a primary key (a));");
-    dbApi.getSession().execute("create table t3("
+    dbApi.adminSession().execute("create table t3("
         + "a integer,"
         + "constraint pk_a primary key (a),"
         + "constraint fk_a1 foreign key (a) references t2(a));");
-    dbApi.getSession().execute("create table t4("
+    dbApi.adminSession().execute("create table t4("
         + "a integer,"
         + "constraint fk_a2 foreign key (a) references t2(a));");
     MaterializedTableMeta t2 = dbApi.getMetaRepo().table(new Ident("t2"));
@@ -89,10 +89,10 @@ public class RestartDBTest {
   @Test
   public void testRulesAfterRestart() throws IOException, ModelException, ParserException {
     DBApi dbApi = new DBApi(config);
-    dbApi.getSession().execute("create table t5("
+    dbApi.adminSession().execute("create table t5("
         + "a integer,"
         + "constraint pk_a primary key (a));");
-    dbApi.getSession().execute("create table t6("
+    dbApi.adminSession().execute("create table t6("
         + "a integer,"
         + "constraint fk_a1 foreign key (a) references t5(a),"
         + "constraint c_1 check(a = fk_a1.a));");
@@ -116,14 +116,14 @@ public class RestartDBTest {
   @Test
   public void testRefsAfterRestart() throws IOException, ModelException, ParserException {
     DBApi dbApi = new DBApi(config);
-    dbApi.getSession().execute("create table t7("
+    dbApi.adminSession().execute("create table t7("
         + "a integer,"
         + "constraint pk_a primary key (a));");
-    dbApi.getSession().execute("create table t8("
+    dbApi.adminSession().execute("create table t8("
         + "a integer,"
         + "constraint fk_a1 foreign key (a) references t7(a));");
-    dbApi.getSession().execute("alter table t7 add ref s (select sum(a) as sa from rev_fk_a1);");
-    dbApi.getSession().execute("alter table t7 add constraint c_1 check(s.sa < 10);");
+    dbApi.adminSession().execute("alter table t7 add ref s (select sum(a) as sa from rev_fk_a1);");
+    dbApi.adminSession().execute("alter table t7 add constraint c_1 check(s.sa < 10);");
 
     MaterializedTableMeta t7 = dbApi.getMetaRepo().table(new Ident("t7"));
     assertEquals(1, t7.refs().size());
@@ -139,7 +139,7 @@ public class RestartDBTest {
   @Test
   public void testDoubleRestart() throws IOException, ModelException, ParserException {
     DBApi dbApi = new DBApi(config);
-    dbApi.getSession().execute("create table t9(a integer, b varchar);");
+    dbApi.adminSession().execute("create table t9(a integer, b varchar);");
 
     MaterializedTableMeta t9 = dbApi.getMetaRepo().table(new Ident("t9"));
     assertEquals(2, t9.columns().size());
@@ -156,11 +156,11 @@ public class RestartDBTest {
   @Test
   public void testTableDataAfterRestart() throws IOException, ModelException, ParserException {
     DBApi dbApi = new DBApi(config);
-    dbApi.getSession().execute("create table t10(a integer, b varchar);");
-    dbApi.getSession().execute("insert into t10 values(1, 'x');");
+    dbApi.adminSession().execute("create table t10(a integer, b varchar);");
+    dbApi.adminSession().execute("insert into t10 values(1, 'x');");
 
     dbApi = new DBApi(config);
-    QueryResult result = (QueryResult) ((TransactionResult) dbApi.getSession().execute("select * from t10;"))
+    QueryResult result = (QueryResult) ((TransactionResult) dbApi.adminSession().execute("select * from t10;"))
         .getResults().get(0);
     assertEquals(ImmutableList.of("a", "b"), result.getHeader());
     assertEquals(ImmutableList.of(ImmutableList.of(1L, "x")), result.getValues());
@@ -169,11 +169,11 @@ public class RestartDBTest {
   @Test
   public void testIndexesAfterRestart() throws IOException, ModelException, ParserException {
     DBApi dbApi = new DBApi(config);
-    dbApi.getSession().execute("create table t11(a integer unique);");
-    dbApi.getSession().execute("insert into t11 values(1);");
+    dbApi.adminSession().execute("create table t11(a integer unique);");
+    dbApi.adminSession().execute("insert into t11 values(1);");
 
     dbApi = new DBApi(config);
-    ErrorResult result = (ErrorResult) dbApi.getSession().execute("insert into t11 values(1);");
+    ErrorResult result = (ErrorResult) dbApi.adminSession().execute("insert into t11 values(1);");
     assertEquals("Key '1' already present in index.", result.getError().getMessage());
   }
 }

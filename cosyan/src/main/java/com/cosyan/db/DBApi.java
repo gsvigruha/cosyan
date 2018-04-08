@@ -32,24 +32,24 @@ public class DBApi {
     transactionJournal = new TransactionJournal(config);
     authenticator = new Authenticator(config);
     metaJournal = new MetaJournal(config);
-    metaJournal.reload(getSession(/* innerSession= */true));
+    metaJournal.reload(adminSession(/* innerSession= */true));
   }
 
   public MetaRepo getMetaRepo() {
     return metaRepo;
   }
 
-  public Session getSession() {
-    return getSession(/* innerSession= */false);
+  public Session adminSession() {
+    return adminSession(/* innerSession= */false);
   }
 
-  private Session getSession(boolean innerSession) {
+  private Session adminSession(boolean innerSession) {
     return new Session(
         metaRepo,
         transactionHandler,
         transactionJournal,
         metaJournal,
-        AuthToken.NO_AUTH,
+        AuthToken.ADMIN_AUTH,
         new Parser(),
         new Lexer(),
         innerSession);

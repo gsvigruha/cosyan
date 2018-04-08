@@ -2,6 +2,7 @@ package com.cosyan.db.lang.sql;
 
 import java.io.IOException;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.transaction.Result;
@@ -24,7 +25,7 @@ public class DropStatement {
     private final Ident table;
 
     @Override
-    public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
+    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
       if (!tableMeta.reverseForeignKeys().isEmpty()) {
         ReverseForeignKey foreignKey = tableMeta.reverseForeignKeys().values().iterator().next();
@@ -45,7 +46,7 @@ public class DropStatement {
     private final Ident column;
 
     @Override
-    public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
+    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
       BasicColumn column = tableMeta.column(this.column);
       if (!column.isIndexed()) {

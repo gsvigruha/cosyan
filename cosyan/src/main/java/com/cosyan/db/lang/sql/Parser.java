@@ -34,6 +34,7 @@ import com.cosyan.db.lang.sql.CreateStatement.RuleDefinition;
 import com.cosyan.db.lang.sql.DeleteStatement.Delete;
 import com.cosyan.db.lang.sql.DropStatement.DropIndex;
 import com.cosyan.db.lang.sql.DropStatement.DropTable;
+import com.cosyan.db.lang.sql.GrantStatement.Grant;
 import com.cosyan.db.lang.sql.InsertIntoStatement.InsertInto;
 import com.cosyan.db.lang.sql.SelectStatement.AsExpression;
 import com.cosyan.db.lang.sql.SelectStatement.AsTable;
@@ -61,7 +62,8 @@ public class Parser implements IParser {
   public boolean isMeta(PeekingIterator<Token> tokens) {
     if (tokens.peek().is(Tokens.CREATE) ||
         tokens.peek().is(Tokens.ALTER) ||
-        tokens.peek().is(Tokens.DROP)) {
+        tokens.peek().is(Tokens.DROP) ||
+        tokens.peek().is(Tokens.GRANT)) {
       return true;
     }
     return false;
@@ -84,6 +86,8 @@ public class Parser implements IParser {
       return parseDrop(tokens);
     } else if (tokens.peek().is(Tokens.ALTER)) {
       return parseAlter(tokens);
+    } else if (tokens.peek().is(Tokens.GRANT)) {
+      return parseGrant(tokens);
     }
     throw new ParserException("Syntax error, expected create, drop or alter.");
   }
@@ -291,6 +295,24 @@ public class Parser implements IParser {
     } else {
       throw new ParserException("Unsupported alter operation '" + tokens.peek() + "'.");
     }
+  }
+
+  private MetaStatement parseGrant(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.GRANT);
+    assertPeek(tokens, Tokens.SELECT, Tokens.INSERT, Tokens.UPDATE, Tokens.DELETE, String.valueOf(Tokens.ASTERISK));
+    Ident method = parseIdent(tokens);
+    assertNext(tokens, Tokens.ON);
+    Ident table = parseIdent(tokens);
+    assertNext(tokens, Tokens.TO);
+    Ident username = parseIdent(tokens);
+    boolean withGrantOption = false;
+    if (tokens.peek().is(Tokens.WITH)) {
+      tokens.next();
+      assertNext(tokens, Tokens.GRANT);
+      assertNext(tokens, Tokens.OPTION);
+      withGrantOption = true;
+    }
+    return new Grant(username, table, method.getString(), withGrantOption);
   }
 
   private ConstraintDefinition parseConstraint(PeekingIterator<Token> tokens) throws ParserException {

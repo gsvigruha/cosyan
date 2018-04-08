@@ -2,6 +2,7 @@ package com.cosyan.db.lang.sql;
 
 import java.io.IOException;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.CreateStatement.RefDefinition;
@@ -34,7 +35,7 @@ public class AlterStatementRefs {
     private final RefDefinition ref;
 
     @Override
-    public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
+    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
       if (!tableMeta.isEmpty()) {
         throw new ModelException(String.format("Cannot add ref to a non-empty table."));

@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
@@ -43,7 +44,7 @@ public class CreateStatement {
     private final Optional<Expression> partitioning;
 
     @Override
-    public Result execute(MetaRepo metaRepo) throws ModelException, IOException {
+    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       if (metaRepo.hasTable(name)) {
         throw new ModelException(String.format("Table '%s' already exists.", name));
       }
@@ -235,7 +236,7 @@ public class CreateStatement {
     private final Ident column;
 
     @Override
-    public Result execute(MetaRepo metaRepo) throws ModelException, IndexException, IOException {
+    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IndexException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
       BasicColumn column = tableMeta.column(this.column);
       if (column.isIndexed()) {

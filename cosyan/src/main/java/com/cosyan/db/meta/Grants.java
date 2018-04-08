@@ -2,6 +2,7 @@ package com.cosyan.db.meta;
 
 import java.util.Collection;
 
+import com.cosyan.db.auth.AuthToken;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
@@ -11,28 +12,32 @@ public class Grants {
     SELECT, INSERT, DELETE, UPDATE, ALL
   }
 
-  public static class Grant {
+  public static class GrantToken {
     private final String username;
     private final Method method;
     private final String tablename;
     private final boolean withGrantOption;
 
-    public Grant(String username, Method method, String tablename, boolean withGrantOption) {
+    public GrantToken(String username, Method method, String tablename, boolean withGrantOption) {
       this.username = username;
       this.method = method;
       this.tablename = tablename;
       this.withGrantOption = withGrantOption;
     }
 
-    public boolean includes(Grant other) {
+    public boolean includes(GrantToken other) {
       return username.equals(other.username) &&
           tablename.equals(other.tablename) &&
           (withGrantOption || !other.withGrantOption) &&
           (method == Method.ALL || method == other.method);
     }
+
+    public boolean hasGrant(AuthToken authToken) {
+      return authToken.isAdmin() || (withGrantOption && username.equals(authToken.username()));
+    }
   }
 
-  private final Multimap<String, Grant> tableGrants;
+  private final Multimap<String, GrantToken> tableGrants;
 
   public Grants() {
     tableGrants = HashMultimap.create();
@@ -42,7 +47,7 @@ public class Grants {
     if (hasAuthorization(username, method, tablename)) {
       return;
     }
-    tableGrants.put(tablename, new Grant(username, method, tablename, false));
+    tableGrants.put(tablename, new GrantToken(username, method, tablename, false));
   }
 
   public void checkAuthorization(String username, Method method, String tablename) throws GrantException {
@@ -53,14 +58,30 @@ public class Grants {
   }
 
   public boolean hasAuthorization(String username, Method method, String tablename) {
-    Grant newGrant = new Grant(username, method, tablename, false);
-    Collection<Grant> grants = tableGrants.get(tablename);
-    for (Grant grant : grants) {
+    GrantToken newGrant = new GrantToken(username, method, tablename, false);
+    Collection<GrantToken> grants = tableGrants.get(tablename);
+    for (GrantToken grant : grants) {
       if (grant.includes(newGrant)) {
         return true;
       }
     }
     return false;
+  }
+
+  public void grant(GrantToken grantToken, AuthToken authToken) throws GrantException {
+    String table = grantToken.tablename;
+    Collection<GrantToken> grants = tableGrants.get(table);
+    if (authToken.isAdmin()) {
+      tableGrants.put(table, grantToken);
+      return;
+    }
+    for (GrantToken grant : grants) {
+      if (grant.hasGrant(authToken)) {
+        tableGrants.put(table, grantToken);
+        return;
+      }
+    }
+    throw new GrantException(String.format("User '%s' has no grant right on '%s'.", authToken.username(), table));
   }
 
   public static class GrantException extends Exception {
