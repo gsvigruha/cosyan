@@ -13,9 +13,11 @@ import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.TransactionResult;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.session.Session;
+import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 import com.google.common.collect.ImmutableList;
 
 public class Transaction {
@@ -72,6 +74,13 @@ public class Transaction {
       return new ErrorResult(e);
     } finally {
       metaRepo.metaRepoReadUnlock();
+    }
+    try {
+      for (TableMetaResource resource : metaResources.tables()) {
+        metaRepo.checkAccess(resource, session.authToken());
+      }
+    } catch (GrantException e) {
+      return new ErrorResult(e);
     }
     try {
       lock(metaResources, metaRepo);

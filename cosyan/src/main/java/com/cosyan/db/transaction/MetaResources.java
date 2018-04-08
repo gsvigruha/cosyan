@@ -30,7 +30,10 @@ public class MetaResources {
   @Data
   public static class TableMetaResource {
     private final MaterializedTableMeta tableMeta;
-    private final boolean write;
+    private final boolean select;
+    private final boolean insert;
+    private final boolean delete;
+    private final boolean update;
     private final boolean foreignIndexes;
     private final boolean reverseForeignIndexes;
 
@@ -38,19 +41,26 @@ public class MetaResources {
       assert (this.tableMeta == other.tableMeta);
       return new TableMetaResource(
           this.tableMeta,
-          this.write || other.write,
+          this.select || other.select,
+          this.insert || other.insert,
+          this.delete || other.delete,
+          this.update || other.update,
           this.foreignIndexes || other.foreignIndexes,
           this.reverseForeignIndexes || other.reverseForeignIndexes);
+    }
+
+    public boolean write() {
+      return insert || delete || update;
     }
 
     public ImmutableMap<String, Resource> resources() {
       Map<String, Resource> builder = new HashMap<>();
       String tableName = tableMeta.tableName();
-      builder.put(tableName, new Resource(tableName, write));
+      builder.put(tableName, new Resource(tableName, write()));
       for (BasicColumn column : tableMeta.columns().values()) {
         if (column.isIndexed()) {
           String indexName = tableName + "." + column.getName();
-          builder.put(indexName, new Resource(indexName, write));
+          builder.put(indexName, new Resource(indexName, write()));
         }
       }
       if (foreignIndexes) {
@@ -87,7 +97,14 @@ public class MetaResources {
   public static MetaResources readTable(MaterializedTableMeta tableMeta) {
     return new MetaResources(ImmutableMap.of(
         tableMeta.tableName(),
-        new TableMetaResource(tableMeta, false, false, false)));
+        new TableMetaResource(
+            tableMeta,
+            /* select= */true,
+            /* insert= */false,
+            /* delete= */false,
+            /* update= */false,
+            /* foreignIndexes= */false,
+            /* reverseForeignIndexes= */false)));
   }
 
   public static MetaResources updateTable(MaterializedTableMeta tableMeta) {
@@ -95,7 +112,10 @@ public class MetaResources {
         tableMeta.tableName(),
         new TableMetaResource(
             tableMeta,
-            /* write= */true,
+            /* select= */false,
+            /* insert= */false,
+            /* delete= */false,
+            /* update= */true,
             /* foreignIndexes= */true,
             /* reverseForeignIndexes= */true)));
   }
@@ -105,7 +125,10 @@ public class MetaResources {
         tableMeta.tableName(),
         new TableMetaResource(
             tableMeta,
-            /* write= */true,
+            /* select= */false,
+            /* insert= */true,
+            /* delete= */false,
+            /* update= */false,
             /* foreignIndexes= */true, // New records have to satisfy foreign key constraints.
             /* reverseForeignIndexes= */false)));
   }
@@ -115,7 +138,10 @@ public class MetaResources {
         tableMeta.tableName(),
         new TableMetaResource(
             tableMeta,
-            /* write= */true,
+            /* select= */false,
+            /* insert= */false,
+            /* delete= */true,
+            /* update= */false,
             /* foreignIndexes= */false,
             /* reverseForeignIndexes= */true))); // Cannot delete records referenced by foreign keys.
   }

@@ -228,6 +228,10 @@ public class MetaRepo implements TableProvider {
     grants.createUser(username, password, authToken);
   }
 
+  public void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
+    grants.checkAccess(resource, authToken);
+  }
+
   public OutputStream openForWrite(
       String tableName, ImmutableMap<String, BasicColumn> columns) throws ModelException, FileNotFoundException {
     return new FileOutputStream(config.tableDir() + File.separator + tableName);
@@ -237,7 +241,7 @@ public class MetaRepo implements TableProvider {
     ImmutableMap.Builder<String, SeekableTableReader> readers = ImmutableMap.builder();
     ImmutableMap.Builder<String, TableWriter> writers = ImmutableMap.builder();
     for (TableMetaResource resource : metaResources.tables()) {
-      if (resource.isWrite()) {
+      if (resource.write()) {
         MaterializedTableMeta tableMeta = resource.getTableMeta();
         writers.put(resource.getTableMeta().tableName(), new TableWriter(
             tableMeta,

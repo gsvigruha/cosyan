@@ -32,7 +32,7 @@ public class GrantStatement {
       GrantToken grantToken = new GrantToken(
           user.getString(),
           Grants.Method.valueOf(method.toUpperCase()),
-          table.getString(),
+          metaRepo.table(table),
           withGrantOption);
       metaRepo.grant(grantToken, authToken);
       return new MetaStatementResult();

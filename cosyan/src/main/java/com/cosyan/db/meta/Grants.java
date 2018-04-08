@@ -11,6 +11,8 @@ import java.util.Collection;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.auth.LocalUsers;
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
@@ -23,25 +25,29 @@ public class Grants {
   public static class GrantToken {
     private final String username;
     private final Method method;
-    private final String tablename;
+    private final MaterializedTableMeta table;
     private final boolean withGrantOption;
 
-    public GrantToken(String username, Method method, String tablename, boolean withGrantOption) {
+    public GrantToken(String username, Method method, MaterializedTableMeta table, boolean withGrantOption) {
       this.username = username;
       this.method = method;
-      this.tablename = tablename;
+      this.table = table;
       this.withGrantOption = withGrantOption;
     }
 
     public boolean includes(GrantToken other) {
       return username.equals(other.username) &&
-          tablename.equals(other.tablename) &&
+          table == other.table &&
           (withGrantOption || !other.withGrantOption) &&
           (method == Method.ALL || method == other.method);
     }
 
     public boolean hasGrant(AuthToken authToken) {
       return authToken.isAdmin() || (withGrantOption && username.equals(authToken.username()));
+    }
+
+    public boolean hasAccess(Method method, AuthToken authToken) {
+      return hasGrant(authToken) || (method == this.method && authToken.username().equals(username));
     }
   }
 
@@ -53,38 +59,13 @@ public class Grants {
     tableGrants = HashMultimap.create();
   }
 
-  public void simpleGrant(String username, Method method, String tablename) {
-    if (hasAuthorization(username, method, tablename)) {
-      return;
-    }
-    tableGrants.put(tablename, new GrantToken(username, method, tablename, false));
-  }
-
-  public void checkAuthorization(String username, Method method, String tablename) throws GrantException {
-    if (!hasAuthorization(username, method, tablename)) {
-      throw new GrantException(String.format("User '%s' has no authorization to perform '%s' on '%s'.",
-          username, method, tablename));
-    }
-  }
-
-  public boolean hasAuthorization(String username, Method method, String tablename) {
-    GrantToken newGrant = new GrantToken(username, method, tablename, false);
-    Collection<GrantToken> grants = tableGrants.get(tablename);
-    for (GrantToken grant : grants) {
-      if (grant.includes(newGrant)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   public void grant(GrantToken grantToken, AuthToken authToken) throws GrantException {
-    String table = grantToken.tablename;
-    Collection<GrantToken> grants = tableGrants.get(table);
-    if (authToken.isAdmin()) {
+    String table = grantToken.table.tableName();
+    if (authToken.isAdmin() || authToken.username().equals(grantToken.table.owner())) {
       tableGrants.put(table, grantToken);
       return;
     }
+    Collection<GrantToken> grants = tableGrants.get(table);
     for (GrantToken grant : grants) {
       if (grant.hasGrant(authToken)) {
         tableGrants.put(table, grantToken);
@@ -114,6 +95,40 @@ public class Grants {
       throw new GrantException(e.getMessage());
     } finally {
       writer.close();
+    }
+  }
+
+  private void checkAccess(Collection<GrantToken> grants, Method method, String table, AuthToken authToken)
+      throws GrantException {
+    for (GrantToken grant : grants) {
+      if (grant.hasAccess(method, authToken)) {
+        return;
+      }
+    }
+    throw new GrantException(String.format("User '%s' has no %s right on '%s'.", authToken.username(), method, table));
+  }
+
+  public void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
+    String table = resource.getTableMeta().tableName();
+    if (authToken.isAdmin() || authToken.username().equals(resource.getTableMeta().owner())) {
+      return;
+    }
+    Collection<GrantToken> grants = tableGrants.get(table);
+    if (resource.write()) {
+
+      if (resource.isInsert()) {
+        checkAccess(grants, Method.INSERT, table, authToken);
+      }
+      if (resource.isDelete()) {
+        checkAccess(grants, Method.DELETE, table, authToken);
+      }
+      if (resource.isUpdate()) {
+        checkAccess(grants, Method.UPDATE, table, authToken);
+      }
+    } else {
+      if (resource.isSelect()) {
+        checkAccess(grants, Method.SELECT, table, authToken);
+      }
     }
   }
 

@@ -48,6 +48,7 @@ public class MaterializedTableMeta {
 
   private final Config config;
   private final String tableName;
+  private final String owner;
   private final Type type;
   private final RandomAccessFile raf;
   private final SeekableOutputStream fileWriter;
@@ -67,11 +68,13 @@ public class MaterializedTableMeta {
   public MaterializedTableMeta(
       Config config,
       String tableName,
+      String owner,
       Iterable<BasicColumn> columns,
       Optional<PrimaryKey> primaryKey,
       Type type) throws IOException {
     this.config = config;
     this.tableName = tableName;
+    this.owner = owner;
     this.type = type;
     this.raf = new RandomAccessFile(fileName(), "rw");
     this.columns = Lists.newArrayList(columns);
@@ -101,6 +104,10 @@ public class MaterializedTableMeta {
 
   public Type type() {
     return type;
+  }
+
+  public String owner() {
+    return owner;
   }
 
   public RandomAccessFile raf() {

@@ -55,7 +55,20 @@ public abstract class UnitTestBase {
   }
 
   protected StatementResult statement(String sql) {
-    return (StatementResult) Iterables.getOnlyElement(((TransactionResult) session.execute(sql)).getResults());
+    return statement(sql, session);
+  }
+
+  protected StatementResult statement(String sql, Session session) {
+    Result result = session.execute(sql);
+    if (result instanceof ErrorResult) {
+      ((ErrorResult) result).getError().printStackTrace();
+      fail(sql);
+    }
+    if (result instanceof CrashResult) {
+      ((CrashResult) result).getError().printStackTrace();
+      fail(sql);
+    }
+    return (StatementResult) Iterables.getOnlyElement(((TransactionResult) result).getResults());
   }
 
   protected ErrorResult error(String sql) {

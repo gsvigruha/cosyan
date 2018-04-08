@@ -95,6 +95,7 @@ public class CreateStatement {
       MaterializedTableMeta tableMeta = new MaterializedTableMeta(
           metaRepo.config(),
           name,
+          authToken.username(),
           columns.values(),
           primaryKey,
           type);
