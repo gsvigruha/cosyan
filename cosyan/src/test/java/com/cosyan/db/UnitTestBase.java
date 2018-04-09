@@ -33,6 +33,7 @@ public abstract class UnitTestBase {
 
   @BeforeClass
   public static void setUp() throws IOException, ModelException, ParserException, ConfigException {
+    FileUtils.forceMkdir(new File("/tmp/data"));
     FileUtils.cleanDirectory(new File("/tmp/data"));
     FileUtils.copyFile(new File("src/test/resources/cosyan.db.properties"), new File("/tmp/data/cosyan.db.properties"));
     FileUtils.copyFile(new File("conf/users"), new File("/tmp/data/users"));

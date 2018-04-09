@@ -40,6 +40,8 @@ public class Tokens {
 
   public static String OPTION = "option";
 
+  public static String ALL = "all";
+
   public static String VARCHAR = "varchar";
 
   public static String INTEGER = "integer";

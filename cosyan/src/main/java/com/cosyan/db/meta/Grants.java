@@ -37,9 +37,9 @@ public class Grants {
 
     public boolean includes(GrantToken other) {
       return username.equals(other.username) &&
-          table == other.table &&
-          (withGrantOption || !other.withGrantOption) &&
-          (method == Method.ALL || method == other.method);
+          this.table == other.table &&
+          (this.withGrantOption || !other.withGrantOption) &&
+          (this.method == Method.ALL || this.method == other.method);
     }
 
     public boolean hasGrant(AuthToken authToken) {
@@ -47,7 +47,9 @@ public class Grants {
     }
 
     public boolean hasAccess(Method method, AuthToken authToken) {
-      return hasGrant(authToken) || (method == this.method && authToken.username().equals(username));
+      return hasGrant(authToken)
+          || (authToken.username().equals(username)
+              && (method == this.method || this.method == Method.ALL));
     }
   }
 

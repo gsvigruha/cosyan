@@ -307,7 +307,7 @@ public class Parser implements IParser {
 
   private MetaStatement parseGrant(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.GRANT);
-    assertPeek(tokens, Tokens.SELECT, Tokens.INSERT, Tokens.UPDATE, Tokens.DELETE, String.valueOf(Tokens.ASTERISK));
+    assertPeek(tokens, Tokens.SELECT, Tokens.INSERT, Tokens.UPDATE, Tokens.DELETE, Tokens.ALL);
     Ident method = parseIdent(tokens);
     assertNext(tokens, Tokens.ON);
     Ident table = parseIdent(tokens);
