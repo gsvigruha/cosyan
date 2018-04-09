@@ -220,8 +220,8 @@ public class MetaRepo implements TableProvider {
     index.drop();
   }
 
-  public void grant(GrantToken grant, AuthToken authToken) throws GrantException {
-    grants.grant(grant, authToken);
+  public void createGrant(GrantToken grant, AuthToken authToken) throws GrantException {
+    grants.createGrant(grant, authToken);
   }
 
   public void createUser(String username, String password, AuthToken authToken) throws GrantException, IOException {

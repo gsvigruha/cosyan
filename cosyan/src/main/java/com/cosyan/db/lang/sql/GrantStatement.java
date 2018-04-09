@@ -8,7 +8,9 @@ import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.MetaStatementResult;
 import com.cosyan.db.meta.Grants;
+import com.cosyan.db.meta.Grants.GrantAllTablesToken;
 import com.cosyan.db.meta.Grants.GrantException;
+import com.cosyan.db.meta.Grants.GrantTableToken;
 import com.cosyan.db.meta.Grants.GrantToken;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -29,12 +31,20 @@ public class GrantStatement {
 
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException, GrantException {
-      GrantToken grantToken = new GrantToken(
-          user.getString(),
-          Grants.Method.valueOf(method.toUpperCase()),
-          metaRepo.table(table),
-          withGrantOption);
-      metaRepo.grant(grantToken, authToken);
+      GrantToken grantToken;
+      if (table.is(Tokens.ASTERISK)) {
+        grantToken = new GrantAllTablesToken(
+            user.getString(),
+            Grants.Method.valueOf(method.toUpperCase()),
+            withGrantOption);
+      } else {
+        grantToken = new GrantTableToken(
+            user.getString(),
+            Grants.Method.valueOf(method.toUpperCase()),
+            metaRepo.table(table),
+            withGrantOption);
+      }
+      metaRepo.createGrant(grantToken, authToken);
       return new MetaStatementResult();
     }
   }

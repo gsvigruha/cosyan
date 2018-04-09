@@ -14,6 +14,7 @@ import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
+import com.cosyan.db.lang.transaction.Result.MetaStatementResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.lang.transaction.Result.StatementResult;
 import com.cosyan.db.lang.transaction.Result.TransactionResult;
@@ -57,6 +58,19 @@ public abstract class UnitTestBase {
 
   protected StatementResult statement(String sql) {
     return statement(sql, session);
+  }
+
+  protected MetaStatementResult metaStatement(String sql, Session session) {
+    Result result = session.execute(sql);
+    if (result instanceof ErrorResult) {
+      ((ErrorResult) result).getError().printStackTrace();
+      fail(sql);
+    }
+    if (result instanceof CrashResult) {
+      ((CrashResult) result).getError().printStackTrace();
+      fail(sql);
+    }
+    return (MetaStatementResult) result;
   }
 
   protected StatementResult statement(String sql, Session session) {

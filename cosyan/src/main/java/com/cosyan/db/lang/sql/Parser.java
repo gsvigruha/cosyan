@@ -310,7 +310,13 @@ public class Parser implements IParser {
     assertPeek(tokens, Tokens.SELECT, Tokens.INSERT, Tokens.UPDATE, Tokens.DELETE, Tokens.ALL);
     Ident method = parseIdent(tokens);
     assertNext(tokens, Tokens.ON);
-    Ident table = parseIdent(tokens);
+    Ident table;
+    if (tokens.peek().is(Tokens.ASTERISK)) {
+      tokens.next();
+      table = new Ident("*");
+    } else {
+      table = parseIdent(tokens);
+    }
     assertNext(tokens, Tokens.TO);
     Ident username = parseIdent(tokens);
     boolean withGrantOption = false;

@@ -93,4 +93,52 @@ public class GrantsTest extends UnitTestBase {
     execute("grant select on t8 to u6;");
     query("select a, s.sb from t7;", u6);
   }
+
+  @Test
+  public void testAccessToEverything() throws AuthException {
+    execute("create table t9 (a varchar);");
+    execute("insert into t9 values ('x');");
+    execute("create user u7 identified by 'abc';");
+    Session u7 = dbApi.authSession("u7", "abc", Method.LOCAL);
+    ErrorResult e1 = (ErrorResult) u7.execute("select * from t9;");
+    assertEquals("User 'u7' has no SELECT right on 't9'.", e1.getError().getMessage());
+    execute("grant all on * to u7;");
+    query("select a from t9;", u7);
+  }
+
+  @Test
+  public void testUserPassesOnGrant() throws AuthException {
+    execute("create table t10 (a varchar);");
+    execute("create user u8 identified by 'abc';");
+    execute("create user u9 identified by 'abc';");
+    execute("create user u10 identified by 'abc';");
+
+    execute("grant select on t10 to u8 with grant option;");
+    Session u8 = dbApi.authSession("u8", "abc", Method.LOCAL);
+    metaStatement("grant select on t10 to u10;", u8);
+    ErrorResult e1 = (ErrorResult) u8.execute("grant insert on t10 to u10;");
+    assertEquals("User 'u8' has no grant INSERT right on 't10'.", e1.getError().getMessage());
+
+    Session u10 = dbApi.authSession("u10", "abc", Method.LOCAL);
+    ErrorResult e3 = (ErrorResult) u10.execute("grant select on t10 to u8;");
+    assertEquals("User 'u10' has no grant SELECT right on 't10'.", e3.getError().getMessage());
+
+    execute("grant all on t10 to u9 with grant option;");
+    Session u9 = dbApi.authSession("u9", "abc", Method.LOCAL);
+    metaStatement("grant insert on t10 to u10;", u9);
+
+    execute("create user u11 identified by 'abc';");
+    execute("grant select on * to u11 with grant option;");
+    Session u11 = dbApi.authSession("u11", "abc", Method.LOCAL);
+    metaStatement("grant select on t10 to u10;", u11);
+    ErrorResult e2 = (ErrorResult) u11.execute("grant insert on t10 to u10;");
+    assertEquals("User 'u11' has no grant INSERT right on 't10'.", e2.getError().getMessage());
+
+    execute("create user u12 identified by 'abc';");
+    execute("grant all on * to u12 with grant option;");
+    Session u12 = dbApi.authSession("u12", "abc", Method.LOCAL);
+    metaStatement("grant select on t10 to u10;", u12);
+    metaStatement("grant insert on t10 to u10;", u12);
+    metaStatement("grant all on t10 to u10;", u12);
+  }
 }
