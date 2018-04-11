@@ -1,10 +1,12 @@
 package com.cosyan.db.model;
 
+import com.cosyan.db.doc.FunctionDocumentation.Func;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.google.common.collect.ImmutableList;
 
 public class MathFunctions {
 
+  @Func(doc = "Returns the first parameter on the power of the second.")
   public static class Power extends SimpleFunction<Double> {
     public Power() {
       super("pow", DataTypes.DoubleType, ImmutableList.of(DataTypes.DoubleType, DataTypes.DoubleType));
