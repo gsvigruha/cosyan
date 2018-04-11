@@ -66,7 +66,18 @@ public class BuiltinFunctionsTest extends DummyTestBase {
     assertResult("round(1.5)", 2L);
     assertResult("ceil(1.1)", 2L);
     assertResult("floor(1.7)", 1L);
+    assertResult("abs(-10.0)", 10.0);
     assertResult("sin(0.0)", 0.0);
+    assertResult("sinh(0.0)", 0.0);
     assertResult("cos(0.0)", 1.0);
+    assertResult("cosh(0.0)", 1.0);
+    assertResult("tan(0.0)", 0.0);
+    assertResult("tanh(0.0)", 0.0);
+  }
+
+  @Test
+  public void testImplicitLongToDoubleConversion() throws Exception {
+    assertResult("pow(3, 2)", 9.0);
+    assertResult("abs(-1)", 1.0);
   }
 }

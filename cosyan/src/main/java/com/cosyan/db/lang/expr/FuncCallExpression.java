@@ -17,6 +17,7 @@ import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumnWithDeps;
 import com.cosyan.db.model.CompiledObject;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Ident;
@@ -73,8 +74,17 @@ public class FuncCallExpression extends Expression {
 
     MetaResources resources = MetaResources.empty();
     ImmutableList<ColumnMeta> argColumns = argColumnsBuilder.build();
+    if (function.getArgTypes().size() != argColumns.size()) {
+      throw new ModelException(String.format("Expected %s columns for function '%s' but got %s.",
+          function.getArgTypes().size(), ident.getString(), argColumns.size()));
+    }
     for (int i = 0; i < function.getArgTypes().size(); i++) {
-      SyntaxTree.assertType(function.getArgTypes().get(i), argColumns.get(i).getType());
+      DataType<?> expectedType = function.getArgTypes().get(i);
+      DataType<?> dataType = argColumns.get(i).getType();
+      if (!(expectedType == DataTypes.DoubleType && dataType == DataTypes.LongType)) {
+        // Skip check for Double/Long pairs, there will be an implicit type conversion.
+        SyntaxTree.assertType(expectedType, dataType);
+      }
       resources = resources.merge(argColumns.get(i).readResources());
     }
     return new DerivedColumnWithDeps(function.getReturnType(), tableDependencies, resources) {
@@ -82,8 +92,13 @@ public class FuncCallExpression extends Expression {
       @Override
       public Object value(Object[] values, Resources resources) throws IOException {
         ImmutableList.Builder<Object> paramsBuilder = ImmutableList.builder();
-        for (ColumnMeta column : argColumns) {
-          paramsBuilder.add(column.value(values, resources));
+        for (int i = 0; i < function.getArgTypes().size(); i++) {
+          Object value = argColumns.get(i).value(values, resources);
+          if (function.getArgTypes().get(i) == DataTypes.DoubleType && value instanceof Long) {
+            // Implicit type conversion from Long to Double.
+            value = Double.valueOf((Long) value);
+          }
+          paramsBuilder.add(value);
         }
         ImmutableList<Object> params = paramsBuilder.build();
         for (Object param : params) {

@@ -116,6 +116,17 @@ public class MathFunctions {
     }
   }
 
+  public static class Abs extends SimpleFunction<Double> {
+    public Abs() {
+      super("abs", DataTypes.DoubleType, ImmutableList.of(DataTypes.DoubleType));
+    }
+
+    @Override
+    public Double call(ImmutableList<Object> argValues) {
+      return Math.abs((Double) argValues.get(0));
+    }
+  }
+
   public static class Sin extends SimpleFunction<Double> {
     public Sin() {
       super("sin", DataTypes.DoubleType, ImmutableList.of(DataTypes.DoubleType));
@@ -127,6 +138,17 @@ public class MathFunctions {
     }
   }
 
+  public static class SinH extends SimpleFunction<Double> {
+    public SinH() {
+      super("sinh", DataTypes.DoubleType, ImmutableList.of(DataTypes.DoubleType));
+    }
+
+    @Override
+    public Double call(ImmutableList<Object> argValues) {
+      return Math.sinh((Double) argValues.get(0));
+    }
+  }
+
   public static class Cos extends SimpleFunction<Double> {
     public Cos() {
       super("cos", DataTypes.DoubleType, ImmutableList.of(DataTypes.DoubleType));
@@ -135,6 +157,39 @@ public class MathFunctions {
     @Override
     public Double call(ImmutableList<Object> argValues) {
       return Math.cos((Double) argValues.get(0));
+    }
+  }
+
+  public static class CosH extends SimpleFunction<Double> {
+    public CosH() {
+      super("cosh", DataTypes.DoubleType, ImmutableList.of(DataTypes.DoubleType));
+    }
+
+    @Override
+    public Double call(ImmutableList<Object> argValues) {
+      return Math.cosh((Double) argValues.get(0));
+    }
+  }
+
+  public static class Tan extends SimpleFunction<Double> {
+    public Tan() {
+      super("tan", DataTypes.DoubleType, ImmutableList.of(DataTypes.DoubleType));
+    }
+
+    @Override
+    public Double call(ImmutableList<Object> argValues) {
+      return Math.tan((Double) argValues.get(0));
+    }
+  }
+
+  public static class TanH extends SimpleFunction<Double> {
+    public TanH() {
+      super("tanh", DataTypes.DoubleType, ImmutableList.of(DataTypes.DoubleType));
+    }
+
+    @Override
+    public Double call(ImmutableList<Object> argValues) {
+      return Math.tanh((Double) argValues.get(0));
     }
   }
 }

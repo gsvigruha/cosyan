@@ -25,8 +25,10 @@ import com.cosyan.db.model.DateFunctions.GetSecond;
 import com.cosyan.db.model.DateFunctions.GetWeekOfMonth;
 import com.cosyan.db.model.DateFunctions.GetWeekOfYear;
 import com.cosyan.db.model.DateFunctions.GetYear;
+import com.cosyan.db.model.MathFunctions.Abs;
 import com.cosyan.db.model.MathFunctions.Ceil;
 import com.cosyan.db.model.MathFunctions.Cos;
+import com.cosyan.db.model.MathFunctions.CosH;
 import com.cosyan.db.model.MathFunctions.Exp;
 import com.cosyan.db.model.MathFunctions.Floor;
 import com.cosyan.db.model.MathFunctions.Log;
@@ -37,6 +39,9 @@ import com.cosyan.db.model.MathFunctions.Power;
 import com.cosyan.db.model.MathFunctions.Round;
 import com.cosyan.db.model.MathFunctions.RoundTo;
 import com.cosyan.db.model.MathFunctions.Sin;
+import com.cosyan.db.model.MathFunctions.SinH;
+import com.cosyan.db.model.MathFunctions.Tan;
+import com.cosyan.db.model.MathFunctions.TanH;
 import com.cosyan.db.model.StringFunctions.Concat;
 import com.cosyan.db.model.StringFunctions.Contains;
 import com.cosyan.db.model.StringFunctions.IndexOf;
@@ -158,8 +163,13 @@ public class BuiltinFunctions {
       .add(new RoundTo())
       .add(new Ceil())
       .add(new Floor())
+      .add(new Abs())
       .add(new Sin())
+      .add(new SinH())
       .add(new Cos())
+      .add(new CosH())
+      .add(new Tan())
+      .add(new TanH())
       // Date
       .add(new Date())
       .add(new AddYears())

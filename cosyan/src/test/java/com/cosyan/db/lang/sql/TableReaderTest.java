@@ -600,4 +600,9 @@ public class TableReaderTest extends DummyTestBase {
   public void testInconsistentAggr() throws Exception {
     query("select sum(b) + b from large;");
   }
+
+  @Test(expected = ModelException.class)
+  public void testWrongArgNumber() throws Exception {
+    query("select length(a, 1) from table;");
+  }
 }
