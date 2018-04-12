@@ -34,6 +34,7 @@ import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.References.ReferencedTable;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
+import com.cosyan.db.model.stat.TableStats;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -51,6 +52,7 @@ public class MaterializedTableMeta {
   private final String owner;
   private final Type type;
   private final RandomAccessFile raf;
+  private final TableStats stats;
   private final SeekableOutputStream fileWriter;
   private final List<BasicColumn> columns;
   private final Map<String, BooleanRule> rules;
@@ -61,8 +63,6 @@ public class MaterializedTableMeta {
   private TableDependencies ruleDependencies;
   private ReverseRuleDependencies reverseRuleDependencies;
   private Optional<ColumnMeta> partitioning;
-  private long cnt;
-  private long lastID;
   private SeekableInputStream fileReader;
 
   public MaterializedTableMeta(
@@ -77,6 +77,7 @@ public class MaterializedTableMeta {
     this.owner = owner;
     this.type = type;
     this.raf = new RandomAccessFile(fileName(), "rw");
+    this.stats = new TableStats();
     this.columns = Lists.newArrayList(columns);
     this.primaryKey = primaryKey;
     this.rules = new HashMap<>();
@@ -86,7 +87,6 @@ public class MaterializedTableMeta {
     this.ruleDependencies = new TableDependencies();
     this.reverseRuleDependencies = new ReverseRuleDependencies();
     this.partitioning = Optional.empty();
-    this.cnt = 0;
 
     if (type == Type.LOG) {
       fileWriter = new RAFSeekableOutputStream(raf);
@@ -207,13 +207,16 @@ public class MaterializedTableMeta {
     }
   }
 
-  public void insert(long size) {
-    cnt += size;
-    lastID += size;
+  public void insert(int insertedLines) {
+    stats.insert(insertedLines);
   }
 
-  public void delete(long size) {
-    cnt -= size;
+  public void delete(long deletedLines) {
+    stats.delete(deletedLines);
+  }
+
+  public TableStats stats() {
+    return stats;
   }
 
   public void addForeignKey(ForeignKey foreignKey) throws ModelException {
@@ -312,7 +315,7 @@ public class MaterializedTableMeta {
   }
 
   public boolean isEmpty() {
-    return cnt == 0;
+    return stats.isEmpty();
   }
 
   public static class SeekableTableMeta extends ExposedTableMeta implements ReferencedTable, TableProvider {

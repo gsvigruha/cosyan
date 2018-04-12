@@ -24,7 +24,7 @@ public class Serializer {
     } else if (fieldDesc == 1) {
       if (type == DataTypes.BoolType) {
         value = inputStream.readBoolean();
-      } else if (type == DataTypes.LongType) {
+      } else if (type == DataTypes.LongType || type == DataTypes.IDType) {
         value = inputStream.readLong();
       } else if (type == DataTypes.DoubleType) {
         value = inputStream.readDouble();
@@ -52,7 +52,7 @@ public class Serializer {
     }
     if (type == DataTypes.BoolType) {
       return 2;
-    } else if (type == DataTypes.LongType) {
+    } else if (type == DataTypes.LongType || type == DataTypes.IDType) {
       return 9;
     } else if (type == DataTypes.DoubleType) {
       return 9;
@@ -74,7 +74,7 @@ public class Serializer {
     }
     if (dataType == DataTypes.BoolType) {
       stream.writeBoolean((boolean) value);
-    } else if (dataType == DataTypes.LongType) {
+    } else if (dataType == DataTypes.LongType || dataType == DataTypes.IDType) {
       stream.writeLong((long) value);
     } else if (dataType == DataTypes.DoubleType) {
       stream.writeDouble((double) value);

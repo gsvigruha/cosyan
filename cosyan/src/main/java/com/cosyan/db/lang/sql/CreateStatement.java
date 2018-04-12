@@ -52,6 +52,11 @@ public class CreateStatement {
       LinkedHashMap<String, BasicColumn> columns = Maps.newLinkedHashMap();
       int i = 0;
       for (ColumnDefinition column : columnDefinitions) {
+        if (column.getType() == DataTypes.IDType) {
+          if (i != 0) {
+            throw new ModelException(String.format("The ID column '%s' has to be the first one.", column.getName()));
+          }
+        }
         BasicColumn basicColumn = new BasicColumn(
             i++,
             column.getName(),

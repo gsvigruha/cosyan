@@ -52,7 +52,12 @@ public class InsertIntoStatement {
       if (columns.isPresent()) {
         for (int i = 0; i < columns.get().size(); i++) {
           Ident ident = columns.get().get(i);
-          indexesBuilder.put(ident, tableMeta.column(ident).getIndex());
+          BasicColumn column = tableMeta.column(ident);
+          if (column.getType() == DataTypes.NULL) {
+            throw new ModelException(
+                String.format("Cannot specify value for ID type column '%s' directly.", column.getName()));
+          }
+          indexesBuilder.put(ident, column.getIndex());
         }
       }
       indexes = indexesBuilder.build();
@@ -69,20 +74,31 @@ public class InsertIntoStatement {
 
       // The rules must be evaluated for new records. This requires dependent table
       // readers.
+      long lastID = tableMeta.stats().lastID();
+      int j = 0;
       TableWriter writer = resources.writer(tableMeta.tableName());
       for (ImmutableList<Literal> values : valuess) {
         if (columns.isPresent()) {
           Arrays.fill(fullValues, DataTypes.NULL);
+          if (cols.get(0).getType() == DataTypes.IDType) {
+            fullValues[0] = lastID + j++;
+          }
           for (int i = 0; i < columns.get().size(); i++) {
             int idx = indexes.get(columns.get().get(i));
             fullValues[idx] = check(cols.get(idx).getType(), values.get(i));
           }
         } else {
-          if (values.size() != fullValues.length) {
-            throw new RuleException("Expected '" + fullValues.length + "' values but got '" + values.size() + "'.");
+          int offset = 0;
+          if (cols.get(0).getType() == DataTypes.IDType) {
+            fullValues[0] = lastID + j++;
+            offset = 1;
           }
-          for (int i = 0; i < values.size(); i++) {
-            fullValues[i] = check(cols.get(i).getType(), values.get(i));
+          if (values.size() + offset != fullValues.length) {
+            throw new RuleException(
+                String.format("Expected '%s' values but got '%s'.", fullValues.length - offset, values.size()));
+          }
+          for (int i = offset; i < fullValues.length; i++) {
+            fullValues[i] = check(cols.get(i).getType(), values.get(i - offset));
           }
         }
         writer.insert(resources, fullValues, /* checkReferencingRules= */true);

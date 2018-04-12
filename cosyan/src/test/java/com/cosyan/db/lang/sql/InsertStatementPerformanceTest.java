@@ -68,4 +68,15 @@ public class InsertStatementPerformanceTest extends UnitTestBase {
     t = System.currentTimeMillis() - t;
     System.out.println("Records without index many per transaction inserted in " + t + " " + speed(t, N));
   }
+
+  @Test
+  public void testInsertWithIDIndex_oneRecordPerTransaction() {
+    long t = System.currentTimeMillis();
+    execute("create table t5 (a id, b varchar);");
+    for (int i = 0; i < N; i++) {
+      execute("insert into t5 values ('abc" + i + "');");
+    }
+    t = System.currentTimeMillis() - t;
+    System.out.println("Records with ID index one per transaction inserted in " + t + " " + speed(t, N));
+  }
 }

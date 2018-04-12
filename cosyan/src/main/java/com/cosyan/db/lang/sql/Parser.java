@@ -417,6 +417,8 @@ public class Parser implements IParser {
       return DataTypes.DateType;
     } else if (token.is(Tokens.BOOLEAN)) {
       return DataTypes.BoolType;
+    } else if (token.is(Tokens.ID)) {
+      return DataTypes.IDType;
     }
     throw new ParserException("Unknown data type '" + token + "'.");
   }
