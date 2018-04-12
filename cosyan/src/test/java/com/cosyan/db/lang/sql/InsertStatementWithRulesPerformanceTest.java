@@ -129,4 +129,27 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
     QueryResult r = query("select avg(s.sb) from t9;");
     assertValues(new Object[][] { { 400.0 } }, r);
   }
+
+  @Test
+  public void testInsertWithRefRule_MultipleFields_IDIndexedTable() {
+    execute("create table t11 (i id, a varchar, b integer, c integer, d integer, constraint pk_i primary key (i));");
+    for (int i = 0; i < N1; i++) {
+      execute("insert into t11 values ('abc" + i + "' ," + i + ", " + i + ", " + i + ");");
+    }
+    execute("create table t12 (a integer, "
+        + "constraint fk_a foreign key (a) references t11,"
+        + "constraint c_1 check (fk_a.b * 2 = fk_a.c + fk_a.d));");
+    long t = System.currentTimeMillis();
+    for (int i = 0; i < N2 / T; i++) {
+      StringBuffer sb = new StringBuffer();
+      for (int n = 0; n < T; n++) {
+        int j = ((n + i * T) * 193) % N1;
+        sb.append("insert into t12 values (" + j + ");");
+      }
+      execute(sb.toString());
+    }
+    t = System.currentTimeMillis() - t;
+    System.out.println("Records with ref rules to ID indexed table (3 col) inserted in " + t + " " + speed(t, N2));
+  }
+
 }

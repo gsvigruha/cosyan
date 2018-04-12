@@ -16,6 +16,7 @@ import com.cosyan.db.index.ByteTrie.IndexException;
 public class IDIndex {
 
   private static final int SIZE = 4096;
+  private static final int BYTE_SIZE = SIZE * 8;
 
   private final TreeMap<Long, long[]> cachedIndices = new TreeMap<>();
   private final HashSet<Long> dirty = new HashSet<>();
@@ -63,8 +64,8 @@ public class IDIndex {
   }
 
   private long[] read(long segment) throws IOException {
-    ByteBuffer bb = ByteBuffer.allocate(SIZE * 8);
-    raf.seek(segment * SIZE * 8);
+    ByteBuffer bb = ByteBuffer.allocate(BYTE_SIZE);
+    raf.seek(segment * BYTE_SIZE);
     raf.read(bb.array());
     LongBuffer lb = bb.asLongBuffer();
     long[] cachedValues = new long[lb.capacity()];
@@ -77,7 +78,7 @@ public class IDIndex {
     long[] cachedValues = cachedIndices.get(segment);
     if (cachedValues == null) {
       if (key * 8 >= filePointer) {
-        for (long i = filePointer / (SIZE * 8); i <= segment; i++) {
+        for (long i = filePointer / BYTE_SIZE; i <= segment; i++) {
           cachedValues = new long[SIZE];
           Arrays.fill(cachedValues, -1);
           cachedIndices.put(i, cachedValues);
@@ -122,8 +123,8 @@ public class IDIndex {
       long i = e.getKey();
       if (dirty.contains(i)) {
         long[] values = e.getValue();
-        raf.seek(i * SIZE * 8);
-        ByteBuffer lb = ByteBuffer.allocate(SIZE * 8);
+        raf.seek(i * BYTE_SIZE);
+        ByteBuffer lb = ByteBuffer.allocate(BYTE_SIZE);
         lb.asLongBuffer().put(values);
         raf.write(lb.array());
       }

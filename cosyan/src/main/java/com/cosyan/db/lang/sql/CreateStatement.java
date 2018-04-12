@@ -157,6 +157,12 @@ public class CreateStatement {
           throw new ModelException(
               "Foreign key reference column has to be the primary key column of the referenced table.");
         }
+        if (keyColumn.getType() != refColumn.getType()
+            && !(keyColumn.getType() == DataTypes.LongType && refColumn.getType() == DataTypes.IDType)) {
+          throw new ModelException(
+              String.format("Foreign key reference column has type '%s' while key column has type '%s'.",
+                  refColumn.getType(), keyColumn.getType()));
+        }
         assert refColumn.isUnique() && !refColumn.isNullable();
         // Unique keys are indexed by default, so no need to change refColumn.
         keyColumn.setIndexed(true);
