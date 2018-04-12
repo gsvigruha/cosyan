@@ -7,6 +7,8 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.TreeMap;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
@@ -16,6 +18,7 @@ public class IDIndex {
   private static final int SIZE = 4096;
 
   private final TreeMap<Long, long[]> cachedIndices = new TreeMap<>();
+  private final HashSet<Long> dirty = new HashSet<>();
 
   private final String fileName;
 
@@ -74,12 +77,17 @@ public class IDIndex {
     long[] cachedValues = cachedIndices.get(segment);
     if (cachedValues == null) {
       if (key * 8 >= filePointer) {
-        cachedValues = new long[SIZE];
-        Arrays.fill(cachedValues, -1);
+        for (long i = filePointer / (SIZE * 8); i <= segment; i++) {
+          cachedValues = new long[SIZE];
+          Arrays.fill(cachedValues, -1);
+          cachedIndices.put(i, cachedValues);
+          dirty.add(i);
+        }
       } else {
         cachedValues = read(segment);
+        cachedIndices.put(segment, cachedValues);
+        dirty.add(segment);
       }
-      cachedIndices.put(segment, cachedValues);
     }
     if (cachedValues[(int) (key % SIZE)] != -1) {
       throw new IndexException("Key '" + key + "' already present in index.");
@@ -97,6 +105,7 @@ public class IDIndex {
       }
       cachedValues = read(segment);
       cachedIndices.put(segment, cachedValues);
+      dirty.add(segment);
     }
     int idx = (int) (key - blockStart);
     long cachedValue = cachedValues[idx];
@@ -109,21 +118,22 @@ public class IDIndex {
   }
 
   public void commit() throws IOException {
-    for (long i = 0; i <= cachedIndices.lastKey(); i++) {
-      long[] values = cachedIndices.get(i);
-      if (values == null) {
-        values = new long[SIZE];
-        Arrays.fill(values, -1);
+    for (Map.Entry<Long, long[]> e : cachedIndices.entrySet()) {
+      long i = e.getKey();
+      if (dirty.contains(i)) {
+        long[] values = e.getValue();
+        raf.seek(i * SIZE * 8);
+        ByteBuffer lb = ByteBuffer.allocate(SIZE * 8);
+        lb.asLongBuffer().put(values);
+        raf.write(lb.array());
       }
-      raf.seek(i * SIZE * 8);
-      ByteBuffer lb = ByteBuffer.allocate(SIZE * 8);
-      lb.asLongBuffer().put(values);
-      raf.write(lb.array());
     }
     filePointer = raf.length();
+    dirty.clear();
   }
 
   public void rollback() {
     cachedIndices.clear();
+    dirty.clear();
   }
 }
