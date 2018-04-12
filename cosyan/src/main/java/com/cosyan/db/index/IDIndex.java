@@ -50,7 +50,7 @@ public class IDIndex {
     long segment = key / SIZE;
     long[] cachedValues = cachedIndices.get(segment);
     if (cachedValues == null) {
-      if (key >= filePointer) {
+      if (key * 8 >= filePointer) {
         return null;
       }
       cachedValues = read(segment);
@@ -73,7 +73,7 @@ public class IDIndex {
     long segment = key / SIZE;
     long[] cachedValues = cachedIndices.get(segment);
     if (cachedValues == null) {
-      if (key >= filePointer) {
+      if (key * 8 >= filePointer) {
         cachedValues = new long[SIZE];
         Arrays.fill(cachedValues, -1);
       } else {
@@ -92,7 +92,7 @@ public class IDIndex {
     long[] cachedValues = cachedIndices.get(segment);
     long blockStart = segment * SIZE;
     if (cachedValues == null) {
-      if (key >= filePointer) {
+      if (key * 8 >= filePointer) {
         return false;
       }
       cachedValues = read(segment);

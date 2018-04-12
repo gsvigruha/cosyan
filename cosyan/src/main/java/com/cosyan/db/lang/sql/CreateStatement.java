@@ -70,9 +70,11 @@ public class CreateStatement {
 
       for (BasicColumn column : columns.values()) {
         if (column.isUnique()) {
-          if (column.getType() != DataTypes.StringType && column.getType() != DataTypes.LongType) {
+          if (column.getType() != DataTypes.StringType
+              && column.getType() != DataTypes.LongType
+              && column.getType() != DataTypes.IDType) {
             throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
-                " and " + DataTypes.LongType + " types, not " + column.getType() + ".");
+                ", " + DataTypes.LongType + " and " + DataTypes.IDType + " types, not " + column.getType() + ".");
           }
         }
       }

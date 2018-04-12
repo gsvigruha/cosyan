@@ -127,4 +127,14 @@ public class IDIndexTest {
     } catch (IndexException e) {
     }
   }
+
+  @Test
+  public void testIDIndexSegmentBoundaries() throws Exception {
+    Files.deleteIfExists(Paths.get("/tmp/idindex"));
+    IDIndex index = new IDIndex("/tmp/idindex");
+    assertEquals(null, index.get(0L));
+    index.put(0L, 10L);
+    assertEquals(10L, index.get(0L));
+    assertEquals(null, index.get(4096L));
+  }
 }
