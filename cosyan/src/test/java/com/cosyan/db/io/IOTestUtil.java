@@ -45,7 +45,7 @@ public class IOTestUtil {
     }
 
     @Override
-    public IterableTableReader iterableReader(Resources resources) throws IOException {
+    public IterableTableReader iterableReader() throws IOException {
       Iterator<Object[]> iterator = data.iterator();
       return new IterableTableReader() {
 

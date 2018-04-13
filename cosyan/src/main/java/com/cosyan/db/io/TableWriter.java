@@ -352,7 +352,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   }
 
   @Override
-  public IterableTableReader iterableReader(Resources resources) throws IOException {
+  public IterableTableReader iterableReader() throws IOException {
     RecordReader reader = recordReader();
     return new IterableTableReader() {
 

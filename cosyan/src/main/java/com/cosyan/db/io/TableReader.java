@@ -77,7 +77,7 @@ public abstract class TableReader implements TableIO {
 
     public abstract Record get(Object key, Resources resources) throws IOException;
 
-    public abstract IterableTableReader iterableReader(Resources resources) throws IOException;
+    public abstract IterableTableReader iterableReader() throws IOException;
 
     public TableIndex getPrimaryKeyIndex() {
       return (TableIndex) getIndex(tableMeta.primaryKey().get().getColumn().getName());
@@ -127,7 +127,7 @@ public abstract class TableReader implements TableIO {
     }
 
     @Override
-    public IterableTableReader iterableReader(Resources resources) throws IOException {
+    public IterableTableReader iterableReader() throws IOException {
       RecordReader reader = new RecordReader(columns, new BufferedInputStream(new FileInputStream(fileName)));
       return new IterableTableReader() {
 

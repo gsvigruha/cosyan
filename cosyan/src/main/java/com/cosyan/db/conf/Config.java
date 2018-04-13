@@ -38,6 +38,10 @@ public class Config {
     return props.getProperty(DATA_DIR) + File.separator + "table";
   }
 
+  public String statDir() {
+    return props.getProperty(DATA_DIR) + File.separator + "stat";
+  }
+
   public String indexDir() {
     return props.getProperty(DATA_DIR) + File.separator + "index";
   }

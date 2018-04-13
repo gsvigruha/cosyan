@@ -77,7 +77,7 @@ public class MaterializedTableMeta {
     this.owner = owner;
     this.type = type;
     this.raf = new RandomAccessFile(fileName(), "rw");
-    this.stats = new TableStats();
+    this.stats = new TableStats(config, tableName);
     this.columns = Lists.newArrayList(columns);
     this.primaryKey = primaryKey;
     this.rules = new HashMap<>();
@@ -121,6 +121,10 @@ public class MaterializedTableMeta {
   public SeekableInputStream fileReader() throws IOException {
     fileReader.reset();
     return fileReader;
+  }
+
+  public void loadStats() throws IOException {
+    stats.load(this);
   }
 
   public ImmutableList<String> columnNames() {

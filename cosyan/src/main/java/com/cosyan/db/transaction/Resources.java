@@ -52,9 +52,9 @@ public class Resources {
   public IterableTableReader createIterableReader(String table) throws IOException {
     assert readers.containsKey(table) || writers.containsKey(table) : String.format("Invalid table %s.", table);
     if (readers.containsKey(table)) {
-      return readers.get(table).iterableReader(this);
+      return readers.get(table).iterableReader();
     } else {
-      return writers.get(table).iterableReader(this);
+      return writers.get(table).iterableReader();
     }
   }
 

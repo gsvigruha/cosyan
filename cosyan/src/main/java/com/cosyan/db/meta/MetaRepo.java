@@ -77,6 +77,12 @@ public class MetaRepo implements TableProvider {
     return config;
   }
 
+  public void loadStats() throws IOException {
+    for (MaterializedTableMeta tableMeta : tables.values()) {
+      tableMeta.loadStats();
+    }
+  }
+
   @Override
   public ExposedTableMeta tableMeta(Ident ident) throws ModelException {
     return table(ident).reader();

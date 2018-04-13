@@ -132,7 +132,7 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
 
   @Test
   public void testInsertWithRefRule_MultipleFields_IDIndexedTable() {
-    execute("create table t11 (i id, a varchar, b integer, c integer, d integer, constraint pk_i primary key (i));");
+    execute("create table t11 (i id, a varchar, b integer, c integer, d integer);");
     for (int i = 0; i < N1; i++) {
       execute("insert into t11 values ('abc" + i + "' ," + i + ", " + i + ", " + i + ");");
     }

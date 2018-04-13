@@ -32,7 +32,9 @@ public class DBApi {
     transactionJournal = new TransactionJournal(config);
     authenticator = new Authenticator(config);
     metaJournal = new MetaJournal(config);
-    metaJournal.reload(adminSession(/* innerSession= */true));
+    Session initSession = adminSession(/* innerSession= */true);
+    metaJournal.reload(initSession);
+    metaRepo.loadStats();
   }
 
   public MetaRepo getMetaRepo() {

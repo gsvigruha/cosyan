@@ -65,6 +65,9 @@ public class CreateStatement {
           if (i != 0) {
             throw new ModelException(String.format("The ID column '%s' has to be the first one.", column.getName()));
           }
+          basicColumn.setNullable(false);
+          basicColumn.setUnique(true);
+          basicColumn.setIndexed(true);
           primaryKey = Optional.of(new PrimaryKey("id", basicColumn));
         }
         columns.put(column.getName(), basicColumn);
