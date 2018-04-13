@@ -194,7 +194,7 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateTableIDType() throws Exception {
     execute("create table t21 (a id);");
     MaterializedTableMeta t21 = metaRepo.table(new Ident("t21"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.IDType, true, false, false, true),
+    assertEquals(new BasicColumn(0, "a", DataTypes.IDType, false, true, true, true),
         t21.column(new Ident("a")));
   }
 
