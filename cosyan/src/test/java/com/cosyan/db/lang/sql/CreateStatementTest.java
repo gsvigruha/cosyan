@@ -189,4 +189,20 @@ public class CreateStatementTest extends UnitTestBase {
     assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false, false, true),
         t20.column(new Ident("a")));
   }
+
+  @Test
+  public void testCreateTableIDType() throws Exception {
+    execute("create table t21 (a id);");
+    MaterializedTableMeta t21 = metaRepo.table(new Ident("t21"));
+    assertEquals(new BasicColumn(0, "a", DataTypes.IDType, true, false, false, true),
+        t21.column(new Ident("a")));
+  }
+
+  @Test
+  public void testCreateTableIDTypeErrors() throws Exception {
+    ErrorResult e1 = error("create table t22 (a integer, b id);");
+    assertEquals("The ID column 'b' has to be the first one.", e1.getError().getMessage());
+    ErrorResult e2 = error("create table t22 (a id, b integer, constraint pk_b primary key (b));");
+    assertEquals("There can only be one primary key.", e2.getError().getMessage());
+  }
 }

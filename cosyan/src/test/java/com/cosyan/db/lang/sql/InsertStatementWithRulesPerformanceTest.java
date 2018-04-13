@@ -151,5 +151,4 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
     t = System.currentTimeMillis() - t;
     System.out.println("Records with ref rules to ID indexed table (3 col) inserted in " + t + " " + speed(t, N2));
   }
-
 }

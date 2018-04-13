@@ -49,23 +49,26 @@ public class CreateStatement {
         throw new ModelException(String.format("Table '%s' already exists.", name));
       }
 
+      Optional<PrimaryKey> primaryKey = Optional.empty();
       LinkedHashMap<String, BasicColumn> columns = Maps.newLinkedHashMap();
       int i = 0;
       for (ColumnDefinition column : columnDefinitions) {
-        if (column.getType() == DataTypes.IDType) {
-          if (i != 0) {
-            throw new ModelException(String.format("The ID column '%s' has to be the first one.", column.getName()));
-          }
-        }
         BasicColumn basicColumn = new BasicColumn(
-            i++,
+            i,
             column.getName(),
             column.getType(),
             column.isNullable(),
             column.isUnique(),
             /* indexed= */column.isUnique(),
             column.isImmutable() || column.getType() == DataTypes.IDType);
+        if (column.getType() == DataTypes.IDType) {
+          if (i != 0) {
+            throw new ModelException(String.format("The ID column '%s' has to be the first one.", column.getName()));
+          }
+          primaryKey = Optional.of(new PrimaryKey("id", basicColumn));
+        }
         columns.put(column.getName(), basicColumn);
+        i++;
       }
 
       for (BasicColumn column : columns.values()) {
@@ -79,7 +82,6 @@ public class CreateStatement {
         }
       }
 
-      Optional<PrimaryKey> primaryKey = Optional.empty();
       for (ConstraintDefinition constraint : constraints) {
         if (constraint instanceof PrimaryKeyDefinition) {
           if (!primaryKey.isPresent()) {
