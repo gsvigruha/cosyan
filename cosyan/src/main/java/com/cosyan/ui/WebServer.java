@@ -17,7 +17,7 @@ public class WebServer {
   public static void main(String[] args) throws Exception {
     Server server = new Server(7070);
     ServletContextHandler handler = new ServletContextHandler(server, "/cosyan");
-    Config config = new Config("/tmp/webserver");
+    Config config = new Config("/home/gsvigruha/cosyan_test");
     DBApi dbApi = new DBApi(config);
 
     handler.addServlet(new ServletHolder(new AdminServlet(dbApi.getMetaRepo())), "/admin");
@@ -25,9 +25,9 @@ public class WebServer {
     handler.addServlet(new ServletHolder(new SQLServlet(dbApi)), "/sql");
 
     ResourceHandler resourceHandler = new ResourceHandler();
-    resourceHandler.setDirectoriesListed(false);
+    resourceHandler.setDirectoriesListed(true);
     resourceHandler.setWelcomeFiles(new String[] { "index.html" });
-    resourceHandler.setResourceBase("web/app/");
+    resourceHandler.setResourceBase("web/app");
 
     HandlerList handlers = new HandlerList();
     handlers.setHandlers(new Handler[] { resourceHandler, handler });
