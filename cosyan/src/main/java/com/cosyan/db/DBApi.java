@@ -34,7 +34,7 @@ public class DBApi {
     metaJournal = new MetaJournal(config);
     Session initSession = adminSession(/* innerSession= */true);
     metaJournal.reload(initSession);
-    metaRepo.loadStats();
+    metaRepo.init();
   }
 
   public MetaRepo getMetaRepo() {
@@ -69,7 +69,7 @@ public class DBApi {
         /* innerSession= */false);
   }
 
-  public void shutdown() {
-
+  public void shutdown() throws IOException {
+    metaRepo.shutdown();
   }
 }

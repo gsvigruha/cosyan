@@ -175,4 +175,23 @@ public class RestartDBTest {
     ErrorResult result = (ErrorResult) dbApi.adminSession().execute("insert into t11 values(1);");
     assertEquals("Key '1' already present in index.", result.getError().getMessage());
   }
+
+  @Test
+  public void testGeneratedIDAfterRestart() throws IOException, ModelException, ParserException {
+    DBApi dbApi = new DBApi(config);
+    dbApi.adminSession().execute("create table t12(a id, b varchar);");
+    dbApi.adminSession().execute("insert into t12 values('x'), ('y');");
+    QueryResult r1 = (QueryResult) ((TransactionResult) dbApi.adminSession().execute("select * from t12;"))
+        .getResults().get(0);
+    assertEquals(ImmutableList.of(ImmutableList.of(0L, "x"), ImmutableList.of(1L, "y")), r1.getValues());
+
+    dbApi = new DBApi(config);
+    dbApi.adminSession().execute("insert into t12 values('z');");
+    QueryResult r2 = (QueryResult) ((TransactionResult) dbApi.adminSession().execute("select * from t12;"))
+        .getResults().get(0);
+    assertEquals(ImmutableList.of(
+        ImmutableList.of(0L, "x"),
+        ImmutableList.of(1L, "y"),
+        ImmutableList.of(2L, "z")), r2.getValues());
+  }
 }

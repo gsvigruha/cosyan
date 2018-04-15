@@ -226,5 +226,9 @@ public abstract class TableIndex implements IndexReader {
     public void drop() throws IOException {
       index.drop();
     }
+
+    public long getLastID() {
+      return index.getLastID();
+    }
   }
 }

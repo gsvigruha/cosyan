@@ -25,11 +25,24 @@ public class IDIndex {
 
   private RandomAccessFile raf;
   private long filePointer;
+  private long lastID;
 
   public IDIndex(String fileName) throws IOException {
     this.fileName = fileName;
     this.raf = new RandomAccessFile(fileName, "rw");
     filePointer = raf.length();
+
+    if (filePointer > 0) {
+      long lastSegmentID = (filePointer / BYTE_SIZE) - 1;
+      long[] lastSegment = read(lastSegmentID);
+      for (int i = 0; i < lastSegment.length; i++) {
+        if (lastSegment[i] > -1) {
+          lastID = lastSegmentID * SIZE + i;
+        }
+      }
+    } else {
+      lastID = -1L;
+    }
   }
 
   public void close() throws IOException {
@@ -94,6 +107,7 @@ public class IDIndex {
       throw new IndexException("Key '" + key + "' already present in index.");
     }
     cachedValues[(int) (key % SIZE)] = value;
+    lastID = Math.max(lastID, key);
   }
 
   public boolean delete(long key) throws IOException {
@@ -136,5 +150,9 @@ public class IDIndex {
   public void rollback() {
     cachedIndices.clear();
     dirty.clear();
+  }
+
+  public long getLastID() {
+    return lastID;
   }
 }

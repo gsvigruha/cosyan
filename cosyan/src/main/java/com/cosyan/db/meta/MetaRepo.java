@@ -77,9 +77,15 @@ public class MetaRepo implements TableProvider {
     return config;
   }
 
-  public void loadStats() throws IOException {
+  public void init() throws IOException {
     for (MaterializedTableMeta tableMeta : tables.values()) {
       tableMeta.loadStats();
+    }
+  }
+
+  public void shutdown() throws IOException {
+    for (MaterializedTableMeta tableMeta : tables.values()) {
+      tableMeta.saveStats();
     }
   }
 

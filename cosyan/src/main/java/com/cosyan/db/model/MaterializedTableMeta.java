@@ -124,7 +124,11 @@ public class MaterializedTableMeta {
   }
 
   public void loadStats() throws IOException {
-    stats.load(this);
+    stats.load();
+  }
+
+  public void saveStats() throws IOException {
+    stats.save();
   }
 
   public ImmutableList<String> columnNames() {

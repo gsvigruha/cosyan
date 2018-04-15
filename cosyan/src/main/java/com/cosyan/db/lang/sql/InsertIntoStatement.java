@@ -18,6 +18,7 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
+import com.cosyan.db.model.TableIndex.IDTableIndex;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -70,18 +71,16 @@ public class InsertIntoStatement {
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
       ImmutableList<BasicColumn> cols = ImmutableList.copyOf(tableMeta.columns().values());
+      boolean hasID = cols.get(0).getType() == DataTypes.IDType;
       Object[] fullValues = new Object[cols.size()];
 
-      // The rules must be evaluated for new records. This requires dependent table
-      // readers.
-      long lastID = tableMeta.stats().lastID();
-      int j = 0;
+      long lastID = hasID ? ((IDTableIndex) resources.getPrimaryKeyIndex(table.getString())).getLastID() : -1;
       TableWriter writer = resources.writer(tableMeta.tableName());
       for (ImmutableList<Literal> values : valuess) {
         if (columns.isPresent()) {
           Arrays.fill(fullValues, DataTypes.NULL);
-          if (cols.get(0).getType() == DataTypes.IDType) {
-            fullValues[0] = lastID + j++;
+          if (hasID) {
+            fullValues[0] = ++lastID;
           }
           for (int i = 0; i < columns.get().size(); i++) {
             int idx = indexes.get(columns.get().get(i));
@@ -89,8 +88,8 @@ public class InsertIntoStatement {
           }
         } else {
           int offset = 0;
-          if (cols.get(0).getType() == DataTypes.IDType) {
-            fullValues[0] = lastID + j++;
+          if (hasID) {
+            fullValues[0] = ++lastID;
             offset = 1;
           }
           if (values.size() + offset != fullValues.length) {
