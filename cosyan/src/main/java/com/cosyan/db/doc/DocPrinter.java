@@ -27,7 +27,7 @@ public class DocPrinter {
         ImmutableMap<String, DataType<?>> funcArgs = function.getArgTypes();
         StringBuilder sb = new StringBuilder();
         StringJoiner sj = new StringJoiner(", ");
-        sb.append(" - `").append(function.getIdent()).append("(");
+        sb.append(" * `").append(function.getIdent()).append("(");
         for (Entry<String, DataType<?>> param : funcArgs.entrySet()) {
           sj.add(param.getKey() + ": " + param.getValue().getName());
         }
@@ -36,9 +36,9 @@ public class DocPrinter {
         pw.print(sb.toString());
         String doc = ann.doc();
         for (String param : funcArgs.keySet()) {
-          doc = doc.replace(" " + param + " ", " `" + param + "` ");
+          doc = doc.replaceAll("([ ,.])" + param + "([ ,.])", "$1`" + param + "`$2");
         }
-        pw.append("  " + doc + "\n");
+        pw.append("   " + doc + "\n");
       }
     } finally {
       pw.close();
