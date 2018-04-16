@@ -1,5 +1,5 @@
  - `length(self: float): integer`
-  Number of characters in self.
+   Number of characters in self.
  - `upper(self: float): varchar`
   Converts all characters of `self` to uppercase.
  - `lower(self: float): varchar`
