@@ -18,6 +18,10 @@ public class FunctionDocumentation {
   }
 
   public String documentation(SimpleFunction<?> function) {
+    Func ann = function.getClass().getAnnotation(Func.class);
+    if (ann == null) {
+      throw new RuntimeException(String.format("Missing annotation for '%s'.", function.getIdent()));
+    }
     ImmutableList<DataType<?>> args = function.getArgTypes();
     StringBuilder sb = new StringBuilder();
     StringJoiner sj = new StringJoiner(", ");
@@ -27,7 +31,7 @@ public class FunctionDocumentation {
     }
     sb.append(sj.toString());
     sb.append("): ").append(function.getReturnType().getName()).append("\n");
-    sb.append(function.getClass().getAnnotation(Func.class).doc());
+    sb.append(ann.doc());
     return sb.toString();
   }
 }

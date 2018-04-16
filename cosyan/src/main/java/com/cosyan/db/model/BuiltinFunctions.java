@@ -53,9 +53,7 @@ import com.cosyan.db.model.StringFunctions.Replace;
 import com.cosyan.db.model.StringFunctions.Substr;
 import com.cosyan.db.model.StringFunctions.Trim;
 import com.cosyan.db.model.StringFunctions.Upper;
-import com.cosyan.db.model.TableFunctions.SelectFunction;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import lombok.Data;
@@ -113,17 +111,6 @@ public class BuiltinFunctions {
     }
 
     public abstract TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException;
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = false)
-  public static abstract class TableFunction extends Function {
-
-    public TableFunction(String ident) {
-      super(ident, false);
-    }
-
-    public abstract TableMeta call(TableMeta tableMeta, ImmutableMap<String, ColumnMeta> argValues);
   }
 
   public static final ImmutableList<AggrFunction> AGGREGATIONS = ImmutableList.<AggrFunction>builder()
@@ -192,10 +179,6 @@ public class BuiltinFunctions {
       .add(new GetSecond())
       .build();
 
-  public static final ImmutableList<TableFunction> TABLE = ImmutableList.<TableFunction>builder()
-      .add(new SelectFunction("select"))
-      .build();
-
   public static final ImmutableSet<String> AGGREGATION_NAMES;
   static {
     ImmutableSet.Builder<String> builder = ImmutableSet.builder();
@@ -207,7 +190,6 @@ public class BuiltinFunctions {
 
   private static final ConcurrentHashMap<String, SimpleFunction<?>> simpleFunctions;
   private static final ConcurrentHashMap<String, AggrFunction> aggrFunctions;
-  private static final ConcurrentHashMap<String, TableFunction> tableFunctions;
 
   static {
     simpleFunctions = new ConcurrentHashMap<>();
@@ -217,10 +199,6 @@ public class BuiltinFunctions {
     aggrFunctions = new ConcurrentHashMap<>();
     for (AggrFunction aggrFunction : BuiltinFunctions.AGGREGATIONS) {
       aggrFunctions.put(aggrFunction.getIdent(), aggrFunction);
-    }
-    tableFunctions = new ConcurrentHashMap<>();
-    for (TableFunction tableFunction : BuiltinFunctions.TABLE) {
-      tableFunctions.put(tableFunction.getIdent(), tableFunction);
     }
   }
 
@@ -236,12 +214,5 @@ public class BuiltinFunctions {
       throw new ModelException("Function " + ident + " does not exist.");
     }
     return aggrFunctions.get(ident).compile(argType);
-  }
-
-  public static TableFunction tableFunction(String ident) throws ModelException {
-    if (!tableFunctions.containsKey(ident)) {
-      throw new ModelException("Function " + ident + " does not exist.");
-    }
-    return tableFunctions.get(ident);
   }
 }

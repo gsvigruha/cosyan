@@ -51,3 +51,9 @@ task execute(type:JavaExec) {
    main = 'com.cosyan.ui.WebServer'
    classpath = sourceSets.main.runtimeClasspath
 }
+
+task doc(type:JavaExec) {
+   main = 'com.cosyan.db.doc.DocPrinter'
+   classpath = sourceSets.main.runtimeClasspath
+   args = [ project.projectDir.toString() + '/src/main' ]
+}

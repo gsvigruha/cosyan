@@ -25,9 +25,9 @@ public class WebServer {
     handler.addServlet(new ServletHolder(new SQLServlet(dbApi)), "/sql");
 
     ResourceHandler resourceHandler = new ResourceHandler();
-    resourceHandler.setDirectoriesListed(true);
+    resourceHandler.setDirectoriesListed(false);
     resourceHandler.setWelcomeFiles(new String[] { "index.html" });
-    resourceHandler.setResourceBase("web/app");
+    resourceHandler.setResourceBase("./web/app/");
 
     HandlerList handlers = new HandlerList();
     handlers.setHandlers(new Handler[] { resourceHandler, handler });

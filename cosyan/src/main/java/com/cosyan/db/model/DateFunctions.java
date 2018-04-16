@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import com.cosyan.db.doc.FunctionDocumentation.Func;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.google.common.collect.ImmutableList;
 
@@ -28,6 +29,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Converts self to a date.")
   public static class Date extends SimpleFunction<java.util.Date> {
 
     public Date() {
@@ -54,6 +56,7 @@ public class DateFunctions {
     return (long) cal.get(unit);
   }
 
+  @Func(doc = "Adds n years to self.")
   public static class AddYears extends SimpleFunction<java.util.Date> {
 
     public AddYears() {
@@ -66,6 +69,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Adds n months to self.")
   public static class AddMonths extends SimpleFunction<java.util.Date> {
 
     public AddMonths() {
@@ -78,6 +82,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Adds n days to self.")
   public static class AddDays extends SimpleFunction<java.util.Date> {
 
     public AddDays() {
@@ -90,6 +95,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Adds n weeks to self.")
   public static class AddWeeks extends SimpleFunction<java.util.Date> {
 
     public AddWeeks() {
@@ -102,6 +108,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Adds n hours to self.")
   public static class AddHours extends SimpleFunction<java.util.Date> {
 
     public AddHours() {
@@ -114,6 +121,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Adds n minutes to self.")
   public static class AddMinutes extends SimpleFunction<java.util.Date> {
 
     public AddMinutes() {
@@ -126,6 +134,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Adds n seconds to self.")
   public static class AddSeconds extends SimpleFunction<java.util.Date> {
 
     public AddSeconds() {
@@ -138,6 +147,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Returns the year of self.")
   public static class GetYear extends SimpleFunction<Long> {
 
     public GetYear() {
@@ -150,6 +160,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Returns the month of self.")
   public static class GetMonth extends SimpleFunction<Long> {
 
     public GetMonth() {
@@ -162,6 +173,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Returns the week of year of self.")
   public static class GetWeekOfYear extends SimpleFunction<Long> {
 
     public GetWeekOfYear() {
@@ -174,6 +186,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Returns the week of month of self.")
   public static class GetWeekOfMonth extends SimpleFunction<Long> {
 
     public GetWeekOfMonth() {
@@ -186,6 +199,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Returns the day of month of self.")
   public static class GetDay extends SimpleFunction<Long> {
 
     public GetDay() {
@@ -198,6 +212,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Returns the day of year of self.")
   public static class GetDayOfYear extends SimpleFunction<Long> {
 
     public GetDayOfYear() {
@@ -210,6 +225,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Returns the day of month of self.")
   public static class GetDayOfMonth extends SimpleFunction<Long> {
 
     public GetDayOfMonth() {
@@ -222,6 +238,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Returns the day of week of self.")
   public static class GetDayOfWeek extends SimpleFunction<Long> {
 
     public GetDayOfWeek() {
@@ -234,6 +251,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Returns the hours of self.")
   public static class GetHour extends SimpleFunction<Long> {
 
     public GetHour() {
@@ -246,6 +264,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Returns the minutes of self.")
   public static class GetMinute extends SimpleFunction<Long> {
 
     public GetMinute() {
@@ -258,6 +277,7 @@ public class DateFunctions {
     }
   }
 
+  @Func(doc = "Returns the seconds of self.")
   public static class GetSecond extends SimpleFunction<Long> {
 
     public GetSecond() {
