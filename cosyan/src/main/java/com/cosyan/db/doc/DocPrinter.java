@@ -32,7 +32,7 @@ public class DocPrinter {
           sj.add(param.getKey() + ": " + param.getValue().getName());
         }
         sb.append(sj.toString());
-        sb.append("): ").append(function.getReturnType().getName()).append("`\n");
+        sb.append("): ").append(function.getReturnType().getName()).append("`<br/>\n");
         pw.print(sb.toString());
         String doc = ann.doc();
         for (String param : funcArgs.keySet()) {
