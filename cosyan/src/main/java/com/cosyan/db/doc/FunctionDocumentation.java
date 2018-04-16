@@ -8,7 +8,7 @@ import java.util.StringJoiner;
 
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableCollection;
 
 public class FunctionDocumentation {
   @Retention(RetentionPolicy.RUNTIME)
@@ -22,7 +22,7 @@ public class FunctionDocumentation {
     if (ann == null) {
       throw new RuntimeException(String.format("Missing annotation for '%s'.", function.getIdent()));
     }
-    ImmutableList<DataType<?>> args = function.getArgTypes();
+    ImmutableCollection<DataType<?>> args = function.getArgTypes().values();
     StringBuilder sb = new StringBuilder();
     StringJoiner sj = new StringJoiner(", ");
     sb.append(function.getIdent()).append("(");

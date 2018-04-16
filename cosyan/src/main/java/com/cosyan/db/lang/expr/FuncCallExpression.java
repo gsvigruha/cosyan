@@ -79,7 +79,7 @@ public class FuncCallExpression extends Expression {
           function.getArgTypes().size(), ident.getString(), argColumns.size()));
     }
     for (int i = 0; i < function.getArgTypes().size(); i++) {
-      DataType<?> expectedType = function.getArgTypes().get(i);
+      DataType<?> expectedType = function.argType(i);
       DataType<?> dataType = argColumns.get(i).getType();
       if (!(expectedType == DataTypes.DoubleType && dataType == DataTypes.LongType)) {
         // Skip check for Double/Long pairs, there will be an implicit type conversion.
@@ -94,7 +94,7 @@ public class FuncCallExpression extends Expression {
         ImmutableList.Builder<Object> paramsBuilder = ImmutableList.builder();
         for (int i = 0; i < function.getArgTypes().size(); i++) {
           Object value = argColumns.get(i).value(values, resources);
-          if (function.getArgTypes().get(i) == DataTypes.DoubleType && value instanceof Long) {
+          if (function.argType(i) == DataTypes.DoubleType && value instanceof Long) {
             // Implicit type conversion from Long to Double.
             value = Double.valueOf((Long) value);
           }

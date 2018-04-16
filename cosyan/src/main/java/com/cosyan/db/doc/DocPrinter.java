@@ -3,13 +3,14 @@ package com.cosyan.db.doc;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Map.Entry;
 import java.util.StringJoiner;
 
 import com.cosyan.db.doc.FunctionDocumentation.Func;
 import com.cosyan.db.model.BuiltinFunctions;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 public class DocPrinter {
 
@@ -23,18 +24,21 @@ public class DocPrinter {
     try {
       for (SimpleFunction<?> function : BuiltinFunctions.SIMPLE) {
         Func ann = function.getClass().getAnnotation(Func.class);
-        ImmutableList<DataType<?>> funcArgs = function.getArgTypes();
+        ImmutableMap<String, DataType<?>> funcArgs = function.getArgTypes();
         StringBuilder sb = new StringBuilder();
         StringJoiner sj = new StringJoiner(", ");
         sb.append(" - `").append(function.getIdent()).append("(");
-        for (DataType<?> paramType : funcArgs) {
-          sj.add(paramType.getName());
+        for (Entry<String, DataType<?>> param : funcArgs.entrySet()) {
+          sj.add(param.getKey() + ": " + param.getValue().getName());
         }
         sb.append(sj.toString());
         sb.append("): ").append(function.getReturnType().getName()).append("`\n");
         pw.print(sb.toString());
-        pw.append("  " + ann.doc() + "\n");
-
+        String doc = ann.doc();
+        for (String param : funcArgs.keySet()) {
+          doc = doc.replace(" " + param + " ", " `" + param + "` ");
+        }
+        pw.append("  " + doc + "\n");
       }
     } finally {
       pw.close();

@@ -3,12 +3,13 @@ package com.cosyan.db.model;
 import com.cosyan.db.doc.FunctionDocumentation.Func;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 public class StringFunctions {
   @Func(doc = "Number of characters in self.")
   public static class Length extends SimpleFunction<Long> {
     public Length() {
-      super("length", DataTypes.LongType, ImmutableList.of(DataTypes.StringType));
+      super("length", DataTypes.LongType, ImmutableMap.of("self", DataTypes.DoubleType));
     }
 
     @Override
@@ -20,7 +21,7 @@ public class StringFunctions {
   @Func(doc = "Converts all characters of self to uppercase.")
   public static class Upper extends SimpleFunction<String> {
     public Upper() {
-      super("upper", DataTypes.StringType, ImmutableList.of(DataTypes.StringType));
+      super("upper", DataTypes.StringType, ImmutableMap.of("self", DataTypes.DoubleType));
     }
 
     @Override
@@ -32,7 +33,7 @@ public class StringFunctions {
   @Func(doc = "Converts all characters of self to lowercase.")
   public static class Lower extends SimpleFunction<String> {
     public Lower() {
-      super("lower", DataTypes.StringType, ImmutableList.of(DataTypes.StringType));
+      super("lower", DataTypes.StringType, ImmutableMap.of("self", DataTypes.DoubleType));
     }
 
     @Override
@@ -41,11 +42,11 @@ public class StringFunctions {
     }
   }
 
-  @Func(doc = "Returns the substring of self between startIndex and endIndex.")
+  @Func(doc = "Returns the substring of self between start and end.")
   public static class Substr extends SimpleFunction<String> {
     public Substr() {
       super("substr", DataTypes.StringType,
-          ImmutableList.of(DataTypes.StringType, DataTypes.LongType, DataTypes.LongType));
+          ImmutableMap.of("self", DataTypes.StringType, "start", DataTypes.LongType, "end", DataTypes.LongType));
     }
 
     @Override
@@ -60,7 +61,7 @@ public class StringFunctions {
   public static class Matches extends SimpleFunction<Boolean> {
     public Matches() {
       super("matches", DataTypes.BoolType,
-          ImmutableList.of(DataTypes.StringType, DataTypes.StringType));
+          ImmutableMap.of("self", DataTypes.StringType, "regex", DataTypes.StringType));
     }
 
     @Override
@@ -75,7 +76,7 @@ public class StringFunctions {
   public static class Contains extends SimpleFunction<Boolean> {
     public Contains() {
       super("contains", DataTypes.BoolType,
-          ImmutableList.of(DataTypes.StringType, DataTypes.StringType));
+          ImmutableMap.of("self", DataTypes.StringType, "str", DataTypes.StringType));
     }
 
     @Override
@@ -89,8 +90,10 @@ public class StringFunctions {
   @Func(doc = "Replaces every occurrences of target with replacement in self.")
   public static class Replace extends SimpleFunction<String> {
     public Replace() {
-      super("replace", DataTypes.StringType,
-          ImmutableList.of(DataTypes.StringType, DataTypes.StringType, DataTypes.StringType));
+      super("replace", DataTypes.StringType, ImmutableMap.of(
+          "self", DataTypes.StringType,
+          "target", DataTypes.StringType,
+          "replacement", DataTypes.StringType));
     }
 
     @Override
@@ -105,7 +108,7 @@ public class StringFunctions {
   @Func(doc = "Removes all leading and trailing whitespaces from self.")
   public static class Trim extends SimpleFunction<String> {
     public Trim() {
-      super("trim", DataTypes.StringType, ImmutableList.of(DataTypes.StringType));
+      super("trim", DataTypes.StringType, ImmutableMap.of("self", DataTypes.StringType));
     }
 
     @Override
@@ -118,7 +121,7 @@ public class StringFunctions {
   @Func(doc = "Concatenates self with str.")
   public static class Concat extends SimpleFunction<String> {
     public Concat() {
-      super("concat", DataTypes.StringType, ImmutableList.of(DataTypes.StringType, DataTypes.StringType));
+      super("concat", DataTypes.StringType, ImmutableMap.of("self", DataTypes.StringType, "str", DataTypes.StringType));
     }
 
     @Override
@@ -132,7 +135,7 @@ public class StringFunctions {
   @Func(doc = "Index of the first occurrence of str in self.")
   public static class IndexOf extends SimpleFunction<Long> {
     public IndexOf() {
-      super("index_of", DataTypes.LongType, ImmutableList.of(DataTypes.StringType, DataTypes.StringType));
+      super("index_of", DataTypes.LongType, ImmutableMap.of("self", DataTypes.StringType, "str", DataTypes.StringType));
     }
 
     @Override
@@ -146,7 +149,8 @@ public class StringFunctions {
   @Func(doc = "Index of the last occurrence of str in self.")
   public static class LastIndexOf extends SimpleFunction<Long> {
     public LastIndexOf() {
-      super("last_index_of", DataTypes.LongType, ImmutableList.of(DataTypes.StringType, DataTypes.StringType));
+      super("last_index_of", DataTypes.LongType,
+          ImmutableMap.of("self", DataTypes.StringType, "str", DataTypes.StringType));
     }
 
     @Override

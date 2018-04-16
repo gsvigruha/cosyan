@@ -54,6 +54,7 @@ import com.cosyan.db.model.StringFunctions.Substr;
 import com.cosyan.db.model.StringFunctions.Trim;
 import com.cosyan.db.model.StringFunctions.Upper;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import lombok.Data;
@@ -73,14 +74,18 @@ public class BuiltinFunctions {
   @EqualsAndHashCode(callSuper = false)
   public static abstract class SimpleFunction<T> extends Function {
 
-    private final ImmutableList<DataType<?>> argTypes;
+    private final ImmutableMap<String, DataType<?>> argTypes;
 
     private final DataType<T> returnType;
 
-    public SimpleFunction(String ident, DataType<T> returnType, ImmutableList<DataType<?>> argTypes) {
+    public SimpleFunction(String ident, DataType<T> returnType, ImmutableMap<String, DataType<?>> argTypes) {
       super(ident, false);
       this.argTypes = argTypes;
       this.returnType = returnType;
+    }
+
+    public DataType<?> argType(int i) {
+      return argTypes.values().asList().get(i);
     }
 
     public abstract Object call(ImmutableList<Object> argValues);
