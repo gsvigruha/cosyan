@@ -1,8 +1,8 @@
- * `length(self: float): integer`<br/>
+ * `length(self: varchar): integer`<br/>
    Number of characters in `self`.
- * `upper(self: float): varchar`<br/>
+ * `upper(self: varchar): varchar`<br/>
    Converts all characters of `self` to uppercase.
- * `lower(self: float): varchar`<br/>
+ * `lower(self: varchar): varchar`<br/>
    Converts all characters of `self` to lowercase.
  * `substr(self: varchar, start: integer, end: integer): varchar`<br/>
    Returns the substring of `self` between `start` and `end`.
@@ -21,7 +21,7 @@
  * `last_index_of(self: varchar, str: varchar): integer`<br/>
    Index of the last occurrence of `str` in `self`.
  * `pow(self: float, x: float): float`<br/>
-   Returns the `self` raised to the power of `x`.
+   Returns `self` raised to the power of `x`.
  * `exp(self: float): float`<br/>
    Returns Euler's number raised to the power of `self`.
  * `log(self: float, x: float): float`<br/>

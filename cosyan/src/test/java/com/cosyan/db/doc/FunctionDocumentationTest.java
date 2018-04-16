@@ -12,6 +12,6 @@ public class FunctionDocumentationTest {
 
   @Test
   public void testMathFunctionDocs() {
-    assertEquals("pow(float, float): float\nReturns the first parameter on the power of the second.", doc.documentation(new Power()));
+    assertEquals("pow(float, float): float\nReturns self raised to the power of x.", doc.documentation(new Power()));
   }
 }

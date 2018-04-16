@@ -7,7 +7,7 @@ import com.google.common.collect.ImmutableMap;
 
 public class MathFunctions {
 
-  @Func(doc = "Returns the self raised to the power of x.")
+  @Func(doc = "Returns self raised to the power of x.")
   public static class Power extends SimpleFunction<Double> {
     public Power() {
       super("pow", DataTypes.DoubleType, ImmutableMap.of("self", DataTypes.DoubleType, "x", DataTypes.DoubleType));
