@@ -9,7 +9,7 @@ public class StringFunctions {
   @Func(doc = "Number of characters in self.")
   public static class Length extends SimpleFunction<Long> {
     public Length() {
-      super("length", DataTypes.LongType, ImmutableMap.of("self", DataTypes.DoubleType));
+      super("length", DataTypes.LongType, ImmutableMap.of("self", DataTypes.StringType));
     }
 
     @Override
@@ -21,7 +21,7 @@ public class StringFunctions {
   @Func(doc = "Converts all characters of self to uppercase.")
   public static class Upper extends SimpleFunction<String> {
     public Upper() {
-      super("upper", DataTypes.StringType, ImmutableMap.of("self", DataTypes.DoubleType));
+      super("upper", DataTypes.StringType, ImmutableMap.of("self", DataTypes.StringType));
     }
 
     @Override
@@ -33,7 +33,7 @@ public class StringFunctions {
   @Func(doc = "Converts all characters of self to lowercase.")
   public static class Lower extends SimpleFunction<String> {
     public Lower() {
-      super("lower", DataTypes.StringType, ImmutableMap.of("self", DataTypes.DoubleType));
+      super("lower", DataTypes.StringType, ImmutableMap.of("self", DataTypes.StringType));
     }
 
     @Override
