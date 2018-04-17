@@ -1,7 +1,9 @@
 package com.cosyan.db.model;
 
+import java.util.Date;
 import java.util.HashSet;
 
+import com.cosyan.db.doc.FunctionDocumentation.Func;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
@@ -33,7 +35,7 @@ public class Aggregators {
     public abstract boolean isNull();
   }
 
-  
+  @Func(doc = "Counts the non `null` elements.")
   public static class Count extends AggrFunction {
     public Count() {
       super("count");
@@ -69,6 +71,7 @@ public class Aggregators {
     }
   }
 
+  @Func(doc = "Counts the distinct non `null` elements.")
   public static class CountDistinct extends AggrFunction {
     public CountDistinct() {
       super("count$distinct");
@@ -104,6 +107,7 @@ public class Aggregators {
     }
   }
 
+  @Func(doc = "The maximum of the elements.")
   public static class Max extends AggrFunction {
     public Max() {
       super("max");
@@ -201,12 +205,43 @@ public class Aggregators {
             };
           }
         };
+      } else if (argType == DataTypes.DateType) {
+        return new TypedAggrFunction<Date>(ident, DataTypes.DateType) {
+
+          @Override
+          public Aggregator<Date, Date> create() {
+            return new Aggregator<Date, Date>() {
+
+              private Date max = null;
+
+              @Override
+              public void addImpl(Date x) {
+                if (max == null) {
+                  max = x;
+                } else {
+                  max = max.compareTo(x) < 0 ? x : max;
+                }
+              }
+
+              @Override
+              public Date finishImpl() {
+                return max;
+              }
+
+              @Override
+              public boolean isNull() {
+                return max == null;
+              }
+            };
+          }
+        };
       } else {
         throw new ModelException("Invalid type for max: '" + argType + "'.");
       }
     }
   }
 
+  @Func(doc = "The minimum of the elements.")
   public static class Min extends AggrFunction {
     public Min() {
       super("min");
@@ -294,6 +329,36 @@ public class Aggregators {
 
               @Override
               public String finishImpl() {
+                return min;
+              }
+
+              @Override
+              public boolean isNull() {
+                return min == null;
+              }
+            };
+          }
+        };
+      } else if (argType == DataTypes.DateType) {
+        return new TypedAggrFunction<Date>(ident, DataTypes.DateType) {
+
+          @Override
+          public Aggregator<Date, Date> create() {
+            return new Aggregator<Date, Date>() {
+
+              private Date min = null;
+
+              @Override
+              public void addImpl(Date x) {
+                if (min == null) {
+                  min = x;
+                } else {
+                  min = min.compareTo(x) > 0 ? x : min;
+                }
+              }
+
+              @Override
+              public Date finishImpl() {
                 return min;
               }
 

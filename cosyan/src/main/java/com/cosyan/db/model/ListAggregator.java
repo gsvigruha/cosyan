@@ -4,12 +4,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 
+import com.cosyan.db.doc.FunctionDocumentation.Func;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Aggregators.Aggregator;
 import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
 
+@Func(doc = "Aggregates the elements into a list.")
 public class ListAggregator extends AggrFunction {
   public ListAggregator() {
     super("list");

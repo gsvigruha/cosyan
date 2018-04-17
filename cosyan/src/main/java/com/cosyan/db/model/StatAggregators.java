@@ -1,5 +1,6 @@
 package com.cosyan.db.model;
 
+import com.cosyan.db.doc.FunctionDocumentation.Func;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Aggregators.Aggregator;
 import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
@@ -8,6 +9,8 @@ import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.StatAggregators.Skewness.SkewnessAggregator;
 
 public class StatAggregators {
+
+  @Func(doc = "The sum of the elements.")
   public static class Sum extends AggrFunction {
     public Sum() {
       super("sum");
@@ -81,6 +84,7 @@ public class StatAggregators {
     }
   }
 
+  @Func(doc = "The average of the elements.")
   public static class Avg extends AggrFunction {
     public Avg() {
       super("avg");
@@ -197,6 +201,7 @@ public class StatAggregators {
     }
   }
 
+  @Func(doc = "The sample standard deviation of the elements.")
   public static class StdDev extends AggrFunction {
     public static abstract class StdDevSampleAggregator<T> extends StdDevAggregator<T> {
       @Override
@@ -243,6 +248,7 @@ public class StatAggregators {
     }
   }
 
+  @Func(doc = "The population standard deviation of the elements.")
   public static class StdDevPop extends AggrFunction {
     public static abstract class StdDevPopAggregator<T> extends StdDevAggregator<T> {
       @Override
@@ -289,6 +295,7 @@ public class StatAggregators {
     }
   }
 
+  @Func(doc = "The sample skewness of the elements.")
   public static class Skewness extends AggrFunction {
     public static abstract class SkewnessAggregator<T> extends StdDevAggregator<T> {
 
@@ -354,6 +361,7 @@ public class StatAggregators {
     }
   }
 
+  @Func(doc = "The sample kurtosis of the elements.")
   public static class Kurtosis extends AggrFunction {
     public static abstract class KurtosisAggregator<T> extends SkewnessAggregator<T> {
 
