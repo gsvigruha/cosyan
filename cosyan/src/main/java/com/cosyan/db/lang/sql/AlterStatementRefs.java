@@ -38,7 +38,7 @@ public class AlterStatementRefs {
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
       if (!tableMeta.isEmpty()) {
-        throw new ModelException(String.format("Cannot add ref to a non-empty table."));
+        throw new ModelException(String.format("Cannot add ref to a non-empty table."), this);
       }
       ReferencedMultiTableMeta srcTableMeta = (ReferencedMultiTableMeta) ref.getSelect().getTable()
           .compile(tableMeta.reader());
@@ -54,7 +54,7 @@ public class AlterStatementRefs {
               derivedTable,
               TableMeta.wholeTableKeys));
       // Columns have aggregations, recompile with an AggrTable.
-      TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
+      TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns(), this);
       RefTableMeta refTableMeta = new RefTableMeta(
           aggrTable, tableColumns.getColumns(), srcTableMeta.getReverseForeignKey());
       tableMeta.addRef(new TableRef(ref.getName(), refTableMeta));

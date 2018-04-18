@@ -88,7 +88,7 @@ public class JoinTables {
       boolean presentInLeftTable = leftTable.hasColumn(ident);
       boolean presentInRightTable = rightTable.hasColumn(ident);
       if (presentInLeftTable && presentInRightTable) {
-        throw new ModelException("Ambiguous column reference '" + ident + "'.");
+        throw new ModelException("Ambiguous column reference '" + ident + "'.", ident);
       }
       if (presentInLeftTable) {
         return leftTable.getColumn(ident).shift(this, 0);
@@ -96,7 +96,7 @@ public class JoinTables {
       if (presentInRightTable) {
         return rightTable.getColumn(ident).shift(this, leftTable.columnNames().size());
       }
-      throw new ModelException("Column '" + ident + "' not found in table.");
+      throw new ModelException("Column '" + ident + "' not found in table.", ident);
     }
 
     @Override
@@ -104,7 +104,7 @@ public class JoinTables {
       boolean presentInLeftTable = leftTable.hasTable(ident);
       boolean presentInRightTable = rightTable.hasTable(ident);
       if (presentInLeftTable && presentInRightTable) {
-        throw new ModelException("Ambiguous table reference '" + ident + "'.");
+        throw new ModelException("Ambiguous table reference '" + ident + "'.", ident);
       }
       if (presentInLeftTable) {
         return new ShiftedTableMeta(this, leftTable.getRefTable(ident), 0);
@@ -112,7 +112,7 @@ public class JoinTables {
       if (presentInRightTable) {
         return new ShiftedTableMeta(this, rightTable.getRefTable(ident), leftTable.columnNames().size());
       }
-      throw new ModelException("Table reference '" + ident + "' not found.");
+      throw new ModelException("Table reference '" + ident + "' not found.", ident);
     }
 
     @Override

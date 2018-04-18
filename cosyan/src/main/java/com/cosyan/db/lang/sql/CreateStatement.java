@@ -46,7 +46,7 @@ public class CreateStatement {
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       if (metaRepo.hasTable(name)) {
-        throw new ModelException(String.format("Table '%s' already exists.", name));
+        throw new ModelException(String.format("Table '%s' already exists.", name), this);
       }
 
       Optional<PrimaryKey> primaryKey = Optional.empty();
@@ -63,7 +63,7 @@ public class CreateStatement {
             column.isImmutable() || column.getType() == DataTypes.IDType);
         if (column.getType() == DataTypes.IDType) {
           if (i != 0) {
-            throw new ModelException(String.format("The ID column '%s' has to be the first one.", column.getName()));
+            throw new ModelException(String.format("The ID column '%s' has to be the first one.", column.getName()), column);
           }
           basicColumn.setNullable(false);
           basicColumn.setUnique(true);
@@ -74,17 +74,6 @@ public class CreateStatement {
         i++;
       }
 
-      for (BasicColumn column : columns.values()) {
-        if (column.isUnique()) {
-          if (column.getType() != DataTypes.StringType
-              && column.getType() != DataTypes.LongType
-              && column.getType() != DataTypes.IDType) {
-            throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
-                ", " + DataTypes.LongType + " and " + DataTypes.IDType + " types, not " + column.getType() + ".");
-          }
-        }
-      }
-
       for (ConstraintDefinition constraint : constraints) {
         if (constraint instanceof PrimaryKeyDefinition) {
           if (!primaryKey.isPresent()) {
@@ -92,7 +81,7 @@ public class CreateStatement {
             String pkColumnName = primaryKeyDefinition.getKeyColumn().getString();
             if (!columns.containsKey(pkColumnName)) {
               throw new ModelException(
-                  String.format("Invalid primary key definition: column '%s' not found.", pkColumnName));
+                  String.format("Invalid primary key definition: column '%s' not found.", pkColumnName), primaryKeyDefinition);
             }
             BasicColumn keyColumn = columns.get(pkColumnName);
             keyColumn.setNullable(false);
@@ -100,7 +89,7 @@ public class CreateStatement {
             keyColumn.setIndexed(true);
             primaryKey = Optional.of(new PrimaryKey(primaryKeyDefinition.getName(), keyColumn));
           } else {
-            throw new ModelException("There can only be one primary key.");
+            throw new ModelException("There can only be one primary key.", this);
           }
         }
       }
@@ -116,9 +105,9 @@ public class CreateStatement {
       for (BasicColumn column : columns.values()) {
         if (column.isIndexed()) {
           if (column.isUnique()) {
-            metaRepo.registerUniqueIndex(tableMeta, column);
+            metaRepo.registerUniqueIndex(tableMeta, column, this);
           } else {
-            metaRepo.registerMultiIndex(tableMeta, column);
+            metaRepo.registerMultiIndex(tableMeta, column, this);
           }
         }
       }
@@ -149,7 +138,7 @@ public class CreateStatement {
         } else if (constraint instanceof PrimaryKeyDefinition) {
           // Pass.
         } else {
-          throw new ModelException(String.format("Invalid constraint %s.", constraint));
+          throw new ModelException(String.format("Invalid constraint %s.", constraint), (Node) constraint);
         }
       }
 
@@ -160,13 +149,13 @@ public class CreateStatement {
         if (foreignKeyDefinition.getRefColumn().isPresent()
             && !foreignKeyDefinition.getRefColumn().get().getString().equals(refColumn.getName())) {
           throw new ModelException(
-              "Foreign key reference column has to be the primary key column of the referenced table.");
+              "Foreign key reference column has to be the primary key column of the referenced table.", foreignKeyDefinition);
         }
         if (keyColumn.getType() != refColumn.getType()
             && !(keyColumn.getType() == DataTypes.LongType && refColumn.getType() == DataTypes.IDType)) {
           throw new ModelException(
               String.format("Foreign key reference column has type '%s' while key column has type '%s'.",
-                  refColumn.getType(), keyColumn.getType()));
+                  refColumn.getType(), keyColumn.getType()), foreignKeyDefinition);
         }
         assert refColumn.isUnique() && !refColumn.isNullable();
         // Unique keys are indexed by default, so no need to change refColumn.
@@ -183,7 +172,7 @@ public class CreateStatement {
       for (RuleDefinition ruleDefinition : ruleDefinitions) {
         Rule rule = ruleDefinition.compile(tableMeta);
         if (rule.getType() != DataTypes.BoolType) {
-          throw new ModelException("Constraint expression has to be boolean.");
+          throw new ModelException("Constraint expression has to be boolean.", ruleDefinition);
         }
         tableMeta.addRule(rule.toBooleanRule());
       }
@@ -260,9 +249,9 @@ public class CreateStatement {
       BasicColumn column = tableMeta.column(this.column);
       if (column.isIndexed()) {
         throw new ModelException(String.format("Cannot create index on '%s.%s', column is already indexed.",
-            tableMeta.tableName(), column.getName()));
+            tableMeta.tableName(), column.getName()), this);
       }
-      metaRepo.registerMultiIndex(tableMeta, column);
+      metaRepo.registerMultiIndex(tableMeta, column, this);
       column.setIndexed(true);
       return new MetaStatementResult();
     }

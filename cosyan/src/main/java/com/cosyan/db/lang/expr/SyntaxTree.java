@@ -38,13 +38,21 @@ public class SyntaxTree {
 
   public static interface MetaStatement {
 
-    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IndexException, IOException, GrantException;
+    public Result execute(MetaRepo metaRepo, AuthToken authToken)
+        throws ModelException, IndexException, IOException, GrantException;
   }
 
   public static void assertType(DataType<?> expectedType, DataType<?> dataType) throws ModelException {
     if (expectedType != dataType) {
       throw new ModelException(
           "Data type " + dataType + " did not match expected type " + expectedType + ".");
+    }
+  }
+
+  public static void assertType(DataType<?> expectedType, DataType<?> dataType, Node node) throws ModelException {
+    if (expectedType != dataType) {
+      throw new ModelException(
+          "Data type " + dataType + " did not match expected type " + expectedType + ".", node);
     }
   }
 }

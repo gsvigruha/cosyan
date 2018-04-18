@@ -207,17 +207,19 @@ public class BuiltinFunctions {
     }
   }
 
-  public static SimpleFunction<?> simpleFunction(String ident) throws ModelException {
-    if (!simpleFunctions.containsKey(ident)) {
-      throw new ModelException("Function " + ident + " does not exist.");
+  public static SimpleFunction<?> simpleFunction(Ident ident) throws ModelException {
+    String name = ident.getString();
+    if (!simpleFunctions.containsKey(name)) {
+      throw new ModelException("Function " + name + " does not exist.", ident);
     }
-    return simpleFunctions.get(ident);
+    return simpleFunctions.get(name);
   }
 
-  public static TypedAggrFunction<?> aggrFunction(String ident, DataType<?> argType) throws ModelException {
-    if (!aggrFunctions.containsKey(ident)) {
-      throw new ModelException("Function " + ident + " does not exist.");
+  public static TypedAggrFunction<?> aggrFunction(Ident ident, DataType<?> argType) throws ModelException {
+    String name = ident.getString();
+    if (!aggrFunctions.containsKey(name)) {
+      throw new ModelException("Function " + name + " does not exist.", ident);
     }
-    return aggrFunctions.get(ident).compile(argType);
+    return aggrFunctions.get(name).compile(argType);
   }
 }

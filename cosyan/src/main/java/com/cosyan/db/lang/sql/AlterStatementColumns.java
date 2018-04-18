@@ -32,12 +32,12 @@ public class AlterStatementColumns {
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       if (!column.isNullable()) {
         throw new ModelException(
-            String.format("Cannot add column '%s', new columns have to be nullable.", column.getName()));
+            String.format("Cannot add column '%s', new columns have to be nullable.", column.getName()), this);
       }
       MaterializedTableMeta tableMeta = metaRepo.table(table);
       if (tableMeta.hasColumn(new Ident(column.getName()))) {
         throw new ModelException(
-            String.format("Cannot add column '%s', column with the same name already exists.", column.getName()));
+            String.format("Cannot add column '%s', column with the same name already exists.", column.getName()), this);
       }
       BasicColumn basicColumn = new BasicColumn(
           tableMeta.columns().size(),
@@ -50,9 +50,9 @@ public class AlterStatementColumns {
       tableMeta.addColumn(basicColumn);
       if (basicColumn.isIndexed()) {
         if (basicColumn.isUnique()) {
-          metaRepo.registerUniqueIndex(tableMeta, basicColumn);
+          metaRepo.registerUniqueIndex(tableMeta, basicColumn, this);
         } else {
-          metaRepo.registerMultiIndex(tableMeta, basicColumn);
+          metaRepo.registerMultiIndex(tableMeta, basicColumn, this);
         }
       }
       return new MetaStatementResult();
@@ -76,19 +76,19 @@ public class AlterStatementColumns {
             rule.reCompile(tableMeta);
           } catch (ModelException e) {
             throw new ModelException(String.format(
-                "Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()));
+                "Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()), this);
           }
         }
         for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
           if (foreignKey.getColumn().getName().equals(basicColumn.getName())) {
             throw new ModelException(String.format(
-                "Cannot drop column '%s', it is used by foreign key '%s'.", column, foreignKey));
+                "Cannot drop column '%s', it is used by foreign key '%s'.", column, foreignKey), this);
           }
         }
         for (ReverseForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
           if (foreignKey.getColumn().getName().equals(basicColumn.getName())) {
             throw new ModelException(String.format(
-                "Cannot drop column '%s', it is used by reverse foreign key '%s'.", column, foreignKey));
+                "Cannot drop column '%s', it is used by reverse foreign key '%s'.", column, foreignKey), this);
           }
         }
       } finally {
@@ -117,20 +117,20 @@ public class AlterStatementColumns {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
       if (!tableMeta.hasColumn(new Ident(column.getName()))) {
         throw new ModelException(
-            String.format("Cannot alter column '%s', column does not exist.", column.getName()));
+            String.format("Cannot alter column '%s', column does not exist.", column.getName()), this);
       }
       BasicColumn originalColumn = tableMeta.column(new Ident(column.getName()));
       if (originalColumn.getType() != column.getType()) {
         throw new ModelException(
-            String.format("Cannot alter column '%s', type has to remain the same.", column.getName()));
+            String.format("Cannot alter column '%s', type has to remain the same.", column.getName()), this);
       }
       if (originalColumn.isNullable() && !column.isNullable()) {
         throw new ModelException(
-            String.format("Cannot alter column '%s', column has to remain nullable.", column.getName()));
+            String.format("Cannot alter column '%s', column has to remain nullable.", column.getName()), this);
       }
       if (!originalColumn.isUnique() && column.isUnique()) {
         throw new ModelException(
-            String.format("Cannot alter column '%s', column cannot be unique.", column.getName()));
+            String.format("Cannot alter column '%s', column cannot be unique.", column.getName()), this);
       }
       if (originalColumn.isUnique() && !column.isUnique()) {
         originalColumn.setIndexed(false);

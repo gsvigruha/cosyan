@@ -635,17 +635,20 @@ public class Parser implements IParser {
       return parsePrimary(tokens);
     } else if (tokens.peek().is(Tokens.NOT)
         && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.NOT)) {
-      return new UnaryExpression(tokens.next(), parseExpression(tokens, precedence + 1));
+      tokens.next();
+      return new UnaryExpression(UnaryExpression.Type.NOT, parseExpression(tokens, precedence + 1));
     } else {
       Expression primary = parseExpression(tokens, precedence + 1);
       if (!tokens.hasNext()) {
         return primary;
       }
       if (tokens.peek().is(Tokens.ASC) && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.ASC)) {
-        return new UnaryExpression(tokens.next(), primary);
+        tokens.next();
+        return new UnaryExpression(UnaryExpression.Type.ASC, primary);
       } else if (tokens.peek().is(Tokens.DESC)
           && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.DESC)) {
-        return new UnaryExpression(tokens.next(), primary);
+        tokens.next();
+        return new UnaryExpression(UnaryExpression.Type.DESC, primary);
       } else if (tokens.peek().is(Tokens.IS)
           && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.IS)) {
         tokens.next();
@@ -657,8 +660,7 @@ public class Parser implements IParser {
           not = false;
         }
         assertNext(tokens, Tokens.NULL);
-        return new UnaryExpression(
-            not ? Token.concat(Tokens.IS, Tokens.NOT, Tokens.NULL) : Token.concat(Tokens.IS, Tokens.NULL), primary);
+        return new UnaryExpression(not ? UnaryExpression.Type.IS_NOT_NULL : UnaryExpression.Type.IS_NULL, primary);
       } else {
         return parseBinaryExpression(primary, tokens, precedence);
       }

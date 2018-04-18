@@ -32,9 +32,9 @@ import lombok.EqualsAndHashCode;
 
 public class UpdateStatement {
 
-  public static void check(DataType<?> columnType, DataType<?> exprType) throws ModelException {
+  public static void check(DataType<?> columnType, DataType<?> exprType, Node node) throws ModelException {
     if (exprType != DataTypes.NULL && columnType != exprType) {
-      throw new ModelException(String.format("Expected '%s' but got '%s'.", columnType, exprType));
+      throw new ModelException(String.format("Expected '%s' but got '%s'.", columnType, exprType), node);
     }
   }
 
@@ -66,7 +66,7 @@ public class UpdateStatement {
         BasicColumn column = materializedTableMeta.column(update.getIdent());
         if (column.isImmutable()) {
           throw new ModelException(String.format(
-              "Column '%s.%s' is immutable.", materializedTableMeta.tableName(), column.getName()));
+              "Column '%s.%s' is immutable.", materializedTableMeta.tableName(), column.getName()), this);
         }
         ColumnMeta columnExpr = update.getValue().compileColumn(tableMeta);
         columnExprsBuilder.put(tableMeta.column(update.getIdent()).index(), columnExpr);
@@ -74,7 +74,8 @@ public class UpdateStatement {
       columnExprs = columnExprsBuilder.build();
       for (Map.Entry<Integer, ColumnMeta> entry : columnExprs.entrySet()) {
         check(tableMeta.tableMeta().allColumns().get(entry.getKey()).getType(),
-            entry.getValue().getType());
+            entry.getValue().getType(),
+            this);
       }
       if (where.isPresent()) {
         whereColumn = where.get().compileColumn(tableMeta);

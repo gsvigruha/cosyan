@@ -80,7 +80,7 @@ public class ParserTest {
         ImmutableList.of(new AsteriskExpression()),
         new TableRef(new Ident("table")),
         Optional.of(new BinaryExpression(
-            new Token("="),
+            new Token("=", null),
             FuncCallExpression.of(new Ident("a")),
             new LongLiteral(1L))),
         Optional.empty(),
@@ -112,13 +112,13 @@ public class ParserTest {
         ImmutableList.of(
             FuncCallExpression.of(new Ident("a")),
             new BinaryExpression(
-                new Token("+"),
+                new Token("+", null),
                 FuncCallExpression.of(new Ident("b")),
                 new LongLiteral(1L)),
             new BinaryExpression(
-                new Token(">"),
+                new Token(">", null),
                 new BinaryExpression(
-                    new Token("*"),
+                    new Token("*", null),
                     FuncCallExpression.of(new Ident("c")),
                     new DoubleLiteral(2.0)),
                 new DoubleLiteral(3.0))),
@@ -138,7 +138,7 @@ public class ParserTest {
   public void testExpr() throws ParserException {
     Expression expr = parseExpression("a = 1;");
     assertEquals(expr, new BinaryExpression(
-        new Token("="),
+        new Token("=", null),
         FuncCallExpression.of(new Ident("a")),
         new LongLiteral(1L)));
     assertEquals("(a = 1)", expr.print());
@@ -148,9 +148,9 @@ public class ParserTest {
   public void testExprPrecedence1() throws ParserException {
     Expression expr = parseExpression("a and b or c;");
     assertEquals(expr, new BinaryExpression(
-        new Token("or"),
+        new Token("or", null),
         new BinaryExpression(
-            new Token("and"),
+            new Token("and", null),
             FuncCallExpression.of(new Ident("a")),
             FuncCallExpression.of(new Ident("b"))),
         FuncCallExpression.of(new Ident("c"))));
@@ -161,10 +161,10 @@ public class ParserTest {
   public void testExprPrecedence2() throws ParserException {
     Expression expr = parseExpression("a or b and c;");
     assertEquals(expr, new BinaryExpression(
-        new Token("or"),
+        new Token("or", null),
         FuncCallExpression.of(new Ident("a")),
         new BinaryExpression(
-            new Token("and"),
+            new Token("and", null),
             FuncCallExpression.of(new Ident("b")),
             FuncCallExpression.of(new Ident("c")))));
     assertEquals("(a or (b and c))", expr.print());
@@ -174,9 +174,9 @@ public class ParserTest {
   public void testExprParentheses1() throws ParserException {
     Expression expr = parseExpression("(a or b) and c;");
     assertEquals(expr, new BinaryExpression(
-        new Token("and"),
+        new Token("and", null),
         new BinaryExpression(
-            new Token("or"),
+            new Token("or", null),
             FuncCallExpression.of(new Ident("a")),
             FuncCallExpression.of(new Ident("b"))),
         FuncCallExpression.of(new Ident("c"))));
@@ -187,10 +187,10 @@ public class ParserTest {
   public void testExprParentheses2() throws ParserException {
     Expression expr = parseExpression("a and (b or c);");
     assertEquals(expr, new BinaryExpression(
-        new Token("and"),
+        new Token("and", null),
         FuncCallExpression.of(new Ident("a")),
         new BinaryExpression(
-            new Token("or"),
+            new Token("or", null),
             FuncCallExpression.of(new Ident("b")),
             FuncCallExpression.of(new Ident("c")))));
     assertEquals("(a and (b or c))", expr.print());
@@ -200,9 +200,9 @@ public class ParserTest {
   public void testExprLogical() throws ParserException {
     Expression expr = parseExpression("a > 1 or c;");
     assertEquals(expr, new BinaryExpression(
-        new Token("or"),
+        new Token("or", null),
         new BinaryExpression(
-            new Token(">"),
+            new Token(">", null),
             FuncCallExpression.of(new Ident("a")),
             new LongLiteral(1L)),
         FuncCallExpression.of(new Ident("c"))));
@@ -213,7 +213,7 @@ public class ParserTest {
   public void testExprFuncCall() throws ParserException {
     Expression expr = parseExpression("a and f(b);");
     assertEquals(expr, new BinaryExpression(
-        new Token("and"),
+        new Token("and", null),
         FuncCallExpression.of(new Ident("a")),
         new FuncCallExpression(new Ident("f"), null, ImmutableList.of(FuncCallExpression.of(new Ident("b"))))));
     assertEquals("(a and f(b))", expr.print());
@@ -241,7 +241,7 @@ public class ParserTest {
   public void testExprNot() throws ParserException {
     Expression expr = parseExpression("not a;");
     assertEquals(expr, new UnaryExpression(
-        new Token(Tokens.NOT),
+        UnaryExpression.Type.NOT,
         FuncCallExpression.of(new Ident("a"))));
     assertEquals("not a", expr.print());
   }
@@ -250,9 +250,9 @@ public class ParserTest {
   public void testExprNotInBinary() throws ParserException {
     Expression expr = parseExpression("not a and not b;");
     assertEquals(expr, new BinaryExpression(
-        new Token("and"),
-        new UnaryExpression(new Token(Tokens.NOT), FuncCallExpression.of(new Ident("a"))),
-        new UnaryExpression(new Token(Tokens.NOT), FuncCallExpression.of(new Ident("b")))));
+        new Token("and", null),
+        new UnaryExpression(UnaryExpression.Type.NOT, FuncCallExpression.of(new Ident("a"))),
+        new UnaryExpression(UnaryExpression.Type.NOT, FuncCallExpression.of(new Ident("b")))));
     assertEquals("(not a and not b)", expr.print());
   }
 
@@ -260,9 +260,9 @@ public class ParserTest {
   public void testExprNotWithLogical() throws ParserException {
     Expression expr = parseExpression("not a = 'x';");
     assertEquals(expr, new UnaryExpression(
-        new Token(Tokens.NOT),
+        UnaryExpression.Type.NOT,
         new BinaryExpression(
-            new Token("="),
+            new Token("=", null),
             FuncCallExpression.of(new Ident("a")),
             new StringLiteral("x"))));
     assertEquals("not (a = 'x')", expr.print());

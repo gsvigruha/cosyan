@@ -3,8 +3,6 @@ package com.cosyan.db.lang.expr;
 import java.io.IOException;
 
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
-import com.cosyan.db.lang.sql.Tokens;
-import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
@@ -38,12 +36,17 @@ public abstract class Expression extends Node {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class UnaryExpression extends Expression {
-    private final Token token;
+
+    public static enum Type {
+      NOT, ASC, DESC, IS_NULL, IS_NOT_NULL
+    }
+
+    private final Type type;
     private final Expression expr;
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
-      if (token.is(Tokens.NOT)) {
+      if (type == Type.NOT) {
         ColumnMeta exprColumn = expr.compileColumn(sourceTable);
         SyntaxTree.assertType(DataTypes.BoolType, exprColumn.getType());
         return new DerivedColumnWithDeps(
@@ -61,13 +64,13 @@ public abstract class Expression extends Node {
             return "not " + exprColumn.print(values, resources);
           }
         };
-      } else if (token.is(Tokens.ASC)) {
+      } else if (type == Type.ASC) {
         ColumnMeta exprColumn = expr.compileColumn(sourceTable);
         return new OrderColumn(exprColumn, true);
-      } else if (token.is(Tokens.DESC)) {
+      } else if (type == Type.DESC) {
         ColumnMeta exprColumn = expr.compileColumn(sourceTable);
         return new OrderColumn(exprColumn, false);
-      } else if (token.is(Token.concat(Tokens.IS, Tokens.NOT, Tokens.NULL).getString())) {
+      } else if (type == Type.IS_NOT_NULL) {
         ColumnMeta exprColumn = expr.compileColumn(sourceTable);
         return new DerivedColumnWithDeps(
             DataTypes.BoolType,
@@ -84,7 +87,7 @@ public abstract class Expression extends Node {
             return exprColumn.print(values, resources) + " is not null";
           }
         };
-      } else if (token.is(Token.concat(Tokens.IS, Tokens.NULL).getString())) {
+      } else if (type == Type.IS_NULL) {
         ColumnMeta exprColumn = expr.compileColumn(sourceTable);
         return new DerivedColumnWithDeps(
             DataTypes.BoolType,
@@ -108,7 +111,7 @@ public abstract class Expression extends Node {
 
     @Override
     public String print() {
-      return token.getString() + " " + expr.print();
+      return type.name().toLowerCase() + " " + expr.print();
     }
   }
 }

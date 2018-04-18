@@ -23,6 +23,7 @@ import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
+import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lock.LockManager;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.Grants.GrantToken;
@@ -179,7 +180,8 @@ public class MetaRepo implements TableProvider {
     return tables.containsKey(tableName);
   }
 
-  public void registerUniqueIndex(MaterializedTableMeta table, BasicColumn column) throws ModelException, IOException {
+  public void registerUniqueIndex(MaterializedTableMeta table, BasicColumn column, Node node)
+      throws ModelException, IOException {
     String indexName = table.tableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
     assert !uniqueIndexes.containsKey(indexName);
@@ -195,14 +197,15 @@ public class MetaRepo implements TableProvider {
         lockManager.registerLock(indexName);
       } else {
         throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
-            " and " + DataTypes.LongType + " types, not " + column.getType() + ".");
+            ", " + DataTypes.LongType + " and " + DataTypes.IDType + " types, not " + column.getType() + ".", node);
       }
     } else {
-      throw new ModelException("Column " + column.getName() + " is not unique.");
+      throw new ModelException("Column " + column.getName() + " is not unique.", node);
     }
   }
 
-  public void registerMultiIndex(MaterializedTableMeta table, BasicColumn column) throws ModelException, IOException {
+  public void registerMultiIndex(MaterializedTableMeta table, BasicColumn column, Node node)
+      throws ModelException, IOException {
     String indexName = table.tableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
     assert !multiIndexes.containsKey(indexName);
@@ -213,8 +216,8 @@ public class MetaRepo implements TableProvider {
       multiIndexes.put(indexName, new LongTableMultiIndex(new LongMultiIndex(path)));
       lockManager.registerLock(indexName);
     } else {
-      throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
-          " and " + DataTypes.LongType + " types, not " + column.getType() + ".");
+      throw new ModelException("Multi indexes are only supported for " + DataTypes.StringType +
+          ", " + DataTypes.LongType + " and " + DataTypes.IDType + " types, not " + column.getType() + ".", node);
     }
   }
 
@@ -295,6 +298,14 @@ public class MetaRepo implements TableProvider {
 
   public static class ModelException extends Exception {
     private static final long serialVersionUID = 1L;
+
+    public ModelException(String msg, Node node) {
+      super(msg);
+    }
+
+    public ModelException(String msg, Ident ident) {
+      super(msg);
+    }
 
     public ModelException(String msg) {
       super(msg);

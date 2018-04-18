@@ -1,6 +1,5 @@
 package com.cosyan.db.lang.sql;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -277,12 +276,39 @@ public class Tokens {
   }
 
   @Data
+  public static class Loc {
+    private final int start;
+    private final int end;
+
+  }
+
+  @Data
   public static class Token {
     private final String string;
+    private final Loc loc;
+
+    public Token(String string, Loc loc) {
+      this.string = string;
+      this.loc = loc;
+    }
 
     @Override
     public String toString() {
       return string;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      if (other instanceof Token) {
+        return string.equals(((Token) other).string);
+      } else {
+        return false;
+      }
+    }
+
+    @Override
+    public int hashCode() {
+      return string.hashCode();
     }
 
     public boolean is(char c) {
@@ -291,10 +317,6 @@ public class Tokens {
 
     public boolean is(String s) {
       return string.equals(s);
-    }
-
-    public static Token concat(String... tokens) {
-      return new Token(Joiner.on(" ").join(tokens));
     }
 
     public boolean isString() {
@@ -319,8 +341,13 @@ public class Tokens {
   }
 
   public static class StringToken extends Token {
-    public StringToken(String string) {
-      super(string);
+
+    public StringToken(String original, int start, int end) {
+      super(original.substring(start, end), new Loc(start, end));
+    }
+
+    public StringToken(String string, Loc loc) {
+      super(string, loc);
     }
 
     @Override
@@ -330,8 +357,13 @@ public class Tokens {
   }
 
   public static class IntToken extends Token {
-    public IntToken(String string) {
-      super(string);
+
+    public IntToken(String original, int start, int end) {
+      super(original.substring(start, end), new Loc(start, end));
+    }
+
+    public IntToken(String string, Loc loc) {
+      super(string, loc);
     }
 
     @Override
@@ -341,8 +373,13 @@ public class Tokens {
   }
 
   public static class FloatToken extends Token {
-    public FloatToken(String string) {
-      super(string);
+
+    public FloatToken(String original, int start, int end) {
+      super(original.substring(start, end), new Loc(start, end));
+    }
+
+    public FloatToken(String string, Loc loc) {
+      super(string, loc);
     }
 
     @Override
@@ -352,8 +389,8 @@ public class Tokens {
   }
 
   public static class BooleanToken extends Token {
-    public BooleanToken(String string) {
-      super(string);
+    public BooleanToken(String string, Loc loc) {
+      super(string, loc);
     }
 
     @Override
@@ -363,8 +400,8 @@ public class Tokens {
   }
 
   public static class IdentToken extends Token {
-    public IdentToken(String string) {
-      super(string);
+    public IdentToken(String string, Loc loc) {
+      super(string, loc);
     }
 
     @Override

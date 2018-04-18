@@ -56,7 +56,7 @@ public class InsertIntoStatement {
           BasicColumn column = tableMeta.column(ident);
           if (column.getType() == DataTypes.NULL) {
             throw new ModelException(
-                String.format("Cannot specify value for ID type column '%s' directly.", column.getName()));
+                String.format("Cannot specify value for ID type column '%s' directly.", column.getName()), this);
           }
           indexesBuilder.put(ident, column.getIndex());
         }

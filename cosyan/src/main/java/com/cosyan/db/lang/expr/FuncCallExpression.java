@@ -60,7 +60,7 @@ public class FuncCallExpression extends Expression {
 
   private DerivedColumnWithDeps simpleFunction(TableMeta sourceTable, @Nullable ColumnMeta objColumn)
       throws ModelException {
-    SimpleFunction<?> function = BuiltinFunctions.simpleFunction(ident.getString());
+    SimpleFunction<?> function = BuiltinFunctions.simpleFunction(ident);
     ImmutableList.Builder<ColumnMeta> argColumnsBuilder = ImmutableList.builder();
     if (objColumn != null) {
       argColumnsBuilder.add(objColumn);
@@ -69,14 +69,13 @@ public class FuncCallExpression extends Expression {
     for (int i = 0; i < args.size(); i++) {
       ColumnMeta col = args.get(i).compileColumn(sourceTable);
       argColumnsBuilder.add(col);
-      // tableDependencies.add(col.tableDependencies());
     }
 
     MetaResources resources = MetaResources.empty();
     ImmutableList<ColumnMeta> argColumns = argColumnsBuilder.build();
     if (function.getArgTypes().size() != argColumns.size()) {
       throw new ModelException(String.format("Expected %s columns for function '%s' but got %s.",
-          function.getArgTypes().size(), ident.getString(), argColumns.size()));
+          function.getArgTypes().size(), ident.getString(), argColumns.size()), ident);
     }
     for (int i = 0; i < function.getArgTypes().size(); i++) {
       DataType<?> expectedType = function.argType(i);
@@ -123,13 +122,13 @@ public class FuncCallExpression extends Expression {
   private AggrColumn aggrFunction(TableMeta sourceTable, Expression arg)
       throws ModelException {
     if (!(sourceTable instanceof AggrTables)) {
-      throw new NotAggrTableException();
+      throw new NotAggrTableException(this);
     }
     AggrTables aggrTable = (AggrTables) sourceTable;
     KeyValueTableMeta keyValueTableMeta = aggrTable.sourceTable();
     int shift = keyValueTableMeta.getKeyColumns().size();
     ColumnMeta argColumn = arg.compileColumn(keyValueTableMeta.getSourceTable());
-    final TypedAggrFunction<?> function = BuiltinFunctions.aggrFunction(ident.getString(), argColumn.getType());
+    final TypedAggrFunction<?> function = BuiltinFunctions.aggrFunction(ident, argColumn.getType());
     AggrColumn aggrColumn = new AggrColumn(
         aggrTable,
         function.getReturnType(),
@@ -153,7 +152,7 @@ public class FuncCallExpression extends Expression {
       } else {
         if (isAggr()) {
           if (args.size() != 1) {
-            throw new ModelException("Invalid number of arguments for aggregator: " + args.size() + ".");
+            throw new ModelException("Invalid number of arguments for aggregator: " + args.size() + ".", ident);
           }
           return aggrFunction(sourceTable, Iterables.getOnlyElement(args));
         } else {
@@ -163,7 +162,7 @@ public class FuncCallExpression extends Expression {
     } else {
       if (isAggr()) {
         if (args.size() > 0) {
-          throw new ModelException("Invalid number of arguments for aggregator: " + args.size() + ".");
+          throw new ModelException("Invalid number of arguments for aggregator: " + args.size() + ".", ident);
         }
         return aggrFunction(sourceTable, object);
       } else { // Not aggregator.
@@ -183,7 +182,7 @@ public class FuncCallExpression extends Expression {
         }
       }
     }
-    throw new ModelException(String.format("Invalid identifier '%s'.", ident.getString()));
+    throw new ModelException(String.format("Invalid identifier '%s'.", ident.getString()), ident);
   }
 
   @Override

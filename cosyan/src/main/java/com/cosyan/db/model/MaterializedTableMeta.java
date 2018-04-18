@@ -163,7 +163,7 @@ public class MaterializedTableMeta {
 
   public BasicColumn column(Ident ident) throws ModelException {
     if (!columns().containsKey(ident.getString())) {
-      throw new ModelException(String.format("Column '%s' not found in table '%s'.", ident, tableName));
+      throw new ModelException(String.format("Column '%s' not found in table '%s'.", ident, tableName), ident);
     }
     return columns().get(ident.getString());
   }
@@ -387,7 +387,7 @@ public class MaterializedTableMeta {
       if (tableMeta.hasReverseForeignKey(ident.getString())) {
         return new ReferencedMultiTableMeta(this, tableMeta.reverseForeignKey(ident.getString()));
       } else {
-        throw new ModelException(String.format("Table '%s' not found.", ident.getString()));
+        throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
       }
     }
 

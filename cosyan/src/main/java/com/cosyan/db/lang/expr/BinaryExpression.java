@@ -87,8 +87,8 @@ public class BinaryExpression extends Expression {
     final ColumnMeta rightColumn = right.compileColumn(sourceTable);
 
     if (token.is(Tokens.AND)) {
-      assertType(DataTypes.BoolType, leftColumn.getType());
-      assertType(DataTypes.BoolType, rightColumn.getType());
+      assertType(DataTypes.BoolType, leftColumn.getType(), this);
+      assertType(DataTypes.BoolType, rightColumn.getType(), this);
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
 
         @Override
@@ -97,8 +97,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else if (token.is(Tokens.OR)) {
-      assertType(DataTypes.BoolType, leftColumn.getType());
-      assertType(DataTypes.BoolType, rightColumn.getType());
+      assertType(DataTypes.BoolType, leftColumn.getType(), this);
+      assertType(DataTypes.BoolType, rightColumn.getType(), this);
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
 
         @Override
@@ -107,8 +107,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else if (token.is(Tokens.XOR)) {
-      assertType(DataTypes.BoolType, leftColumn.getType());
-      assertType(DataTypes.BoolType, rightColumn.getType());
+      assertType(DataTypes.BoolType, leftColumn.getType(), this);
+      assertType(DataTypes.BoolType, rightColumn.getType(), this);
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
 
         @Override
@@ -117,8 +117,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else if (token.is(Tokens.IMPL)) {
-      assertType(DataTypes.BoolType, leftColumn.getType());
-      assertType(DataTypes.BoolType, rightColumn.getType());
+      assertType(DataTypes.BoolType, leftColumn.getType(), this);
+      assertType(DataTypes.BoolType, rightColumn.getType(), this);
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
 
         @Override
@@ -147,7 +147,7 @@ public class BinaryExpression extends Expression {
     } else if (token.is(Tokens.GEQ)) {
       return geqExpression(leftColumn, rightColumn);
     } else {
-      throw new ModelException("Unsupported binary expression '" + token.getString() + "'.");
+      throw new ModelException("Unsupported binary expression '" + token.getString() + "'.", this);
     }
   }
 
@@ -182,7 +182,7 @@ public class BinaryExpression extends Expression {
       };
     } else {
       throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
+          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", this);
     }
   }
 
@@ -224,7 +224,7 @@ public class BinaryExpression extends Expression {
       };
     } else {
       throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
+          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", this);
     }
   }
 
@@ -266,7 +266,7 @@ public class BinaryExpression extends Expression {
       };
     } else {
       throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
+          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", this);
     }
   }
 
@@ -301,7 +301,7 @@ public class BinaryExpression extends Expression {
       };
     } else {
       throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
+          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", this);
     }
   }
 
@@ -336,7 +336,7 @@ public class BinaryExpression extends Expression {
       };
     } else {
       throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
+          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", this);
     }
   }
 
@@ -385,7 +385,7 @@ public class BinaryExpression extends Expression {
       };
     } else {
       throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
+          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", this);
     }
   }
 
@@ -434,7 +434,7 @@ public class BinaryExpression extends Expression {
       };
     } else {
       throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
+          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", this);
     }
   }
 
@@ -483,7 +483,7 @@ public class BinaryExpression extends Expression {
       };
     } else {
       throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
+          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", this);
     }
   }
 
@@ -532,7 +532,7 @@ public class BinaryExpression extends Expression {
       };
     } else {
       throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
+          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", this);
     }
   }
 
@@ -581,7 +581,7 @@ public class BinaryExpression extends Expression {
       };
     } else {
       throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".");
+          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", this);
     }
   }
 

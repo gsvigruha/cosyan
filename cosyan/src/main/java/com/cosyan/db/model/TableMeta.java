@@ -21,7 +21,7 @@ public abstract class TableMeta implements CompiledObject {
   public IndexColumn column(Ident ident) throws ModelException {
     IndexColumn column = getColumn(ident);
     if (column == null) {
-      throw new ModelException(String.format("Column '%s' not found in table.", ident));
+      throw new ModelException(String.format("Column '%s' not found in table.", ident), ident);
     }
     return column;
   }
@@ -39,7 +39,7 @@ public abstract class TableMeta implements CompiledObject {
   public TableMeta table(Ident ident) throws ModelException {
     TableMeta table = getRefTable(ident);
     if (table == null) {
-      throw new ModelException(String.format("Table reference '%s' not found.", ident));
+      throw new ModelException(String.format("Table reference '%s' not found.", ident), ident);
     }
     return table;
   }

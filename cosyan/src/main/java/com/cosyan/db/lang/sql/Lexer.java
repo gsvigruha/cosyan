@@ -6,6 +6,7 @@ import com.cosyan.db.lang.sql.Tokens.BooleanToken;
 import com.cosyan.db.lang.sql.Tokens.FloatToken;
 import com.cosyan.db.lang.sql.Tokens.IdentToken;
 import com.cosyan.db.lang.sql.Tokens.IntToken;
+import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.lang.sql.Tokens.StringToken;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.session.ILexer;
@@ -35,13 +36,13 @@ public class Lexer implements ILexer {
       char c = sql.charAt(i);
       if (state == STATE_IN_SINGLE_QUOTE) {
         if (c == Tokens.SINGLE_QUOTE) {
-          builder.add(new StringToken(sql.substring(literalStartIndex + 1, i)));
+          builder.add(new StringToken(sql, literalStartIndex + 1, i));
           state = STATE_DEFAULT;
           literalStartIndex = i;
         }
       } else if (state == STATE_IN_DOUBLE_QUOTE) {
         if (c == Tokens.DOUBLE_QUOTE) {
-          builder.add(new StringToken(sql.substring(literalStartIndex + 1, i)));
+          builder.add(new StringToken(sql, literalStartIndex + 1, i));
           state = STATE_DEFAULT;
           literalStartIndex = i;
         }
@@ -49,7 +50,7 @@ public class Lexer implements ILexer {
         if (c == Tokens.DOT) {
           state = STATE_FLOAT_LITERAL;
         } else if (Tokens.isDelimiter(c)) {
-          builder.add(new IntToken(sql.substring(literalStartIndex, i)));
+          builder.add(new IntToken(sql, literalStartIndex, i));
           state = STATE_DEFAULT;
           literalStartIndex = i;
           i--;
@@ -60,7 +61,7 @@ public class Lexer implements ILexer {
         }
       } else if (state == STATE_FLOAT_LITERAL) {
         if (Tokens.isDelimiter(c)) {
-          builder.add(new FloatToken(sql.substring(literalStartIndex, i)));
+          builder.add(new FloatToken(sql, literalStartIndex, i));
           state = STATE_DEFAULT;
           literalStartIndex = i;
           i--;
@@ -73,9 +74,9 @@ public class Lexer implements ILexer {
         if (Tokens.isDelimiter(c) || c == Tokens.DOT) {
           String str = sql.substring(literalStartIndex, i);
           if (str.equals(Tokens.TRUE) || str.equals(Tokens.FALSE)) {
-            builder.add(new BooleanToken(str));
+            builder.add(new BooleanToken(str, new Loc(literalStartIndex, i)));
           } else {
-            builder.add(new IdentToken(str));
+            builder.add(new IdentToken(str, new Loc(literalStartIndex, i)));
           }
           state = STATE_DEFAULT;
           literalStartIndex = i;
@@ -91,13 +92,13 @@ public class Lexer implements ILexer {
           literalStartIndex = i;
         } else if (Tokens.isDelimiter(c)) {
           if (c == Tokens.LESS && i < sql.length() - 1 && sql.charAt(i + 1) == Tokens.EQ) {
-            builder.add(new Token(Tokens.LEQ));
+            builder.add(new Token(Tokens.LEQ, new Loc(literalStartIndex, i + 1)));
             i++;
           } else if (c == Tokens.GREATER && i < sql.length() - 1 && sql.charAt(i + 1) == Tokens.EQ) {
-            builder.add(new Token(Tokens.GEQ));
+            builder.add(new Token(Tokens.GEQ, new Loc(literalStartIndex, i + 1)));
             i++;
           } else if (!Tokens.isWhitespace(c)) {
-            builder.add(new Token(String.valueOf(c)));
+            builder.add(new Token(String.valueOf(c), new Loc(literalStartIndex, i)));
           }
           literalStartIndex = i;
         } else if (c == Tokens.SINGLE_QUOTE) {
@@ -108,7 +109,7 @@ public class Lexer implements ILexer {
           literalStartIndex = i;
         } else if (Tokens.isLowerCaseLetter(c) || c == Tokens.DOT) {
           if (c == Tokens.DOT) {
-            builder.add(new Token(String.valueOf(c)));
+            builder.add(new Token(String.valueOf(c), new Loc(literalStartIndex, i)));
             i++;
           }
           state = STATE_IDENT;

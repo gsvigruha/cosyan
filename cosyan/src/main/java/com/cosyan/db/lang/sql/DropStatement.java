@@ -32,7 +32,8 @@ public class DropStatement {
         throw new ModelException(String.format("Cannot drop table '%s', referenced by foreign key '%s.%s'.",
             table.getString(),
             foreignKey.getRefTable().tableName(),
-            foreignKey.getReverse()));
+            foreignKey.getReverse()),
+            this);
       }
       metaRepo.dropTable(table.getString());
       return new MetaStatementResult();
@@ -51,11 +52,11 @@ public class DropStatement {
       BasicColumn column = tableMeta.column(this.column);
       if (!column.isIndexed()) {
         throw new ModelException(String.format("Cannot drop index '%s.%s', column is not indexed.",
-            tableMeta.tableName(), column.getName()));
+            tableMeta.tableName(), column.getName()), this);
       }
       if (column.isUnique()) {
         throw new ModelException(String.format("Cannot drop index '%s.%s', column is unique.",
-            tableMeta.tableName(), column.getName()));
+            tableMeta.tableName(), column.getName()), this);
       }
       metaRepo.dropMultiIndex(tableMeta, column);
       column.setIndexed(false);

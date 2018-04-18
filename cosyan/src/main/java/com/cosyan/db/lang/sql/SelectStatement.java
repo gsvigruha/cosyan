@@ -79,12 +79,12 @@ public class SelectStatement {
       if (groupBy.isPresent()) {
         KeyValueTableMeta intermediateTable = keyValueTable(filteredTable, groupBy.get());
         AggrTables aggrTable = new KeyValueAggrTableMeta(intermediateTable);
-        TableColumns tableColumns = tableColumns(aggrTable, columns);
+        TableColumns tableColumns = tableColumns(aggrTable, columns, this);
         ColumnMeta havingColumn = havingExpression(aggrTable, having);
         aggrTable.setHavingColumn(havingColumn);
         fullTable = new DerivedTableMeta(aggrTable, tableColumns.columns);
       } else {
-        fullTable = selectTable(filteredTable, columns);
+        fullTable = selectTable(filteredTable, columns, this);
       }
 
       ExposedTableMeta distinctTable;
@@ -129,9 +129,10 @@ public class SelectStatement {
 
     public static DerivedTableMeta selectTable(
         IterableTableMeta sourceTable,
-        ImmutableList<Expression> columns) throws ModelException {
+        ImmutableList<Expression> columns,
+        Node node) throws ModelException {
       try {
-        TableColumns tableColumns = tableColumns(sourceTable, columns);
+        TableColumns tableColumns = tableColumns(sourceTable, columns, node);
         return new DerivedTableMeta(sourceTable, tableColumns.columns);
       } catch (NotAggrTableException e) {
         AggrTables aggrTable = new GlobalAggrTableMeta(
@@ -139,7 +140,7 @@ public class SelectStatement {
                 sourceTable,
                 TableMeta.wholeTableKeys));
         // Columns have aggregations, recompile with KeyValueTableMeta.
-        TableColumns tableColumns = tableColumns(aggrTable, columns);
+        TableColumns tableColumns = tableColumns(aggrTable, columns, node);
         return new DerivedTableMeta(aggrTable, tableColumns.columns);
       }
     }
@@ -152,14 +153,15 @@ public class SelectStatement {
 
     public static TableColumns tableColumns(
         TableMeta sourceTable,
-        ImmutableList<Expression> columns) throws NotAggrTableException, ModelException {
+        ImmutableList<Expression> columns,
+        Node node) throws NotAggrTableException, ModelException {
       ImmutableList.Builder<TableMeta> tables = ImmutableList.builder();
       LinkedListMultimap<String, ColumnMeta> tableColumns = LinkedListMultimap.create();
       int i = 0;
       for (Expression expr : columns) {
         if (expr instanceof AsteriskExpression) {
           if (!(sourceTable instanceof ExposedTableMeta)) {
-            throw new ModelException("Asterisk experssion is not allowed here.");
+            throw new ModelException("Asterisk expression is not allowed here.", node);
           }
           for (String columnName : ((ExposedTableMeta) sourceTable).columnNames()) {
             tableColumns.put(columnName,
@@ -170,20 +172,20 @@ public class SelectStatement {
           if (obj instanceof ColumnMeta) {
             tableColumns.put(expr.getName("_c" + (i++)), (ColumnMeta) obj);
           } else {
-            throw new ModelException("Expected column.");
+            throw new ModelException("Expected column.", node);
           }
         }
       }
-      return new TableColumns(deduplicateColumns(tableColumns), tables.build());
+      return new TableColumns(deduplicateColumns(tableColumns, node), tables.build());
     }
 
     private static ImmutableMap<String, ColumnMeta> deduplicateColumns(
-        LinkedListMultimap<String, ColumnMeta> tableColumns)
-        throws ModelException {
+        LinkedListMultimap<String, ColumnMeta> tableColumns,
+        Node node) throws ModelException {
       ImmutableMap.Builder<String, ColumnMeta> builder = ImmutableMap.builder();
       for (Map.Entry<String, Collection<ColumnMeta>> column : tableColumns.asMap().entrySet()) {
         if (column.getValue().size() > 1) {
-          throw new ModelException(String.format("Duplicate column name '%s' in expression.", column.getKey()));
+          throw new ModelException(String.format("Duplicate column name '%s' in expression.", column.getKey()), node);
         }
         builder.put(column.getKey(), Iterables.getOnlyElement(column.getValue()));
       }
@@ -195,7 +197,7 @@ public class SelectStatement {
         throws ModelException {
       if (where.isPresent()) {
         ColumnMeta whereColumn = where.get().compileColumn(sourceTable);
-        assertType(DataTypes.BoolType, whereColumn.getType());
+        assertType(DataTypes.BoolType, whereColumn.getType(), this);
         if (sourceTable instanceof SeekableTableMeta) {
           SeekableTableMeta tableMeta = (SeekableTableMeta) sourceTable;
           VariableEquals clause = PredicateHelper.getBestClause(tableMeta, where.get());
@@ -217,7 +219,7 @@ public class SelectStatement {
         Optional<Expression> having) throws ModelException {
       if (having.isPresent()) {
         ColumnMeta havingColumn = having.get().compileColumn(sourceTable);
-        assertType(DataTypes.BoolType, havingColumn.getType());
+        assertType(DataTypes.BoolType, havingColumn.getType(), this);
         return havingColumn;
       } else {
         return ColumnMeta.TRUE_COLUMN;
@@ -232,7 +234,7 @@ public class SelectStatement {
         ColumnMeta keyColumn = expr.compileColumn(sourceTable);
         String name = expr.getName(null);
         if (name == null) {
-          throw new ModelException("Expression in group by must be named: '" + expr + "'.");
+          throw new ModelException("Expression in group by must be named: '" + expr + "'.", this);
         }
         keyColumnsBuilder.put(name, keyColumn);
       }
@@ -322,7 +324,7 @@ public class SelectStatement {
           collector.add(binaryExpr);
         } else {
           throw new ModelException(
-              "Only 'and' and '=' binary expressions are allowed in the 'on' expression of joins.");
+              "Only 'and' and '=' binary expressions are allowed in the 'on' expression of joins.", this);
         }
       }
       return collector;
