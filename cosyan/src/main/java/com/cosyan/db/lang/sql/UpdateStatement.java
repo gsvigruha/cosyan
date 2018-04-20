@@ -1,7 +1,6 @@
 package com.cosyan.db.lang.sql;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Optional;
 
 import com.cosyan.db.io.TableWriter;
@@ -32,9 +31,9 @@ import lombok.EqualsAndHashCode;
 
 public class UpdateStatement {
 
-  public static void check(DataType<?> columnType, DataType<?> exprType, Node node) throws ModelException {
+  public static void check(DataType<?> columnType, DataType<?> exprType, Ident ident) throws ModelException {
     if (exprType != DataTypes.NULL && columnType != exprType) {
-      throw new ModelException(String.format("Expected '%s' but got '%s'.", columnType, exprType), node);
+      throw new ModelException(String.format("Expected '%s' but got '%s'.", columnType, exprType), ident);
     }
   }
 
@@ -66,17 +65,13 @@ public class UpdateStatement {
         BasicColumn column = materializedTableMeta.column(update.getIdent());
         if (column.isImmutable()) {
           throw new ModelException(String.format(
-              "Column '%s.%s' is immutable.", materializedTableMeta.tableName(), column.getName()), this);
+              "Column '%s.%s' is immutable.", materializedTableMeta.tableName(), column.getName()), update.getIdent());
         }
         ColumnMeta columnExpr = update.getValue().compileColumn(tableMeta);
+        check(column.getType(), columnExpr.getType(), update.getIdent());
         columnExprsBuilder.put(tableMeta.column(update.getIdent()).index(), columnExpr);
       }
       columnExprs = columnExprsBuilder.build();
-      for (Map.Entry<Integer, ColumnMeta> entry : columnExprs.entrySet()) {
-        check(tableMeta.tableMeta().allColumns().get(entry.getKey()).getType(),
-            entry.getValue().getType(),
-            this);
-      }
       if (where.isPresent()) {
         whereColumn = where.get().compileColumn(tableMeta);
         clause = PredicateHelper.getBestClause(tableMeta, where.get());

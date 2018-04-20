@@ -280,6 +280,9 @@ public class Tokens {
     private final int start;
     private final int end;
 
+    public static Loc interval(Loc start, Loc end) {
+      return new Loc(start.start, end.end);
+    }
   }
 
   @Data

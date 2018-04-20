@@ -122,7 +122,7 @@ public class FuncCallExpression extends Expression {
   private AggrColumn aggrFunction(TableMeta sourceTable, Expression arg)
       throws ModelException {
     if (!(sourceTable instanceof AggrTables)) {
-      throw new NotAggrTableException(this);
+      throw new NotAggrTableException(ident);
     }
     AggrTables aggrTable = (AggrTables) sourceTable;
     KeyValueTableMeta keyValueTableMeta = aggrTable.sourceTable();

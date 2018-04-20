@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.index.ByteTrie.IndexException;
+import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MetaRepo;
@@ -49,10 +50,10 @@ public class SyntaxTree {
     }
   }
 
-  public static void assertType(DataType<?> expectedType, DataType<?> dataType, Node node) throws ModelException {
+  public static void assertType(DataType<?> expectedType, DataType<?> dataType, Token token) throws ModelException {
     if (expectedType != dataType) {
       throw new ModelException(
-          "Data type " + dataType + " did not match expected type " + expectedType + ".", node);
+          "Data type " + dataType + " did not match expected type " + expectedType + ".", token);
     }
   }
 }

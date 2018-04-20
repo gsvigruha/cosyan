@@ -35,7 +35,7 @@ public class CaseExpression extends Expression {
     for (int i = 0; i < conditions.size(); i++) {
       ColumnMeta condition = conditions.get(i).compileColumn(sourceTable);
       if (condition.getType() != DataTypes.BoolType) {
-        throw new ModelException("Expected boolean type but got " + condition.getType() + ".", this);
+        throw new ModelException("Expected boolean type but got " + condition.getType() + ".");
       }
       conditionColsBuilder.add(condition);
       deps.addToThis(condition.tableDependencies());
@@ -44,7 +44,7 @@ public class CaseExpression extends Expression {
       if (type == null) {
         type = value.getType();
       } else if (type != value.getType()) {
-        throw new ModelException("Inconsistent type " + type + " vs " + value.getType() + ".", this);
+        throw new ModelException("Inconsistent type " + type + " vs " + value.getType() + ".");
       }
       valueColsBuilder.add(value);
       deps.addToThis(value.tableDependencies());

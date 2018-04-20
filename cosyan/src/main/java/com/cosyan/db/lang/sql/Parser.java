@@ -234,7 +234,7 @@ public class Parser implements IParser {
       } else {
         partitioning = Optional.empty();
       }
-      return new CreateTable(ident.getString(), type, columns.build(), constraints.build(), partitioning);
+      return new CreateTable(ident, type, columns.build(), constraints.build(), partitioning);
     } else if (tokens.peek().is(Tokens.INDEX)) {
       assertNext(tokens, Tokens.INDEX);
       Ident table = parseIdent(tokens);
@@ -343,14 +343,14 @@ public class Parser implements IParser {
         assertNext(tokens, Tokens.NULL);
         nullIsTrue = false;
       }
-      return new RuleDefinition(ident.getString(), expr, nullIsTrue);
+      return new RuleDefinition(ident, expr, nullIsTrue);
     } else if (tokens.peek().is(Tokens.PRIMARY)) {
       tokens.next();
       assertNext(tokens, Tokens.KEY);
       assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
       Ident column = parseIdent(tokens);
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-      return new PrimaryKeyDefinition(ident.getString(), column);
+      return new PrimaryKeyDefinition(ident, column);
     } else if (tokens.peek().is(Tokens.FOREIGN)) {
       tokens.next();
       assertNext(tokens, Tokens.KEY);
@@ -368,9 +368,9 @@ public class Parser implements IParser {
       if (tokens.peek().is(Tokens.REVERSE)) {
         tokens.next();
         Ident reverseIdent = parseIdent(tokens);
-        return new ForeignKeyDefinition(ident.getString(), reverseIdent.getString(), column, refTable, refColumn);
+        return new ForeignKeyDefinition(ident, reverseIdent.getString(), column, refTable, refColumn);
       } else {
-        return new ForeignKeyDefinition(ident.getString(), "rev_" + ident.getString(), column, refTable, refColumn);
+        return new ForeignKeyDefinition(ident, "rev_" + ident.getString(), column, refTable, refColumn);
       }
     } else {
       throw new ParserException("Unsupported constraint '" + tokens.peek() + "'.");
@@ -402,7 +402,7 @@ public class Parser implements IParser {
     } else {
       immutable = false;
     }
-    return new ColumnDefinition(ident.getString(), type, nullable, unique, immutable);
+    return new ColumnDefinition(ident, type, nullable, unique, immutable);
   }
 
   private DataType<?> parseDataType(PeekingIterator<Token> tokens) throws ParserException {
