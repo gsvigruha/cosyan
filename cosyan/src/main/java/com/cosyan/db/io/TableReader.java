@@ -11,7 +11,7 @@ import com.cosyan.db.io.RecordProvider.SeekableRecordReader;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.TableIndex;
+import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -79,8 +79,8 @@ public abstract class TableReader implements TableIO {
 
     public abstract IterableTableReader iterableReader() throws IOException;
 
-    public TableIndex getPrimaryKeyIndex() {
-      return (TableIndex) getIndex(tableMeta.primaryKey().get().getColumn().getName());
+    public TableUniqueIndex getPrimaryKeyIndex() {
+      return (TableUniqueIndex) getIndex(tableMeta.primaryKey().get().getColumn().getName());
     }
 
     public abstract IndexReader getIndex(String name);
@@ -121,7 +121,7 @@ public abstract class TableReader implements TableIO {
 
     @Override
     public Record get(Object key, Resources resources) throws IOException {
-      TableIndex index = resources.getPrimaryKeyIndex(tableMeta.tableName());
+      TableUniqueIndex index = resources.getPrimaryKeyIndex(tableMeta.tableName());
       long filePointer = index.get0(key);
       return get(filePointer);
     }

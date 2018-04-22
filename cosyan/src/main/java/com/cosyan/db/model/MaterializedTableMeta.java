@@ -18,6 +18,7 @@ import com.cosyan.db.io.SeekableOutputStream;
 import com.cosyan.db.io.SeekableOutputStream.RAFSeekableOutputStream;
 import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
+import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
@@ -56,7 +57,7 @@ public class MaterializedTableMeta {
   private final SeekableOutputStream fileWriter;
   private final List<BasicColumn> columns;
   private final Map<String, BooleanRule> rules;
-  private Optional<PrimaryKey> primaryKey;
+  private final Optional<PrimaryKey> primaryKey;
   private final Map<String, ForeignKey> foreignKeys;
   private final Map<String, ReverseForeignKey> reverseForeignKeys;
   private final Map<String, TableRef> refs;
@@ -64,6 +65,7 @@ public class MaterializedTableMeta {
   private ReverseRuleDependencies reverseRuleDependencies;
   private Optional<ColumnMeta> partitioning;
   private SeekableInputStream fileReader;
+  private boolean isEmpty;
 
   public MaterializedTableMeta(
       Config config,
@@ -71,12 +73,13 @@ public class MaterializedTableMeta {
       String owner,
       Iterable<BasicColumn> columns,
       Optional<PrimaryKey> primaryKey,
-      Type type) throws IOException {
+      Type type) throws IOException, ModelException {
     this.config = config;
     this.tableName = tableName;
     this.owner = owner;
     this.type = type;
     this.raf = new RandomAccessFile(fileName(), "rw");
+    this.isEmpty = raf.length() == 0L;
     this.stats = new TableStats(config, tableName);
     this.columns = Lists.newArrayList(columns);
     this.primaryKey = primaryKey;
@@ -87,6 +90,13 @@ public class MaterializedTableMeta {
     this.ruleDependencies = new TableDependencies();
     this.reverseRuleDependencies = new ReverseRuleDependencies();
     this.partitioning = Optional.empty();
+
+    for (BasicColumn column : columns) {
+      if (column.getType() == DataTypes.IDType && column.getIndex() > 0) {
+        throw new ModelException(String.format(
+            "The ID column '%s' has to be the first one.", column.getName()), column.getIdent());
+      }
+    }
 
     if (type == Type.LOG) {
       fileWriter = new RAFSeekableOutputStream(raf);
@@ -216,6 +226,7 @@ public class MaterializedTableMeta {
   }
 
   public void insert(int insertedLines) {
+    isEmpty = false;
     stats.insert(insertedLines);
   }
 
@@ -234,9 +245,16 @@ public class MaterializedTableMeta {
     foreignKey.getRefTable().reverseForeignKeys.put(foreignKey.getRevName(), foreignKey.createReverse());
   }
 
-  public void addColumn(BasicColumn basicColumn) throws ModelException {
-    checkName(basicColumn.getName());
-    columns.add(basicColumn);
+  public void addColumn(BasicColumn column) throws ModelException {
+    assert column.getIndex() == columns.size();
+    if (!isEmpty && !column.isNullable()) {
+      throw new ModelException(
+          String.format("Cannot add column '%s', new columns on a non empty table have to be nullable.",
+              column.getName()),
+          column.getIdent());
+    }
+    checkName(column.getName());
+    columns.add(column);
   }
 
   public void addRef(TableRef ref) throws ModelException {
@@ -324,6 +342,51 @@ public class MaterializedTableMeta {
 
   public boolean isEmpty() {
     return stats.isEmpty();
+  }
+
+  public void deleteColumn(Ident column, MetaRepo metaRepo) throws ModelException, IOException {
+    BasicColumn basicColumn = column(column);
+    basicColumn.setDeleted(true);
+    try {
+      for (ForeignKey foreignKey : foreignKeys().values()) {
+        if (foreignKey.getColumn().getName().equals(basicColumn.getName())) {
+          throw new ModelException(String.format(
+              "Cannot drop column '%s', it is used by foreign key '%s'.", column, foreignKey), column);
+        }
+      }
+      for (ReverseForeignKey foreignKey : reverseForeignKeys().values()) {
+        if (foreignKey.getColumn().getName().equals(basicColumn.getName())) {
+          throw new ModelException(String.format(
+              "Cannot drop column '%s', it is used by reverse foreign key '%s'.", column, foreignKey), column);
+        }
+      }
+      for (Rule rule : rules().values()) {
+        try {
+          rule.reCompile(this);
+        } catch (ModelException e) {
+          throw new ModelException(String.format(
+              "Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()), column);
+        }
+      }
+      for (Rule rule : reverseRuleDependencies().allRules()) {
+        try {
+          rule.reCompile(this);
+        } catch (ModelException e) {
+          throw new ModelException(String.format(
+              "Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()), column);
+        }
+      }
+    } finally {
+      basicColumn.setDeleted(false);
+    }
+    basicColumn.setDeleted(true);
+    if (basicColumn.isIndexed()) {
+      if (basicColumn.isUnique()) {
+        metaRepo.dropUniqueIndex(this, basicColumn);
+      } else {
+        metaRepo.dropMultiIndex(this, basicColumn);
+      }
+    }
   }
 
   public static class SeekableTableMeta extends ExposedTableMeta implements ReferencedTable, TableProvider {

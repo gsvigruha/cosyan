@@ -2,6 +2,8 @@ package com.cosyan.db.model;
 
 import java.io.IOException;
 
+import javax.annotation.concurrent.Immutable;
+
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
@@ -15,6 +17,7 @@ import com.cosyan.db.transaction.Resources;
 import lombok.Data;
 
 @Data
+@Immutable
 public class Rule {
 
   private final String name;

@@ -12,10 +12,7 @@ import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.Keys.ForeignKey;
-import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.Rule;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -30,31 +27,15 @@ public class AlterStatementColumns {
 
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
-      if (!column.isNullable()) {
-        throw new ModelException(
-            String.format("Cannot add column '%s', new columns have to be nullable.", column.getName()), column.getName());
-      }
       MaterializedTableMeta tableMeta = metaRepo.table(table);
-      if (tableMeta.hasColumn(column.getName())) {
-        throw new ModelException(
-            String.format("Cannot add column '%s', column with the same name already exists.", column.getName()), column.getName());
-      }
       BasicColumn basicColumn = new BasicColumn(
-          tableMeta.columns().size(),
-          column.getName().getString(),
+          tableMeta.allColumns().size(),
+          column.getName(),
           column.getType(),
           column.isNullable(),
           column.isUnique(),
-          /* indexed= */column.isUnique(),
           column.isImmutable());
       tableMeta.addColumn(basicColumn);
-      if (basicColumn.isIndexed()) {
-        if (basicColumn.isUnique()) {
-          metaRepo.registerUniqueIndex(tableMeta, basicColumn, column.getName());
-        } else {
-          metaRepo.registerMultiIndex(tableMeta, basicColumn, column.getName());
-        }
-      }
       return new MetaStatementResult();
     }
   }
@@ -68,40 +49,7 @@ public class AlterStatementColumns {
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
-      BasicColumn basicColumn = tableMeta.column(column);
-      basicColumn.setDeleted(true);
-      try {
-        for (Rule rule : tableMeta.rules().values()) {
-          try {
-            rule.reCompile(tableMeta);
-          } catch (ModelException e) {
-            throw new ModelException(String.format(
-                "Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()), column);
-          }
-        }
-        for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
-          if (foreignKey.getColumn().getName().equals(basicColumn.getName())) {
-            throw new ModelException(String.format(
-                "Cannot drop column '%s', it is used by foreign key '%s'.", column, foreignKey), column);
-          }
-        }
-        for (ReverseForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
-          if (foreignKey.getColumn().getName().equals(basicColumn.getName())) {
-            throw new ModelException(String.format(
-                "Cannot drop column '%s', it is used by reverse foreign key '%s'.", column, foreignKey), column);
-          }
-        }
-      } finally {
-        basicColumn.setDeleted(false);
-      }
-      basicColumn.setDeleted(true);
-      if (basicColumn.isIndexed()) {
-        if (basicColumn.isUnique()) {
-          metaRepo.dropUniqueIndex(tableMeta, basicColumn);
-        } else {
-          metaRepo.dropMultiIndex(tableMeta, basicColumn);
-        }
-      }
+      tableMeta.deleteColumn(column, metaRepo);
       return new MetaStatementResult();
     }
   }
@@ -115,29 +63,18 @@ public class AlterStatementColumns {
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
-      if (!tableMeta.hasColumn(column.getName())) {
-        throw new ModelException(
-            String.format("Cannot alter column '%s', column does not exist.", column.getName()), column.getName());
-      }
       BasicColumn originalColumn = tableMeta.column(column.getName());
       if (originalColumn.getType() != column.getType()) {
         throw new ModelException(
             String.format("Cannot alter column '%s', type has to remain the same.", column.getName()), column.getName());
       }
-      if (originalColumn.isNullable() && !column.isNullable()) {
+      if (originalColumn.isUnique() != column.isUnique()) {
         throw new ModelException(
-            String.format("Cannot alter column '%s', column has to remain nullable.", column.getName()), column.getName());
-      }
-      if (!originalColumn.isUnique() && column.isUnique()) {
-        throw new ModelException(
-            String.format("Cannot alter column '%s', column cannot be unique.", column.getName()), column.getName());
-      }
-      if (originalColumn.isUnique() && !column.isUnique()) {
-        originalColumn.setIndexed(false);
-        metaRepo.dropUniqueIndex(tableMeta, originalColumn);
+            String.format("Cannot alter column '%s', uniqueness has to remain the same.", column.getName()), column.getName());
+      
       }
       originalColumn.setNullable(column.isNullable());
-      originalColumn.setUnique(column.isUnique());
+      originalColumn.setImmutable(column.isImmutable());
       return new MetaStatementResult();
     }
   }

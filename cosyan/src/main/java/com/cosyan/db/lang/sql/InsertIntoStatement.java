@@ -18,7 +18,7 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.TableIndex.IDTableIndex;
+import com.cosyan.db.model.TableUniqueIndex.IDTableIndex;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;

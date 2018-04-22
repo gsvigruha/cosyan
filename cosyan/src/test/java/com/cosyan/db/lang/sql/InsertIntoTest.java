@@ -10,7 +10,7 @@ import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.TableIndex;
+import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.model.TableMultiIndex;
 
 public class InsertIntoTest extends UnitTestBase {
@@ -108,7 +108,7 @@ public class InsertIntoTest extends UnitTestBase {
       assertHeader(new String[] { "a", "b" }, result);
       assertValues(new Object[][] { { "123", "x" }, { "456", "x" } }, result);
     }
-    TableIndex t9a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t9"))).get("a");
+    TableUniqueIndex t9a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t9"))).get("a");
     assertEquals(0L, t9a.get("x")[0]);
     assertEquals(16L, t9a.get("y")[0]);
     TableMultiIndex t10b = metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t10"))).get("b");

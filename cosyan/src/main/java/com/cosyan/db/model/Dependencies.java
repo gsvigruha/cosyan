@@ -1,5 +1,6 @@
 package com.cosyan.db.model;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -8,10 +9,10 @@ import java.util.stream.Collectors;
 
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
-import com.cosyan.db.model.References.ReferencedRefTableMeta;
-import com.cosyan.db.model.References.ReferencedMultiTableMeta;
-import com.cosyan.db.model.References.ReferencedSimpleTableMeta;
 import com.cosyan.db.model.References.RefTableMeta;
+import com.cosyan.db.model.References.ReferencedMultiTableMeta;
+import com.cosyan.db.model.References.ReferencedRefTableMeta;
+import com.cosyan.db.model.References.ReferencedSimpleTableMeta;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -222,6 +223,19 @@ public class Dependencies {
 
     public Map<String, ReverseRuleDependency> getDeps() {
       return deps;
+    }
+
+    public Iterable<Rule> allRules() {
+      ArrayList<Rule> rules = new ArrayList<>();
+      allRules(rules, deps);
+      return rules;
+    }
+
+    private void allRules(ArrayList<Rule> rules, Map<String, ReverseRuleDependency> deps) {
+      for (ReverseRuleDependency dep : deps.values()) {
+        rules.addAll(dep.rules.values());
+        allRules(rules, dep.deps);
+      }
     }
   }
 }

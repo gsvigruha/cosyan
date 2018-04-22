@@ -11,7 +11,7 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.TableIndex;
+import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.model.TableMultiIndex;
 
 public class UpdateTest extends UnitTestBase {
@@ -78,7 +78,7 @@ public class UpdateTest extends UnitTestBase {
     execute("insert into t5 values ('123', 'x');");
 
     ErrorResult r1 = error("update t4 set a = 'z' where a = 'x';");
-    assertError(RuleException.class, "Foreign key violation, key value 'x' has references.", r1);
+    assertError(ModelException.class, "Column 't4.a' is immutable.", r1);
 
     ErrorResult r2 = error("update t5 set b = 'z' where b = 'x';");
     assertError(RuleException.class, "Foreign key violation, value 'z' not present.", r2);
@@ -99,7 +99,7 @@ public class UpdateTest extends UnitTestBase {
     execute("insert into t6 values ('y');");
     execute("insert into t7 values ('123', 'x');");
 
-    TableIndex t6a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t6"))).get("a");
+    TableUniqueIndex t6a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t6"))).get("a");
     assertEquals(0L, t6a.get("x")[0]);
     assertEquals(16L, t6a.get("y")[0]);
     TableMultiIndex t7b = metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t7"))).get("b");
@@ -137,7 +137,7 @@ public class UpdateTest extends UnitTestBase {
     QueryResult r1 = query("select a, fk_a.a as a2, fk_a.b as b2 from t10;");
     assertHeader(new String[] { "a", "a2", "b2" }, r1);
     assertValues(new Object[][] { { 1L, 1L, 1L } }, r1);
-    TableIndex t9a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t9"))).get("a");
+    TableUniqueIndex t9a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t9"))).get("a");
     assertEquals(0L, t9a.get0(1L));
     TableMultiIndex t10a = metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t10"))).get("a");
     assertEquals(0L, t10a.get(1L)[0]);

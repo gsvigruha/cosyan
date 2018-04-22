@@ -6,7 +6,7 @@ public class Keys {
 
   @Data
   public static class PrimaryKey {
-    private final String name;
+    private final Ident name;
     private final BasicColumn column;
   }
 

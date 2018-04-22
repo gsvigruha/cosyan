@@ -20,9 +20,9 @@ public class AlterStatementTest extends UnitTestBase {
     execute("alter table t1 drop b;");
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
     assertEquals(2, tableMeta.columns().size());
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false),
+    assertEquals(new BasicColumn(0, new Ident("a"), DataTypes.StringType, true, false, false),
         tableMeta.column(new Ident("a")));
-    assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false, false, false),
+    assertEquals(new BasicColumn(2, new Ident("c"), DataTypes.DoubleType, true, false, false),
         tableMeta.column(new Ident("c")));
   }
 
@@ -76,11 +76,11 @@ public class AlterStatementTest extends UnitTestBase {
     execute("alter table t5 add c float;");
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t5"));
     assertEquals(3, tableMeta.columns().size());
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false),
+    assertEquals(new BasicColumn(0, new Ident("a"), DataTypes.StringType, true, false, false),
         tableMeta.column(new Ident("a")));
-    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, false, false, false),
+    assertEquals(new BasicColumn(1, new Ident("b"), DataTypes.LongType, true, false, false),
         tableMeta.column(new Ident("b")));
-    assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false, false, false),
+    assertEquals(new BasicColumn(2, new Ident("c"), DataTypes.DoubleType, true, false, false),
         tableMeta.column(new Ident("c")));
   }
 
@@ -113,13 +113,16 @@ public class AlterStatementTest extends UnitTestBase {
   public void testAddColumnErrors() throws Exception {
     execute("create table t7 (a varchar);");
     {
-      ErrorResult result = error("alter table t7 add b varchar not null;");
-      assertEquals("Cannot add column 'b', new columns have to be nullable.", result.getError().getMessage());
+      ErrorResult result = error("alter table t7 add a varchar;");
+      assertEquals("Duplicate column, foreign key or reversed foreign key name in 't7': 'a'.",
+          result.getError().getMessage());
     }
     assertEquals(1, metaRepo.table(new Ident("t7")).columns().size());
+    execute("insert into t7 values ('x');");
     {
-      ErrorResult result = error("alter table t7 add a varchar;");
-      assertEquals("Cannot add column 'a', column with the same name already exists.", result.getError().getMessage());
+      ErrorResult result = error("alter table t7 add b varchar not null;");
+      assertEquals("Cannot add column 'b', new columns on a non empty table have to be nullable.",
+          result.getError().getMessage());
     }
     assertEquals(1, metaRepo.table(new Ident("t7")).columns().size());
   }
@@ -161,15 +164,16 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t10 (a varchar, b varchar, c varchar);");
     {
       ErrorResult result = error("alter table t10 alter d varchar;");
-      assertEquals("Cannot alter column 'd', column does not exist.", result.getError().getMessage());
+      assertEquals("Column 'd' not found in table 't10'.", result.getError().getMessage());
     }
     {
       ErrorResult result = error("alter table t10 alter a integer;");
       assertEquals("Cannot alter column 'a', type has to remain the same.", result.getError().getMessage());
     }
+    execute("insert into t10 values ('x', 'y', 'z');");
     {
       ErrorResult result = error("alter table t10 alter b varchar unique;");
-      assertEquals("Cannot alter column 'b', column cannot be unique.", result.getError().getMessage());
+      assertEquals("Cannot alter column 'b', uniqueness has to remain the same.", result.getError().getMessage());
     }
     {
       ErrorResult result = error("alter table t10 alter c varchar not null;");
@@ -179,19 +183,18 @@ public class AlterStatementTest extends UnitTestBase {
 
   @Test
   public void testAlterColumnLiftConstraint() throws Exception {
-    execute("create table t11 (a varchar, b integer unique, c float not null);");
-    execute("insert into t11 values('x', 1, 1.0);");
-    execute("insert into t11 values('y', 2, 2.0);");
-    execute("alter table t11 alter b integer;");
-    execute("alter table t11 alter c float;");
-    execute("insert into t11 (a, b) values('z', 1);");
+    execute("create table t11 (a varchar, b float not null);");
+    execute("insert into t11 values('x', 1.0);");
+    execute("insert into t11 values('y', 2.0);");
+    execute("alter table t11 alter b float;");
+    execute("insert into t11 (a) values('z');");
 
     QueryResult result = query("select * from t11;");
-    assertHeader(new String[] { "a", "b", "c" }, result);
+    assertHeader(new String[] { "a", "b" }, result);
     assertValues(new Object[][] {
-        { "x", 1L, 1.0 },
-        { "y", 2L, 2.0 },
-        { "z", 1L, DataTypes.NULL } }, result);
+        { "x", 1.0 },
+        { "y", 2.0 },
+        { "z", DataTypes.NULL } }, result);
   }
 
   @Test

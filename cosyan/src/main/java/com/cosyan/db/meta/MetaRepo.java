@@ -36,10 +36,10 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.TableIndex;
-import com.cosyan.db.model.TableIndex.IDTableIndex;
-import com.cosyan.db.model.TableIndex.LongTableIndex;
-import com.cosyan.db.model.TableIndex.StringTableIndex;
+import com.cosyan.db.model.TableUniqueIndex;
+import com.cosyan.db.model.TableUniqueIndex.IDTableIndex;
+import com.cosyan.db.model.TableUniqueIndex.LongTableIndex;
+import com.cosyan.db.model.TableUniqueIndex.StringTableIndex;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.LongTableMultiIndex;
@@ -58,7 +58,7 @@ public class MetaRepo implements TableProvider {
 
   private final Config config;
   private final HashMap<String, MaterializedTableMeta> tables;
-  private final HashMap<String, TableIndex> uniqueIndexes;
+  private final HashMap<String, TableUniqueIndex> uniqueIndexes;
   private final HashMap<String, TableMultiIndex> multiIndexes;
   private final Grants grants;
 
@@ -121,8 +121,8 @@ public class MetaRepo implements TableProvider {
   }
 
   @VisibleForTesting
-  public ImmutableMap<String, TableIndex> collectUniqueIndexes(MaterializedTableMeta table) {
-    ImmutableMap.Builder<String, TableIndex> builder = ImmutableMap.builder();
+  public ImmutableMap<String, TableUniqueIndex> collectUniqueIndexes(MaterializedTableMeta table) {
+    ImmutableMap.Builder<String, TableUniqueIndex> builder = ImmutableMap.builder();
     for (BasicColumn column : table.columns().values()) {
       String indexName = table.tableName() + "." + column.getName();
       if (column.isIndexed() && column.isUnique()) {
@@ -170,6 +170,15 @@ public class MetaRepo implements TableProvider {
 
   public void registerTable(MaterializedTableMeta tableMeta) throws IOException {
     String tableName = tableMeta.tableName();
+    for (BasicColumn column : tableMeta.allColumns()) {
+      if (column.isIndexed()) {
+        if (column.isUnique()) {
+          registerUniqueIndex(tableMeta, column);
+        } else {
+          registerMultiIndex(tableMeta, column);
+        }
+      }
+    }
     tables.put(tableName, tableMeta);
     lockManager.registerLock(tableName);
   }
@@ -183,32 +192,25 @@ public class MetaRepo implements TableProvider {
     return tables.containsKey(tableName);
   }
 
-  public void registerUniqueIndex(MaterializedTableMeta table, BasicColumn column, Ident ident)
-      throws ModelException, IOException {
+  public void registerUniqueIndex(MaterializedTableMeta table, BasicColumn column)
+      throws IOException {
     String indexName = table.tableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
     assert !uniqueIndexes.containsKey(indexName);
-    if (column.isUnique()) {
-      if (column.getType() == DataTypes.StringType) {
-        uniqueIndexes.put(indexName, new StringTableIndex(new StringIndex(path)));
-        lockManager.registerLock(indexName);
-      } else if (column.getType() == DataTypes.LongType) {
-        uniqueIndexes.put(indexName, new LongTableIndex(new LongIndex(path)));
-        lockManager.registerLock(indexName);
-      } else if (column.getType() == DataTypes.IDType) {
-        uniqueIndexes.put(indexName, new IDTableIndex(new IDIndex(path)));
-        lockManager.registerLock(indexName);
-      } else {
-        throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
-            ", " + DataTypes.LongType + " and " + DataTypes.IDType + " types, not " + column.getType() + ".", ident);
-      }
-    } else {
-      throw new ModelException("Column " + column.getName() + " is not unique.", ident);
+    if (column.getType() == DataTypes.StringType) {
+      uniqueIndexes.put(indexName, new StringTableIndex(new StringIndex(path)));
+      lockManager.registerLock(indexName);
+    } else if (column.getType() == DataTypes.LongType) {
+      uniqueIndexes.put(indexName, new LongTableIndex(new LongIndex(path)));
+      lockManager.registerLock(indexName);
+    } else if (column.getType() == DataTypes.IDType) {
+      uniqueIndexes.put(indexName, new IDTableIndex(new IDIndex(path)));
+      lockManager.registerLock(indexName);
     }
   }
 
-  public void registerMultiIndex(MaterializedTableMeta table, BasicColumn column, Ident ident)
-      throws ModelException, IOException {
+  public void registerMultiIndex(MaterializedTableMeta table, BasicColumn column)
+      throws IOException {
     String indexName = table.tableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
     assert !multiIndexes.containsKey(indexName);
@@ -218,15 +220,12 @@ public class MetaRepo implements TableProvider {
     } else if (column.getType() == DataTypes.LongType || column.getType() == DataTypes.IDType) {
       multiIndexes.put(indexName, new LongTableMultiIndex(new LongMultiIndex(path)));
       lockManager.registerLock(indexName);
-    } else {
-      throw new ModelException("Multi indexes are only supported for " + DataTypes.StringType +
-          ", " + DataTypes.LongType + " and " + DataTypes.IDType + " types, not " + column.getType() + ".", ident);
     }
   }
 
   public void dropUniqueIndex(MaterializedTableMeta table, BasicColumn column) throws IOException {
     String indexName = table.tableName() + "." + column.getName();
-    TableIndex index = uniqueIndexes.remove(indexName);
+    TableUniqueIndex index = uniqueIndexes.remove(indexName);
     lockManager.removeLock(indexName);
     index.drop();
   }
@@ -358,7 +357,7 @@ public class MetaRepo implements TableProvider {
   }
 
   public ImmutableMap<String, ByteTrieStat> uniqueIndexStats() throws IOException {
-    return Util.<String, TableIndex, ByteTrieStat>mapValuesIOException(uniqueIndexes, TableIndex::stats);
+    return Util.<String, TableUniqueIndex, ByteTrieStat>mapValuesIOException(uniqueIndexes, TableUniqueIndex::stats);
   }
 
   public ImmutableMap<String, ByteMultiTrieStat> multiIndexStats() throws IOException {

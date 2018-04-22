@@ -1,6 +1,6 @@
 package com.cosyan.db.lang.sql;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -22,15 +22,15 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateTable() throws Exception {
     execute("create table t1 (a varchar not null, b integer, c float, d boolean, e timestamp);");
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, false, false, false),
+    assertEquals(new BasicColumn(0, new Ident("a"), DataTypes.StringType, false, false, false),
         tableMeta.column(new Ident("a")));
-    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, false, false, false),
+    assertEquals(new BasicColumn(1, new Ident("b"), DataTypes.LongType, true, false, false),
         tableMeta.column(new Ident("b")));
-    assertEquals(new BasicColumn(2, "c", DataTypes.DoubleType, true, false, false, false),
+    assertEquals(new BasicColumn(2, new Ident("c"), DataTypes.DoubleType, true, false, false),
         tableMeta.column(new Ident("c")));
-    assertEquals(new BasicColumn(3, "d", DataTypes.BoolType, true, false, false, false),
+    assertEquals(new BasicColumn(3, new Ident("d"), DataTypes.BoolType, true, false, false),
         tableMeta.column(new Ident("d")));
-    assertEquals(new BasicColumn(4, "e", DataTypes.DateType, true, false, false, false),
+    assertEquals(new BasicColumn(4, new Ident("e"), DataTypes.DateType, true, false, false),
         tableMeta.column(new Ident("e")));
   }
 
@@ -38,18 +38,20 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateTableUniqueColumns() throws Exception {
     execute("create table t2 (a varchar unique not null, b integer unique);");
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t2"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true, true, false),
-        tableMeta.column(new Ident("a")));
-    assertEquals(new BasicColumn(1, "b", DataTypes.LongType, true, true, true, false),
-        tableMeta.column(new Ident("b")));
+    assertTrue(tableMeta.column(new Ident("a")).isUnique());
+    assertTrue(tableMeta.column(new Ident("a")).isIndexed());
+    assertFalse(tableMeta.column(new Ident("a")).isNullable());
+    assertTrue(tableMeta.column(new Ident("b")).isUnique());
+    assertTrue(tableMeta.column(new Ident("b")).isIndexed());
+    assertTrue(tableMeta.column(new Ident("b")).isNullable());
   }
 
   @Test
   public void testCreateTablePrimaryKey() throws Exception {
     execute("create table t3 (a varchar, constraint pk_a primary key (a));");
     MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t3"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, false, true, true, false),
-        tableMeta.column(new Ident("a")));
+    assertTrue(tableMeta.column(new Ident("a")).isUnique());
+    assertTrue(tableMeta.column(new Ident("a")).isIndexed());
   }
 
   @Test
@@ -57,10 +59,10 @@ public class CreateStatementTest extends UnitTestBase {
     execute("create table t4 (a varchar, constraint pk_a primary key (a));");
     execute("create table t5 (a varchar, b varchar, constraint fk_b foreign key (b) references t4(a));");
     MaterializedTableMeta t5 = metaRepo.table(new Ident("t5"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false),
+    assertEquals(new BasicColumn(0, new Ident("a"), DataTypes.StringType, true, false, false),
         t5.column(new Ident("a")));
-    assertEquals(new BasicColumn(1, "b", DataTypes.StringType, true, false, true, false),
-        t5.column(new Ident("b")));
+    assertFalse(t5.column(new Ident("b")).isUnique());
+    assertTrue(t5.column(new Ident("b")).isIndexed());
     MaterializedTableMeta t4 = metaRepo.table(new Ident("t4"));
     assertEquals(ImmutableMap.of("fk_b", new ForeignKey(
         "fk_b",
@@ -92,13 +94,6 @@ public class CreateStatementTest extends UnitTestBase {
     execute("create table t7 (a varchar);");
     execute("create index t7.a;");
     assertEquals(1, metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t7"))).size());
-  }
-
-  @Test
-  public void testCreateIndexErrors() throws Exception {
-    execute("create table t8 (a varchar unique);");
-    ErrorResult error = error("create index t8.a;");
-    assertEquals("Cannot create index on 't8.a', column is already indexed.", error.getError().getMessage());
   }
 
   @Test
@@ -186,7 +181,7 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateTableImmutableColumn() throws Exception {
     execute("create table t20 (a varchar immutable);");
     MaterializedTableMeta t20 = metaRepo.table(new Ident("t20"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.StringType, true, false, false, true),
+    assertEquals(new BasicColumn(0, new Ident("a"), DataTypes.StringType, true, false, true),
         t20.column(new Ident("a")));
   }
 
@@ -194,8 +189,10 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateTableIDType() throws Exception {
     execute("create table t21 (a id);");
     MaterializedTableMeta t21 = metaRepo.table(new Ident("t21"));
-    assertEquals(new BasicColumn(0, "a", DataTypes.IDType, false, true, true, true),
-        t21.column(new Ident("a")));
+    assertTrue(t21.column(new Ident("a")).isUnique());
+    assertTrue(t21.column(new Ident("a")).isIndexed());
+    assertFalse(t21.column(new Ident("a")).isNullable());
+    assertEquals(DataTypes.IDType, t21.column(new Ident("a")).getType());
   }
 
   @Test

@@ -11,7 +11,7 @@ import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.lang.transaction.Result.TransactionResult;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.TableIndex;
+import com.cosyan.db.model.TableUniqueIndex;
 
 public class TransactionTest extends UnitTestBase {
   @Test
@@ -43,7 +43,7 @@ public class TransactionTest extends UnitTestBase {
         { 3L, 1.0, "abc" }
     }, result);
 
-    TableIndex t2a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t2"))).get("a");
+    TableUniqueIndex t2a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t2"))).get("a");
     // Record length: 1 + 4 + (1 + 8) + (1 + 8) + (1 + 4 + 6) + 4 = 38.
     assertEquals(0L, t2a.get(1L)[0]);
     assertEquals(38L, t2a.get(2L)[0]);

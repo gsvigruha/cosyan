@@ -9,7 +9,7 @@ import com.cosyan.db.index.IDIndex;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Indexes.IndexReader;
 
-public abstract class TableIndex implements IndexReader {
+public abstract class TableUniqueIndex implements IndexReader {
 
   public abstract void put(Object key, long fileIndex) throws IOException, IndexException;
 
@@ -35,7 +35,7 @@ public abstract class TableIndex implements IndexReader {
     return valid;
   }
 
-  public static class LongTableIndex extends TableIndex {
+  public static class LongTableIndex extends TableUniqueIndex {
 
     private LongIndex index;
 
@@ -99,7 +99,7 @@ public abstract class TableIndex implements IndexReader {
     }
   }
 
-  public static class StringTableIndex extends TableIndex {
+  public static class StringTableIndex extends TableUniqueIndex {
 
     private StringIndex index;
 
@@ -163,7 +163,7 @@ public abstract class TableIndex implements IndexReader {
     }
   }
 
-  public static class IDTableIndex extends TableIndex {
+  public static class IDTableIndex extends TableUniqueIndex {
 
     private IDIndex index;
 

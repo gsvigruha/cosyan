@@ -7,31 +7,26 @@ import java.io.IOException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.cosyan.db.DummyTestBase;
+import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.conf.Config.ConfigException;
-import com.cosyan.db.io.IOTestUtil.DummyMaterializedTableMeta;
-import com.cosyan.db.io.TableReader.ExposedTableReader;
+import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.session.IParser.ParserException;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableList;
 
-public class BuiltinFunctionsTest extends DummyTestBase {
+public class BuiltinFunctionsTest extends UnitTestBase {
 
   @BeforeClass
-  public static void setUp() throws Exception {
-    DummyTestBase.setUp();
-    register(new DummyMaterializedTableMeta(metaRepo.config(), "table",
-        ImmutableMap.of(
-            "a", new BasicColumn(0, "a", DataTypes.StringType, true, false, false, false)),
-        new Object[][] {
-            new Object[] { "abcABC" } }));
-    DummyTestBase.finalizeResources();
+  public static void setUp() throws IOException, ModelException, ParserException, ConfigException {
+    UnitTestBase.setUp();
+    execute("create table t (a varchar);");
+    execute("insert into t values ('abcABC');");
   }
 
   private void assertResult(String expr, Object result)
       throws ModelException, ConfigException, ParserException, IOException {
-    ExposedTableReader reader = query("select " + expr + " as r from table;");
-    assertEquals(ImmutableMap.of("r", result), reader.readColumns());
+    QueryResult r = query("select " + expr + " as r from t;");
+    assertEquals(ImmutableList.of(ImmutableList.of(result)), r.getValues());
   }
 
   @Test

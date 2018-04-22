@@ -50,16 +50,7 @@ public class DropStatement {
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
       BasicColumn column = tableMeta.column(this.column);
-      if (!column.isIndexed()) {
-        throw new ModelException(String.format("Cannot drop index '%s.%s', column is not indexed.",
-            tableMeta.tableName(), column.getName()), this.column);
-      }
-      if (column.isUnique()) {
-        throw new ModelException(String.format("Cannot drop index '%s.%s', column is unique.",
-            tableMeta.tableName(), column.getName()), this.column);
-      }
-      metaRepo.dropMultiIndex(tableMeta, column);
-      column.setIndexed(false);
+      column.dropIndex(tableMeta, metaRepo);
       return new MetaStatementResult();
     }
   }

@@ -44,7 +44,7 @@ public abstract class UnitTestBase {
     session = dbApi.adminSession();
   }
 
-  protected void execute(String sql) {
+  protected static void execute(String sql) {
     Result result = session.execute(sql);
     if (result instanceof ErrorResult) {
       ((ErrorResult) result).getError().printStackTrace();

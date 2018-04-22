@@ -31,7 +31,7 @@ import com.cosyan.db.model.Dependencies.ReverseRuleDependencies;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.Rule.BooleanRule;
-import com.cosyan.db.model.TableIndex;
+import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.base.Predicates;
@@ -46,7 +46,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   private final MaterializedTableMeta tableMeta;
   private final SeekableRecordReader reader;
   private final ImmutableList<BasicColumn> columns;
-  private final ImmutableMap<String, TableIndex> uniqueIndexes;
+  private final ImmutableMap<String, TableUniqueIndex> uniqueIndexes;
   private final ImmutableMap<String, TableMultiIndex> multiIndexes;
   private final ImmutableMultimap<String, IndexReader> foreignIndexes;
   private final ImmutableMultimap<String, IndexReader> reversedForeignIndexes;
@@ -65,7 +65,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       SeekableOutputStream fileWriter,
       SeekableInputStream fileReader,
       ImmutableList<BasicColumn> columns,
-      ImmutableMap<String, TableIndex> uniqueIndexes,
+      ImmutableMap<String, TableUniqueIndex> uniqueIndexes,
       ImmutableMap<String, TableMultiIndex> multiIndexes,
       ImmutableMultimap<String, IndexReader> foreignIndexes,
       ImmutableMultimap<String, IndexReader> reversedForeignIndexes,
@@ -160,7 +160,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       writer.getChannel().truncate(fileIndex0);
       throw e;
     }
-    for (TableIndex index : uniqueIndexes.values()) {
+    for (TableUniqueIndex index : uniqueIndexes.values()) {
       try {
         index.commit();
       } catch (IOException e) {
@@ -179,7 +179,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   public void rollback() {
     recordsToDelete.clear();
     recordsToInsert.clear();
-    for (TableIndex index : uniqueIndexes.values()) {
+    for (TableUniqueIndex index : uniqueIndexes.values()) {
       index.rollback();
     }
     for (TableMultiIndex index : multiIndexes.values()) {
@@ -306,7 +306,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     return valuess.size();
   }
 
-  public TableIndex getPrimaryKeyIndex() {
+  public TableUniqueIndex getPrimaryKeyIndex() {
     return uniqueIndexes.get(primaryKey.get().getColumn().getName());
   }
 

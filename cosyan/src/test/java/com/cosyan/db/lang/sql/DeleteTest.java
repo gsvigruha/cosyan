@@ -9,7 +9,7 @@ import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.TableIndex;
+import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.model.TableMultiIndex;
 
 public class DeleteTest extends UnitTestBase {
@@ -79,7 +79,7 @@ public class DeleteTest extends UnitTestBase {
     execute("insert into t5 values ('y');");
     execute("insert into t6 values ('123', 'x');");
 
-    TableIndex t5a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t5"))).get("a");
+    TableUniqueIndex t5a = metaRepo.collectUniqueIndexes(metaRepo.table(new Ident("t5"))).get("a");
     assertEquals(0L, t5a.get("x")[0]);
     assertEquals(16L, t5a.get("y")[0]);
     TableMultiIndex t6b = metaRepo.collectMultiIndexes(metaRepo.table(new Ident("t6"))).get("b");

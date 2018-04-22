@@ -7,7 +7,7 @@ import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.model.Keys.Ref;
-import com.cosyan.db.model.TableIndex;
+import com.cosyan.db.model.TableUniqueIndex;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 
@@ -58,7 +58,7 @@ public class Resources {
     }
   }
 
-  public TableIndex getPrimaryKeyIndex(String table) {
+  public TableUniqueIndex getPrimaryKeyIndex(String table) {
     assert readers.containsKey(table) || writers.containsKey(table) : String.format("Invalid table %s.", table);
     if (readers.containsKey(table)) {
       return readers.get(table).getPrimaryKeyIndex();

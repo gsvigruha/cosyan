@@ -106,7 +106,7 @@ public class MetaResourcesTest extends UnitTestBase {
     assertFalse(res2.get("t9").isWrite());
     assertFalse(res2.get("t9.a").isWrite());
 
-    Map<String, Resource> res3 = resources("update t8 set a = 'x';");
+    Map<String, Resource> res3 = resources("update t8 set b = 2;");
     assertEquals(4, res1.size());
     assertTrue(res3.get("t8").isWrite());
     assertTrue(res3.get("t8.a").isWrite());
