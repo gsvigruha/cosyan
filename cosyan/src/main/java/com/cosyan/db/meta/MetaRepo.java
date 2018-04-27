@@ -35,15 +35,15 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
-import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.TableUniqueIndex;
-import com.cosyan.db.model.TableUniqueIndex.IDTableIndex;
-import com.cosyan.db.model.TableUniqueIndex.LongTableIndex;
-import com.cosyan.db.model.TableUniqueIndex.StringTableIndex;
+import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.LongTableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.StringTableMultiIndex;
+import com.cosyan.db.model.TableUniqueIndex;
+import com.cosyan.db.model.TableUniqueIndex.IDTableIndex;
+import com.cosyan.db.model.TableUniqueIndex.LongTableIndex;
+import com.cosyan.db.model.TableUniqueIndex.StringTableIndex;
 import com.cosyan.db.session.IParser.ParserException;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
@@ -168,23 +168,67 @@ public class MetaRepo implements TableProvider {
     return builder.build();
   }
 
-  public void registerTable(MaterializedTableMeta tableMeta) throws IOException {
-    String tableName = tableMeta.tableName();
+  public void sync(MaterializedTableMeta tableMeta) throws IOException {
     for (BasicColumn column : tableMeta.allColumns()) {
       if (column.isIndexed()) {
-        if (column.isUnique()) {
-          registerUniqueIndex(tableMeta, column);
+        if (column.isDeleted()) {
+          if (column.isUnique()) {
+            dropUniqueIndex(tableMeta, column);
+          } else {
+            dropMultiIndex(tableMeta, column);
+          }
         } else {
-          registerMultiIndex(tableMeta, column);
+          if (column.isUnique()) {
+            registerUniqueIndex(tableMeta, column);
+          } else {
+            registerMultiIndex(tableMeta, column);
+          }
         }
       }
     }
+    for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
+      foreignKey.getRefTable().addReverseForeignKey(foreignKey.createReverse());
+    }
+    for (BooleanRule rule : tableMeta.rules().values()) {
+      rule.getDeps().addAllReverseRuleDependencies(rule);
+    }
+  }
+
+  public void registerTable(MaterializedTableMeta tableMeta) throws IOException {
+    String tableName = tableMeta.tableName();
+    sync(tableMeta);
     tables.put(tableName, tableMeta);
     lockManager.registerLock(tableName);
   }
 
-  public void dropTable(String tableName) throws IOException {
+  public void dropTable(Ident table) throws IOException, ModelException {
+    MaterializedTableMeta tableMeta = table(table);
+    if (!tableMeta.foreignKeys().isEmpty()) {
+      ForeignKey foreignKey = tableMeta.foreignKeys().values().iterator().next();
+      throw new ModelException(String.format("Cannot drop table '%s', has foreign key '%s'.",
+          table.getString(), foreignKey),
+          table);
+    }
+    if (!tableMeta.reverseForeignKeys().isEmpty()) {
+      ReverseForeignKey foreignKey = tableMeta.reverseForeignKeys().values().iterator().next();
+      throw new ModelException(String.format("Cannot drop table '%s', referenced by foreign key '%s.%s'.",
+          table.getString(),
+          foreignKey.getRefTable().tableName(),
+          foreignKey.getReverse()),
+          table);
+    }
+
+    String tableName = table.getString();
     tables.remove(tableName);
+    for (BasicColumn column : tableMeta.allColumns()) {
+      if (column.isIndexed()) {
+        if (column.isUnique()) {
+          dropUniqueIndex(tableMeta, column);
+        } else {
+          dropMultiIndex(tableMeta, column);
+        }
+      }
+    }
     lockManager.removeLock(tableName);
   }
 
@@ -192,11 +236,13 @@ public class MetaRepo implements TableProvider {
     return tables.containsKey(tableName);
   }
 
-  public void registerUniqueIndex(MaterializedTableMeta table, BasicColumn column)
+  private void registerUniqueIndex(MaterializedTableMeta table, BasicColumn column)
       throws IOException {
     String indexName = table.tableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
-    assert !uniqueIndexes.containsKey(indexName);
+    if (uniqueIndexes.containsKey(indexName)) {
+      return;
+    }
     if (column.getType() == DataTypes.StringType) {
       uniqueIndexes.put(indexName, new StringTableIndex(new StringIndex(path)));
       lockManager.registerLock(indexName);
@@ -209,11 +255,13 @@ public class MetaRepo implements TableProvider {
     }
   }
 
-  public void registerMultiIndex(MaterializedTableMeta table, BasicColumn column)
+  private void registerMultiIndex(MaterializedTableMeta table, BasicColumn column)
       throws IOException {
     String indexName = table.tableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
-    assert !multiIndexes.containsKey(indexName);
+    if (multiIndexes.containsKey(indexName)) {
+      return;
+    }
     if (column.getType() == DataTypes.StringType) {
       multiIndexes.put(indexName, new StringTableMultiIndex(new StringMultiIndex(path)));
       lockManager.registerLock(indexName);
@@ -223,15 +271,21 @@ public class MetaRepo implements TableProvider {
     }
   }
 
-  public void dropUniqueIndex(MaterializedTableMeta table, BasicColumn column) throws IOException {
+  private void dropUniqueIndex(MaterializedTableMeta table, BasicColumn column) throws IOException {
     String indexName = table.tableName() + "." + column.getName();
+    if (!uniqueIndexes.containsKey(indexName)) {
+      return;
+    }
     TableUniqueIndex index = uniqueIndexes.remove(indexName);
     lockManager.removeLock(indexName);
     index.drop();
   }
 
-  public void dropMultiIndex(MaterializedTableMeta table, BasicColumn column) throws IOException {
+  private void dropMultiIndex(MaterializedTableMeta table, BasicColumn column) throws IOException {
     String indexName = table.tableName() + "." + column.getName();
+    if (!multiIndexes.containsKey(indexName)) {
+      return;
+    }
     TableMultiIndex index = multiIndexes.remove(indexName);
     lockManager.removeLock(indexName);
     index.drop();

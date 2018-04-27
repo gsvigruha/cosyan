@@ -1,4 +1,4 @@
-package com.cosyan.db.model;
+package com.cosyan.db.meta;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,23 +18,29 @@ import com.cosyan.db.io.SeekableOutputStream;
 import com.cosyan.db.io.SeekableOutputStream.RAFSeekableOutputStream;
 import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.Dependencies.ReverseRuleDependencies;
+import com.cosyan.db.meta.Dependencies.ReverseRuleDependency;
+import com.cosyan.db.meta.Dependencies.TableDependencies;
+import com.cosyan.db.meta.Dependencies.TableDependency;
+import com.cosyan.db.meta.Dependencies.TransitiveTableDependency;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.meta.TableProvider;
+import com.cosyan.db.model.BasicColumn;
+import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
-import com.cosyan.db.model.Dependencies.ReverseRuleDependencies;
-import com.cosyan.db.model.Dependencies.ReverseRuleDependency;
-import com.cosyan.db.model.Dependencies.TableDependencies;
-import com.cosyan.db.model.Dependencies.TableDependency;
-import com.cosyan.db.model.Dependencies.TransitiveTableDependency;
+import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
+import com.cosyan.db.model.References;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.References.ReferencedTable;
+import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
+import com.cosyan.db.model.TableRef;
 import com.cosyan.db.model.stat.TableStats;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -240,12 +246,20 @@ public class MaterializedTableMeta {
 
   public void addForeignKey(ForeignKey foreignKey) throws ModelException {
     checkName(foreignKey.getName());
-    foreignKey.getRefTable().checkName(foreignKey.getName());
+    foreignKey.getRefTable().checkName(foreignKey.getRevName());
     foreignKeys.put(foreignKey.getName(), foreignKey);
-    foreignKey.getRefTable().reverseForeignKeys.put(foreignKey.getRevName(), foreignKey.createReverse());
   }
 
-  public void addColumn(BasicColumn column) throws ModelException {
+  void addReverseForeignKey(ReverseForeignKey reverseForeignKey) {
+    ReverseForeignKey existingKey = reverseForeignKeys.get(reverseForeignKey.getName());
+    if (existingKey == null) {
+      reverseForeignKeys.put(reverseForeignKey.getName(), reverseForeignKey);
+    } else {
+      assert reverseForeignKey.equals(existingKey);
+    }
+  }
+
+  public void addColumn(BasicColumn column) throws ModelException, IOException {
     assert column.getIndex() == columns.size();
     if (!isEmpty && !column.isNullable()) {
       throw new ModelException(
@@ -266,10 +280,9 @@ public class MaterializedTableMeta {
     checkName(rule.name());
     rules.put(rule.name(), rule);
     ruleDependencies.addToThis(rule.getDeps());
-    rule.getDeps().addAllReverseRuleDependencies(rule);
   }
 
-  public void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, BooleanRule rule) {
+  void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, BooleanRule rule) {
     reverseRuleDependencies.addReverseRuleDependency(reverseForeignKeyChain, rule);
   }
 
@@ -344,7 +357,7 @@ public class MaterializedTableMeta {
     return stats.isEmpty();
   }
 
-  public void deleteColumn(Ident column, MetaRepo metaRepo) throws ModelException, IOException {
+  public void deleteColumn(Ident column) throws ModelException, IOException {
     BasicColumn basicColumn = column(column);
     basicColumn.setDeleted(true);
     try {
@@ -380,13 +393,6 @@ public class MaterializedTableMeta {
       basicColumn.setDeleted(false);
     }
     basicColumn.setDeleted(true);
-    if (basicColumn.isIndexed()) {
-      if (basicColumn.isUnique()) {
-        metaRepo.dropUniqueIndex(this, basicColumn);
-      } else {
-        metaRepo.dropMultiIndex(this, basicColumn);
-      }
-    }
   }
 
   public static class SeekableTableMeta extends ExposedTableMeta implements ReferencedTable, TableProvider {
@@ -407,7 +413,7 @@ public class MaterializedTableMeta {
     }
 
     @Override
-    protected IndexColumn getColumn(Ident ident) throws ModelException {
+    public IndexColumn getColumn(Ident ident) throws ModelException {
       BasicColumn column = tableMeta.column(ident);
       if (column == null) {
         return null;
@@ -417,7 +423,7 @@ public class MaterializedTableMeta {
     }
 
     @Override
-    protected TableMeta getRefTable(Ident ident) throws ModelException {
+    public TableMeta getRefTable(Ident ident) throws ModelException {
       return References.getRefTable(
           this,
           tableMeta.tableName(),

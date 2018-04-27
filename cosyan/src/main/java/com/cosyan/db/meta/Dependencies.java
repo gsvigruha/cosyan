@@ -1,4 +1,4 @@
-package com.cosyan.db.model;
+package com.cosyan.db.meta;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,6 +13,7 @@ import com.cosyan.db.model.References.RefTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.References.ReferencedRefTableMeta;
 import com.cosyan.db.model.References.ReferencedSimpleTableMeta;
+import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -201,14 +202,19 @@ public class Dependencies {
 
     public void addRule(BooleanRule rule) {
       assert rule.getTable().tableName().equals(key.getRefTable().tableName());
-      rules.put(rule.getName(), rule);
+      BooleanRule existingRule = rules.get(rule.getName());
+      if (existingRule == null) {
+        rules.put(rule.getName(), rule);
+      } else {
+        assert existingRule == rule;
+      }
     }
   }
 
   public static class ReverseRuleDependencies {
     private final Map<String, ReverseRuleDependency> deps = new HashMap<>();
 
-    public void addReverseRuleDependency(Iterable<Ref> foreignKeyChain, BooleanRule rule) {
+    void addReverseRuleDependency(Iterable<Ref> foreignKeyChain, BooleanRule rule) {
       Map<String, ReverseRuleDependency> actDeps = deps;
       ReverseRuleDependency reverseDep = null;
       for (Ref foreignKey : foreignKeyChain) {
@@ -221,8 +227,8 @@ public class Dependencies {
       reverseDep.addRule(rule);
     }
 
-    public Map<String, ReverseRuleDependency> getDeps() {
-      return deps;
+    public ImmutableMap<String, ReverseRuleDependency> getDeps() {
+      return ImmutableMap.copyOf(deps);
     }
 
     public Iterable<Rule> allRules() {

@@ -10,13 +10,13 @@ import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.StatementResult;
 import com.cosyan.db.logic.PredicateHelper;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
+import com.cosyan.db.meta.MaterializedTableMeta;
 import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 

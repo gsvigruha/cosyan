@@ -11,7 +11,6 @@ import java.util.Collection;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.auth.LocalUsers;
 import com.cosyan.db.conf.Config;
-import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;

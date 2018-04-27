@@ -8,11 +8,11 @@ import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.CreateStatement.ColumnDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.MetaStatementResult;
+import com.cosyan.db.meta.MaterializedTableMeta;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.MaterializedTableMeta;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -36,6 +36,7 @@ public class AlterStatementColumns {
           column.isUnique(),
           column.isImmutable());
       tableMeta.addColumn(basicColumn);
+      metaRepo.sync(tableMeta);
       return new MetaStatementResult();
     }
   }
@@ -49,7 +50,8 @@ public class AlterStatementColumns {
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
-      tableMeta.deleteColumn(column, metaRepo);
+      tableMeta.deleteColumn(column);
+      metaRepo.sync(tableMeta);
       return new MetaStatementResult();
     }
   }

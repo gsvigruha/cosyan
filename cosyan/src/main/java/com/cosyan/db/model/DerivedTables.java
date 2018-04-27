@@ -12,10 +12,11 @@ import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
+import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
-import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMeta.IterableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -168,7 +169,7 @@ public class DerivedTables {
     }
 
     @Override
-    protected TableMeta getRefTable(Ident ident) throws ModelException {
+    public TableMeta getRefTable(Ident ident) throws ModelException {
       return sourceTable.getRefTable(ident);
     }
 

@@ -13,7 +13,9 @@ import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.MetaStatementResult;
+import com.cosyan.db.meta.MaterializedTableMeta;
 import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
@@ -22,8 +24,6 @@ import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
-import com.cosyan.db.model.MaterializedTableMeta;
-import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.model.Rule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -149,7 +149,7 @@ public class CreateStatement {
               foreignKeyDefinition.getName());
         }
         assert refColumn.isUnique() && !refColumn.isNullable();
-        keyColumn.setIndexed();
+        keyColumn.addIndex(tableMeta);
         tableMeta.addForeignKey(new ForeignKey(
             foreignKeyDefinition.getName().getString(),
             foreignKeyDefinition.getRevName(),
@@ -237,7 +237,8 @@ public class CreateStatement {
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IndexException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
       BasicColumn column = tableMeta.column(this.column);
-      column.addIndex(tableMeta, metaRepo);
+      column.addIndex(tableMeta);
+      metaRepo.sync(tableMeta);
       return new MetaStatementResult();
     }
   }

@@ -11,10 +11,10 @@ import com.cosyan.db.lang.expr.Literals.Literal;
 import com.cosyan.db.lang.expr.Literals.LongLiteral;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
 import com.cosyan.db.lang.sql.Tokens;
+import com.cosyan.db.meta.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.MaterializedTableMeta.SeekableTableMeta;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;

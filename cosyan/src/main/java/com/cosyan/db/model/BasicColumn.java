@@ -1,8 +1,6 @@
 package com.cosyan.db.model;
 
-import java.io.IOException;
-
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MaterializedTableMeta;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.DataTypes.DataType;
 
@@ -98,45 +96,28 @@ public class BasicColumn {
     }
   }
 
-  public void addIndex(MaterializedTableMeta parentTable, MetaRepo metaRepo) throws IOException, ModelException {
+  public void addIndex(MaterializedTableMeta parentTable) throws ModelException {
     assert parentTable.column(ident) == this;
     if (indexed) {
       return;
     }
     checkIndexType();
-    try {
-      if (unique) {
-        // Already has index.
-      } else {
-        metaRepo.registerMultiIndex(parentTable, this);
-      }
-    } finally {
-      indexed = true;
-    }
+    indexed = true;
   }
 
-  public void dropIndex(MaterializedTableMeta parentTable, MetaRepo metaRepo) throws IOException, ModelException {
+  public void dropIndex(MaterializedTableMeta parentTable) throws ModelException {
     assert parentTable.column(ident) == this;
     if (!indexed) {
       return;
     }
-    try {
-      if (unique) {
-        throw new ModelException(String.format("Cannot drop index '%s.%s', column is unique.",
-            parentTable.tableName(), getName()), ident);
-      }
-      metaRepo.dropMultiIndex(parentTable, this);
-    } finally {
-      indexed = false;
+    if (unique) {
+      throw new ModelException(String.format("Cannot drop index '%s.%s', column is unique.",
+          parentTable.tableName(), getName()), ident);
     }
+    indexed = false;
   }
 
   public void setDeleted(boolean deleted) {
     this.deleted = deleted;
-  }
-
-  public void setIndexed() throws ModelException {
-    checkIndexType();
-    this.indexed = true;
   }
 }

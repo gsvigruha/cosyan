@@ -1,5 +1,7 @@
 package com.cosyan.db.model;
 
+import com.cosyan.db.meta.MaterializedTableMeta;
+
 import lombok.Data;
 
 public class Keys {

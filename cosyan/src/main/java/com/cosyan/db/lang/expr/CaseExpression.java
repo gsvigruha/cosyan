@@ -2,12 +2,12 @@ package com.cosyan.db.lang.expr;
 
 import java.io.IOException;
 
+import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;

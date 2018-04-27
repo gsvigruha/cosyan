@@ -8,10 +8,10 @@ import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.CreateStatement.ConstraintDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.MetaStatementResult;
+import com.cosyan.db.meta.MaterializedTableMeta;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.MaterializedTableMeta;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
@@ -29,6 +29,7 @@ public class AlterStatementConstraints {
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
       CreateStatement.CreateTable.addConstraints(metaRepo, tableMeta, ImmutableList.of(constraint));
+      metaRepo.sync(tableMeta);
       return new MetaStatementResult();
     }
   }

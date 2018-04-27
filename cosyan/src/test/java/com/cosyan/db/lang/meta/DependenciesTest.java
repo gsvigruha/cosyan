@@ -1,15 +1,15 @@
-package com.cosyan.db.lang.sql;
+package com.cosyan.db.lang.meta;
 
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
+import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.Dependencies.ReverseRuleDependency;
+import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.Rule;
-import com.cosyan.db.model.Dependencies.ReverseRuleDependency;
-import com.cosyan.db.model.Dependencies.TableDependencies;
 
 public class DependenciesTest extends UnitTestBase {
 

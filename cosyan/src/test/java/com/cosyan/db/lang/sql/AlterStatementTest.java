@@ -7,10 +7,10 @@ import org.junit.Test;
 import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
+import com.cosyan.db.meta.MaterializedTableMeta;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.MaterializedTableMeta;
 
 public class AlterStatementTest extends UnitTestBase {
 

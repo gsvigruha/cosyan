@@ -18,7 +18,6 @@ import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.lang.transaction.Result.TransactionResult;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.session.IParser.ParserException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;

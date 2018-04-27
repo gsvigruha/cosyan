@@ -6,13 +6,13 @@ import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
+import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
-import com.cosyan.db.model.MaterializedTableMeta;
 import com.cosyan.db.model.Rule;
 import com.google.common.collect.ImmutableMap;
 

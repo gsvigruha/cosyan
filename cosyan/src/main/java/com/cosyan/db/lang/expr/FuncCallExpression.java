@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.AggrTables;
 import com.cosyan.db.model.AggrTables.NotAggrTableException;
@@ -18,7 +19,6 @@ import com.cosyan.db.model.ColumnMeta.DerivedColumnWithDeps;
 import com.cosyan.db.model.CompiledObject;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.TableMeta;

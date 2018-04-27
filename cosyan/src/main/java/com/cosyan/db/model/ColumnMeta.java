@@ -2,9 +2,9 @@ package com.cosyan.db.model;
 
 import java.io.IOException;
 
+import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 

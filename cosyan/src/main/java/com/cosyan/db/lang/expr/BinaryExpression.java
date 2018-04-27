@@ -7,12 +7,12 @@ import java.util.Date;
 
 import com.cosyan.db.lang.sql.Tokens;
 import com.cosyan.db.lang.sql.Tokens.Token;
+import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.cosyan.db.model.Dependencies.TableDependencies;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;

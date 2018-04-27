@@ -5,12 +5,12 @@ import java.util.Map;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import com.cosyan.db.meta.MaterializedTableMeta;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
-import com.cosyan.db.model.MaterializedTableMeta;
 
 public class MetaRepoConnector {
 
