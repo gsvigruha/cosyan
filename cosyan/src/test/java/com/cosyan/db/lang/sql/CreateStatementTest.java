@@ -202,4 +202,15 @@ public class CreateStatementTest extends UnitTestBase {
     ErrorResult e2 = error("create table t22 (a id, b integer, constraint pk_b primary key (b));");
     assertEquals("There can only be one primary key.", e2.getError().getMessage());
   }
+
+  @Test
+  public void testCreateTableErrorNoReverseForeignKey() throws Exception {
+    execute("create table t23 (a id);");
+    ErrorResult e1 = error("create table t24 (a integer, "
+        + "constraint fk_a foreign key (a) references t23(a), "
+        + "constraint c check (b > 1));");
+    assertEquals("Column 'b' not found in table 't24'.", e1.getError().getMessage());
+    MaterializedTableMeta t23 = metaRepo.table(new Ident("t23"));
+    assertEquals(0, t23.reverseForeignKeys().size());
+  }
 }
