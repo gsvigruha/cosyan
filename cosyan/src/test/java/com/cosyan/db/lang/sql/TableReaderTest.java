@@ -2,19 +2,16 @@ package com.cosyan.db.lang.sql;
 
 import static org.junit.Assert.assertArrayEquals;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
-import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.AggrTables.NotAggrTableException;
-import com.cosyan.db.session.IParser.ParserException;
 
 public class TableReaderTest extends UnitTestBase {
 
@@ -22,7 +19,7 @@ public class TableReaderTest extends UnitTestBase {
   private static final SimpleDateFormat sdf2 = new SimpleDateFormat("yyyyMMdd hhmmss");
 
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParserException, ConfigException {
+  public static void setUp() throws Exception {
     UnitTestBase.setUp();
 
     execute("create table table (a varchar, b integer, c float);");
@@ -50,6 +47,9 @@ public class TableReaderTest extends UnitTestBase {
 
     execute("create table stats (b integer, c float);");
     execute("insert into stats values (1, 9.0), (8, 13.0), (12, 40.0), (11, 14.0), (6, 21.0);");
+
+    execute("create table enums (a enum('x', 'y'));");
+    execute("insert into enums values ('x'), ('y');");
   }
 
   @Test
@@ -484,6 +484,26 @@ public class TableReaderTest extends UnitTestBase {
         sdf2.parse("20170101 010000"),
         sdf2.parse("20170101 000100"),
         sdf2.parse("20170101 000001") }, result.getValues().get(0));
+  }
+
+  @Test
+  public void testEnumInFunc() throws Exception {
+    QueryResult result = query("select length(a) as l from enums;");
+    assertArrayEquals(new Object[] { 1L }, result.getValues().get(0));
+    assertArrayEquals(new Object[] { 1L }, result.getValues().get(1));
+  }
+
+  @Test
+  public void testEnumInBinaryExpr() throws Exception {
+    QueryResult result = query("select a + 'z' as a from enums;");
+    assertArrayEquals(new Object[] { "xz" }, result.getValues().get(0));
+    assertArrayEquals(new Object[] { "yz" }, result.getValues().get(1));
+  }
+
+  @Test
+  public void testEnumInAggr() throws Exception {
+    QueryResult result = query("select max(a) as a from enums;");
+    assertArrayEquals(new Object[] { "y" }, result.getValues().get(0));
   }
 
   @Test

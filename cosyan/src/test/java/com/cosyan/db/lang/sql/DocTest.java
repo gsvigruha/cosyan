@@ -10,11 +10,8 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
-import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
-import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.session.IParser.ParserException;
 
 public class DocTest extends UnitTestBase {
 
@@ -51,25 +48,25 @@ public class DocTest extends UnitTestBase {
   }
 
   @Test
-  public void testForeignKeys() throws IOException, ModelException, ParserException, ConfigException {
+  public void testForeignKeys() throws Exception {
     setUp();
     runDocFile("doc/rules/foreign_keys.md");
   }
 
   @Test
-  public void testReverseForeignKeys() throws IOException, ModelException, ParserException, ConfigException {
+  public void testReverseForeignKeys() throws Exception {
     setUp();
     runDocFile("doc/rules/reverse_foreign_keys.md");
   }
 
   @Test
-  public void testDateTimes() throws IOException, ModelException, ParserException, ConfigException {
+  public void testDateTimes() throws Exception {
     setUp();
     runDocFile("doc/rules/date_time.md");
   }
 
   @Test
-  public void testNetworks() throws IOException, ModelException, ParserException, ConfigException {
+  public void testNetworks() throws Exception {
     setUp();
     runDocFile("doc/rules/networks.md");
   }

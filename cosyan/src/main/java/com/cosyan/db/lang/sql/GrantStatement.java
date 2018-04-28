@@ -47,5 +47,10 @@ public class GrantStatement {
       metaRepo.createGrant(grantToken, authToken);
       return new MetaStatementResult();
     }
+
+    @Override
+    public boolean log() {
+      return true;
+    }
   }
 }

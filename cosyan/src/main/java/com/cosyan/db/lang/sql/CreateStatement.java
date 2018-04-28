@@ -167,6 +167,11 @@ public class CreateStatement {
         tableMeta.addRule(rule.toBooleanRule());
       }
     }
+
+    @Override
+    public boolean log() {
+      return true;
+    }
   }
 
   @Data
@@ -240,6 +245,11 @@ public class CreateStatement {
       column.addIndex(tableMeta);
       metaRepo.sync(tableMeta);
       return new MetaStatementResult();
+    }
+
+    @Override
+    public boolean log() {
+      return true;
     }
   }
 }

@@ -16,7 +16,7 @@ import com.cosyan.db.session.IParser.ParserException;
 public class BuiltinFunctionsTest extends UnitTestBase {
 
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParserException, ConfigException {
+  public static void setUp() throws Exception {
     UnitTestBase.setUp();
     execute("create table t (a varchar);");
     execute("insert into t values ('abcABC');");

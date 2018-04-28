@@ -115,7 +115,7 @@ public class Aggregators {
 
     @Override
     public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
-      if (argType == DataTypes.DoubleType) {
+      if (argType.isDouble()) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override
@@ -145,7 +145,7 @@ public class Aggregators {
             };
           }
         };
-      } else if (argType == DataTypes.LongType) {
+      } else if (argType.isLong()) {
         return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
 
           @Override
@@ -175,7 +175,7 @@ public class Aggregators {
             };
           }
         };
-      } else if (argType == DataTypes.StringType) {
+      } else if (argType.isString()) {
         return new TypedAggrFunction<String>(ident, DataTypes.StringType) {
 
           @Override
@@ -205,7 +205,7 @@ public class Aggregators {
             };
           }
         };
-      } else if (argType == DataTypes.DateType) {
+      } else if (argType.isDate()) {
         return new TypedAggrFunction<Date>(ident, DataTypes.DateType) {
 
           @Override
@@ -249,7 +249,7 @@ public class Aggregators {
 
     @Override
     public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
-      if (argType == DataTypes.DoubleType) {
+      if (argType.isDouble()) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override
@@ -279,7 +279,7 @@ public class Aggregators {
             };
           }
         };
-      } else if (argType == DataTypes.LongType) {
+      } else if (argType.isLong()) {
         return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
 
           @Override
@@ -309,7 +309,7 @@ public class Aggregators {
             };
           }
         };
-      } else if (argType == DataTypes.StringType) {
+      } else if (argType.isString()) {
         return new TypedAggrFunction<String>(ident, DataTypes.StringType) {
 
           @Override
@@ -339,7 +339,7 @@ public class Aggregators {
             };
           }
         };
-      } else if (argType == DataTypes.DateType) {
+      } else if (argType.isDate()) {
         return new TypedAggrFunction<Date>(ident, DataTypes.DateType) {
 
           @Override

@@ -18,7 +18,7 @@ public class StatAggregators {
 
     @Override
     public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
-      if (argType == DataTypes.DoubleType) {
+      if (argType.isDouble()) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override
@@ -48,7 +48,7 @@ public class StatAggregators {
             };
           }
         };
-      } else if (argType == DataTypes.LongType) {
+      } else if (argType.isLong()) {
         return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
 
           @Override
@@ -92,7 +92,7 @@ public class StatAggregators {
 
     @Override
     public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
-      if (argType == DataTypes.DoubleType) {
+      if (argType.isDouble()) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override
@@ -124,7 +124,7 @@ public class StatAggregators {
             };
           }
         };
-      } else if (argType == DataTypes.LongType) {
+      } else if (argType.isLong()) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override
@@ -216,7 +216,7 @@ public class StatAggregators {
 
     @Override
     public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
-      if (argType == DataTypes.DoubleType) {
+      if (argType.isDouble()) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override
@@ -229,7 +229,7 @@ public class StatAggregators {
             };
           }
         };
-      } else if (argType == DataTypes.LongType) {
+      } else if (argType.isLong()) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override
@@ -263,7 +263,7 @@ public class StatAggregators {
 
     @Override
     public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
-      if (argType == DataTypes.DoubleType) {
+      if (argType.isDouble()) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override
@@ -276,7 +276,7 @@ public class StatAggregators {
             };
           }
         };
-      } else if (argType == DataTypes.LongType) {
+      } else if (argType.isLong()) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override
@@ -329,7 +329,7 @@ public class StatAggregators {
 
     @Override
     public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
-      if (argType == DataTypes.DoubleType) {
+      if (argType.isDouble()) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override
@@ -342,7 +342,7 @@ public class StatAggregators {
             };
           }
         };
-      } else if (argType == DataTypes.LongType) {
+      } else if (argType.isLong()) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override
@@ -398,7 +398,7 @@ public class StatAggregators {
 
     @Override
     public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
-      if (argType == DataTypes.DoubleType) {
+      if (argType.isDouble()) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override
@@ -411,7 +411,7 @@ public class StatAggregators {
             };
           }
         };
-      } else if (argType == DataTypes.LongType) {
+      } else if (argType.isLong()) {
         return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
 
           @Override

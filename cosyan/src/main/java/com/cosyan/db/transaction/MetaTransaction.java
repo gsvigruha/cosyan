@@ -30,7 +30,9 @@ public class MetaTransaction {
     try {
       metaRepo.metaRepoWriteLock();
       metaStatement.execute(metaRepo, session.authToken());
-      session.metaJournal().log(sql);
+      if (metaStatement.log()) {
+        session.metaJournal().log(sql);
+      }
       return new MetaStatementResult();
     } catch (ModelException | IndexException | IOException | GrantException e) {
       return new ErrorResult(e);

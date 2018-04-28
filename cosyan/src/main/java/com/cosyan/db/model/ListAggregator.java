@@ -19,7 +19,7 @@ public class ListAggregator extends AggrFunction {
 
   @Override
   public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
-    if (argType == DataTypes.StringType) {
+    if (argType.isString()) {
       return new TypedAggrFunction<String[]>(ident, DataTypes.StringType.toListType()) {
 
         @Override
@@ -46,7 +46,7 @@ public class ListAggregator extends AggrFunction {
           };
         }
       };
-    } else if (argType == DataTypes.DoubleType) {
+    } else if (argType.isDouble()) {
       return new TypedAggrFunction<Double[]>(ident, DataTypes.DoubleType.toListType()) {
 
         @Override
@@ -73,7 +73,7 @@ public class ListAggregator extends AggrFunction {
           };
         }
       };
-    } else if (argType == DataTypes.LongType) {
+    } else if (argType.isLong()) {
       return new TypedAggrFunction<Long[]>(ident, DataTypes.LongType.toListType()) {
 
         @Override
@@ -100,7 +100,7 @@ public class ListAggregator extends AggrFunction {
           };
         }
       };
-    } else if (argType == DataTypes.DateType) {
+    } else if (argType.isDate()) {
       return new TypedAggrFunction<Date[]>(ident, DataTypes.DateType.toListType()) {
 
         @Override
@@ -127,7 +127,7 @@ public class ListAggregator extends AggrFunction {
           };
         }
       };
-    } else if (argType == DataTypes.BoolType) {
+    } else if (argType.isBool()) {
       return new TypedAggrFunction<Boolean[]>(ident, DataTypes.BoolType.toListType()) {
 
         @Override

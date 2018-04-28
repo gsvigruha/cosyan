@@ -152,28 +152,28 @@ public class BinaryExpression extends Expression {
   }
 
   private DerivedColumn asteriskExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
-    if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
+    if (leftColumn.getType().isLong() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.LongType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Long) l * (Long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Double) l * (Double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Double) l * (Long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isLong() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
@@ -187,35 +187,35 @@ public class BinaryExpression extends Expression {
   }
 
   private DerivedColumn plusExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
-    if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
+    if (leftColumn.getType().isLong() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.LongType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Long) l + (Long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Double) l + (Double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Double) l + (Long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isLong() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Long) l + (Double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.StringType && rightColumn.getType() == DataTypes.StringType) {
+    } else if (leftColumn.getType().isString() && rightColumn.getType().isString()) {
       return new BinaryColumn(DataTypes.StringType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
@@ -229,35 +229,35 @@ public class BinaryExpression extends Expression {
   }
 
   private DerivedColumn minusExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
-    if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
+    if (leftColumn.getType().isLong() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.LongType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Long) l - (Long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Double) l - (Double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Double) l - (Long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isLong() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Long) l - (Double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DateType && rightColumn.getType() == DataTypes.DateType) {
+    } else if (leftColumn.getType().isDate() && rightColumn.getType().isDate()) {
       return new BinaryColumn(DataTypes.LongType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
@@ -271,28 +271,28 @@ public class BinaryExpression extends Expression {
   }
 
   private DerivedColumn divExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
-    if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
+    if (leftColumn.getType().isLong() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.LongType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Long) l / (Long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Double) l / (Double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Double) l / (Long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isLong() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
@@ -306,28 +306,28 @@ public class BinaryExpression extends Expression {
   }
 
   private DerivedColumn modExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
-    if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
+    if (leftColumn.getType().isLong() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.LongType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Long) l % (Long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Double) l % (Double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (Double) l % (Long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isLong() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.DoubleType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
@@ -341,42 +341,42 @@ public class BinaryExpression extends Expression {
   }
 
   private DerivedColumn eqExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
-    if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
+    if (leftColumn.getType().isLong() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (long) l == (long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (double) l == (double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (double) l == (long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isLong() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (long) l == (double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.StringType && rightColumn.getType() == DataTypes.StringType) {
+    } else if (leftColumn.getType().isString() && rightColumn.getType().isString()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return ((String) l).equals((String) r);
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DateType && rightColumn.getType() == DataTypes.DateType) {
+    } else if (leftColumn.getType().isDate() && rightColumn.getType().isDate()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
@@ -390,42 +390,42 @@ public class BinaryExpression extends Expression {
   }
 
   private DerivedColumn lessExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
-    if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
+    if (leftColumn.getType().isLong() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (long) l < (long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (double) l < (double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (double) l < (long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isLong() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (long) l < (double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.StringType && rightColumn.getType() == DataTypes.StringType) {
+    } else if (leftColumn.getType().isString() && rightColumn.getType().isString()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return ((String) l).compareTo((String) r) < 0;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DateType && rightColumn.getType() == DataTypes.DateType) {
+    } else if (leftColumn.getType().isDate() && rightColumn.getType().isDate()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
@@ -439,42 +439,42 @@ public class BinaryExpression extends Expression {
   }
 
   private DerivedColumn greaterExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
-    if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
+    if (leftColumn.getType().isLong() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (long) l > (long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (double) l > (double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (double) l > (long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isLong() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (long) l > (double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.StringType && rightColumn.getType() == DataTypes.StringType) {
+    } else if (leftColumn.getType().isString() && rightColumn.getType().isString()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return ((String) l).compareTo((String) r) > 0;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DateType && rightColumn.getType() == DataTypes.DateType) {
+    } else if (leftColumn.getType().isDate() && rightColumn.getType().isDate()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
@@ -488,42 +488,42 @@ public class BinaryExpression extends Expression {
   }
 
   private DerivedColumn leqExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
-    if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
+    if (leftColumn.getType().isLong() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (long) l <= (long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (double) l <= (double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (double) l <= (long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isLong() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (long) l <= (double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.StringType && rightColumn.getType() == DataTypes.StringType) {
+    } else if (leftColumn.getType().isString() && rightColumn.getType().isString()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return ((String) l).compareTo((String) r) <= 0;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DateType && rightColumn.getType() == DataTypes.DateType) {
+    } else if (leftColumn.getType().isDate() && rightColumn.getType().isDate()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
@@ -537,42 +537,42 @@ public class BinaryExpression extends Expression {
   }
 
   private DerivedColumn geqExpression(ColumnMeta leftColumn, ColumnMeta rightColumn) throws ModelException {
-    if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.LongType) {
+    if (leftColumn.getType().isLong() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (long) l >= (long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (double) l >= (double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DoubleType && rightColumn.getType() == DataTypes.LongType) {
+    } else if (leftColumn.getType().isDouble() && rightColumn.getType().isLong()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (double) l >= (long) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.LongType && rightColumn.getType() == DataTypes.DoubleType) {
+    } else if (leftColumn.getType().isLong() && rightColumn.getType().isDouble()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return (long) l >= (double) r;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.StringType && rightColumn.getType() == DataTypes.StringType) {
+    } else if (leftColumn.getType().isString() && rightColumn.getType().isString()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {
           return ((String) l).compareTo((String) r) >= 0;
         }
       };
-    } else if (leftColumn.getType() == DataTypes.DateType && rightColumn.getType() == DataTypes.DateType) {
+    } else if (leftColumn.getType().isDate() && rightColumn.getType().isDate()) {
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
         @Override
         public Object getValueImpl(Object l, Object r) {

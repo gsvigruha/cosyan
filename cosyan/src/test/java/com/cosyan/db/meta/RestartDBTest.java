@@ -1,8 +1,9 @@
 package com.cosyan.db.meta;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,14 +13,16 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.cosyan.db.DBApi;
+import com.cosyan.db.auth.Authenticator.Method;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.conf.Config.ConfigException;
+import com.cosyan.db.lang.transaction.Result;
+import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.lang.transaction.Result.TransactionResult;
-import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.session.IParser.ParserException;
+import com.cosyan.db.session.Session;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
@@ -31,11 +34,25 @@ public class RestartDBTest {
   public static void before() throws IOException, ConfigException {
     FileUtils.cleanDirectory(new File("/tmp/data"));
     FileUtils.copyFile(new File("src/test/resources/cosyan.db.properties"), new File("/tmp/data/cosyan.db.properties"));
+    FileUtils.copyFile(new File("conf/users"), new File("/tmp/data/users"));
     config = new Config("/tmp/data");
   }
 
+  private QueryResult query(String sql, Session session) {
+    Result result = session.execute(sql);
+    if (result instanceof ErrorResult) {
+      ((ErrorResult) result).getError().printStackTrace();
+      fail(sql);
+    }
+    if (result instanceof CrashResult) {
+      ((CrashResult) result).getError().printStackTrace();
+      fail(sql);
+    }
+    return (QueryResult) ((TransactionResult) result).getResults().get(0);
+  }
+
   @Test
-  public void testTablesAfterRestart() throws IOException, ModelException, ParserException {
+  public void testTablesAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
     dbApi.adminSession().execute("create table t1("
         + "a integer,"
@@ -57,7 +74,7 @@ public class RestartDBTest {
   }
 
   @Test
-  public void testTableReferencesAfterRestart() throws IOException, ModelException, ParserException {
+  public void testTableReferencesAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
     dbApi.adminSession().execute("create table t2("
         + "a integer,"
@@ -86,7 +103,7 @@ public class RestartDBTest {
   }
 
   @Test
-  public void testRulesAfterRestart() throws IOException, ModelException, ParserException {
+  public void testRulesAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
     dbApi.adminSession().execute("create table t5("
         + "a integer,"
@@ -113,7 +130,7 @@ public class RestartDBTest {
   }
 
   @Test
-  public void testRefsAfterRestart() throws IOException, ModelException, ParserException {
+  public void testRefsAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
     dbApi.adminSession().execute("create table t7("
         + "a integer,"
@@ -136,7 +153,7 @@ public class RestartDBTest {
   }
 
   @Test
-  public void testDoubleRestart() throws IOException, ModelException, ParserException {
+  public void testDoubleRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
     dbApi.adminSession().execute("create table t9(a integer, b varchar);");
 
@@ -153,7 +170,7 @@ public class RestartDBTest {
   }
 
   @Test
-  public void testTableDataAfterRestart() throws IOException, ModelException, ParserException {
+  public void testTableDataAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
     dbApi.adminSession().execute("create table t10(a integer, b varchar);");
     dbApi.adminSession().execute("insert into t10 values(1, 'x');");
@@ -166,7 +183,7 @@ public class RestartDBTest {
   }
 
   @Test
-  public void testIndexesAfterRestart() throws IOException, ModelException, ParserException {
+  public void testIndexesAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
     dbApi.adminSession().execute("create table t11(a integer unique);");
     dbApi.adminSession().execute("insert into t11 values(1);");
@@ -177,7 +194,7 @@ public class RestartDBTest {
   }
 
   @Test
-  public void testGeneratedIDAfterRestart() throws IOException, ModelException, ParserException {
+  public void testGeneratedIDAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
     dbApi.adminSession().execute("create table t12(a id, b varchar);");
     dbApi.adminSession().execute("insert into t12 values('x'), ('y');");
@@ -188,11 +205,31 @@ public class RestartDBTest {
 
     dbApi = new DBApi(config);
     dbApi.adminSession().execute("insert into t12 values('z');");
-    QueryResult r2 = (QueryResult) ((TransactionResult) dbApi.adminSession().execute("select * from t12;"))
-        .getResults().get(0);
+    QueryResult r2 = query("select * from t12;", dbApi.adminSession());
 
     assertArrayEquals(new Object[] { 0L, "x" }, r2.getValues().get(0));
     assertArrayEquals(new Object[] { 1L, "y" }, r2.getValues().get(1));
     assertArrayEquals(new Object[] { 2L, "z" }, r2.getValues().get(2));
+  }
+
+  @Test
+  public void testUsersAfterRestart() throws Exception {
+    DBApi dbApi = new DBApi(config);
+    dbApi.adminSession().execute("create table t13(a integer);");
+    dbApi.adminSession().execute("insert into t13 values(1);");
+    dbApi.adminSession().execute("create user u1 identified by 'abc';");
+
+    Session u1 = dbApi.authSession("u1", "abc", Method.LOCAL);
+    ErrorResult e = (ErrorResult) u1.execute("select * from t13;");
+    assertEquals("User 'u1' has no SELECT right on 't13'.", e.getError().getMessage());
+    dbApi.adminSession().execute("grant select on t13 to u1;");
+
+    QueryResult r1 = query("select * from t13;", u1);
+    assertArrayEquals(new Object[] { 1L }, r1.getValues().get(0));
+
+    dbApi = new DBApi(config);
+    Session u1_2 = dbApi.authSession("u1", "abc", Method.LOCAL);
+    QueryResult r2 = query("select * from t13;", u1_2);
+    assertArrayEquals(new Object[] { 1L }, r2.getValues().get(0));
   }
 }

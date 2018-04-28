@@ -44,7 +44,6 @@ import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.model.TableUniqueIndex.IDTableIndex;
 import com.cosyan.db.model.TableUniqueIndex.LongTableIndex;
 import com.cosyan.db.model.TableUniqueIndex.StringTableIndex;
-import com.cosyan.db.session.IParser.ParserException;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 import com.cosyan.db.transaction.Resources;
@@ -64,7 +63,7 @@ public class MetaRepo implements TableProvider {
 
   private final LockManager lockManager;
 
-  public MetaRepo(Config config, LockManager lockManager) throws IOException, ModelException, ParserException {
+  public MetaRepo(Config config, LockManager lockManager) throws IOException {
     this.config = config;
     this.lockManager = lockManager;
     this.tables = new HashMap<>();

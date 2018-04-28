@@ -163,7 +163,8 @@ public class Grants {
       }
     }
     throw new GrantException(
-        String.format("User '%s' has no grant %s right on '%s'.", authToken.username(), grantToken.method(), grantToken.objects()));
+        String.format("User '%s' has no grant %s right on '%s'.", authToken.username(), grantToken.method(),
+            grantToken.objects()));
   }
 
   public void createUser(String username, String password, AuthToken authToken) throws GrantException, IOException {
@@ -182,7 +183,7 @@ public class Grants {
     } finally {
       reader.close();
     }
-    BufferedWriter writer = new BufferedWriter(new FileWriter(config.usersFile(), true));
+    BufferedWriter writer = new BufferedWriter(new FileWriter(config.usersFile(), /* append= */true));
     try {
       writer.write("\n" + username + ":" + LocalUsers.hash(password));
     } catch (NoSuchAlgorithmException e) {

@@ -4,13 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 
 import com.cosyan.db.conf.Config;
-import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
@@ -19,8 +17,6 @@ import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.lang.transaction.Result.StatementResult;
 import com.cosyan.db.lang.transaction.Result.TransactionResult;
 import com.cosyan.db.meta.MetaRepo;
-import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.session.IParser.ParserException;
 import com.cosyan.db.session.Session;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -33,7 +29,7 @@ public abstract class UnitTestBase {
   protected static MetaRepo metaRepo;
 
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParserException, ConfigException {
+  public static void setUp() throws Exception {
     FileUtils.forceMkdir(new File("/tmp/data"));
     FileUtils.cleanDirectory(new File("/tmp/data"));
     FileUtils.copyFile(new File("src/test/resources/cosyan.db.properties"), new File("/tmp/data/cosyan.db.properties"));

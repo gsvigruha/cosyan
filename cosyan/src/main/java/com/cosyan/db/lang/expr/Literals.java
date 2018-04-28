@@ -181,7 +181,7 @@ public class Literals {
 
     @Override
     public DataType<?> getType() throws ModelException {
-      return null;
+      return DataTypes.NullType;
     }
   }
 }

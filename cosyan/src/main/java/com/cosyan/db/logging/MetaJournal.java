@@ -10,6 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.lang.transaction.Result;
+import com.cosyan.db.lang.transaction.Result.CrashResult;
+import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.session.Session;
 
 public class MetaJournal {
@@ -33,12 +36,31 @@ public class MetaJournal {
     stream.flush();
   }
 
-  public void reload(Session session) throws IOException {
+  public void reload(Session session) throws IOException, DBException {
     BufferedReader reader = new BufferedReader(new FileReader(fileName()));
     String line = null;
-    while ((line = reader.readLine()) != null) {
-      session.execute(line);
+    try {
+      while ((line = reader.readLine()) != null) {
+        Result result = session.execute(line);
+        if (result instanceof ErrorResult) {
+          throw new DBException(((ErrorResult) result).getError());
+        }
+        if (result instanceof CrashResult) {
+          throw new DBException(((CrashResult) result).getError());
+        }
+      }
+    } finally {
+      reader.close();
     }
-    reader.close();
   }
+
+  public static class DBException extends Exception {
+
+    private static final long serialVersionUID = 1L;
+
+    public DBException(Throwable cause) {
+      super("DB crashed during start: " + cause.getMessage(), cause);
+    }
+  }
+
 }

@@ -41,10 +41,12 @@ public class SyntaxTree {
 
     public Result execute(MetaRepo metaRepo, AuthToken authToken)
         throws ModelException, IndexException, IOException, GrantException;
+
+    public boolean log();
   }
 
   public static void assertType(DataType<?> expectedType, DataType<?> dataType) throws ModelException {
-    if (expectedType != dataType) {
+    if (!expectedType.javaClass().equals(dataType.javaClass())) {
       throw new ModelException(
           "Data type " + dataType + " did not match expected type " + expectedType + ".");
     }

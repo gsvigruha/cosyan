@@ -31,5 +31,13 @@ public class Users {
       metaRepo.createUser(username.getString(), password.getValue(), authToken);
       return new MetaStatementResult();
     }
+
+    @Override
+    public boolean log() {
+      // Users are stored in a separate file manually. This statement should not be
+      // logged in order to avoid storing un-hashed passwords and re-creating users on
+      // DB restart.
+      return false;
+    }
   }
 }

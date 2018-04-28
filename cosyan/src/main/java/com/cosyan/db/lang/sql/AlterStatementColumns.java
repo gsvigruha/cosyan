@@ -39,6 +39,11 @@ public class AlterStatementColumns {
       metaRepo.sync(tableMeta);
       return new MetaStatementResult();
     }
+
+    @Override
+    public boolean log() {
+      return true;
+    }
   }
 
   @Data
@@ -54,6 +59,11 @@ public class AlterStatementColumns {
       metaRepo.sync(tableMeta);
       return new MetaStatementResult();
     }
+
+    @Override
+    public boolean log() {
+      return true;
+    }
   }
 
   @Data
@@ -68,16 +78,23 @@ public class AlterStatementColumns {
       BasicColumn originalColumn = tableMeta.column(column.getName());
       if (originalColumn.getType() != column.getType()) {
         throw new ModelException(
-            String.format("Cannot alter column '%s', type has to remain the same.", column.getName()), column.getName());
+            String.format("Cannot alter column '%s', type has to remain the same.", column.getName()),
+            column.getName());
       }
       if (originalColumn.isUnique() != column.isUnique()) {
         throw new ModelException(
-            String.format("Cannot alter column '%s', uniqueness has to remain the same.", column.getName()), column.getName());
-      
+            String.format("Cannot alter column '%s', uniqueness has to remain the same.", column.getName()),
+            column.getName());
+
       }
       originalColumn.setNullable(column.isNullable());
       originalColumn.setImmutable(column.isImmutable());
       return new MetaStatementResult();
+    }
+
+    @Override
+    public boolean log() {
+      return true;
     }
   }
 }

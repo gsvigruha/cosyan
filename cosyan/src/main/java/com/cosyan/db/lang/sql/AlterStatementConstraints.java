@@ -32,5 +32,10 @@ public class AlterStatementConstraints {
       metaRepo.sync(tableMeta);
       return new MetaStatementResult();
     }
+
+    @Override
+    public boolean log() {
+      return true;
+    }
   }
 }

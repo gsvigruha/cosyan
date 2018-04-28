@@ -28,6 +28,11 @@ public class DropStatement {
       metaRepo.dropTable(table);
       return new MetaStatementResult();
     }
+
+    @Override
+    public boolean log() {
+      return true;
+    }
   }
 
   @Data
@@ -43,6 +48,11 @@ public class DropStatement {
       column.dropIndex(tableMeta);
       metaRepo.sync(tableMeta);
       return new MetaStatementResult();
+    }
+
+    @Override
+    public boolean log() {
+      return true;
     }
   }
 }

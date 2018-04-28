@@ -60,5 +60,10 @@ public class AlterStatementRefs {
       tableMeta.addRef(new TableRef(ref.getName(), refTableMeta));
       return new MetaStatementResult();
     }
+
+    @Override
+    public boolean log() {
+      return true;
+    }
   }
 }

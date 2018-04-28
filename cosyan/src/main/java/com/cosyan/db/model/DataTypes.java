@@ -67,6 +67,30 @@ public class DataTypes {
 
     public abstract Class<T> javaClass();
 
+    public boolean isString() {
+      return javaClass().equals(String.class);
+    }
+
+    public boolean isLong() {
+      return javaClass().equals(Long.class);
+    }
+
+    public boolean isDouble() {
+      return javaClass().equals(Double.class);
+    }
+
+    public boolean isDate() {
+      return javaClass().equals(Date.class);
+    }
+
+    public boolean isBool() {
+      return javaClass().equals(Boolean.class);
+    }
+
+    public boolean isNull() {
+      return false;
+    }
+
     public abstract void write(Object value, DataOutput stream) throws IOException;
 
     public abstract T read(DataInput stream) throws IOException;
@@ -199,6 +223,34 @@ public class DataTypes {
     }
   };
 
+  public static final DataType<Object> NullType = new DataType<Object>("null") {
+
+    @Override
+    public Class<Object> javaClass() {
+      return Object.class;
+    }
+
+    @Override
+    public void write(Object value, DataOutput stream) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Date read(DataInput stream) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int size(Object value) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isNull() {
+      return true;
+    }
+  };
+
   public static final DataType<Long> IDType = new DataType<Long>("id") {
 
     @Override
@@ -251,6 +303,7 @@ public class DataTypes {
         return 1;
       }
 
+      @Override
       public void check(Object value) throws RuleException {
         if (!map.containsKey((String) value)) {
           throw new RuleException(String.format("Invalid enum value '%s'.", value));

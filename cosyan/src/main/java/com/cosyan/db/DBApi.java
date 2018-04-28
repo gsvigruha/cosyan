@@ -10,10 +10,9 @@ import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
 import com.cosyan.db.lock.LockManager;
 import com.cosyan.db.logging.MetaJournal;
+import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
-import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.session.IParser.ParserException;
 import com.cosyan.db.session.Session;
 import com.cosyan.db.transaction.TransactionHandler;
 
@@ -25,7 +24,7 @@ public class DBApi {
   private final MetaJournal metaJournal;
   private final Authenticator authenticator;
 
-  public DBApi(Config config) throws IOException, ModelException, ParserException {
+  public DBApi(Config config) throws IOException, DBException {
     LockManager lockManager = new LockManager();
     metaRepo = new MetaRepo(config, lockManager);
     transactionHandler = new TransactionHandler();
