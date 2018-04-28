@@ -3,8 +3,9 @@ package com.cosyan.db.lang.expr;
 import java.io.IOException;
 import java.util.Date;
 
-import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
+import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.TableMeta;
@@ -21,14 +22,14 @@ public class Literals {
 
     public String print();
 
-    public DataType<?> getType();
+    public DataType<?> getType() throws ModelException;
   }
 
   private static class LiteralColumn extends DerivedColumn {
 
     private Literal literal;
 
-    public LiteralColumn(Literal literal) {
+    public LiteralColumn(Literal literal) throws ModelException {
       super(literal.getType());
       this.literal = literal;
     }
@@ -60,7 +61,7 @@ public class Literals {
     private final String value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable) {
+    public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
       return new LiteralColumn(this);
     }
 
@@ -81,7 +82,7 @@ public class Literals {
     private final Long value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable) {
+    public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
       return new LiteralColumn(this);
     }
 
@@ -102,7 +103,7 @@ public class Literals {
     private final Double value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable) {
+    public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
       return new LiteralColumn(this);
     }
 
@@ -123,7 +124,7 @@ public class Literals {
     private final Boolean value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable) {
+    public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
       return new LiteralColumn(this);
     }
 
@@ -144,7 +145,7 @@ public class Literals {
     private final Date value;
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable) {
+    public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
       return new LiteralColumn(this);
     }
 
@@ -164,7 +165,7 @@ public class Literals {
   public static class NullLiteral extends Expression implements Literal {
 
     @Override
-    public DerivedColumn compile(TableMeta sourceTable) {
+    public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
       return new LiteralColumn(this);
     }
 
@@ -175,12 +176,12 @@ public class Literals {
 
     @Override
     public Object getValue() {
-      return DataTypes.NULL;
+      return null;
     }
 
     @Override
-    public DataType<?> getType() {
-      return DataTypes.NULL;
+    public DataType<?> getType() throws ModelException {
+      return null;
     }
   }
 }

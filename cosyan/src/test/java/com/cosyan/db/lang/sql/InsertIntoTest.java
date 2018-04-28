@@ -8,10 +8,9 @@ import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.meta.MetaRepo.RuleException;
-import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.model.TableMultiIndex;
+import com.cosyan.db.model.TableUniqueIndex;
 
 public class InsertIntoTest extends UnitTestBase {
 
@@ -34,8 +33,8 @@ public class InsertIntoTest extends UnitTestBase {
     assertHeader(new String[] { "a", "b", "c" }, result);
     assertValues(new Object[][] {
         { "x", 1L, 2.0 },
-        { "y", DataTypes.NULL, 3.0 },
-        { DataTypes.NULL, 5L, 4.0 } }, result);
+        { "y", null, 3.0 },
+        { null, 5L, 4.0 } }, result);
   }
 
   @Test
@@ -64,8 +63,8 @@ public class InsertIntoTest extends UnitTestBase {
     assertHeader(new String[] { "a", "b" }, result);
     assertValues(new Object[][] {
         { "x", 1L },
-        { DataTypes.NULL, 1L },
-        { DataTypes.NULL, 1L } }, result);
+        { null, 1L },
+        { null, 1L } }, result);
   }
 
   @Test
@@ -152,7 +151,7 @@ public class InsertIntoTest extends UnitTestBase {
     execute("create table t14 (a varchar, b integer);");
     QueryResult result = query("select count(1) as c, max(a) as max, min(a) as min, sum(b) as s from t14;");
     assertHeader(new String[] { "c", "max", "min", "s" }, result);
-    assertValues(new Object[][] { { 0L, DataTypes.NULL, DataTypes.NULL, DataTypes.NULL } }, result);
+    assertValues(new Object[][] { { 0L, null, null, null } }, result);
   }
 
   @Test
@@ -291,7 +290,7 @@ public class InsertIntoTest extends UnitTestBase {
     assertHeader(new String[] { "a2", "b2", "b1" }, r1);
     assertValues(new Object[][] {
         { "x", "a", 1L },
-        { DataTypes.NULL, "b", DataTypes.NULL } }, r1);
+        { null, "b", null } }, r1);
   }
 
   @Test
@@ -301,7 +300,7 @@ public class InsertIntoTest extends UnitTestBase {
 
     QueryResult r1 = query("select a1, b1 from t30;");
     assertHeader(new String[] { "a1", "b1" }, r1);
-    assertValues(new Object[][] { { "x", DataTypes.NULL } }, r1);
+    assertValues(new Object[][] { { "x", null } }, r1);
   }
 
   @Test
@@ -337,6 +336,6 @@ public class InsertIntoTest extends UnitTestBase {
     assertValues(new Object[][] { { 0l, "x", 10l }, { 1l, "y", 10l } }, r1);
     execute("insert into t33 (c) values (10);");
     QueryResult r2 = query("select * from t33;");
-    assertValues(new Object[][] { { 0l, "x", 10l }, { 1l, "y", 10l }, { 2l, DataTypes.NULL, 10l } }, r2);
+    assertValues(new Object[][] { { 0l, "x", 10l }, { 1l, "y", 10l }, { 2l, null, 10l } }, r2);
   }
 }

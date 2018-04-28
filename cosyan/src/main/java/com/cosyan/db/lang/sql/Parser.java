@@ -1,5 +1,6 @@
 package com.cosyan.db.lang.sql;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -419,6 +420,21 @@ public class Parser implements IParser {
       return DataTypes.BoolType;
     } else if (token.is(Tokens.ID)) {
       return DataTypes.IDType;
+    } else if (token.is(Tokens.ENUM)) {
+      assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+      ArrayList<String> list = new ArrayList<>();
+      while (!tokens.peek().is(Tokens.PARENT_CLOSED)) {
+        Literal literal = parseLiteral(tokens);
+        if (literal instanceof StringLiteral) {
+          throw new ParserException(String.format("Expected string literal but got '%s'.", literal));
+        }
+        list.add((String) literal.getValue());
+        if (tokens.peek().is(Tokens.COMMA)) {
+          tokens.next();
+        }
+      }
+      tokens.next();
+      return DataTypes.enumType(list);
     }
     throw new ParserException("Unknown data type '" + token + "'.");
   }
@@ -498,7 +514,7 @@ public class Parser implements IParser {
       tokens.next();
       Token value = tokens.next();
       Object date = DateFunctions.convert(value.getString());
-      if (date == DataTypes.NULL) {
+      if (date == null) {
         throw new ParserException(String.format("Expected a valid date string but got '%s'.", value.getString()));
       }
       expr = new DateLiteral((java.util.Date) date);

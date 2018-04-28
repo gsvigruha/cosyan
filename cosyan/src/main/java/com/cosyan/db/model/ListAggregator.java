@@ -20,7 +20,7 @@ public class ListAggregator extends AggrFunction {
   @Override
   public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
     if (argType == DataTypes.StringType) {
-      return new TypedAggrFunction<String[]>(ident, DataTypes.StringListType) {
+      return new TypedAggrFunction<String[]>(ident, DataTypes.StringType.toListType()) {
 
         @Override
         public Aggregator<String[], Object> create() {
@@ -47,7 +47,7 @@ public class ListAggregator extends AggrFunction {
         }
       };
     } else if (argType == DataTypes.DoubleType) {
-      return new TypedAggrFunction<Double[]>(ident, DataTypes.DoubleListType) {
+      return new TypedAggrFunction<Double[]>(ident, DataTypes.DoubleType.toListType()) {
 
         @Override
         public Aggregator<Double[], Object> create() {
@@ -74,7 +74,7 @@ public class ListAggregator extends AggrFunction {
         }
       };
     } else if (argType == DataTypes.LongType) {
-      return new TypedAggrFunction<Long[]>(ident, DataTypes.LongListType) {
+      return new TypedAggrFunction<Long[]>(ident, DataTypes.LongType.toListType()) {
 
         @Override
         public Aggregator<Long[], Object> create() {
@@ -101,7 +101,7 @@ public class ListAggregator extends AggrFunction {
         }
       };
     } else if (argType == DataTypes.DateType) {
-      return new TypedAggrFunction<Date[]>(ident, DataTypes.DateListType) {
+      return new TypedAggrFunction<Date[]>(ident, DataTypes.DateType.toListType()) {
 
         @Override
         public Aggregator<Date[], Object> create() {
@@ -128,7 +128,7 @@ public class ListAggregator extends AggrFunction {
         }
       };
     } else if (argType == DataTypes.BoolType) {
-      return new TypedAggrFunction<Boolean[]>(ident, DataTypes.BoolListType) {
+      return new TypedAggrFunction<Boolean[]>(ident, DataTypes.BoolType.toListType()) {
 
         @Override
         public Aggregator<Boolean[], Object> create() {

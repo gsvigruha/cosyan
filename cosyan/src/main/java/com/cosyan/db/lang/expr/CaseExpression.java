@@ -62,7 +62,7 @@ public class CaseExpression extends Expression {
       public Object value(Object[] values, Resources resources) throws IOException {
         for (int i = 0; i < conditionCols.size(); i++) {
           Object condition = conditionCols.get(i).value(values, resources);
-          if (condition != DataTypes.NULL && ((boolean) condition)) {
+          if (condition != null && ((boolean) condition)) {
             return valueCols.get(i).value(values, resources);
           }
         }

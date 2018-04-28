@@ -1,8 +1,14 @@
 package com.cosyan.db.model;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Date;
 
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.google.common.collect.ImmutableMap;
 
 import lombok.Data;
 
@@ -17,149 +23,229 @@ public class DataTypes {
       return name;
     }
 
-    public abstract DataType<?> toListType() throws ModelException;
+    public DataType<T[]> toListType() throws ModelException {
+      return new DataType<T[]>(name + "_list") {
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Class<T[]> javaClass() {
+          return (Class<T[]>) Array.newInstance(DataType.this.javaClass(), 0).getClass();
+        }
+
+        @Override
+        public void write(Object value, DataOutput stream) throws IOException {
+          Object[] values = (Object[]) value;
+          stream.writeInt(values.length);
+          for (Object v : values) {
+            DataType.this.write(v, stream);
+          }
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public T[] read(DataInput stream) throws IOException {
+          int s = stream.readInt();
+          Object[] array = new Object[s];
+          for (int i = 0; i < s; i++) {
+            array[i] = DataType.this.read(stream);
+          }
+          return (T[]) array;
+        }
+
+        @Override
+        public int size(Object value) {
+          Object[] values = (Object[]) value;
+          int i = 4;
+          for (Object v : values) {
+            i += DataType.this.size(v);
+          }
+          return i;
+        }
+      };
+    }
+
+    public abstract Class<T> javaClass();
+
+    public abstract void write(Object value, DataOutput stream) throws IOException;
+
+    public abstract T read(DataInput stream) throws IOException;
+
+    public abstract int size(Object value);
   }
 
   public static final DataType<String> StringType = new DataType<String>("varchar") {
+
     @Override
-    public DataType<?> toListType() {
-      return StringListType;
+    public Class<String> javaClass() {
+      return String.class;
+    }
+
+    @Override
+    public void write(Object value, DataOutput stream) throws IOException {
+      String str = (String) value;
+      stream.writeInt(str.length());
+      stream.writeChars(str);
+    }
+
+    @Override
+    public String read(DataInput stream) throws IOException {
+      int length = stream.readInt();
+      char[] chars = new char[length];
+      for (int c = 0; c < chars.length; c++) {
+        chars[c] = stream.readChar();
+      }
+      return new String(chars);
+    }
+
+    @Override
+    public int size(Object value) {
+      return 4 + ((String) value).length() * 2;
     }
   };
 
   public static final DataType<Double> DoubleType = new DataType<Double>("float") {
+
     @Override
-    public DataType<?> toListType() {
-      return DoubleListType;
+    public Class<Double> javaClass() {
+      return Double.class;
+    }
+
+    @Override
+    public void write(Object value, DataOutput stream) throws IOException {
+      stream.writeDouble((double) value);
+    }
+
+    @Override
+    public Double read(DataInput stream) throws IOException {
+      return stream.readDouble();
+    }
+
+    @Override
+    public int size(Object value) {
+      return 8;
     }
   };
 
   public static final DataType<Long> LongType = new DataType<Long>("integer") {
+
     @Override
-    public DataType<?> toListType() {
-      return LongListType;
+    public Class<Long> javaClass() {
+      return Long.class;
+    }
+
+    @Override
+    public void write(Object value, DataOutput stream) throws IOException {
+      stream.writeLong((long) value);
+    }
+
+    @Override
+    public Long read(DataInput stream) throws IOException {
+      return stream.readLong();
+    }
+
+    @Override
+    public int size(Object value) {
+      return 8;
     }
   };
 
   public static final DataType<Boolean> BoolType = new DataType<Boolean>("boolean") {
+
     @Override
-    public DataType<?> toListType() {
-      return BoolListType;
+    public Class<Boolean> javaClass() {
+      return Boolean.class;
+    }
+
+    @Override
+    public void write(Object value, DataOutput stream) throws IOException {
+      stream.writeBoolean((boolean) value);
+    }
+
+    @Override
+    public Boolean read(DataInput stream) throws IOException {
+      return stream.readBoolean();
+    }
+
+    @Override
+    public int size(Object value) {
+      return 1;
     }
   };
 
   public static final DataType<Date> DateType = new DataType<Date>("timestamp") {
+
     @Override
-    public DataType<?> toListType() {
-      return DateListType;
+    public Class<Date> javaClass() {
+      return Date.class;
+    }
+
+    @Override
+    public void write(Object value, DataOutput stream) throws IOException {
+      stream.writeLong(((Date) value).getTime());
+    }
+
+    @Override
+    public Date read(DataInput stream) throws IOException {
+      return new Date(stream.readLong());
+    }
+
+    @Override
+    public int size(Object value) {
+      return 8;
     }
   };
 
   public static final DataType<Long> IDType = new DataType<Long>("id") {
+
     @Override
-    public DataType<?> toListType() {
-      return IDListType;
+    public Class<Long> javaClass() {
+      return Long.class;
+    }
+
+    @Override
+    public void write(Object value, DataOutput stream) throws IOException {
+      stream.writeLong((long) value);
+    }
+
+    @Override
+    public Long read(DataInput stream) throws IOException {
+      return stream.readLong();
+    }
+
+    @Override
+    public int size(Object value) {
+      return 8;
     }
   };
 
-  public static final DataType<String[]> StringListType = new DataType<String[]>("varchar_list") {
-    @Override
-    public DataType<?> toListType() throws ModelException {
-      throw new ModelException("Cannot create a list of lists.");
-    }
-  };
+  public static DataType<?> enumType(final ArrayList<String> values) {
 
-  public static final DataType<Double[]> DoubleListType = new DataType<Double[]>("float_list") {
-    @Override
-    public DataType<?> toListType() throws ModelException {
-      throw new ModelException("Cannot create a list of lists.");
+    ImmutableMap.Builder<String, Byte> builder = ImmutableMap.builder();
+    for (byte b = 0; b < values.size(); b++) {
+      builder.put(values.get(b), b);
     }
-  };
+    final ImmutableMap<String, Byte> map = builder.build();
+    return new DataType<String>("enum") {
 
-  public static final DataType<Long[]> LongListType = new DataType<Long[]>("integer_list") {
-    @Override
-    public DataType<?> toListType() throws ModelException {
-      throw new ModelException("Cannot create a list of lists.");
-    }
-  };
+      @Override
+      public Class<String> javaClass() {
+        return String.class;
+      }
 
-  public static final DataType<Boolean[]> BoolListType = new DataType<Boolean[]>("boolean_list") {
-    @Override
-    public DataType<?> toListType() throws ModelException {
-      throw new ModelException("Cannot create a list of lists.");
-    }
-  };
+      @Override
+      public void write(Object value, DataOutput stream) throws IOException {
+        stream.writeByte(map.get((String) value));
+      }
 
-  public static final DataType<Date[]> DateListType = new DataType<Date[]>("timestamp_list") {
-    @Override
-    public DataType<?> toListType() throws ModelException {
-      throw new ModelException("Cannot create a list of lists.");
-    }
-  };
+      @Override
+      public String read(DataInput stream) throws IOException {
+        return values.get(stream.readByte());
+      }
 
-  public static final DataType<Long[]> IDListType = new DataType<Long[]>("id_list") {
-    @Override
-    public DataType<?> toListType() throws ModelException {
-      throw new ModelException("Cannot create a list of lists.");
-    }
-  };
-
-  public static final class NullType extends DataType<Object> implements Comparable<Object> {
-    public NullType() {
-      super("null");
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      return o == NULL;
-    }
-
-    @Override
-    public int hashCode() {
-      return 0;
-    }
-
-    @Override
-    public int compareTo(Object o) {
-      return o == NULL ? 0 : -1;
-    }
-
-    @Override
-    public String toString() {
-      return "null";
-    }
-
-    @Override
-    public DataType<?> toListType() throws ModelException {
-      throw new ModelException("Cannot create a list of nulls.");
-    }
-  }
-
-  public static final NullType NULL = new NullType();
-
-  public static DataType<?> fromString(String name) {
-    if (name.equals("varchar")) {
-      return StringType;
-    } else if (name.equals("float")) {
-      return DoubleType;
-    } else if (name.equals("integer")) {
-      return LongType;
-    } else if (name.equals("boolean")) {
-      return BoolType;
-    } else if (name.equals("timestamp")) {
-      return DateType;
-    } else if (name.equals("varchar_list")) {
-      return StringListType;
-    } else if (name.equals("float_list")) {
-      return DoubleListType;
-    } else if (name.equals("integer_list")) {
-      return LongListType;
-    } else if (name.equals("boolean_list")) {
-      return BoolListType;
-    } else if (name.equals("timestamp_list")) {
-      return DateListType;
-    } else {
-      throw new IllegalArgumentException();
-    }
+      @Override
+      public int size(Object value) {
+        return 1;
+      }
+    };
   }
 }

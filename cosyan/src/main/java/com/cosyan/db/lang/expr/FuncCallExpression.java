@@ -93,6 +93,9 @@ public class FuncCallExpression extends Expression {
         ImmutableList.Builder<Object> paramsBuilder = ImmutableList.builder();
         for (int i = 0; i < function.getArgTypes().size(); i++) {
           Object value = argColumns.get(i).value(values, resources);
+          if (value == null) {
+            return null;
+          }
           if (function.argType(i) == DataTypes.DoubleType && value instanceof Long) {
             // Implicit type conversion from Long to Double.
             value = Double.valueOf((Long) value);
@@ -100,11 +103,6 @@ public class FuncCallExpression extends Expression {
           paramsBuilder.add(value);
         }
         ImmutableList<Object> params = paramsBuilder.build();
-        for (Object param : params) {
-          if (param == DataTypes.NULL) {
-            return DataTypes.NULL;
-          }
-        }
         return function.call(params);
       }
 

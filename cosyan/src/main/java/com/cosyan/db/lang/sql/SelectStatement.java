@@ -112,11 +112,11 @@ public class SelectStatement {
 
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
-      List<ImmutableList<Object>> valuess = new ArrayList<>();
+      List<Object[]> valuess = new ArrayList<>();
       IterableTableReader reader = tableMeta.reader(resources);
       Object[] values = null;
       while ((values = reader.next()) != null) {
-        valuess.add(ImmutableList.copyOf(values));
+        valuess.add(values);
       }
       reader.close();
       return new QueryResult(tableMeta.columnNames(), valuess);

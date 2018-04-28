@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.util.Set;
 
 import com.cosyan.db.model.BasicColumn;
-import com.cosyan.db.model.DataTypes;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -90,7 +89,7 @@ public interface RecordProvider {
           }
         }
         for (int j = i; j < numColumns; j++) {
-          values[j] = DataTypes.NULL;
+          values[j] = null;
         }
         dataInput.readInt(); // CRC;
         pointer += 4;

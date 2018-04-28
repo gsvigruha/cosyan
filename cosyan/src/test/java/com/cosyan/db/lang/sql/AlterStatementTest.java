@@ -94,8 +94,8 @@ public class AlterStatementTest extends UnitTestBase {
       QueryResult result = query("select * from t6;");
       assertHeader(new String[] { "a", "b", "c" }, result);
       assertValues(new Object[][] {
-          { "x", 1L, DataTypes.NULL },
-          { "y", 2L, DataTypes.NULL } }, result);
+          { "x", 1L, null },
+          { "y", 2L, null } }, result);
     }
 
     execute("insert into t6 values('z', 3, 3.0);");
@@ -103,8 +103,8 @@ public class AlterStatementTest extends UnitTestBase {
       QueryResult result = query("select * from t6;");
       assertHeader(new String[] { "a", "b", "c" }, result);
       assertValues(new Object[][] {
-          { "x", 1L, DataTypes.NULL },
-          { "y", 2L, DataTypes.NULL },
+          { "x", 1L, null },
+          { "y", 2L, null },
           { "z", 3L, 3.0 } }, result);
     }
   }
@@ -138,8 +138,8 @@ public class AlterStatementTest extends UnitTestBase {
     QueryResult result = query("select * from t8;");
     assertHeader(new String[] { "a", "b" }, result);
     assertValues(new Object[][] {
-        { "x", DataTypes.NULL },
-        { "y", DataTypes.NULL },
+        { "x", null },
+        { "y", null },
         { "z", 1.0 } }, result);
   }
 
@@ -154,7 +154,7 @@ public class AlterStatementTest extends UnitTestBase {
     QueryResult result = query("select * from t9;");
     assertHeader(new String[] { "a", "c" }, result);
     assertValues(new Object[][] {
-        { "x", DataTypes.NULL },
+        { "x", null },
         { "y", 2.0 },
         { "z", 3.0 } }, result);
   }
@@ -194,7 +194,7 @@ public class AlterStatementTest extends UnitTestBase {
     assertValues(new Object[][] {
         { "x", 1.0 },
         { "y", 2.0 },
-        { "z", DataTypes.NULL } }, result);
+        { "z", null } }, result);
   }
 
   @Test

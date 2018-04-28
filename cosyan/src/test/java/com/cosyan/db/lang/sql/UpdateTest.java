@@ -9,10 +9,9 @@ import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
-import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.model.TableMultiIndex;
+import com.cosyan.db.model.TableUniqueIndex;
 
 public class UpdateTest extends UnitTestBase {
 
@@ -310,7 +309,7 @@ public class UpdateTest extends UnitTestBase {
 
     QueryResult r2 = query("select a2, b2, fk_a.b1 from t26;");
     assertHeader(new String[] { "a2", "b2", "b1" }, r2);
-    assertValues(new Object[][] { { DataTypes.NULL, "a", DataTypes.NULL } }, r2);
+    assertValues(new Object[][] { { null, "a", null } }, r2);
   }
 
   @Test
@@ -337,7 +336,7 @@ public class UpdateTest extends UnitTestBase {
 
     QueryResult r3 = query("select a, b from t27;");
     assertHeader(new String[] { "a", "b" }, r3);
-    assertValues(new Object[][] { { DataTypes.NULL, "z" } }, r3);
+    assertValues(new Object[][] { { null, "z" } }, r3);
   }
 
   @Test

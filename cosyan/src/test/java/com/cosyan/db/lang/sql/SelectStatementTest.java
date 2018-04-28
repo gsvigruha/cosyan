@@ -4,7 +4,6 @@ import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
-import com.cosyan.db.model.DataTypes;
 
 public class SelectStatementTest extends UnitTestBase {
 
@@ -147,7 +146,7 @@ public class SelectStatementTest extends UnitTestBase {
     assertHeader(new String[] { "a2", "b2", "a1" }, r1);
     assertValues(new Object[][] {
         { "x", 1L, "x" },
-        { DataTypes.NULL, 2L, DataTypes.NULL } }, r1);
+        { null, 2L, null } }, r1);
   }
 
   @Test

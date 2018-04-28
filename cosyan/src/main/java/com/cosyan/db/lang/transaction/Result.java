@@ -19,9 +19,9 @@ public abstract class Result {
   public static class QueryResult extends Result {
 
     private final ImmutableList<String> header;
-    private final ImmutableList<ImmutableList<Object>> values;
+    private final ImmutableList<Object[]> values;
 
-    public QueryResult(Iterable<String> header, Iterable<ImmutableList<Object>> values) {
+    public QueryResult(Iterable<String> header, Iterable<Object[]> values) {
       super(true);
       this.header = ImmutableList.copyOf(header);
       this.values = ImmutableList.copyOf(values);
@@ -34,10 +34,12 @@ public abstract class Result {
         sj.add(col);
       }
       sb.append(sj.toString()).append("\n");
-      for (ImmutableList<Object> row : values) {
+      for (Object[] row : values) {
         StringJoiner vsj = new StringJoiner(",");
         for (Object obj : row) {
-          if (obj instanceof Date) {
+          if (obj == null) {
+            vsj.add("null");
+          } else if (obj instanceof Date) {
             vsj.add(DateFunctions.sdf1.format((Date) obj));
           } else {
             vsj.add(obj.toString());

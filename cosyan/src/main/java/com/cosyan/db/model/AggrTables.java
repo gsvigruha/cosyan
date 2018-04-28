@@ -115,22 +115,22 @@ public abstract class AggrTables extends IterableTableMeta {
           return values;
         }
 
-        private ImmutableList<Object> getKeyValues(Object[] sourceValues, Resources resources) throws IOException {
-          ImmutableList.Builder<Object> builder = ImmutableList.builder();
+        private ArrayList<Object> getKeyValues(Object[] sourceValues, Resources resources) throws IOException {
+          ArrayList<Object> keys = new ArrayList<>(sourceTable.getKeyColumns().size());
           for (Map.Entry<String, ? extends ColumnMeta> entry : sourceTable.getKeyColumns().entrySet()) {
-            builder.add(entry.getValue().value(sourceValues, resources));
+            keys.add(entry.getValue().value(sourceValues, resources));
           }
-          return builder.build();
+          return keys;
         }
 
         private void aggregate(Resources resources) throws IOException {
-          HashMap<ImmutableList<Object>, Aggregator<?, ?>[]> aggregatedValues = new HashMap<>();
+          HashMap<ArrayList<Object>, Aggregator<?, ?>[]> aggregatedValues = new HashMap<>();
           while (!cancelled) {
             Object[] sourceValues = sourceReader.next();
             if (sourceValues == null) {
               break;
             }
-            ImmutableList<Object> keyValues = getKeyValues(sourceValues, resources);
+            ArrayList<Object> keyValues = getKeyValues(sourceValues, resources);
             if (!aggregatedValues.containsKey(keyValues)) {
               Aggregator<?, ?>[] aggrValues = new Aggregator[aggrColumns.size()];
               int i = 0;
@@ -145,7 +145,7 @@ public abstract class AggrTables extends IterableTableMeta {
               aggrValues[i++].add(column.getInnerValue(sourceValues, resources));
             }
           }
-          final Iterator<Entry<ImmutableList<Object>, Aggregator<?, ?>[]>> innerIterator = aggregatedValues.entrySet()
+          final Iterator<Entry<ArrayList<Object>, Aggregator<?, ?>[]>> innerIterator = aggregatedValues.entrySet()
               .iterator();
           iterator = new Iterator<Object[]>() {
 
@@ -157,7 +157,7 @@ public abstract class AggrTables extends IterableTableMeta {
             @Override
             public Object[] next() {
               Object[] result = new Object[size()];
-              Entry<ImmutableList<Object>, Aggregator<?, ?>[]> item = innerIterator.next();
+              Entry<ArrayList<Object>, Aggregator<?, ?>[]> item = innerIterator.next();
               Object[] keys = item.getKey().toArray();
               System.arraycopy(keys, 0, result, 0, keys.length);
               for (int i = 0; i < item.getValue().length; i++) {

@@ -154,7 +154,9 @@ public abstract class UnitTestBase {
   protected void assertValues(Object[][] expected, QueryResult result) {
     assertEquals("Wrong row number:", expected.length, result.getValues().size());
     for (int i = 0; i < expected.length; i++) {
-      assertEquals(ImmutableList.copyOf(expected[i]), result.getValues().get(i));
+      for (int j = 0; j < expected[i].length; j++) {
+        assertEquals(expected[i][j], result.getValues().get(i)[j]);
+      }
     }
   }
 

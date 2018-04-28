@@ -51,6 +51,8 @@ public class Tokens {
 
   public static String TIMESTAMP = "timestamp";
 
+  public static String ENUM = "enum";
+
   public static String DT = "dt";
 
   public static String TRUE = "true";

@@ -79,7 +79,7 @@ public abstract class Expression extends Node {
 
           @Override
           public Object value(Object[] values, Resources resources) throws IOException {
-            return exprColumn.value(values, resources) != DataTypes.NULL;
+            return exprColumn.value(values, resources) != null;
           }
 
           @Override
@@ -96,7 +96,7 @@ public abstract class Expression extends Node {
 
           @Override
           public Object value(Object[] values, Resources resources) throws IOException {
-            return exprColumn.value(values, resources) == DataTypes.NULL;
+            return exprColumn.value(values, resources) == null;
           }
 
           @Override

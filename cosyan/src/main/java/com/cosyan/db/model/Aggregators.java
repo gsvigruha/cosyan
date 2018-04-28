@@ -15,7 +15,7 @@ public class Aggregators {
 
     @SuppressWarnings("unchecked")
     public void add(Object x) {
-      if (x != DataTypes.NULL) {
+      if (x != null) {
         addImpl((U) x);
       }
     }
@@ -24,7 +24,7 @@ public class Aggregators {
 
     public Object finish() {
       if (isNull()) {
-        return DataTypes.NULL;
+        return null;
       } else {
         return finishImpl();
       }

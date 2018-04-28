@@ -23,16 +23,15 @@ import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
-import com.cosyan.db.meta.MaterializedTableMeta;
 import com.cosyan.db.meta.Dependencies.ReverseRuleDependencies;
+import com.cosyan.db.meta.MaterializedTableMeta;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
-import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Rule.BooleanRule;
-import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.model.TableMultiIndex;
+import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
@@ -98,24 +97,24 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     for (int i = 0; i < values.length; i++) {
       Object value = values[i];
       BasicColumn column = columns.get(i);
-      if (!column.isNullable() && value == DataTypes.NULL) {
+      if (!column.isNullable() && value == null) {
         throw new RuleException("Column is not nullable (mandatory).");
       }
-      if (column.isUnique() && value != DataTypes.NULL) {
+      if (column.isUnique() && value != null) {
         try {
           uniqueIndexes.get(column.getName()).put(value, fileIndex);
         } catch (IndexException e) {
           throw new RuleException(e);
         }
       }
-      if (value != DataTypes.NULL && multiIndexes.containsKey(column.getName())) {
+      if (value != null && multiIndexes.containsKey(column.getName())) {
         try {
           multiIndexes.get(column.getName()).put(value, fileIndex);
         } catch (IndexException e) {
           throw new RuleException(e);
         }
       }
-      if (value != DataTypes.NULL && foreignIndexes.containsKey(column.getName())) {
+      if (value != null && foreignIndexes.containsKey(column.getName())) {
         for (IndexReader foreignIndex : foreignIndexes.get(column.getName())) {
           if (!foreignIndex.contains(value)) {
             throw new RuleException(String.format(

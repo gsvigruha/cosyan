@@ -84,7 +84,7 @@ public class Rule {
     public boolean check(Resources resources, long fileIndex) throws IOException {
       Object[] values = table.get(resources, fileIndex).getValues();
       Object check = column.value(values, resources);
-      if (check == DataTypes.NULL) {
+      if (check == null) {
         return nullIsTrue;
       }
       return (boolean) check;

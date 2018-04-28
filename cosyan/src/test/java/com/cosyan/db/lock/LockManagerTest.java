@@ -105,7 +105,7 @@ public class LockManagerTest extends UnitTestBase {
         Session s = dbApi.adminSession();
         for (int i = 0; i < 25; i++) {
           QueryResult result = query("select count(1) from t3;", s);
-          long cnt = (Long) result.getValues().get(0).get(0);
+          long cnt = (Long) result.getValues().get(0)[0];
           s.execute("insert into t4 values (" + cnt + ");");
           try {
             Thread.sleep(10);
@@ -130,7 +130,7 @@ public class LockManagerTest extends UnitTestBase {
     {
       QueryResult result = query("select min(x), max(x) from t4;", s);
       System.out.println("  min, max: " + result.getValues().get(0));
-      assert ((Long) result.getValues().get(0).get(0) < (Long) result.getValues().get(0).get(1));
+      assert ((Long) result.getValues().get(0)[0] < (Long) result.getValues().get(0)[1]);
     }
   }
 

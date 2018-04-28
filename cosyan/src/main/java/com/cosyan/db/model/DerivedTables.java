@@ -1,6 +1,7 @@
 package com.cosyan.db.model;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -256,10 +257,19 @@ public class DerivedTables {
       return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
 
         private void sort() throws IOException {
-          TreeMap<ImmutableList<Object>, Object[]> values = new TreeMap<>(new Comparator<ImmutableList<Object>>() {
+          TreeMap<ArrayList<Object>, Object[]> values = new TreeMap<>(new Comparator<ArrayList<Object>>() {
             @Override
-            public int compare(ImmutableList<Object> x, ImmutableList<Object> y) {
+            public int compare(ArrayList<Object> x, ArrayList<Object> y) {
               for (int i = 0; i < orderColumns.size(); i++) {
+                if (x.get(i) == null) {
+                  if (y.get(i) == null) {
+                    return 0;
+                  } else {
+                    return -1;
+                  }
+                } else if (y.get(i) == null) {
+                  return 1;
+                }
                 int result = orderColumns.get(i).compare(x.get(i), y.get(i));
                 if (result != 0) {
                   return result;
@@ -273,12 +283,12 @@ public class DerivedTables {
             if (sourceValues == null) {
               break;
             }
-            ImmutableList.Builder<Object> builder = ImmutableList.builder();
+            ArrayList<Object> list = new ArrayList<>();
             for (OrderColumn column : orderColumns) {
               Object key = column.value(sourceValues, resources);
-              builder.add(key);
+              list.add(key);
             }
-            values.put(builder.build(), sourceValues);
+            values.put(list, sourceValues);
           }
           iterator = values.values().iterator();
           sorted = true;

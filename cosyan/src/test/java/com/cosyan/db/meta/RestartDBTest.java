@@ -2,6 +2,7 @@ package com.cosyan.db.meta;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
 
 import java.io.File;
 import java.io.IOException;
@@ -161,7 +162,7 @@ public class RestartDBTest {
     QueryResult result = (QueryResult) ((TransactionResult) dbApi.adminSession().execute("select * from t10;"))
         .getResults().get(0);
     assertEquals(ImmutableList.of("a", "b"), result.getHeader());
-    assertEquals(ImmutableList.of(ImmutableList.of(1L, "x")), result.getValues());
+    assertArrayEquals(new Object[] { 1L, "x" }, result.getValues().get(0));
   }
 
   @Test
@@ -182,15 +183,16 @@ public class RestartDBTest {
     dbApi.adminSession().execute("insert into t12 values('x'), ('y');");
     QueryResult r1 = (QueryResult) ((TransactionResult) dbApi.adminSession().execute("select * from t12;"))
         .getResults().get(0);
-    assertEquals(ImmutableList.of(ImmutableList.of(0L, "x"), ImmutableList.of(1L, "y")), r1.getValues());
+    assertArrayEquals(new Object[] { 0L, "x" }, r1.getValues().get(0));
+    assertArrayEquals(new Object[] { 1L, "y" }, r1.getValues().get(1));
 
     dbApi = new DBApi(config);
     dbApi.adminSession().execute("insert into t12 values('z');");
     QueryResult r2 = (QueryResult) ((TransactionResult) dbApi.adminSession().execute("select * from t12;"))
         .getResults().get(0);
-    assertEquals(ImmutableList.of(
-        ImmutableList.of(0L, "x"),
-        ImmutableList.of(1L, "y"),
-        ImmutableList.of(2L, "z")), r2.getValues());
+
+    assertArrayEquals(new Object[] { 0L, "x" }, r2.getValues().get(0));
+    assertArrayEquals(new Object[] { 1L, "y" }, r2.getValues().get(1));
+    assertArrayEquals(new Object[] { 2L, "z" }, r2.getValues().get(2));
   }
 }

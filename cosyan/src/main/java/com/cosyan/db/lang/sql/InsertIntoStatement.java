@@ -30,8 +30,12 @@ import lombok.EqualsAndHashCode;
 public class InsertIntoStatement {
 
   public static Object check(DataType<?> dataType, Literal literal) throws RuleException {
-    if (literal.getValue() != DataTypes.NULL && literal.getType() != dataType) {
-      throw new RuleException(String.format("Expected '%s' but got '%s'.", dataType, literal.getType()));
+    try {
+      if (literal.getValue() != null && literal.getType() != dataType) {
+        throw new RuleException(String.format("Expected '%s' but got '%s'.", dataType, literal.getType()));
+      }
+    } catch (ModelException e) {
+      throw new RuleException(e.getMessage());
     }
     return literal.getValue();
   }
@@ -54,7 +58,7 @@ public class InsertIntoStatement {
         for (int i = 0; i < columns.get().size(); i++) {
           Ident ident = columns.get().get(i);
           BasicColumn column = tableMeta.column(ident);
-          if (column.getType() == DataTypes.NULL) {
+          if (column.getType() == null) {
             throw new ModelException(
                 String.format("Cannot specify value for ID type column '%s' directly.", column.getName()), ident);
           }
@@ -78,7 +82,7 @@ public class InsertIntoStatement {
       TableWriter writer = resources.writer(tableMeta.tableName());
       for (ImmutableList<Literal> values : valuess) {
         if (columns.isPresent()) {
-          Arrays.fill(fullValues, DataTypes.NULL);
+          Arrays.fill(fullValues, null);
           if (hasID) {
             fullValues[0] = ++lastID;
           }

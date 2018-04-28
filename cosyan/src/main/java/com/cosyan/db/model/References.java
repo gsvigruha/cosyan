@@ -151,9 +151,9 @@ public class References {
     public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
       Object[] parentValues = parent.values(sourceValues, resources);
       Object key = parentValues[foreignKey.getColumn().getIndex()];
-      if (key == DataTypes.NULL) {
+      if (key == null) {
         Object[] values = new Object[foreignKey.getRefTable().columns().size()];
-        Arrays.fill(values, DataTypes.NULL);
+        Arrays.fill(values, null);
         return values;
       } else {
         SeekableTableReader reader = resources.reader(foreignKey.getRefTable().tableName());

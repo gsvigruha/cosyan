@@ -15,7 +15,7 @@ public class DateFunctions {
   private static final SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd");
 
   public static Object convert(Object arg) {
-    if (arg == DataTypes.NULL) {
+    if (arg == null) {
       return arg;
     }
     String sarg = (String) arg;
@@ -25,7 +25,7 @@ public class DateFunctions {
       try {
         return sdf2.parse(sarg);
       } catch (ParseException e2) {
-        return DataTypes.NULL;
+        return null;
       }
     }
   }

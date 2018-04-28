@@ -51,8 +51,8 @@ public class BinaryExpression extends Expression {
     public Object value(Object[] values, Resources resources) throws IOException {
       Object l = leftColumn.value(values, resources);
       Object r = rightColumn.value(values, resources);
-      if (l == DataTypes.NULL || r == DataTypes.NULL) {
-        return DataTypes.NULL;
+      if (l == null || r == null) {
+        return null;
       } else {
         return getValueImpl(l, r);
       }

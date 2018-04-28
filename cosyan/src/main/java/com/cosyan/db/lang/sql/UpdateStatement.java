@@ -12,13 +12,12 @@ import com.cosyan.db.lang.transaction.Result.StatementResult;
 import com.cosyan.db.logic.PredicateHelper;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MaterializedTableMeta;
-import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MaterializedTableMeta.SeekableTableMeta;
+import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
-import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.transaction.MetaResources;
@@ -32,7 +31,7 @@ import lombok.EqualsAndHashCode;
 public class UpdateStatement {
 
   public static void check(DataType<?> columnType, DataType<?> exprType, Ident ident) throws ModelException {
-    if (exprType != DataTypes.NULL && columnType != exprType) {
+    if (exprType != null && columnType != exprType) {
       throw new ModelException(String.format("Expected '%s' but got '%s'.", columnType, exprType), ident);
     }
   }

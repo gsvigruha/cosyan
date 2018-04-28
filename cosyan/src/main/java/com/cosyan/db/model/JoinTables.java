@@ -163,7 +163,7 @@ public class JoinTables {
                 joinValuesForCurrentKey = values.iterator();
               } else if (!innerJoin) {
                 Object[] nullValues = new Object[joinTable.columnNames().size()];
-                Arrays.fill(nullValues, DataTypes.NULL);
+                Arrays.fill(nullValues, null);
                 joinValuesForCurrentKey = ImmutableList.of(nullValues).iterator();
               }
             }

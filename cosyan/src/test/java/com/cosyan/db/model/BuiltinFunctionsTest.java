@@ -12,7 +12,6 @@ import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.session.IParser.ParserException;
-import com.google.common.collect.ImmutableList;
 
 public class BuiltinFunctionsTest extends UnitTestBase {
 
@@ -26,7 +25,7 @@ public class BuiltinFunctionsTest extends UnitTestBase {
   private void assertResult(String expr, Object result)
       throws ModelException, ConfigException, ParserException, IOException {
     QueryResult r = query("select " + expr + " as r from t;");
-    assertEquals(ImmutableList.of(ImmutableList.of(result)), r.getValues());
+    assertEquals(result, r.getValues().get(0)[0]);
   }
 
   @Test
