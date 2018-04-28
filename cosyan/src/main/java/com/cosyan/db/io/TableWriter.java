@@ -97,6 +97,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     for (int i = 0; i < values.length; i++) {
       Object value = values[i];
       BasicColumn column = columns.get(i);
+      column.getType().check(value);
       if (!column.isNullable() && value == null) {
         throw new RuleException("Column is not nullable (mandatory).");
       }

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.google.common.collect.ImmutableMap;
 
 import lombok.Data;
@@ -71,6 +72,9 @@ public class DataTypes {
     public abstract T read(DataInput stream) throws IOException;
 
     public abstract int size(Object value);
+
+    public void check(Object value) throws RuleException {
+    }
   }
 
   public static final DataType<String> StringType = new DataType<String>("varchar") {
@@ -245,6 +249,12 @@ public class DataTypes {
       @Override
       public int size(Object value) {
         return 1;
+      }
+
+      public void check(Object value) throws RuleException {
+        if (!map.containsKey((String) value)) {
+          throw new RuleException(String.format("Invalid enum value '%s'.", value));
+        }
       }
     };
   }

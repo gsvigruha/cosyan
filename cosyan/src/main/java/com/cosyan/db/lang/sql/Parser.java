@@ -426,9 +426,10 @@ public class Parser implements IParser {
       while (!tokens.peek().is(Tokens.PARENT_CLOSED)) {
         Literal literal = parseLiteral(tokens);
         if (literal instanceof StringLiteral) {
+          list.add((String) literal.getValue());
+        } else {
           throw new ParserException(String.format("Expected string literal but got '%s'.", literal));
         }
-        list.add((String) literal.getValue());
         if (tokens.peek().is(Tokens.COMMA)) {
           tokens.next();
         }

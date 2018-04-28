@@ -338,4 +338,18 @@ public class InsertIntoTest extends UnitTestBase {
     QueryResult r2 = query("select * from t33;");
     assertValues(new Object[][] { { 0l, "x", 10l }, { 1l, "y", 10l }, { 2l, null, 10l } }, r2);
   }
+
+  @Test
+  public void testEnumType() {
+    execute("create table t34 (a enum('x', 'y'));");
+    execute("insert into t34 values ('x');");
+    execute("insert into t34 values ('y');");
+
+    QueryResult r1 = query("select a from t34;");
+    assertHeader(new String[] { "a" }, r1);
+    assertValues(new Object[][] { { "x" }, { "y" } }, r1);
+
+    ErrorResult e1 = error("insert into t34 values ('z');");
+    assertError(RuleException.class, "Invalid enum value 'z'.", e1);
+  }
 }

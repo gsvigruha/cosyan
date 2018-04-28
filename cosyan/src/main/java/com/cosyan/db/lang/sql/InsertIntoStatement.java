@@ -31,9 +31,10 @@ public class InsertIntoStatement {
 
   public static Object check(DataType<?> dataType, Literal literal) throws RuleException {
     try {
-      if (literal.getValue() != null && literal.getType() != dataType) {
+      if (literal.getValue() != null && !literal.getType().javaClass().equals(dataType.javaClass())) {
         throw new RuleException(String.format("Expected '%s' but got '%s'.", dataType, literal.getType()));
       }
+      dataType.check(literal.getValue());
     } catch (ModelException e) {
       throw new RuleException(e.getMessage());
     }

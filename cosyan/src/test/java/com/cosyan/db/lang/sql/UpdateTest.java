@@ -365,4 +365,20 @@ public class UpdateTest extends UnitTestBase {
     QueryResult r1 = query("select * from t29;");
     assertValues(new Object[][] { { 0l, "x", 1l }, { 1l, "y", 1l } }, r1);
   }
+
+  @Test
+  public void testEnumType() {
+    execute("create table t30 (a enum('x', 'y'));");
+    execute("insert into t30 values ('x');");
+
+    QueryResult r1 = query("select a from t30;");
+    assertValues(new Object[][] { { "x" } }, r1);
+
+    execute("update t30 set a = 'y';");
+    QueryResult r2 = query("select a from t30;");
+    assertValues(new Object[][] { { "y" } }, r2);
+
+    ErrorResult e1 = error("update t30 set a = 'z';");
+    assertError(RuleException.class, "Invalid enum value 'z'.", e1);
+  }
 }
