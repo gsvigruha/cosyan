@@ -130,6 +130,7 @@ public class BuiltinFunctions {
       .add(new Aggregators.Max())
       .add(new Aggregators.Min())
       .add(new ListAggregator())
+      .add(new SetAggregator())
       .build();
 
   public static final ImmutableList<SimpleFunction<?>> SIMPLE = ImmutableList.<SimpleFunction<?>>builder()

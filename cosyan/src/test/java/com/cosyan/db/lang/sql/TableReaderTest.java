@@ -442,6 +442,12 @@ public class TableReaderTest extends UnitTestBase {
   }
 
   @Test
+  public void testSetAggr() throws Exception {
+    QueryResult result = query("select set(a) as a from large;");
+    assertArrayEquals(new String[] { "a", "b" }, (String[]) result.getValues().get(0)[0]);
+  }
+
+  @Test
   public void testCase() throws Exception {
     QueryResult result = query("select case when a = 'abc' then b else c end as a from table;");
     assertArrayEquals(new Object[] { 1L }, result.getValues().get(0));
