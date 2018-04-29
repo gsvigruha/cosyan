@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.AggrTables;
@@ -65,18 +66,18 @@ public class FuncCallExpression extends Expression {
     if (objColumn != null) {
       argColumnsBuilder.add(objColumn);
     }
-    TableDependencies tableDependencies = new TableDependencies();
     for (int i = 0; i < args.size(); i++) {
       ColumnMeta col = args.get(i).compileColumn(sourceTable);
       argColumnsBuilder.add(col);
     }
 
-    MetaResources resources = MetaResources.empty();
     ImmutableList<ColumnMeta> argColumns = argColumnsBuilder.build();
     if (function.getArgTypes().size() != argColumns.size()) {
       throw new ModelException(String.format("Expected %s columns for function '%s' but got %s.",
           function.getArgTypes().size(), ident.getString(), argColumns.size()), ident);
     }
+    MetaResources resources = MetaResources.empty();
+    TableDependencies tableDependencies = new TableDependencies();
     for (int i = 0; i < function.getArgTypes().size(); i++) {
       DataType<?> expectedType = function.argType(i);
       DataType<?> dataType = argColumns.get(i).getType();
@@ -85,6 +86,7 @@ public class FuncCallExpression extends Expression {
         SyntaxTree.assertType(expectedType, dataType);
       }
       resources = resources.merge(argColumns.get(i).readResources());
+      tableDependencies.addToThis(argColumns.get(i).tableDependencies());
     }
     return new DerivedColumnWithDeps(function.getReturnType(), tableDependencies, resources) {
 
@@ -112,7 +114,7 @@ public class FuncCallExpression extends Expression {
         for (ColumnMeta column : argColumns) {
           sj.add(column.print(values, resources));
         }
-        return function.getIdent() + "(" + sj.toString() + ")";
+        return function.getName() + "(" + sj.toString() + ")";
       }
     };
   }
@@ -201,5 +203,10 @@ public class FuncCallExpression extends Expression {
     } else {
       return object.print() + "." + ident.getString() + argsStr;
     }
+  }
+
+  @Override
+  public Loc loc() {
+    return ident.getLoc();
   }
 }

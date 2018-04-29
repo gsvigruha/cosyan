@@ -163,4 +163,17 @@ public class SelectStatementTest extends UnitTestBase {
     assertHeader(new String[] { "a1", "sb" }, r1);
     assertValues(new Object[][] { { "x", 1L } }, r1);
   }
+
+  @Test
+  public void testTableDepsInFuncArg() {
+    execute("create table t21 (a varchar, b varchar, constraint pk_a primary key (a));");
+    execute("create table t22 (a varchar, constraint fk_a foreign key (a) references t21);");
+
+    execute("insert into t21 values ('x', 'abc');");
+    execute("insert into t22 values ('x');");
+
+    QueryResult r1 = query("select length(fk_a.b) as l from t22;");
+    assertHeader(new String[] { "l" }, r1);
+    assertValues(new Object[][] { { 3L } }, r1);
+  }
 }

@@ -16,6 +16,7 @@ import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.FuncCallExpression;
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
@@ -159,7 +160,7 @@ public class SelectStatement {
       for (Expression expr : columns) {
         if (expr instanceof AsteriskExpression) {
           if (!(sourceTable instanceof ExposedTableMeta)) {
-            throw new ModelException("Asterisk expression is not allowed here.");
+            throw new ModelException("Asterisk expression is not allowed here.", expr);
           }
           for (String columnName : ((ExposedTableMeta) sourceTable).columnNames()) {
             tableColumns.put(columnName,
@@ -170,7 +171,7 @@ public class SelectStatement {
           if (obj instanceof ColumnMeta) {
             tableColumns.put(expr.getName("_c" + (i++)), (ColumnMeta) obj);
           } else {
-            throw new ModelException("Expected column.");
+            throw new ModelException("Expected column.", expr);
           }
         }
       }
@@ -194,7 +195,7 @@ public class SelectStatement {
         throws ModelException {
       if (where.isPresent()) {
         ColumnMeta whereColumn = where.get().compileColumn(sourceTable);
-        assertType(DataTypes.BoolType, whereColumn.getType());
+        assertType(DataTypes.BoolType, whereColumn.getType(), where.get());
         if (sourceTable instanceof SeekableTableMeta) {
           SeekableTableMeta tableMeta = (SeekableTableMeta) sourceTable;
           VariableEquals clause = PredicateHelper.getBestClause(tableMeta, where.get());
@@ -216,7 +217,7 @@ public class SelectStatement {
         Optional<Expression> having) throws ModelException {
       if (having.isPresent()) {
         ColumnMeta havingColumn = having.get().compileColumn(sourceTable);
-        assertType(DataTypes.BoolType, havingColumn.getType());
+        assertType(DataTypes.BoolType, havingColumn.getType(), having.get());
         return havingColumn;
       } else {
         return ColumnMeta.TRUE_COLUMN;
@@ -231,7 +232,7 @@ public class SelectStatement {
         ColumnMeta keyColumn = expr.compileColumn(sourceTable);
         String name = expr.getName(null);
         if (name == null) {
-          throw new ModelException("Expression in group by must be named: '" + expr + "'.");
+          throw new ModelException("Expression in group by must be named: '" + expr + "'.", expr);
         }
         keyColumnsBuilder.put(name, keyColumn);
       }
@@ -321,7 +322,7 @@ public class SelectStatement {
           collector.add(binaryExpr);
         } else {
           throw new ModelException(
-              "Only 'and' and '=' binary expressions are allowed in the 'on' expression of joins.");
+              "Only 'and' and '=' binary expressions are allowed in the 'on' expression of joins.", expr);
         }
       }
       return collector;
@@ -348,6 +349,11 @@ public class SelectStatement {
     public String print() {
       return expr.print() + " as " + ident.getString();
     }
+
+    @Override
+    public Loc loc() {
+      return ident.getLoc();
+    }
   }
 
   @Data
@@ -365,6 +371,7 @@ public class SelectStatement {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class AsteriskExpression extends Expression {
+    private final Loc loc;
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) {
@@ -379,6 +386,11 @@ public class SelectStatement {
     @Override
     public String print() {
       return "*";
+    }
+    
+    @Override
+    public Loc loc() {
+      return loc;
     }
   }
 }

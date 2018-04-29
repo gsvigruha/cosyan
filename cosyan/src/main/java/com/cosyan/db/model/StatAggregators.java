@@ -17,9 +17,9 @@ public class StatAggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> compile(Ident ident, DataType<?> argType) throws ModelException {
       if (argType.isDouble()) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(name, DataTypes.DoubleType) {
 
           @Override
           public Aggregator<Double, Double> create() {
@@ -49,7 +49,7 @@ public class StatAggregators {
           }
         };
       } else if (argType.isLong()) {
-        return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
+        return new TypedAggrFunction<Long>(name, DataTypes.LongType) {
 
           @Override
           public Aggregator<Long, Long> create() {
@@ -79,7 +79,7 @@ public class StatAggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for sum: '" + argType + "'.");
+        throw new ModelException("Invalid type for sum: '" + argType + "'.", ident);
       }
     }
   }
@@ -91,9 +91,9 @@ public class StatAggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> compile(Ident ident, DataType<?> argType) throws ModelException {
       if (argType.isDouble()) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(name, DataTypes.DoubleType) {
 
           @Override
           public Aggregator<Double, Double> create() {
@@ -125,7 +125,7 @@ public class StatAggregators {
           }
         };
       } else if (argType.isLong()) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(name, DataTypes.DoubleType) {
 
           @Override
           public Aggregator<Double, Long> create() {
@@ -157,7 +157,7 @@ public class StatAggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for avg: '" + argType + "'.");
+        throw new ModelException("Invalid type for avg: '" + argType + "'.", ident);
       }
     }
   }
@@ -215,9 +215,9 @@ public class StatAggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> compile(Ident ident, DataType<?> argType) throws ModelException {
       if (argType.isDouble()) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(name, DataTypes.DoubleType) {
 
           @Override
           public Aggregator<Double, Double> create() {
@@ -230,7 +230,7 @@ public class StatAggregators {
           }
         };
       } else if (argType.isLong()) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(name, DataTypes.DoubleType) {
 
           @Override
           public Aggregator<Double, Long> create() {
@@ -243,7 +243,7 @@ public class StatAggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for stddev: '" + argType + "'.");
+        throw new ModelException("Invalid type for stddev: '" + argType + "'.", ident);
       }
     }
   }
@@ -262,9 +262,9 @@ public class StatAggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> compile(Ident ident, DataType<?> argType) throws ModelException {
       if (argType.isDouble()) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(name, DataTypes.DoubleType) {
 
           @Override
           public Aggregator<Double, Double> create() {
@@ -277,7 +277,7 @@ public class StatAggregators {
           }
         };
       } else if (argType.isLong()) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(name, DataTypes.DoubleType) {
 
           @Override
           public Aggregator<Double, Long> create() {
@@ -290,7 +290,7 @@ public class StatAggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for stddev_pop: '" + argType + "'.");
+        throw new ModelException("Invalid type for stddev_pop: '" + argType + "'.", ident);
       }
     }
   }
@@ -328,9 +328,9 @@ public class StatAggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> compile(Ident ident, DataType<?> argType) throws ModelException {
       if (argType.isDouble()) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(name, DataTypes.DoubleType) {
 
           @Override
           public Aggregator<Double, Double> create() {
@@ -343,7 +343,7 @@ public class StatAggregators {
           }
         };
       } else if (argType.isLong()) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(name, DataTypes.DoubleType) {
 
           @Override
           public Aggregator<Double, Long> create() {
@@ -356,7 +356,7 @@ public class StatAggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for skewness: '" + argType + "'.");
+        throw new ModelException("Invalid type for skewness: '" + argType + "'.", ident);
       }
     }
   }
@@ -397,9 +397,9 @@ public class StatAggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> compile(Ident ident, DataType<?> argType) throws ModelException {
       if (argType.isDouble()) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(name, DataTypes.DoubleType) {
 
           @Override
           public Aggregator<Double, Double> create() {
@@ -412,7 +412,7 @@ public class StatAggregators {
           }
         };
       } else if (argType.isLong()) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(name, DataTypes.DoubleType) {
 
           @Override
           public Aggregator<Double, Long> create() {
@@ -425,7 +425,7 @@ public class StatAggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for kurtosis: '" + argType + "'.");
+        throw new ModelException("Invalid type for kurtosis: '" + argType + "'.", ident);
       }
     }
   }

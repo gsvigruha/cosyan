@@ -505,10 +505,10 @@ public class Parser implements IParser {
       return expr;
     } else if (token.is(Tokens.ASTERISK)) {
       tokens.next();
-      expr = new AsteriskExpression();
+      expr = new AsteriskExpression(token.getLoc());
     } else if (token.is(Tokens.NULL)) {
       tokens.next();
-      expr = new NullLiteral();
+      expr = new NullLiteral(token.getLoc());
     } else if (token.is(Tokens.CASE)) {
       expr = parseCase(tokens);
     } else if (token.is(Tokens.DT)) {
@@ -518,22 +518,22 @@ public class Parser implements IParser {
       if (date == null) {
         throw new ParserException(String.format("Expected a valid date string but got '%s'.", value.getString()));
       }
-      expr = new DateLiteral((java.util.Date) date);
+      expr = new DateLiteral((java.util.Date) date, value.getLoc());
     } else if (token.isIdent()) {
       Ident ident = new Ident(tokens.next().getString());
       expr = parseFuncCallExpression(ident, null, tokens);
     } else if (token.isInt()) {
       tokens.next();
-      expr = new LongLiteral(Long.valueOf(token.getString()));
+      expr = new LongLiteral(Long.valueOf(token.getString()), token.getLoc());
     } else if (token.isFloat()) {
       tokens.next();
-      expr = new DoubleLiteral(Double.valueOf(token.getString()));
+      expr = new DoubleLiteral(Double.valueOf(token.getString()), token.getLoc());
     } else if (token.isString()) {
       tokens.next();
-      expr = new StringLiteral(token.getString());
+      expr = new StringLiteral(token.getString(), token.getLoc());
     } else if (token.isBoolean()) {
       tokens.next();
-      expr = new BooleanLiteral(Boolean.valueOf(token.getString()));
+      expr = new BooleanLiteral(Boolean.valueOf(token.getString()), token.getLoc());
     } else {
       throw new ParserException("Expected literal but got " + token.getString() + ".");
     }
@@ -547,6 +547,7 @@ public class Parser implements IParser {
   }
 
   private Expression parseCase(PeekingIterator<Token> tokens) throws ParserException {
+    Token token = tokens.peek();
     assertNext(tokens, Tokens.CASE);
     ImmutableList.Builder<Expression> conditions = ImmutableList.builder();
     ImmutableList.Builder<Expression> values = ImmutableList.builder();
@@ -559,7 +560,7 @@ public class Parser implements IParser {
     assertNext(tokens, Tokens.ELSE);
     Expression elseValue = parseExpression(tokens);
     assertNext(tokens, Tokens.END);
-    return new CaseExpression(conditions.build(), values.build(), elseValue);
+    return new CaseExpression(conditions.build(), values.build(), elseValue, token.getLoc());
   }
 
   private FuncCallExpression parseFuncCallExpression(Ident ident, Expression parent, PeekingIterator<Token> tokens)
@@ -652,21 +653,22 @@ public class Parser implements IParser {
       return parsePrimary(tokens);
     } else if (tokens.peek().is(Tokens.NOT)
         && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.NOT)) {
-      tokens.next();
-      return new UnaryExpression(UnaryExpression.Type.NOT, parseExpression(tokens, precedence + 1));
+      Token token = tokens.next();
+      return new UnaryExpression(UnaryExpression.Type.NOT, parseExpression(tokens, precedence + 1), token.getLoc());
     } else {
       Expression primary = parseExpression(tokens, precedence + 1);
       if (!tokens.hasNext()) {
         return primary;
       }
-      if (tokens.peek().is(Tokens.ASC) && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.ASC)) {
+      Token token = tokens.peek();
+      if (token.is(Tokens.ASC) && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.ASC)) {
         tokens.next();
-        return new UnaryExpression(UnaryExpression.Type.ASC, primary);
-      } else if (tokens.peek().is(Tokens.DESC)
+        return new UnaryExpression(UnaryExpression.Type.ASC, primary, token.getLoc());
+      } else if (token.is(Tokens.DESC)
           && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.DESC)) {
         tokens.next();
-        return new UnaryExpression(UnaryExpression.Type.DESC, primary);
-      } else if (tokens.peek().is(Tokens.IS)
+        return new UnaryExpression(UnaryExpression.Type.DESC, primary, token.getLoc());
+      } else if (token.is(Tokens.IS)
           && Tokens.BINARY_OPERATORS_PRECEDENCE.get(precedence).contains(Tokens.IS)) {
         tokens.next();
         boolean not;
@@ -677,7 +679,7 @@ public class Parser implements IParser {
           not = false;
         }
         assertNext(tokens, Tokens.NULL);
-        return new UnaryExpression(not ? UnaryExpression.Type.IS_NOT_NULL : UnaryExpression.Type.IS_NULL, primary);
+        return new UnaryExpression(not ? UnaryExpression.Type.IS_NOT_NULL : UnaryExpression.Type.IS_NULL, primary, token.getLoc());
       } else {
         return parseBinaryExpression(primary, tokens, precedence);
       }

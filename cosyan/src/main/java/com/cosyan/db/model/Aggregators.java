@@ -42,8 +42,8 @@ public class Aggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
-      return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
+    public TypedAggrFunction<?> compile(Ident ident, DataType<?> argType) throws ModelException {
+      return new TypedAggrFunction<Long>(name, DataTypes.LongType) {
 
         @Override
         public Aggregator<Long, Object> create() {
@@ -78,8 +78,8 @@ public class Aggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
-      return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
+    public TypedAggrFunction<?> compile(Ident ident, DataType<?> argType) throws ModelException {
+      return new TypedAggrFunction<Long>(name, DataTypes.LongType) {
 
         @Override
         public Aggregator<Long, Object> create() {
@@ -114,9 +114,9 @@ public class Aggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> compile(Ident ident, DataType<?> argType) throws ModelException {
       if (argType.isDouble()) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(name, DataTypes.DoubleType) {
 
           @Override
           public Aggregator<Double, Double> create() {
@@ -146,7 +146,7 @@ public class Aggregators {
           }
         };
       } else if (argType.isLong()) {
-        return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
+        return new TypedAggrFunction<Long>(name, DataTypes.LongType) {
 
           @Override
           public Aggregator<Long, Long> create() {
@@ -176,7 +176,7 @@ public class Aggregators {
           }
         };
       } else if (argType.isString()) {
-        return new TypedAggrFunction<String>(ident, DataTypes.StringType) {
+        return new TypedAggrFunction<String>(name, DataTypes.StringType) {
 
           @Override
           public Aggregator<String, String> create() {
@@ -206,7 +206,7 @@ public class Aggregators {
           }
         };
       } else if (argType.isDate()) {
-        return new TypedAggrFunction<Date>(ident, DataTypes.DateType) {
+        return new TypedAggrFunction<Date>(name, DataTypes.DateType) {
 
           @Override
           public Aggregator<Date, Date> create() {
@@ -236,7 +236,7 @@ public class Aggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for max: '" + argType + "'.");
+        throw new ModelException("Invalid type for max: '" + argType + "'.", ident);
       }
     }
   }
@@ -248,9 +248,9 @@ public class Aggregators {
     }
 
     @Override
-    public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
+    public TypedAggrFunction<?> compile(Ident ident, DataType<?> argType) throws ModelException {
       if (argType.isDouble()) {
-        return new TypedAggrFunction<Double>(ident, DataTypes.DoubleType) {
+        return new TypedAggrFunction<Double>(name, DataTypes.DoubleType) {
 
           @Override
           public Aggregator<Double, Double> create() {
@@ -280,7 +280,7 @@ public class Aggregators {
           }
         };
       } else if (argType.isLong()) {
-        return new TypedAggrFunction<Long>(ident, DataTypes.LongType) {
+        return new TypedAggrFunction<Long>(name, DataTypes.LongType) {
 
           @Override
           public Aggregator<Long, Long> create() {
@@ -310,7 +310,7 @@ public class Aggregators {
           }
         };
       } else if (argType.isString()) {
-        return new TypedAggrFunction<String>(ident, DataTypes.StringType) {
+        return new TypedAggrFunction<String>(name, DataTypes.StringType) {
 
           @Override
           public Aggregator<String, String> create() {
@@ -340,7 +340,7 @@ public class Aggregators {
           }
         };
       } else if (argType.isDate()) {
-        return new TypedAggrFunction<Date>(ident, DataTypes.DateType) {
+        return new TypedAggrFunction<Date>(name, DataTypes.DateType) {
 
           @Override
           public Aggregator<Date, Date> create() {
@@ -370,7 +370,7 @@ public class Aggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for min: '" + argType + "'.");
+        throw new ModelException("Invalid type for min: '" + argType + "'.", ident);
       }
     }
   }

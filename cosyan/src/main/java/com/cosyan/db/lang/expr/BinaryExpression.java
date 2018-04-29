@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Date;
 
 import com.cosyan.db.lang.sql.Tokens;
+import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -588,5 +589,10 @@ public class BinaryExpression extends Expression {
   @Override
   public String print() {
     return "(" + left.print() + " " + token.getString() + " " + right.print() + ")";
+  }
+
+  @Override
+  public Loc loc() {
+    return token.getLoc();
   }
 }

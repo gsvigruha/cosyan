@@ -25,6 +25,7 @@ import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
+import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lock.LockManager;
@@ -99,7 +100,7 @@ public class MetaRepo implements TableProvider {
 
   public MaterializedTableMeta table(Ident ident) throws ModelException {
     if (!tables.containsKey(ident.getString())) {
-      throw new ModelException("Table '" + ident.getString() + "' does not exist.");
+      throw new ModelException("Table '" + ident.getString() + "' does not exist.", ident);
     }
     return tables.get(ident.getString());
   }
@@ -365,6 +366,11 @@ public class MetaRepo implements TableProvider {
     public ModelException(String msg, Token token) {
       super(msg);
       loc = token.getLoc();
+    }
+
+    public ModelException(String msg, Expression expr) {
+      super(msg);
+      loc = expr.loc();
     }
 
     public ModelException(String msg) {

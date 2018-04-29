@@ -17,6 +17,7 @@ import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.SelectStatement.AsteriskExpression;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.sql.SelectStatement.TableRef;
+import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.session.IParser.ParserException;
@@ -35,7 +36,7 @@ public class ParserTest {
   public void testSelect() throws ParserException {
     ImmutableList<Statement> tree = parse("select * from table;");
     assertEquals(tree, ImmutableList.of(new Select(
-        ImmutableList.of(new AsteriskExpression()),
+        ImmutableList.of(new AsteriskExpression(new Loc(6, 7))),
         new TableRef(new Ident("table")),
         Optional.empty(),
         Optional.empty(),
@@ -77,12 +78,12 @@ public class ParserTest {
   public void testSelectWhere() throws ParserException {
     ImmutableList<Statement> tree = parse("select * from table where a = 1;");
     assertEquals(tree, ImmutableList.of(new Select(
-        ImmutableList.of(new AsteriskExpression()),
+        ImmutableList.of(new AsteriskExpression(new Loc(6, 7))),
         new TableRef(new Ident("table")),
         Optional.of(new BinaryExpression(
             new Token("=", null),
             FuncCallExpression.of(new Ident("a")),
-            new LongLiteral(1L))),
+            new LongLiteral(1L, new Loc(30, 31)))),
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
@@ -114,14 +115,14 @@ public class ParserTest {
             new BinaryExpression(
                 new Token("+", null),
                 FuncCallExpression.of(new Ident("b")),
-                new LongLiteral(1L)),
+                new LongLiteral(1L, new Loc(14, 15))),
             new BinaryExpression(
                 new Token(">", null),
                 new BinaryExpression(
                     new Token("*", null),
                     FuncCallExpression.of(new Ident("c")),
-                    new DoubleLiteral(2.0)),
-                new DoubleLiteral(3.0))),
+                    new DoubleLiteral(2.0, new Loc(21, 24))),
+                new DoubleLiteral(3.0, new Loc(27, 30)))),
         new TableRef(new Ident("table")),
         Optional.empty(),
         Optional.empty(),
@@ -140,7 +141,7 @@ public class ParserTest {
     assertEquals(expr, new BinaryExpression(
         new Token("=", null),
         FuncCallExpression.of(new Ident("a")),
-        new LongLiteral(1L)));
+        new LongLiteral(1L, new Loc(4, 5))));
     assertEquals("(a = 1)", expr.print());
   }
 
@@ -204,7 +205,7 @@ public class ParserTest {
         new BinaryExpression(
             new Token(">", null),
             FuncCallExpression.of(new Ident("a")),
-            new LongLiteral(1L)),
+            new LongLiteral(1L, new Loc(4, 5))),
         FuncCallExpression.of(new Ident("c"))));
     assertEquals("((a > 1) or c)", expr.print());
   }
@@ -242,7 +243,8 @@ public class ParserTest {
     Expression expr = parseExpression("not a;");
     assertEquals(expr, new UnaryExpression(
         UnaryExpression.Type.NOT,
-        FuncCallExpression.of(new Ident("a"))));
+        FuncCallExpression.of(new Ident("a")),
+        new Loc(0, 3)));
     assertEquals("not a", expr.print());
   }
 
@@ -251,8 +253,8 @@ public class ParserTest {
     Expression expr = parseExpression("not a and not b;");
     assertEquals(expr, new BinaryExpression(
         new Token("and", null),
-        new UnaryExpression(UnaryExpression.Type.NOT, FuncCallExpression.of(new Ident("a"))),
-        new UnaryExpression(UnaryExpression.Type.NOT, FuncCallExpression.of(new Ident("b")))));
+        new UnaryExpression(UnaryExpression.Type.NOT, FuncCallExpression.of(new Ident("a")), new Loc(0, 3)),
+        new UnaryExpression(UnaryExpression.Type.NOT, FuncCallExpression.of(new Ident("b")), new Loc(10, 13))));
     assertEquals("(not a and not b)", expr.print());
   }
 
@@ -264,7 +266,8 @@ public class ParserTest {
         new BinaryExpression(
             new Token("=", null),
             FuncCallExpression.of(new Ident("a")),
-            new StringLiteral("x"))));
+            new StringLiteral("x", new Loc(9, 10))),
+        new Loc(0, 3)));
     assertEquals("not (a = 'x')", expr.print());
   }
 

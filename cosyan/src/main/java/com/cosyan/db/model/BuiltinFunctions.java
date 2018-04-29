@@ -65,7 +65,7 @@ public class BuiltinFunctions {
   @Data
   public static abstract class Function {
 
-    protected final String ident;
+    protected final String name;
 
     private final boolean isAggregation;
   }
@@ -115,7 +115,7 @@ public class BuiltinFunctions {
       super(ident, false);
     }
 
-    public abstract TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException;
+    public abstract TypedAggrFunction<?> compile(Ident ident, DataType<?> argType) throws ModelException;
   }
 
   public static final ImmutableList<AggrFunction> AGGREGATIONS = ImmutableList.<AggrFunction>builder()
@@ -189,7 +189,7 @@ public class BuiltinFunctions {
   static {
     ImmutableSet.Builder<String> builder = ImmutableSet.builder();
     for (AggrFunction function : AGGREGATIONS) {
-      builder.add(function.getIdent());
+      builder.add(function.getName());
     }
     AGGREGATION_NAMES = builder.build();
   }
@@ -200,11 +200,11 @@ public class BuiltinFunctions {
   static {
     simpleFunctions = new ConcurrentHashMap<>();
     for (SimpleFunction<?> simpleFunction : BuiltinFunctions.SIMPLE) {
-      simpleFunctions.put(simpleFunction.getIdent(), simpleFunction);
+      simpleFunctions.put(simpleFunction.getName(), simpleFunction);
     }
     aggrFunctions = new ConcurrentHashMap<>();
     for (AggrFunction aggrFunction : BuiltinFunctions.AGGREGATIONS) {
-      aggrFunctions.put(aggrFunction.getIdent(), aggrFunction);
+      aggrFunctions.put(aggrFunction.getName(), aggrFunction);
     }
   }
 
@@ -221,6 +221,6 @@ public class BuiltinFunctions {
     if (!aggrFunctions.containsKey(name)) {
       throw new ModelException("Function " + name + " does not exist.", ident);
     }
-    return aggrFunctions.get(name).compile(argType);
+    return aggrFunctions.get(name).compile(ident, argType);
   }
 }

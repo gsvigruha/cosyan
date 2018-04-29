@@ -45,17 +45,24 @@ public class SyntaxTree {
     public boolean log();
   }
 
-  public static void assertType(DataType<?> expectedType, DataType<?> dataType) throws ModelException {
+  public static void assertType(DataType<?> expectedType, DataType<?> dataType, Expression expr) throws ModelException {
     if (!expectedType.javaClass().equals(dataType.javaClass())) {
       throw new ModelException(
-          "Data type " + dataType + " did not match expected type " + expectedType + ".");
+          "Data type " + dataType + " did not match expected type " + expectedType + ".", expr);
     }
   }
 
   public static void assertType(DataType<?> expectedType, DataType<?> dataType, Token token) throws ModelException {
-    if (expectedType != dataType) {
+    if (!expectedType.javaClass().equals(dataType.javaClass())) {
       throw new ModelException(
           "Data type " + dataType + " did not match expected type " + expectedType + ".", token);
+    }
+  }
+  
+  public static void assertType(DataType<?> expectedType, DataType<?> dataType) throws ModelException {
+    if (!expectedType.javaClass().equals(dataType.javaClass())) {
+      throw new ModelException(
+          "Data type " + dataType + " did not match expected type " + expectedType + ".");
     }
   }
 }

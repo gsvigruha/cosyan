@@ -2,11 +2,12 @@ package com.cosyan.db.lang.expr;
 
 import java.io.IOException;
 
+import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta;
-import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
+import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -23,6 +24,7 @@ public class CaseExpression extends Expression {
   private final ImmutableList<Expression> conditions;
   private final ImmutableList<Expression> values;
   private final Expression elseValue;
+  private final Loc loc;
 
   @Override
   public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
@@ -33,18 +35,20 @@ public class CaseExpression extends Expression {
     ImmutableList.Builder<ColumnMeta> valueColsBuilder = ImmutableList.builder();
     DataType<?> type = null;
     for (int i = 0; i < conditions.size(); i++) {
-      ColumnMeta condition = conditions.get(i).compileColumn(sourceTable);
+      Expression conditionExpr = conditions.get(i);
+      ColumnMeta condition = conditionExpr.compileColumn(sourceTable);
       if (condition.getType() != DataTypes.BoolType) {
-        throw new ModelException("Expected boolean type but got " + condition.getType() + ".");
+        throw new ModelException("Expected boolean type but got " + condition.getType() + ".", conditionExpr);
       }
       conditionColsBuilder.add(condition);
       deps.addToThis(condition.tableDependencies());
       resources = resources.merge(condition.readResources());
-      ColumnMeta value = values.get(i).compileColumn(sourceTable);
+      Expression valueExpr = values.get(i);
+      ColumnMeta value = valueExpr.compileColumn(sourceTable);
       if (type == null) {
         type = value.getType();
       } else if (type != value.getType()) {
-        throw new ModelException("Inconsistent type " + type + " vs " + value.getType() + ".");
+        throw new ModelException("Inconsistent type " + type + " vs " + value.getType() + ".", valueExpr);
       }
       valueColsBuilder.add(value);
       deps.addToThis(value.tableDependencies());
@@ -91,5 +95,10 @@ public class CaseExpression extends Expression {
   public String print() {
     // TODO Auto-generated method stub
     return null;
+  }
+
+  @Override
+  public Loc loc() {
+    return loc;
   }
 }

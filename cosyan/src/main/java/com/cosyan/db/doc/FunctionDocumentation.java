@@ -20,12 +20,12 @@ public class FunctionDocumentation {
   public String documentation(SimpleFunction<?> function) {
     Func ann = function.getClass().getAnnotation(Func.class);
     if (ann == null) {
-      throw new RuntimeException(String.format("Missing annotation for '%s'.", function.getIdent()));
+      throw new RuntimeException(String.format("Missing annotation for '%s'.", function.getName()));
     }
     ImmutableCollection<DataType<?>> args = function.getArgTypes().values();
     StringBuilder sb = new StringBuilder();
     StringJoiner sj = new StringJoiner(", ");
-    sb.append(function.getIdent()).append("(");
+    sb.append(function.getName()).append("(");
     for (DataType<?> paramType : args) {
       sj.add(paramType.getName());
     }

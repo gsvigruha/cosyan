@@ -3,6 +3,7 @@ package com.cosyan.db.lang.expr;
 import java.io.IOException;
 import java.util.Date;
 
+import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
@@ -59,6 +60,7 @@ public class Literals {
   @EqualsAndHashCode(callSuper = true)
   public static class StringLiteral extends Expression implements Literal {
     private final String value;
+    private final Loc loc;
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
@@ -74,12 +76,18 @@ public class Literals {
     public DataType<?> getType() {
       return DataTypes.StringType;
     }
+
+    @Override
+    public Loc loc() {
+      return loc;
+    }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class LongLiteral extends Expression implements Literal {
     private final Long value;
+    private final Loc loc;
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
@@ -95,12 +103,18 @@ public class Literals {
     public DataType<?> getType() {
       return DataTypes.LongType;
     }
+
+    @Override
+    public Loc loc() {
+      return loc;
+    }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class DoubleLiteral extends Expression implements Literal {
     private final Double value;
+    private final Loc loc;
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
@@ -116,12 +130,18 @@ public class Literals {
     public DataType<?> getType() {
       return DataTypes.DoubleType;
     }
+
+    @Override
+    public Loc loc() {
+      return loc;
+    }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class BooleanLiteral extends Expression implements Literal {
     private final Boolean value;
+    private final Loc loc;
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
@@ -137,12 +157,18 @@ public class Literals {
     public DataType<?> getType() {
       return DataTypes.BoolType;
     }
+
+    @Override
+    public Loc loc() {
+      return loc;
+    }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class DateLiteral extends Expression implements Literal {
     private final Date value;
+    private final Loc loc;
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
@@ -158,11 +184,17 @@ public class Literals {
     public DataType<?> getType() {
       return DataTypes.DateType;
     }
+
+    @Override
+    public Loc loc() {
+      return loc;
+    }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class NullLiteral extends Expression implements Literal {
+    private final Loc loc;
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
@@ -182,6 +214,11 @@ public class Literals {
     @Override
     public DataType<?> getType() throws ModelException {
       return DataTypes.NullType;
+    }
+
+    @Override
+    public Loc loc() {
+      return loc;
     }
   }
 }

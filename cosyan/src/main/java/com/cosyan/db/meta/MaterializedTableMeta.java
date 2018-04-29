@@ -427,7 +427,7 @@ public class MaterializedTableMeta {
       return References.getRefTable(
           this,
           tableMeta.tableName(),
-          ident.getString(),
+          ident,
           tableMeta.foreignKeys(),
           tableMeta.reverseForeignKeys(),
           tableMeta.refs());

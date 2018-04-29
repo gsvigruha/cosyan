@@ -41,12 +41,12 @@ public class DocPrinter {
   private static void printFunc(PrintWriter pw, SimpleFunction<?> function) {
     Func ann = function.getClass().getAnnotation(Func.class);
     if (ann == null) {
-      throw new RuntimeException(function.getIdent());
+      throw new RuntimeException(function.getName());
     }
     ImmutableMap<String, DataType<?>> funcArgs = function.getArgTypes();
     StringBuilder sb = new StringBuilder();
     StringJoiner sj = new StringJoiner(", ");
-    sb.append(" * `").append(function.getIdent()).append("(");
+    sb.append(" * `").append(function.getName()).append("(");
     for (Entry<String, DataType<?>> param : funcArgs.entrySet()) {
       sj.add(param.getKey() + ": " + param.getValue().getName());
     }
@@ -63,10 +63,10 @@ public class DocPrinter {
   private static void printFunc(PrintWriter pw, AggrFunction function) {
     Func ann = function.getClass().getAnnotation(Func.class);
     if (ann == null) {
-      throw new RuntimeException(function.getIdent());
+      throw new RuntimeException(function.getName());
     }
     StringBuilder sb = new StringBuilder();
-    sb.append(" * `").append(function.getIdent()).append("(arg)").append("`<br/>\n");
+    sb.append(" * `").append(function.getName()).append("(arg)").append("`<br/>\n");
     pw.print(sb.toString());
     String doc = ann.doc();
     pw.append("   " + doc + "\n");

@@ -56,16 +56,17 @@ public class References {
   public static TableMeta getRefTable(
       ReferencedTable parent,
       String tableName,
-      String key,
+      Ident key,
       Map<String, ForeignKey> foreignKeys,
       Map<String, ReverseForeignKey> reverseForeignKeys,
       Map<String, TableRef> refs) throws ModelException {
-    if (foreignKeys.containsKey(key)) {
-      return new ReferencedSimpleTableMeta(parent, foreignKeys.get(key));
-    } else if (refs.containsKey(key)) {
-      return new ReferencedRefTableMeta(parent, refs.get(key).getTableMeta());
+    String name = key.getString();
+    if (foreignKeys.containsKey(name)) {
+      return new ReferencedSimpleTableMeta(parent, foreignKeys.get(name));
+    } else if (refs.containsKey(name)) {
+      return new ReferencedRefTableMeta(parent, refs.get(name).getTableMeta());
     }
-    throw new ModelException(String.format("Reference '%s' not found in table '%s'.", key, tableName));
+    throw new ModelException(String.format("Reference '%s' not found in table '%s'.", key, tableName), key);
   }
 
   @Data
@@ -136,7 +137,7 @@ public class References {
       return References.getRefTable(
           this,
           foreignKey.getTable().tableName(),
-          ident.getString(),
+          ident,
           foreignKey.getRefTable().foreignKeys(),
           foreignKey.getRefTable().reverseForeignKeys(),
           foreignKey.getRefTable().refs());
@@ -197,7 +198,7 @@ public class References {
       return References.getRefTable(
           this,
           reverseForeignKey.getTable().tableName(),
-          ident.getString(),
+          ident,
           reverseForeignKey.getRefTable().foreignKeys(),
           reverseForeignKey.getRefTable().reverseForeignKeys(),
           reverseForeignKey.getRefTable().refs());

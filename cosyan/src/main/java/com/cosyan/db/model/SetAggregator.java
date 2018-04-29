@@ -18,9 +18,9 @@ public class SetAggregator extends AggrFunction {
   }
 
   @Override
-  public TypedAggrFunction<?> compile(DataType<?> argType) throws ModelException {
+  public TypedAggrFunction<?> compile(Ident ident, DataType<?> argType) throws ModelException {
     if (argType.isString()) {
-      return new TypedAggrFunction<String[]>(ident, DataTypes.StringType.toListType()) {
+      return new TypedAggrFunction<String[]>(name, DataTypes.StringType.toListType()) {
 
         @Override
         public Aggregator<String[], Object> create() {
@@ -47,7 +47,7 @@ public class SetAggregator extends AggrFunction {
         }
       };
     } else if (argType.isDouble()) {
-      return new TypedAggrFunction<Double[]>(ident, DataTypes.DoubleType.toListType()) {
+      return new TypedAggrFunction<Double[]>(name, DataTypes.DoubleType.toListType()) {
 
         @Override
         public Aggregator<Double[], Object> create() {
@@ -74,7 +74,7 @@ public class SetAggregator extends AggrFunction {
         }
       };
     } else if (argType.isLong()) {
-      return new TypedAggrFunction<Long[]>(ident, DataTypes.LongType.toListType()) {
+      return new TypedAggrFunction<Long[]>(name, DataTypes.LongType.toListType()) {
 
         @Override
         public Aggregator<Long[], Object> create() {
@@ -101,7 +101,7 @@ public class SetAggregator extends AggrFunction {
         }
       };
     } else if (argType.isDate()) {
-      return new TypedAggrFunction<Date[]>(ident, DataTypes.DateType.toListType()) {
+      return new TypedAggrFunction<Date[]>(name, DataTypes.DateType.toListType()) {
 
         @Override
         public Aggregator<Date[], Object> create() {
@@ -128,7 +128,7 @@ public class SetAggregator extends AggrFunction {
         }
       };
     } else if (argType.isBool()) {
-      return new TypedAggrFunction<Boolean[]>(ident, DataTypes.BoolType.toListType()) {
+      return new TypedAggrFunction<Boolean[]>(name, DataTypes.BoolType.toListType()) {
 
         @Override
         public Aggregator<Boolean[], Object> create() {
@@ -155,7 +155,7 @@ public class SetAggregator extends AggrFunction {
         }
       };
     } else {
-      throw new ModelException(String.format("Unsupported data type %s for set aggregator.", argType));
+      throw new ModelException(String.format("Unsupported data type %s for set aggregator.", argType), ident);
     }
   }
 }
