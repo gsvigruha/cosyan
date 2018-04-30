@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.lang.sql.Tokens.Token;
+import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MetaRepo;
@@ -45,24 +45,10 @@ public class SyntaxTree {
     public boolean log();
   }
 
-  public static void assertType(DataType<?> expectedType, DataType<?> dataType, Expression expr) throws ModelException {
+  public static void assertType(DataType<?> expectedType, DataType<?> dataType, Loc loc) throws ModelException {
     if (!expectedType.javaClass().equals(dataType.javaClass())) {
       throw new ModelException(
-          "Data type " + dataType + " did not match expected type " + expectedType + ".", expr);
-    }
-  }
-
-  public static void assertType(DataType<?> expectedType, DataType<?> dataType, Token token) throws ModelException {
-    if (!expectedType.javaClass().equals(dataType.javaClass())) {
-      throw new ModelException(
-          "Data type " + dataType + " did not match expected type " + expectedType + ".", token);
-    }
-  }
-  
-  public static void assertType(DataType<?> expectedType, DataType<?> dataType) throws ModelException {
-    if (!expectedType.javaClass().equals(dataType.javaClass())) {
-      throw new ModelException(
-          "Data type " + dataType + " did not match expected type " + expectedType + ".");
+          "Data type " + dataType + " did not match expected type " + expectedType + ".", loc);
     }
   }
 }

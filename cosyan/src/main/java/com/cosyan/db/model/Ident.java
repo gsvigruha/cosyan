@@ -1,5 +1,7 @@
 package com.cosyan.db.model;
 
+import java.util.function.Function;
+
 import javax.annotation.Nullable;
 
 import com.cosyan.db.lang.sql.Tokens.Loc;
@@ -33,5 +35,9 @@ public class Ident {
   @Override
   public String toString() {
     return string;
+  }
+
+  public Ident map(Function<String, String> f) {
+    return new Ident(f.apply(string), loc);
   }
 }

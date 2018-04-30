@@ -155,11 +155,8 @@ public class MaterializedTableMeta {
     return columnsMap(columns);
   }
 
-  public BasicColumn pkColumn() throws ModelException {
-    if (!primaryKey.isPresent()) {
-      throw new ModelException(String.format("Table '%s' has no primary key.", tableName));
-    }
-    return primaryKey.get().getColumn();
+  public Optional<BasicColumn> pkColumn() throws ModelException {
+    return primaryKey.map(pk -> pk.getColumn());
   }
 
   public static ImmutableMap<String, BasicColumn> columnsMap(List<BasicColumn> columns) {
@@ -224,10 +221,12 @@ public class MaterializedTableMeta {
     return Collections.unmodifiableMap(refs);
   }
 
-  private void checkName(String name) throws ModelException {
+  private void checkName(Ident ident) throws ModelException {
+    String name = ident.getString();
     if (columnNames().contains(name) || foreignKeys.containsKey(name) || reverseForeignKeys.containsKey(name)) {
       throw new ModelException(
-          String.format("Duplicate column, foreign key or reversed foreign key name in '%s': '%s'.", tableName, name));
+          String.format("Duplicate column, foreign key or reversed foreign key name in '%s': '%s'.", tableName, name),
+          ident);
     }
   }
 
@@ -244,9 +243,9 @@ public class MaterializedTableMeta {
     return stats;
   }
 
-  public void addForeignKey(ForeignKey foreignKey) throws ModelException {
-    checkName(foreignKey.getName());
-    foreignKey.getRefTable().checkName(foreignKey.getRevName());
+  public void addForeignKey(Ident fkIdent, Ident revFKIdent, ForeignKey foreignKey) throws ModelException {
+    checkName(fkIdent);
+    foreignKey.getRefTable().checkName(revFKIdent);
     foreignKeys.put(foreignKey.getName(), foreignKey);
   }
 
@@ -259,7 +258,7 @@ public class MaterializedTableMeta {
     }
   }
 
-  public void addColumn(BasicColumn column) throws ModelException, IOException {
+  public void addColumn(Ident ident, BasicColumn column) throws ModelException, IOException {
     assert column.getIndex() == columns.size();
     if (!isEmpty && !column.isNullable()) {
       throw new ModelException(
@@ -267,17 +266,17 @@ public class MaterializedTableMeta {
               column.getName()),
           column.getIdent());
     }
-    checkName(column.getName());
+    checkName(ident);
     columns.add(column);
   }
 
-  public void addRef(TableRef ref) throws ModelException {
-    checkName(ref.getName());
+  public void addRef(Ident ident, TableRef ref) throws ModelException {
+    checkName(ident);
     refs.put(ref.getName(), ref);
   }
 
-  public void addRule(BooleanRule rule) throws ModelException {
-    checkName(rule.name());
+  public void addRule(Ident ident, BooleanRule rule) throws ModelException {
+    checkName(ident);
     rules.put(rule.name(), rule);
     ruleDependencies.addToThis(rule.getDeps());
   }
@@ -294,9 +293,11 @@ public class MaterializedTableMeta {
     this.partitioning = partitioning;
   }
 
-  public ForeignKey foreignKey(String name) throws ModelException {
+  public ForeignKey foreignKey(Ident ident) throws ModelException {
+    String name = ident.getString();
     if (!foreignKeys.containsKey(name)) {
-      throw new ModelException(String.format("Invalid foreign key reference '%s' in table '%s'.", name, tableName));
+      throw new ModelException(String.format("Invalid foreign key reference '%s' in table '%s'.", name, tableName),
+          ident);
     }
     return foreignKeys.get(name);
   }
@@ -305,10 +306,11 @@ public class MaterializedTableMeta {
     return foreignKeys.containsKey(name);
   }
 
-  public ReverseForeignKey reverseForeignKey(String name) throws ModelException {
+  public ReverseForeignKey reverseForeignKey(Ident ident) throws ModelException {
+    String name = ident.getString();
     if (!reverseForeignKeys.containsKey(name)) {
       throw new ModelException(
-          String.format("Invalid reverse foreign key reference '%s' in table '%s'.", name, tableName));
+          String.format("Invalid reverse foreign key reference '%s' in table '%s'.", name, tableName), ident);
     }
     return reverseForeignKeys.get(name);
   }
@@ -454,7 +456,7 @@ public class MaterializedTableMeta {
     @Override
     public ExposedTableMeta tableMeta(Ident ident) throws ModelException {
       if (tableMeta.hasReverseForeignKey(ident.getString())) {
-        return new ReferencedMultiTableMeta(this, tableMeta.reverseForeignKey(ident.getString()));
+        return new ReferencedMultiTableMeta(this, tableMeta.reverseForeignKey(ident));
       } else {
         throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
       }

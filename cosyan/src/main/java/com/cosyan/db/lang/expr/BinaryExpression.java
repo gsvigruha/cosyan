@@ -88,8 +88,8 @@ public class BinaryExpression extends Expression {
     final ColumnMeta rightColumn = right.compileColumn(sourceTable);
 
     if (token.is(Tokens.AND)) {
-      assertType(DataTypes.BoolType, leftColumn.getType(), token);
-      assertType(DataTypes.BoolType, rightColumn.getType(), token);
+      assertType(DataTypes.BoolType, leftColumn.getType(), token.getLoc());
+      assertType(DataTypes.BoolType, rightColumn.getType(), token.getLoc());
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
 
         @Override
@@ -98,8 +98,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else if (token.is(Tokens.OR)) {
-      assertType(DataTypes.BoolType, leftColumn.getType(), token);
-      assertType(DataTypes.BoolType, rightColumn.getType(), token);
+      assertType(DataTypes.BoolType, leftColumn.getType(), token.getLoc());
+      assertType(DataTypes.BoolType, rightColumn.getType(), token.getLoc());
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
 
         @Override
@@ -108,8 +108,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else if (token.is(Tokens.XOR)) {
-      assertType(DataTypes.BoolType, leftColumn.getType(), token);
-      assertType(DataTypes.BoolType, rightColumn.getType(), token);
+      assertType(DataTypes.BoolType, leftColumn.getType(), token.getLoc());
+      assertType(DataTypes.BoolType, rightColumn.getType(), token.getLoc());
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
 
         @Override
@@ -118,8 +118,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else if (token.is(Tokens.IMPL)) {
-      assertType(DataTypes.BoolType, leftColumn.getType(), token);
-      assertType(DataTypes.BoolType, rightColumn.getType(), token);
+      assertType(DataTypes.BoolType, leftColumn.getType(), token.getLoc());
+      assertType(DataTypes.BoolType, rightColumn.getType(), token.getLoc());
       return new BinaryColumn(DataTypes.BoolType, leftColumn, rightColumn) {
 
         @Override

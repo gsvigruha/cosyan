@@ -67,8 +67,7 @@ public class FuncCallExpression extends Expression {
       argColumnsBuilder.add(objColumn);
     }
     for (int i = 0; i < args.size(); i++) {
-      ColumnMeta col = args.get(i).compileColumn(sourceTable);
-      argColumnsBuilder.add(col);
+      argColumnsBuilder.add(args.get(i).compileColumn(sourceTable));
     }
 
     ImmutableList<ColumnMeta> argColumns = argColumnsBuilder.build();
@@ -81,9 +80,10 @@ public class FuncCallExpression extends Expression {
     for (int i = 0; i < function.getArgTypes().size(); i++) {
       DataType<?> expectedType = function.argType(i);
       DataType<?> dataType = argColumns.get(i).getType();
+      Expression expr = objColumn != null ? i == 0 ? object : args.get(i - 1) : args.get(i);
       if (!(expectedType == DataTypes.DoubleType && dataType == DataTypes.LongType)) {
         // Skip check for Double/Long pairs, there will be an implicit type conversion.
-        SyntaxTree.assertType(expectedType, dataType);
+        SyntaxTree.assertType(expectedType, dataType, expr.loc());
       }
       resources = resources.merge(argColumns.get(i).readResources());
       tableDependencies.addToThis(argColumns.get(i).tableDependencies());

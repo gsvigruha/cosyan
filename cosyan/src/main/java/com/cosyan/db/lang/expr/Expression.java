@@ -52,7 +52,7 @@ public abstract class Expression extends Node {
     public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
       if (type == Type.NOT) {
         ColumnMeta exprColumn = expr.compileColumn(sourceTable);
-        SyntaxTree.assertType(DataTypes.BoolType, exprColumn.getType(), expr);
+        SyntaxTree.assertType(DataTypes.BoolType, exprColumn.getType(), expr.loc());
         return new DerivedColumnWithDeps(
             DataTypes.BoolType,
             exprColumn.tableDependencies(),

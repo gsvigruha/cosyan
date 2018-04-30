@@ -35,7 +35,7 @@ public class AlterStatementColumns {
           column.isNullable(),
           column.isUnique(),
           column.isImmutable());
-      tableMeta.addColumn(basicColumn);
+      tableMeta.addColumn(column.getName(), basicColumn);
       metaRepo.sync(tableMeta);
       return new MetaStatementResult();
     }

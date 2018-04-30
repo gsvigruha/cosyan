@@ -258,7 +258,7 @@ public class Parser implements IParser {
     assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
     Select select = parseSelect(tokens);
     assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-    return new RefDefinition(ident.getString(), select);
+    return new RefDefinition(ident, select);
   }
 
   private MetaStatement parseDrop(PeekingIterator<Token> tokens) throws ParserException {
@@ -369,9 +369,9 @@ public class Parser implements IParser {
       if (tokens.peek().is(Tokens.REVERSE)) {
         tokens.next();
         Ident reverseIdent = parseIdent(tokens);
-        return new ForeignKeyDefinition(ident, reverseIdent.getString(), column, refTable, refColumn);
+        return new ForeignKeyDefinition(ident, reverseIdent, column, refTable, refColumn);
       } else {
-        return new ForeignKeyDefinition(ident, "rev_" + ident.getString(), column, refTable, refColumn);
+        return new ForeignKeyDefinition(ident, ident.map(i -> "rev_" + i), column, refTable, refColumn);
       }
     } else {
       throw new ParserException("Unsupported constraint '" + tokens.peek() + "'.");
@@ -679,7 +679,8 @@ public class Parser implements IParser {
           not = false;
         }
         assertNext(tokens, Tokens.NULL);
-        return new UnaryExpression(not ? UnaryExpression.Type.IS_NOT_NULL : UnaryExpression.Type.IS_NULL, primary, token.getLoc());
+        return new UnaryExpression(not ? UnaryExpression.Type.IS_NOT_NULL : UnaryExpression.Type.IS_NULL, primary,
+            token.getLoc());
       } else {
         return parseBinaryExpression(primary, tokens, precedence);
       }

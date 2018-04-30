@@ -373,9 +373,9 @@ public class MetaRepo implements TableProvider {
       loc = expr.loc();
     }
 
-    public ModelException(String msg) {
+    public ModelException(String msg, Loc loc) {
       super(msg);
-      loc = null;
+      this.loc = loc;
     }
   }
 

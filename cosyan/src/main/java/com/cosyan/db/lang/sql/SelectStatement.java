@@ -4,10 +4,9 @@ import static com.cosyan.db.lang.expr.SyntaxTree.assertType;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import com.cosyan.db.io.TableReader.IterableTableReader;
@@ -22,11 +21,11 @@ import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.logic.PredicateHelper;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
+import com.cosyan.db.meta.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.meta.TableProvider;
-import com.cosyan.db.meta.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.model.AggrTables;
 import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.AggrTables.KeyValueAggrTableMeta;
@@ -53,8 +52,6 @@ import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.LinkedListMultimap;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -155,7 +152,7 @@ public class SelectStatement {
         TableMeta sourceTable,
         ImmutableList<Expression> columns) throws NotAggrTableException, ModelException {
       ImmutableList.Builder<TableMeta> tables = ImmutableList.builder();
-      LinkedListMultimap<String, ColumnMeta> tableColumns = LinkedListMultimap.create();
+      LinkedHashMap<String, ColumnMeta> tableColumns = new LinkedHashMap<>();
       int i = 0;
       for (Expression expr : columns) {
         if (expr instanceof AsteriskExpression) {
@@ -163,31 +160,31 @@ public class SelectStatement {
             throw new ModelException("Asterisk expression is not allowed here.", expr);
           }
           for (String columnName : ((ExposedTableMeta) sourceTable).columnNames()) {
-            tableColumns.put(columnName,
-                FuncCallExpression.of(new Ident(columnName)).compileColumn(sourceTable));
+            Expression columnExpr = FuncCallExpression.of(new Ident(columnName));
+            addColumn(columnName, columnExpr.compileColumn(sourceTable), columnExpr, tableColumns);
           }
         } else {
           CompiledObject obj = expr.compile(sourceTable);
           if (obj instanceof ColumnMeta) {
-            tableColumns.put(expr.getName("_c" + (i++)), (ColumnMeta) obj);
+            addColumn(expr.getName("_c" + (i++)), (ColumnMeta) obj, expr, tableColumns);
           } else {
             throw new ModelException("Expected column.", expr);
           }
         }
       }
-      return new TableColumns(deduplicateColumns(tableColumns), tables.build());
+      return new TableColumns(ImmutableMap.copyOf(tableColumns), tables.build());
     }
 
-    private static ImmutableMap<String, ColumnMeta> deduplicateColumns(
-        LinkedListMultimap<String, ColumnMeta> tableColumns) throws ModelException {
-      ImmutableMap.Builder<String, ColumnMeta> builder = ImmutableMap.builder();
-      for (Map.Entry<String, Collection<ColumnMeta>> column : tableColumns.asMap().entrySet()) {
-        if (column.getValue().size() > 1) {
-          throw new ModelException(String.format("Duplicate column name '%s' in expression.", column.getKey()));
-        }
-        builder.put(column.getKey(), Iterables.getOnlyElement(column.getValue()));
+    private static void addColumn(
+        String columnName,
+        ColumnMeta columnMeta,
+        Expression columnExpr,
+        LinkedHashMap<String, ColumnMeta> tableColumns) throws ModelException {
+      if (tableColumns.containsKey(columnName)) {
+        throw new ModelException(String.format("Duplicate column name '%s' in expression.", columnName),
+            columnExpr);
       }
-      return builder.build();
+      tableColumns.put(columnName, columnMeta);
     }
 
     private ExposedTableMeta filteredTable(
@@ -195,7 +192,7 @@ public class SelectStatement {
         throws ModelException {
       if (where.isPresent()) {
         ColumnMeta whereColumn = where.get().compileColumn(sourceTable);
-        assertType(DataTypes.BoolType, whereColumn.getType(), where.get());
+        assertType(DataTypes.BoolType, whereColumn.getType(), where.get().loc());
         if (sourceTable instanceof SeekableTableMeta) {
           SeekableTableMeta tableMeta = (SeekableTableMeta) sourceTable;
           VariableEquals clause = PredicateHelper.getBestClause(tableMeta, where.get());
@@ -217,7 +214,7 @@ public class SelectStatement {
         Optional<Expression> having) throws ModelException {
       if (having.isPresent()) {
         ColumnMeta havingColumn = having.get().compileColumn(sourceTable);
-        assertType(DataTypes.BoolType, havingColumn.getType(), having.get());
+        assertType(DataTypes.BoolType, havingColumn.getType(), having.get().loc());
         return havingColumn;
       } else {
         return ColumnMeta.TRUE_COLUMN;
@@ -387,7 +384,7 @@ public class SelectStatement {
     public String print() {
       return "*";
     }
-    
+
     @Override
     public Loc loc() {
       return loc;

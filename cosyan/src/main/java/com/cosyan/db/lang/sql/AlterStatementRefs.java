@@ -57,7 +57,7 @@ public class AlterStatementRefs {
       TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
       RefTableMeta refTableMeta = new RefTableMeta(
           aggrTable, tableColumns.getColumns(), srcTableMeta.getReverseForeignKey());
-      tableMeta.addRef(new TableRef(ref.getName(), refTableMeta));
+      tableMeta.addRef(ref.getName(), new TableRef(ref.getName().getString(), refTableMeta));
       return new MetaStatementResult();
     }
 

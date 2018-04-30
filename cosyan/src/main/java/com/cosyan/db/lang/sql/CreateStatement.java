@@ -133,8 +133,14 @@ public class CreateStatement {
 
       for (ForeignKeyDefinition foreignKeyDefinition : foreignKeyDefinitions) {
         BasicColumn keyColumn = tableMeta.column(foreignKeyDefinition.getKeyColumn());
-        MaterializedTableMeta refTable = metaRepo.table(foreignKeyDefinition.getRefTable());
-        BasicColumn refColumn = refTable.pkColumn();
+        Ident refTableName = foreignKeyDefinition.getRefTable();
+        MaterializedTableMeta refTable = metaRepo.table(refTableName);
+        Optional<BasicColumn> refColumnOpt = refTable.pkColumn();
+        if (!refColumnOpt.isPresent()) {
+          throw new ModelException(String.format("Table '%s' has no primary key.", refTableName), refTableName);
+        }
+        BasicColumn refColumn = refColumnOpt.get();
+
         if (foreignKeyDefinition.getRefColumn().isPresent()
             && !foreignKeyDefinition.getRefColumn().get().getString().equals(refColumn.getName())) {
           throw new ModelException(
@@ -150,9 +156,9 @@ public class CreateStatement {
         }
         assert refColumn.isUnique() && !refColumn.isNullable();
         keyColumn.addIndex(tableMeta);
-        tableMeta.addForeignKey(new ForeignKey(
+        tableMeta.addForeignKey(foreignKeyDefinition.getName(), foreignKeyDefinition.getRevName(), new ForeignKey(
             foreignKeyDefinition.getName().getString(),
-            foreignKeyDefinition.getRevName(),
+            foreignKeyDefinition.getRevName().getString(),
             tableMeta,
             keyColumn,
             refTable,
@@ -164,7 +170,7 @@ public class CreateStatement {
         if (rule.getType() != DataTypes.BoolType) {
           throw new ModelException("Constraint expression has to be boolean.", ruleDefinition.getName());
         }
-        tableMeta.addRule(rule.toBooleanRule());
+        tableMeta.addRule(ruleDefinition.getName(), rule.toBooleanRule());
       }
     }
 
@@ -218,7 +224,7 @@ public class CreateStatement {
   @EqualsAndHashCode(callSuper = true)
   public static class ForeignKeyDefinition extends Node implements ConstraintDefinition {
     private final Ident name;
-    private final String revName;
+    private final Ident revName;
     private final Ident keyColumn;
     private final Ident refTable;
     private final Optional<Ident> refColumn;
@@ -227,7 +233,7 @@ public class CreateStatement {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class RefDefinition extends Node {
-    private final String name;
+    private final Ident name;
     private final Select select;
   }
 
