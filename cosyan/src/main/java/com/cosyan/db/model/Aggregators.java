@@ -236,7 +236,7 @@ public class Aggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for max: '" + argType + "'.", ident);
+        throw new ModelException("Invalid type for max: '" + argType + "'.", ident.getLoc());
       }
     }
   }
@@ -370,7 +370,7 @@ public class Aggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for min: '" + argType + "'.", ident);
+        throw new ModelException("Invalid type for min: '" + argType + "'.", ident.getLoc());
       }
     }
   }

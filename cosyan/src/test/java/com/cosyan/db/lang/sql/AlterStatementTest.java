@@ -51,20 +51,20 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t3 (a integer, b integer, constraint pk_b primary key (b), constraint c_a check(a > 1));");
     {
       ErrorResult result = error("alter table t3 drop a;");
-      assertEquals("Cannot drop column 'a', check 'c_a [(a > 1)]' fails.\n" +
-          "Column 'a' not found in table 't3'.", result.getError().getMessage());
+      assertEquals("[20, 21]: Cannot drop column 'a', check 'c_a [(a > 1)]' fails.\n" +
+          "[1, 2]: Column 'a' not found in table 't3'.", result.getError().getMessage());
     }
     assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("a")).isDeleted());
     execute("create table t4 (a integer, constraint fk_a foreign key (a) references t3(b));");
     {
       ErrorResult result = error("alter table t4 drop a;");
-      assertEquals("Cannot drop column 'a', it is used by foreign key 'fk_a [a -> t3.b]'.",
+      assertEquals("[20, 21]: Cannot drop column 'a', it is used by foreign key 'fk_a [a -> t3.b]'.",
           result.getError().getMessage());
     }
     assertEquals(false, metaRepo.table(new Ident("t4")).column(new Ident("a")).isDeleted());
     {
       ErrorResult result = error("alter table t3 drop b;");
-      assertEquals("Cannot drop column 'b', it is used by reverse foreign key 'rev_fk_a [t4.a -> b]'.",
+      assertEquals("[20, 21]: Cannot drop column 'b', it is used by reverse foreign key 'rev_fk_a [t4.a -> b]'.",
           result.getError().getMessage());
     }
     assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("b")).isDeleted());
@@ -114,14 +114,14 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t7 (a varchar);");
     {
       ErrorResult result = error("alter table t7 add a varchar;");
-      assertEquals("Duplicate column, foreign key or reversed foreign key name in 't7': 'a'.",
+      assertEquals("[19, 20]: Duplicate column, foreign key or reversed foreign key name in 't7': 'a'.",
           result.getError().getMessage());
     }
     assertEquals(1, metaRepo.table(new Ident("t7")).columns().size());
     execute("insert into t7 values ('x');");
     {
       ErrorResult result = error("alter table t7 add b varchar not null;");
-      assertEquals("Cannot add column 'b', new columns on a non empty table have to be nullable.",
+      assertEquals("[19, 20]: Cannot add column 'b', new columns on a non empty table have to be nullable.",
           result.getError().getMessage());
     }
     assertEquals(1, metaRepo.table(new Ident("t7")).columns().size());
@@ -164,20 +164,21 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t10 (a varchar, b varchar, c varchar);");
     {
       ErrorResult result = error("alter table t10 alter d varchar;");
-      assertEquals("Column 'd' not found in table 't10'.", result.getError().getMessage());
+      assertEquals("[22, 23]: Column 'd' not found in table 't10'.", result.getError().getMessage());
     }
     {
       ErrorResult result = error("alter table t10 alter a integer;");
-      assertEquals("Cannot alter column 'a', type has to remain the same.", result.getError().getMessage());
+      assertEquals("[22, 23]: Cannot alter column 'a', type has to remain the same.", result.getError().getMessage());
     }
     execute("insert into t10 values ('x', 'y', 'z');");
     {
       ErrorResult result = error("alter table t10 alter b varchar unique;");
-      assertEquals("Cannot alter column 'b', uniqueness has to remain the same.", result.getError().getMessage());
+      assertEquals("[22, 23]: Cannot alter column 'b', uniqueness has to remain the same.",
+          result.getError().getMessage());
     }
     {
       ErrorResult result = error("alter table t10 alter c varchar not null;");
-      assertEquals("Cannot alter column 'c', column has to remain nullable.", result.getError().getMessage());
+      assertEquals("[22, 23]: Cannot alter column 'c', column has to remain nullable.", result.getError().getMessage());
     }
   }
 
@@ -202,7 +203,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t12 (a varchar, b integer);");
     execute("alter table t12 drop b;");
     ErrorResult result = error("select a, b from t12;");
-    assertEquals("Column 'b' not found in table 't12'.", result.getError().getMessage());
+    assertEquals("[10, 11]: Column 'b' not found in table 't12'.", result.getError().getMessage());
   }
 
   @Test

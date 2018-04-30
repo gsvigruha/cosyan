@@ -86,7 +86,7 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateTableAlreadyExists() throws Exception {
     execute("create table t6 (a varchar);");
     ErrorResult error = error("create table t6 (a varchar);");
-    assertEquals("Table 't6' already exists.", error.getError().getMessage());
+    assertEquals("[13, 15]: Table 't6' already exists.", error.getError().getMessage());
   }
 
   @Test
@@ -198,9 +198,9 @@ public class CreateStatementTest extends UnitTestBase {
   @Test
   public void testCreateTableIDTypeErrors() throws Exception {
     ErrorResult e1 = error("create table t22 (a integer, b id);");
-    assertEquals("The ID column 'b' has to be the first one.", e1.getError().getMessage());
+    assertEquals("[29, 30]: The ID column 'b' has to be the first one.", e1.getError().getMessage());
     ErrorResult e2 = error("create table t22 (a id, b integer, constraint pk_b primary key (b));");
-    assertEquals("There can only be one primary key.", e2.getError().getMessage());
+    assertEquals("[46, 50]: There can only be one primary key.", e2.getError().getMessage());
   }
 
   @Test
@@ -209,7 +209,7 @@ public class CreateStatementTest extends UnitTestBase {
     ErrorResult e1 = error("create table t24 (a integer, "
         + "constraint fk_a foreign key (a) references t23(a), "
         + "constraint c check (b > 1));");
-    assertEquals("Column 'b' not found in table 't24'.", e1.getError().getMessage());
+    assertEquals("[100, 101]: Column 'b' not found in table 't24'.", e1.getError().getMessage());
     MaterializedTableMeta t23 = metaRepo.table(new Ident("t23"));
     assertEquals(0, t23.reverseForeignKeys().size());
   }

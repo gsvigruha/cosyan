@@ -87,6 +87,12 @@ public class AlterStatementColumns {
             column.getName());
 
       }
+      if (originalColumn.isNullable() && !column.isNullable()) {
+        throw new ModelException(
+            String.format("Cannot alter column '%s', column has to remain nullable.", column.getName()),
+            column.getName());
+      }
+
       originalColumn.setNullable(column.isNullable());
       originalColumn.setImmutable(column.isImmutable());
       return new MetaStatementResult();

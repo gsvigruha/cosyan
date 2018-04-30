@@ -313,8 +313,7 @@ public class Parser implements IParser {
     assertNext(tokens, Tokens.ON);
     Ident table;
     if (tokens.peek().is(Tokens.ASTERISK)) {
-      tokens.next();
-      table = new Ident("*");
+      table = new Ident("*", tokens.next().getLoc());
     } else {
       table = parseIdent(tokens);
     }
@@ -520,7 +519,7 @@ public class Parser implements IParser {
       }
       expr = new DateLiteral((java.util.Date) date, value.getLoc());
     } else if (token.isIdent()) {
-      Ident ident = new Ident(tokens.next().getString());
+      Ident ident = parseIdent(tokens);
       expr = parseFuncCallExpression(ident, null, tokens);
     } else if (token.isInt()) {
       tokens.next();
@@ -572,7 +571,7 @@ public class Parser implements IParser {
         tokens.next();
         ImmutableList<Expression> argExprs = parseExprs(tokens, false, String.valueOf(Tokens.PARENT_CLOSED));
         tokens.next();
-        expr = new FuncCallExpression(new Ident("count$distinct"), parent, argExprs);
+        expr = new FuncCallExpression(new Ident("count$distinct", ident.getLoc()), parent, argExprs);
       } else {
         ImmutableList<Expression> argExprs = parseExprs(tokens, false, String.valueOf(Tokens.PARENT_CLOSED));
         tokens.next();
@@ -620,7 +619,7 @@ public class Parser implements IParser {
   private Ident parseIdent(PeekingIterator<Token> tokens) throws ParserException {
     Token token = tokens.next();
     if (token.isIdent()) {
-      return new Ident(token.getString());
+      return new Ident(token.getString(), token.getLoc());
     } else {
       throw new ParserException("Expected identifier but got " + token.getString() + ".");
     }

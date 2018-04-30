@@ -77,7 +77,7 @@ public class UpdateTest extends UnitTestBase {
     execute("insert into t5 values ('123', 'x');");
 
     ErrorResult r1 = error("update t4 set a = 'z' where a = 'x';");
-    assertError(ModelException.class, "Column 't4.a' is immutable.", r1);
+    assertError(ModelException.class, "[14, 15]: Column 't4.a' is immutable.", r1);
 
     ErrorResult r2 = error("update t5 set b = 'z' where b = 'x';");
     assertError(RuleException.class, "Foreign key violation, value 'z' not present.", r2);
@@ -329,7 +329,7 @@ public class UpdateTest extends UnitTestBase {
     assertValues(new Object[][] { { "x", "z" } }, r2);
 
     ErrorResult e1 = error("update t27 set a = 'z';");
-    assertEquals("Column 't27.a' is immutable.", e1.getError().getMessage());
+    assertEquals("[15, 16]: Column 't27.a' is immutable.", e1.getError().getMessage());
 
     execute("alter table t27 drop a;");
     execute("alter table t27 add a varchar;");
@@ -344,15 +344,15 @@ public class UpdateTest extends UnitTestBase {
     execute("create table t28 (a varchar, b integer, c float, d timestamp, e boolean);");
     execute("insert into t28 values('x', 1, 1.0, dt '2017-01-01', true);");
     ErrorResult e1 = error("update t28 set a = 1;");
-    assertError(ModelException.class, "Expected 'varchar' but got 'integer'.", e1);
+    assertError(ModelException.class, "[15, 16]: Expected 'varchar' but got 'integer'.", e1);
     ErrorResult e2 = error("update t28 set b = 1.0;");
-    assertError(ModelException.class, "Expected 'integer' but got 'float'.", e2);
+    assertError(ModelException.class, "[15, 16]: Expected 'integer' but got 'float'.", e2);
     ErrorResult e3 = error("update t28 set c = 'x';");
-    assertError(ModelException.class, "Expected 'float' but got 'varchar'.", e3);
+    assertError(ModelException.class, "[15, 16]: Expected 'float' but got 'varchar'.", e3);
     ErrorResult e4 = error("update t28 set d = 1;");
-    assertError(ModelException.class, "Expected 'timestamp' but got 'integer'.", e4);
+    assertError(ModelException.class, "[15, 16]: Expected 'timestamp' but got 'integer'.", e4);
     ErrorResult e5 = error("update t28 set e = 'x';");
-    assertError(ModelException.class, "Expected 'boolean' but got 'varchar'.", e5);
+    assertError(ModelException.class, "[15, 16]: Expected 'boolean' but got 'varchar'.", e5);
   }
 
   @Test
@@ -360,7 +360,7 @@ public class UpdateTest extends UnitTestBase {
     execute("create table t29 (a id, b varchar, c integer);");
     execute("insert into t29 values ('x', 10), ('y', 10);");
     ErrorResult e1 = error("update t29 set a = 1;");
-    assertError(ModelException.class, "Column 't29.a' is immutable.", e1);
+    assertError(ModelException.class, "[15, 16]: Column 't29.a' is immutable.", e1);
     execute("update t29 set c = 1;");
     QueryResult r1 = query("select * from t29;");
     assertValues(new Object[][] { { 0l, "x", 1l }, { 1l, "y", 1l } }, r1);

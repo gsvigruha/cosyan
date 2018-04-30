@@ -285,6 +285,11 @@ public class Tokens {
     public static Loc interval(Loc start, Loc end) {
       return new Loc(start.start, end.end);
     }
+
+    @Override
+    public String toString() {
+      return String.format("[%s, %s]", start, end);
+    }
   }
 
   @Data

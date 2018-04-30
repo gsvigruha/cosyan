@@ -60,7 +60,8 @@ public class CreateStatement {
       Optional<PrimaryKey> primaryKey = Optional.empty();
       int i = 0;
       for (ColumnDefinition column : columnDefinitions) {
-        boolean isPK = primaryKeyDefinition.map(pk -> pk.getKeyColumn().equals(column.getName())).orElse(false);
+        boolean isPK = primaryKeyDefinition.map(
+            pk -> pk.getKeyColumn().getString().equals(column.getName().getString())).orElse(false);
         boolean isID = column.getType() == DataTypes.IDType;
         BasicColumn basicColumn = new BasicColumn(
             i,
@@ -78,7 +79,7 @@ public class CreateStatement {
           if (primaryKey.isPresent()) {
             throw new ModelException("There can only be one primary key.", basicColumn.getIdent());
           }
-          primaryKey = Optional.of(new PrimaryKey(new Ident("pk_id"), basicColumn));
+          primaryKey = Optional.of(new PrimaryKey(new Ident("pk_id", name.getLoc()), basicColumn));
         }
         columns.put(column.getName(), basicColumn);
         i++;
@@ -86,8 +87,8 @@ public class CreateStatement {
 
       if (primaryKeyDefinition.isPresent() && !primaryKey.isPresent()) {
         throw new ModelException(
-            String.format("Invalid primary key definition: column '%s' not found.",
-                primaryKeyDefinition.get().getName()),
+            String.format("Invalid primary key definition '%s': column '%s' not found.",
+                primaryKeyDefinition.get().getName(), primaryKeyDefinition.get().getKeyColumn()),
             primaryKeyDefinition.get().getName());
       }
 

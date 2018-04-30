@@ -9,8 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 
-import javax.annotation.Nullable;
-
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.index.ByteMultiTrie.LongMultiIndex;
@@ -50,6 +48,7 @@ import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 import com.cosyan.db.transaction.Resources;
 import com.cosyan.db.util.Util;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
@@ -355,27 +354,31 @@ public class MetaRepo implements TableProvider {
   public static class ModelException extends Exception {
     private static final long serialVersionUID = 1L;
 
-    @Nullable
     private final Loc loc;
 
     public ModelException(String msg, Ident ident) {
       super(msg);
-      loc = ident.getLoc();
+      loc = Preconditions.checkNotNull(ident.getLoc());
     }
 
     public ModelException(String msg, Token token) {
       super(msg);
-      loc = token.getLoc();
+      loc = Preconditions.checkNotNull(token.getLoc());
     }
 
     public ModelException(String msg, Expression expr) {
       super(msg);
-      loc = expr.loc();
+      loc = Preconditions.checkNotNull(expr.loc());
     }
 
     public ModelException(String msg, Loc loc) {
       super(msg);
-      this.loc = loc;
+      this.loc = Preconditions.checkNotNull(loc);
+    }
+
+    @Override
+    public String getMessage() {
+      return loc.toString() + ": " + super.getMessage();
     }
   }
 

@@ -389,7 +389,7 @@ public class TableReaderTest extends UnitTestBase {
   @Test
   public void testNullEquals() throws Exception {
     ErrorResult e = error("select * from null where b = null;");
-    assertError(ModelException.class, "Unsupported binary expression = for types integer and null.", e);
+    assertError(ModelException.class, "[26, 27]: Unsupported binary expression = for types integer and null.", e);
   }
 
   @Test
@@ -515,30 +515,30 @@ public class TableReaderTest extends UnitTestBase {
   @Test
   public void testAggrInAggr() throws Exception {
     ErrorResult e = error("select sum(sum(b)) from large;");
-    assertError(NotAggrTableException.class, "", e);
+    assertError(NotAggrTableException.class, "[11, 14]: Not an aggregation table 'sum'.", e);
   }
 
   @Test
   public void testNonKeyOutsideOfAggr() throws Exception {
     ErrorResult e = error("select b, sum(c) from large group by a;");
-    assertError(ModelException.class, "Column 'b' not found in table.", e);
+    assertError(ModelException.class, "[7, 8]: Column 'b' not found in table.", e);
   }
 
   @Test
   public void testGroupByInconsistentAggr() throws Exception {
     ErrorResult e = error("select sum(b) + b from large group by a;");
-    assertError(ModelException.class, "Column 'b' not found in table.", e);
+    assertError(ModelException.class, "[16, 17]: Column 'b' not found in table.", e);
   }
 
   @Test
   public void testInconsistentAggr() throws Exception {
     ErrorResult e = error("select sum(b) + b from large;");
-    assertError(ModelException.class, "Column 'b' not found in table.", e);
+    assertError(ModelException.class, "[16, 17]: Column 'b' not found in table.", e);
   }
 
   @Test
   public void testWrongArgNumber() throws Exception {
     ErrorResult e = error("select length(a, 1) from table;");
-    assertError(ModelException.class, "Expected 1 columns for function 'length' but got 2.", e);
+    assertError(ModelException.class, "[7, 13]: Expected 1 columns for function 'length' but got 2.", e);
   }
 }

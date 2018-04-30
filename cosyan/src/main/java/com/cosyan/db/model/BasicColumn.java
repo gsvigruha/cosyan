@@ -78,10 +78,6 @@ public class BasicColumn {
   }
 
   public void setNullable(boolean nullable) throws ModelException {
-    if (!nullable && this.nullable) {
-      throw new ModelException(
-          String.format("Cannot alter column '%s', column has to remain nullable.", getName()), getIdent());
-    }
     this.nullable = nullable;
   }
 

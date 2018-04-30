@@ -160,7 +160,7 @@ public class SelectStatement {
             throw new ModelException("Asterisk expression is not allowed here.", expr);
           }
           for (String columnName : ((ExposedTableMeta) sourceTable).columnNames()) {
-            Expression columnExpr = FuncCallExpression.of(new Ident(columnName));
+            Expression columnExpr = FuncCallExpression.of(new Ident(columnName, expr.loc()));
             addColumn(columnName, columnExpr.compileColumn(sourceTable), columnExpr, tableColumns);
           }
         } else {

@@ -24,7 +24,7 @@ public abstract class AggrTables extends IterableTableMeta {
     private static final long serialVersionUID = 1L;
 
     public NotAggrTableException(Ident ident) {
-      super("", ident);
+      super(String.format("Not an aggregation table '%s'.", ident), ident);
     }
   }
 
