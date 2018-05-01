@@ -213,4 +213,10 @@ public class CreateStatementTest extends UnitTestBase {
     MaterializedTableMeta t23 = metaRepo.table(new Ident("t23"));
     assertEquals(0, t23.reverseForeignKeys().size());
   }
+
+  @Test
+  public void testCreateTableCheckNotBoolean() throws Exception {
+    ErrorResult e1 = error("create table t24 (a varchar, constraint c check (a.substr(1, 2)));");
+    assertEquals("[40, 41]: Constraint check expression has to return a 'boolean': 'a.substr(1, 2)'.", e1.getError().getMessage());
+  }
 }

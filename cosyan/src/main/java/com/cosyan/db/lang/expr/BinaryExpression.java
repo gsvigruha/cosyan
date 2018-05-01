@@ -148,7 +148,7 @@ public class BinaryExpression extends Expression {
     } else if (token.is(Tokens.GEQ)) {
       return geqExpression(leftColumn, rightColumn);
     } else {
-      throw new ModelException("Unsupported binary expression '" + token.getString() + "'.", token);
+      throw new ModelException(String.format("Unsupported binary expression '%s'.", token.getString()), token);
     }
   }
 
@@ -182,8 +182,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", token);
+      throw new ModelException(String.format("Unsupported binary expression '%s' for types '%s' and '%s'.",
+          token.getString(), leftColumn.getType(), rightColumn.getType()), token);
     }
   }
 
@@ -224,8 +224,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", token);
+      throw new ModelException(String.format("Unsupported binary expression '%s' for types '%s' and '%s'.",
+          token.getString(), leftColumn.getType(), rightColumn.getType()), token);
     }
   }
 
@@ -266,8 +266,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", token);
+      throw new ModelException(String.format("Unsupported binary expression '%s' for types '%s' and '%s'.",
+          token.getString(), leftColumn.getType(), rightColumn.getType()), token);
     }
   }
 
@@ -301,8 +301,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", token);
+      throw new ModelException(String.format("Unsupported binary expression '%s' for types '%s' and '%s'.",
+          token.getString(), leftColumn.getType(), rightColumn.getType()), token);
     }
   }
 
@@ -336,8 +336,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", token);
+      throw new ModelException(String.format("Unsupported binary expression '%s' for types '%s' and '%s'.",
+          token.getString(), leftColumn.getType(), rightColumn.getType()), token);
     }
   }
 
@@ -385,8 +385,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", token);
+      throw new ModelException(String.format("Unsupported binary expression '%s' for types '%s' and '%s'.",
+          token.getString(), leftColumn.getType(), rightColumn.getType()), token);
     }
   }
 
@@ -434,8 +434,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", token);
+      throw new ModelException(String.format("Unsupported binary expression '%s' for types '%s' and '%s'.",
+          token.getString(), leftColumn.getType(), rightColumn.getType()), token);
     }
   }
 
@@ -483,8 +483,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", token);
+      throw new ModelException(String.format("Unsupported binary expression '%s' for types '%s' and '%s'.",
+          token.getString(), leftColumn.getType(), rightColumn.getType()), token);
     }
   }
 
@@ -532,8 +532,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", token);
+      throw new ModelException(String.format("Unsupported binary expression '%s' for types '%s' and '%s'.",
+          token.getString(), leftColumn.getType(), rightColumn.getType()), token);
     }
   }
 
@@ -581,8 +581,8 @@ public class BinaryExpression extends Expression {
         }
       };
     } else {
-      throw new ModelException("Unsupported binary expression " + token.getString() +
-          " for types " + leftColumn.getType() + " and " + rightColumn.getType() + ".", token);
+      throw new ModelException(String.format("Unsupported binary expression '%s' for types '%s' and '%s'.",
+          token.getString(), leftColumn.getType(), rightColumn.getType()), token);
     }
   }
 

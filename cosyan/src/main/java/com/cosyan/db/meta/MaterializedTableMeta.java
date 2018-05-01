@@ -323,7 +323,9 @@ public class MaterializedTableMeta {
     checkName(ruleDefinition.getName());
     Rule rule = ruleDefinition.compile(this);
     if (rule.getType() != DataTypes.BoolType) {
-      throw new ModelException("Constraint expression has to be boolean.", ruleDefinition.getName());
+      throw new ModelException(
+          String.format("Constraint check expression has to return a 'boolean': '%s'.", rule.getExpr().print()),
+          ruleDefinition.getName());
     }
     BooleanRule booleanRule = rule.toBooleanRule();
 

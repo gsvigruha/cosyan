@@ -389,7 +389,7 @@ public class TableReaderTest extends UnitTestBase {
   @Test
   public void testNullEquals() throws Exception {
     ErrorResult e = error("select * from null where b = null;");
-    assertError(ModelException.class, "[26, 27]: Unsupported binary expression = for types integer and null.", e);
+    assertError(ModelException.class, "[26, 27]: Unsupported binary expression '=' for types 'integer' and 'null'.", e);
   }
 
   @Test
@@ -546,5 +546,24 @@ public class TableReaderTest extends UnitTestBase {
   public void testInvalidAggrArg() throws Exception {
     ErrorResult e = error("select max(a = 'x') from table;");
     assertError(ModelException.class, "[7, 10]: Invalid argument type 'boolean' for aggregator 'max'.", e);
+  }
+
+  @Test
+  public void testInvalidJoinOn() throws Exception {
+    ErrorResult e = error("select * from left inner join right on a > x;");
+    assertError(ModelException.class,
+        "[40, 41]: Only 'and' and '=' binary expressions are allowed in the 'on' expression of joins, not '>'.", e);
+  }
+
+  @Test
+  public void testDuplicateColumnNames() throws Exception {
+    ErrorResult e = error("select a, b as a from table;");
+    assertError(ModelException.class, "[15, 16]: Duplicate column name 'a'.", e);
+  }
+
+  @Test
+  public void testExpressionInGroupByNotNamed() throws Exception {
+    ErrorResult e = error("select count(1) from table group by a + a;");
+    assertError(ModelException.class, "[37, 38]: Expression in group by must be named: '(a + a)'.", e);
   }
 }

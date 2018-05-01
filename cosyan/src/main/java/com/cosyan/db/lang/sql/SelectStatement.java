@@ -181,8 +181,7 @@ public class SelectStatement {
         Expression columnExpr,
         LinkedHashMap<String, ColumnMeta> tableColumns) throws ModelException {
       if (tableColumns.containsKey(columnName)) {
-        throw new ModelException(String.format("Duplicate column name '%s' in expression.", columnName),
-            columnExpr);
+        throw new ModelException(String.format("Duplicate column name '%s'.", columnName), columnExpr);
       }
       tableColumns.put(columnName, columnMeta);
     }
@@ -229,7 +228,7 @@ public class SelectStatement {
         ColumnMeta keyColumn = expr.compileColumn(sourceTable);
         String name = expr.getName(null);
         if (name == null) {
-          throw new ModelException("Expression in group by must be named: '" + expr + "'.", expr);
+          throw new ModelException(String.format("Expression in group by must be named: '%s'.", expr.print()), expr);
         }
         keyColumnsBuilder.put(name, keyColumn);
       }
@@ -318,8 +317,9 @@ public class SelectStatement {
         } else if (binaryExpr.getToken().is(Tokens.EQ)) {
           collector.add(binaryExpr);
         } else {
-          throw new ModelException(
-              "Only 'and' and '=' binary expressions are allowed in the 'on' expression of joins.", expr);
+          throw new ModelException(String.format(
+              "Only 'and' and '=' binary expressions are allowed in the 'on' expression of joins, not '%s'.",
+              binaryExpr.getToken().getString()), expr);
         }
       }
       return collector;
