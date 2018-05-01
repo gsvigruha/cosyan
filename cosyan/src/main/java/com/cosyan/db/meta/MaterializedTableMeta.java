@@ -18,6 +18,9 @@ import com.cosyan.db.io.SeekableOutputStream;
 import com.cosyan.db.io.SeekableOutputStream.RAFSeekableOutputStream;
 import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
+import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.meta.Dependencies.ReverseRuleDependencies;
 import com.cosyan.db.meta.Dependencies.ReverseRuleDependency;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
@@ -243,9 +246,42 @@ public class MaterializedTableMeta {
     return stats;
   }
 
-  public void addForeignKey(Ident fkIdent, Ident revFKIdent, ForeignKey foreignKey) throws ModelException {
-    checkName(fkIdent);
-    foreignKey.getRefTable().checkName(revFKIdent);
+  public void addForeignKey(ForeignKeyDefinition foreignKeyDefinition, MaterializedTableMeta refTable)
+      throws ModelException {
+    BasicColumn keyColumn = column(foreignKeyDefinition.getKeyColumn());
+    Ident refTableName = foreignKeyDefinition.getRefTable();
+
+    Optional<BasicColumn> refColumnOpt = refTable.pkColumn();
+    if (!refColumnOpt.isPresent()) {
+      throw new ModelException(String.format("Table '%s' has no primary key.", refTableName), refTableName);
+    }
+    BasicColumn refColumn = refColumnOpt.get();
+
+    if (foreignKeyDefinition.getRefColumn().isPresent()
+        && !foreignKeyDefinition.getRefColumn().get().getString().equals(refColumn.getName())) {
+      throw new ModelException(
+          "Foreign key reference column has to be the primary key column of the referenced table.",
+          foreignKeyDefinition.getRefColumn().get());
+    }
+    if (keyColumn.getType() != refColumn.getType()
+        && !(keyColumn.getType() == DataTypes.LongType && refColumn.getType() == DataTypes.IDType)) {
+      throw new ModelException(
+          String.format("Foreign key reference column has type '%s' while key column has type '%s'.",
+              refColumn.getType(), keyColumn.getType()),
+          foreignKeyDefinition.getName());
+    }
+    assert refColumn.isUnique() && !refColumn.isNullable();
+    keyColumn.addIndex(this);
+    ForeignKey foreignKey = new ForeignKey(
+        foreignKeyDefinition.getName().getString(),
+        foreignKeyDefinition.getRevName().getString(),
+        this,
+        keyColumn,
+        refTable,
+        refColumn);
+
+    checkName(foreignKeyDefinition.getName());
+    foreignKey.getRefTable().checkName(foreignKeyDefinition.getRevName());
     foreignKeys.put(foreignKey.getName(), foreignKey);
   }
 
@@ -258,7 +294,16 @@ public class MaterializedTableMeta {
     }
   }
 
-  public void addColumn(Ident ident, BasicColumn column) throws ModelException, IOException {
+  public void addColumn(ColumnDefinition columnDefiniton) throws ModelException, IOException {
+    checkName(columnDefiniton.getName());
+    BasicColumn column = new BasicColumn(
+        allColumns().size(),
+        columnDefiniton.getName(),
+        columnDefiniton.getType(),
+        columnDefiniton.isNullable(),
+        columnDefiniton.isUnique(),
+        columnDefiniton.isImmutable());
+
     assert column.getIndex() == columns.size();
     if (!isEmpty && !column.isNullable()) {
       throw new ModelException(
@@ -266,7 +311,6 @@ public class MaterializedTableMeta {
               column.getName()),
           column.getIdent());
     }
-    checkName(ident);
     columns.add(column);
   }
 
@@ -275,10 +319,16 @@ public class MaterializedTableMeta {
     refs.put(ref.getName(), ref);
   }
 
-  public void addRule(Ident ident, BooleanRule rule) throws ModelException {
-    checkName(ident);
-    rules.put(rule.name(), rule);
-    ruleDependencies.addToThis(rule.getDeps());
+  public void addRule(RuleDefinition ruleDefinition) throws ModelException {
+    checkName(ruleDefinition.getName());
+    Rule rule = ruleDefinition.compile(this);
+    if (rule.getType() != DataTypes.BoolType) {
+      throw new ModelException("Constraint expression has to be boolean.", ruleDefinition.getName());
+    }
+    BooleanRule booleanRule = rule.toBooleanRule();
+
+    rules.put(ruleDefinition.getName().getString(), booleanRule);
+    ruleDependencies.addToThis(booleanRule.getDeps());
   }
 
   void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, BooleanRule rule) {

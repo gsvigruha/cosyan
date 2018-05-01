@@ -5,7 +5,7 @@ import java.io.IOException;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
-import com.cosyan.db.lang.sql.CreateStatement.RefDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.RefDefinition;
 import com.cosyan.db.lang.sql.SelectStatement.Select.TableColumns;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.MetaStatementResult;

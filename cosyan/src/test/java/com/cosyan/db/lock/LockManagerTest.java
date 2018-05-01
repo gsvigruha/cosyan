@@ -5,6 +5,7 @@ import org.junit.Test;
 import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.session.Session;
+import com.google.common.collect.ImmutableList;
 
 public class LockManagerTest extends UnitTestBase {
 
@@ -129,7 +130,7 @@ public class LockManagerTest extends UnitTestBase {
     }
     {
       QueryResult result = query("select min(x), max(x) from t4;", s);
-      System.out.println("  min, max: " + result.getValues().get(0));
+      System.out.println("  min, max: " + ImmutableList.copyOf(result.getValues().get(0)));
       assert ((Long) result.getValues().get(0)[0] < (Long) result.getValues().get(0)[1]);
     }
   }

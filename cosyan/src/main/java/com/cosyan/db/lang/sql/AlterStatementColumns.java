@@ -5,7 +5,7 @@ import java.io.IOException;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
-import com.cosyan.db.lang.sql.CreateStatement.ColumnDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.MetaStatementResult;
 import com.cosyan.db.meta.MaterializedTableMeta;
@@ -28,14 +28,7 @@ public class AlterStatementColumns {
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTableMeta tableMeta = metaRepo.table(table);
-      BasicColumn basicColumn = new BasicColumn(
-          tableMeta.allColumns().size(),
-          column.getName(),
-          column.getType(),
-          column.isNullable(),
-          column.isUnique(),
-          column.isImmutable());
-      tableMeta.addColumn(column.getName(), basicColumn);
+      tableMeta.addColumn(column);
       metaRepo.sync(tableMeta);
       return new MetaStatementResult();
     }

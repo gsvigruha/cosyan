@@ -10,21 +10,21 @@ import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
-import com.cosyan.db.lang.sql.SelectStatement.Select;
+import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.ConstraintDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.PrimaryKeyDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.MetaStatementResult;
 import com.cosyan.db.meta.MaterializedTableMeta;
 import com.cosyan.db.meta.MetaRepo;
-import com.cosyan.db.meta.MaterializedTableMeta.SeekableTableMeta;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
-import com.cosyan.db.model.Rule;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -133,45 +133,12 @@ public class CreateStatement {
       }
 
       for (ForeignKeyDefinition foreignKeyDefinition : foreignKeyDefinitions) {
-        BasicColumn keyColumn = tableMeta.column(foreignKeyDefinition.getKeyColumn());
-        Ident refTableName = foreignKeyDefinition.getRefTable();
-        MaterializedTableMeta refTable = metaRepo.table(refTableName);
-        Optional<BasicColumn> refColumnOpt = refTable.pkColumn();
-        if (!refColumnOpt.isPresent()) {
-          throw new ModelException(String.format("Table '%s' has no primary key.", refTableName), refTableName);
-        }
-        BasicColumn refColumn = refColumnOpt.get();
-
-        if (foreignKeyDefinition.getRefColumn().isPresent()
-            && !foreignKeyDefinition.getRefColumn().get().getString().equals(refColumn.getName())) {
-          throw new ModelException(
-              "Foreign key reference column has to be the primary key column of the referenced table.",
-              foreignKeyDefinition.refColumn.get());
-        }
-        if (keyColumn.getType() != refColumn.getType()
-            && !(keyColumn.getType() == DataTypes.LongType && refColumn.getType() == DataTypes.IDType)) {
-          throw new ModelException(
-              String.format("Foreign key reference column has type '%s' while key column has type '%s'.",
-                  refColumn.getType(), keyColumn.getType()),
-              foreignKeyDefinition.getName());
-        }
-        assert refColumn.isUnique() && !refColumn.isNullable();
-        keyColumn.addIndex(tableMeta);
-        tableMeta.addForeignKey(foreignKeyDefinition.getName(), foreignKeyDefinition.getRevName(), new ForeignKey(
-            foreignKeyDefinition.getName().getString(),
-            foreignKeyDefinition.getRevName().getString(),
-            tableMeta,
-            keyColumn,
-            refTable,
-            refColumn));
+        MaterializedTableMeta refTable = metaRepo.table(foreignKeyDefinition.getRefTable());
+        tableMeta.addForeignKey(foreignKeyDefinition, refTable);
       }
 
       for (RuleDefinition ruleDefinition : ruleDefinitions) {
-        Rule rule = ruleDefinition.compile(tableMeta);
-        if (rule.getType() != DataTypes.BoolType) {
-          throw new ModelException("Constraint expression has to be boolean.", ruleDefinition.getName());
-        }
-        tableMeta.addRule(ruleDefinition.getName(), rule.toBooleanRule());
+        tableMeta.addRule(ruleDefinition);
       }
     }
 
@@ -179,63 +146,6 @@ public class CreateStatement {
     public boolean log() {
       return true;
     }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class ColumnDefinition extends Node {
-    private final Ident name;
-    private final DataType<?> type;
-    private final boolean nullable;
-    private final boolean unique;
-    private final boolean immutable;
-  }
-
-  public interface ConstraintDefinition {
-    public Ident getName();
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class RuleDefinition extends Node implements ConstraintDefinition {
-    private final Ident name;
-    private final Expression expr;
-    private final boolean nullIsTrue;
-
-    @Override
-    public String toString() {
-      return name + " [" + expr.print() + "]";
-    }
-
-    public Rule compile(MaterializedTableMeta tableMeta) throws ModelException {
-      SeekableTableMeta table = tableMeta.reader();
-      ColumnMeta column = expr.compileColumn(table);
-      return new Rule(name.getString(), table, column, expr, nullIsTrue, column.tableDependencies());
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class PrimaryKeyDefinition extends Node implements ConstraintDefinition {
-    private final Ident name;
-    private final Ident keyColumn;
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class ForeignKeyDefinition extends Node implements ConstraintDefinition {
-    private final Ident name;
-    private final Ident revName;
-    private final Ident keyColumn;
-    private final Ident refTable;
-    private final Optional<Ident> refColumn;
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class RefDefinition extends Node {
-    private final Ident name;
-    private final Select select;
   }
 
   @Data
