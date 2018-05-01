@@ -155,7 +155,7 @@ public class ListAggregator extends AggrFunction {
         }
       };
     } else {
-      throw new ModelException(String.format("Unsupported data type %s for list aggregator.", argType), ident);
+      throw new ModelException(String.format("Invalid argument type '%s' for aggregator 'list'.", argType), ident);
     }
   }
 }

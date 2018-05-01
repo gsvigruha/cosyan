@@ -79,7 +79,7 @@ public class StatAggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for sum: '" + argType + "'.", ident);
+        throw new ModelException(String.format("Invalid argument type '%s' for aggregator 'sum'.", argType), ident);
       }
     }
   }
@@ -157,7 +157,7 @@ public class StatAggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for avg: '" + argType + "'.", ident);
+        throw new ModelException(String.format("Invalid argument type '%s' for aggregator 'avg'.", argType), ident);
       }
     }
   }
@@ -243,7 +243,7 @@ public class StatAggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for stddev: '" + argType + "'.", ident);
+        throw new ModelException(String.format("Invalid argument type '%s' for aggregator 'stddev'.", argType), ident);
       }
     }
   }
@@ -290,7 +290,8 @@ public class StatAggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for stddev_pop: '" + argType + "'.", ident);
+        throw new ModelException(String.format("Invalid argument type '%s' for aggregator 'stddev_pop'.", argType),
+            ident);
       }
     }
   }
@@ -356,7 +357,8 @@ public class StatAggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for skewness: '" + argType + "'.", ident);
+        throw new ModelException(String.format("Invalid argument type '%s' for aggregator 'skewness'.", argType),
+            ident);
       }
     }
   }
@@ -425,7 +427,8 @@ public class StatAggregators {
           }
         };
       } else {
-        throw new ModelException("Invalid type for kurtosis: '" + argType + "'.", ident);
+        throw new ModelException(String.format("Invalid argument type '%s' for aggregator 'kurtosis'.", argType),
+            ident);
       }
     }
   }

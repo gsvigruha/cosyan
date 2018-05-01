@@ -541,4 +541,10 @@ public class TableReaderTest extends UnitTestBase {
     ErrorResult e = error("select length(a, 1) from table;");
     assertError(ModelException.class, "[7, 13]: Expected 1 columns for function 'length' but got 2.", e);
   }
+
+  @Test
+  public void testInvalidAggrArg() throws Exception {
+    ErrorResult e = error("select max(a = 'x') from table;");
+    assertError(ModelException.class, "[7, 10]: Invalid argument type 'boolean' for aggregator 'max'.", e);
+  }
 }

@@ -155,7 +155,7 @@ public class SetAggregator extends AggrFunction {
         }
       };
     } else {
-      throw new ModelException(String.format("Unsupported data type %s for set aggregator.", argType), ident);
+      throw new ModelException(String.format("Invalid argument type '%s' for aggregator 'set'.", argType), ident);
     }
   }
 }
