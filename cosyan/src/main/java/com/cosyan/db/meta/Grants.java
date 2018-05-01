@@ -1,16 +1,11 @@
 package com.cosyan.db.meta;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 
 import com.cosyan.db.auth.AuthToken;
+import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.auth.LocalUsers;
-import com.cosyan.db.conf.Config;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -141,12 +136,12 @@ public class Grants {
     }
   }
 
-  private final Config config;
+  private final LocalUsers localUsers;
   private final Multimap<String, GrantToken> userGrants;
 
-  public Grants(Config config) {
-    this.config = config;
-    userGrants = HashMultimap.create();
+  public Grants(LocalUsers localUsers) {
+    this.userGrants = HashMultimap.create();
+    this.localUsers = localUsers;
   }
 
   public void createGrant(GrantToken grantToken, AuthToken authToken) throws GrantException {
@@ -171,25 +166,10 @@ public class Grants {
     if (!authToken.isAdmin()) {
       throw new GrantException("Only the administrator can create users.");
     }
-    BufferedReader reader = new BufferedReader(new FileReader(config.usersFile()));
-    String line = null;
     try {
-      while ((line = reader.readLine()) != null) {
-        String[] parts = line.split(":");
-        if (username.equals(parts[0])) {
-          throw new GrantException(String.format("User '%s' already exists.", username));
-        }
-      }
-    } finally {
-      reader.close();
-    }
-    BufferedWriter writer = new BufferedWriter(new FileWriter(config.usersFile(), /* append= */true));
-    try {
-      writer.write("\n" + username + ":" + LocalUsers.hash(password));
-    } catch (NoSuchAlgorithmException e) {
-      throw new GrantException(e.getMessage());
-    } finally {
-      writer.close();
+      localUsers.createUser(username, password);
+    } catch (AuthException e) {
+      throw new GrantException(e);
     }
   }
 
@@ -234,6 +214,10 @@ public class Grants {
 
     public GrantException(String msg) {
       super(msg);
+    }
+
+    public GrantException(Exception cause) {
+      super(cause);
     }
   }
 }

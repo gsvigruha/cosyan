@@ -1,5 +1,7 @@
 package com.cosyan.db.auth;
 
+import java.io.IOException;
+
 import com.cosyan.db.conf.Config;
 
 public class Authenticator {
@@ -7,9 +9,13 @@ public class Authenticator {
   private final LDAPConnector ldapConnector;
   private final LocalUsers localUsers;
 
-  public Authenticator(Config config) {
+  public Authenticator(Config config) throws IOException {
     ldapConnector = new LDAPConnector(config);
     localUsers = new LocalUsers(config);
+  }
+
+  public LocalUsers localUsers() {
+    return localUsers;
   }
 
   public static enum Method {

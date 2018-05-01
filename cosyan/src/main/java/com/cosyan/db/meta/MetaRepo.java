@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 
 import com.cosyan.db.auth.AuthToken;
+import com.cosyan.db.auth.LocalUsers;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.index.ByteMultiTrie.LongMultiIndex;
 import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
@@ -63,13 +64,13 @@ public class MetaRepo implements TableProvider {
 
   private final LockManager lockManager;
 
-  public MetaRepo(Config config, LockManager lockManager) throws IOException {
+  public MetaRepo(Config config, LockManager lockManager, LocalUsers localUsers) throws IOException {
     this.config = config;
     this.lockManager = lockManager;
     this.tables = new HashMap<>();
     this.uniqueIndexes = new HashMap<>();
     this.multiIndexes = new HashMap<>();
-    this.grants = new Grants(config);
+    this.grants = new Grants(localUsers);
 
     Files.createDirectories(Paths.get(config.tableDir()));
     Files.createDirectories(Paths.get(config.indexDir()));

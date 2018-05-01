@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.junit.BeforeClass;
 
+import com.cosyan.db.auth.LocalUsers;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.expr.SyntaxTree.Statement;
@@ -26,7 +27,8 @@ public class CSVConverterTest {
 
   @BeforeClass
   public static void setUp() throws IOException, ModelException, ParserException, ConfigException {
-    metaRepo = new MetaRepo(new Config("/tmp/data"), new LockManager());
+    Config config = new Config("/tmp/data");
+    metaRepo = new MetaRepo(config, new LockManager(), new LocalUsers(config));
     parser = new Parser();
     lexer = new Lexer();
   }

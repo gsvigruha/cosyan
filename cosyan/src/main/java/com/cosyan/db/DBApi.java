@@ -26,10 +26,10 @@ public class DBApi {
 
   public DBApi(Config config) throws IOException, DBException {
     LockManager lockManager = new LockManager();
-    metaRepo = new MetaRepo(config, lockManager);
+    authenticator = new Authenticator(config);
+    metaRepo = new MetaRepo(config, lockManager, authenticator.localUsers());
     transactionHandler = new TransactionHandler();
     transactionJournal = new TransactionJournal(config);
-    authenticator = new Authenticator(config);
     metaJournal = new MetaJournal(config);
     Session initSession = adminSession(/* innerSession= */true);
     metaJournal.reload(initSession);

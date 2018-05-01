@@ -1,11 +1,15 @@
 package com.cosyan.db.auth;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.conf.Config;
@@ -36,12 +40,24 @@ public class LocalUsers {
   }
 
   private final Config config;
+  private final Map<String, String> users;
 
-  public LocalUsers(Config config) {
+  public LocalUsers(Config config) throws IOException {
     this.config = config;
+    users = new HashMap<>();
+    BufferedReader reader = new BufferedReader(new FileReader(config.usersFile()));
+    String line = null;
+    try {
+      while ((line = reader.readLine()) != null) {
+        String[] parts = line.split(":");
+        users.put(parts[0], parts[1]);
+      }
+    } finally {
+      reader.close();
+    }
   }
 
-  public static String hash(String password) throws NoSuchAlgorithmException {
+  private String hash(String password) throws NoSuchAlgorithmException {
     MessageDigest digest = MessageDigest.getInstance("SHA-256");
     return javax.xml.bind.DatatypeConverter
         .printHexBinary(digest.digest(password.getBytes(StandardCharsets.UTF_8)));
@@ -50,25 +66,34 @@ public class LocalUsers {
   public AuthToken auth(String username, String password) throws AuthException {
     try {
       String hex = hash(password);
-      BufferedReader reader = new BufferedReader(new FileReader(config.usersFile()));
-      String line = null;
-      try {
-        while ((line = reader.readLine()) != null) {
-          String[] parts = line.split(":");
-          if (username.equals(parts[0]) && hex.equals(parts[1])) {
-            if (username.equals("admin")) {
-              return AuthToken.ADMIN_AUTH;
-            } else {
-              return new LocalUserToken(username);
-            }
-          }
+      if (users.containsKey(username) && users.get(username).equals(hex)) {
+        if (username.equals("admin")) {
+          return AuthToken.ADMIN_AUTH;
+        } else {
+          return new LocalUserToken(username);
         }
+      } else {
         throw new AuthException("Wrong username/password.");
-      } finally {
-        reader.close();
       }
-    } catch (IOException | NoSuchAlgorithmException e) {
+    } catch (NoSuchAlgorithmException e) {
       throw new AuthException(e.getMessage());
+    }
+  }
+
+  public void createUser(String username, String password) throws AuthException, IOException {
+    if (users.containsKey(username)) {
+      throw new AuthException(String.format("User '%s' already exists.", username));
+    }
+
+    BufferedWriter writer = new BufferedWriter(new FileWriter(config.usersFile(), /* append= */true));
+    try {
+      String hashedPW = hash(password);
+      writer.write("\n" + username + ":" + hashedPW);
+      users.put(username, hashedPW);
+    } catch (NoSuchAlgorithmException e) {
+      throw new AuthException(e.getMessage());
+    } finally {
+      writer.close();
     }
   }
 }
