@@ -29,6 +29,12 @@ public class Lexer implements ILexer {
   }
 
   ImmutableList<Token> tokens(String sql) throws ParserException {
+    if (sql == null || sql.isEmpty()) {
+      throw new ParserException("Query must not be empty.");
+    }
+    if (!sql.endsWith(";")) {
+      throw new ParserException("Query must end with ';'.");
+    }
     int state = STATE_DEFAULT;
     ArrayList<Token> builder = new ArrayList<>();
     int literalStartIndex = 0;

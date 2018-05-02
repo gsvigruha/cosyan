@@ -1,7 +1,9 @@
+<h4>Run SQL</h4>
+
 <textarea class="sql" rows="5" ng-model="query"></textarea>
 
-<div>
-  <button ng-click="run()" class="btn btn-primary">Run query</button>
+<div class="sql">
+  <button ng-click="run()" class="sql">Run query</button>
 </div>
 
 <div ng-repeat="r in data.result track by $index">
