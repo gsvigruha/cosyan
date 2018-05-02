@@ -37,7 +37,7 @@ public class SQLConnector {
             QueryResult queryResult = (QueryResult) partialResult;
             partialResultObj.put("type", "query");
             partialResultObj.put("header", queryResult.getHeader());
-            partialResultObj.put("values", queryResult.getValues());
+            partialResultObj.put("values", queryResult.listValues());
           } else if (partialResult instanceof StatementResult) {
             StatementResult statementResult = (StatementResult) partialResult;
             partialResultObj.put("type", "statement");

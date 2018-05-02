@@ -2,45 +2,70 @@
   <button ng-click="loadTables()">Reload</button>
 </div>
 
-Tables:
-<ul>
-<li ng-repeat="table in data.tables">
-  {{ table.name }}<br>
-  Columns:
-  <ul>
-  <li ng-repeat="column in table.columns">
-    {{ column.name }}
-    {{ column.type }}
-    {{ column.nullable ? '' : 'not null' }}
-    {{ column.unique ? 'unique' : '' }}
-    {{ column.indexed ? 'indexed' : '' }}
-  </li>
-  </ul>
-  Foreign keys:
-  <ul>
-  <li ng-repeat="fk in table.foreignKeys">
-    {{ fk.name }}: {{ fk.column }} -> {{ fk.refTable }}({{ fk.refColumn }})
-  </li>
-  </ul>
-  Reverse foreign keys:
-  <ul>
-  <li ng-repeat="fk in table.reverseForeignKeys">
-    {{ fk.name }}: {{ fk.refTable }}({{ fk.refColumn }}) -> {{ fk.column }}
-  </li>
-  </ul>
-</li>
-</ul>
+<h2>Tables:<h2/>
+<div ng-repeat="table in data.tables">
+  {{ table.name }}<br/>
+  Columns:<br/>
+  <table class="admin">
+  <thead>
+  <tr>
+    <th>Name</th>
+    <th>Type</th>
+    <th>Nullable</th>
+    <th>Unique</th>
+    <th>Indexed</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr ng-repeat="column in table.columns">
+    <td>{{ column.name }}</td>
+    <td>{{ column.type }}</td>
+    <td>{{ column.nullable ? '' : 'not null' }}</td>
+    <td>{{ column.unique ? 'unique' : '' }}</td>
+    <td>{{ column.indexed ? 'indexed' : '' }}</td>
+  </tr>
+  </tbody>
+  </table>
 
-Unique indexes:
-<ul>
-<li ng-repeat="index in data.uniqueIndexes">
-  {{ index }}
-</li>
-</ul>
-
-Multi-indexes:
-<ul>
-<li ng-repeat="index in data.multiIndexes">
-  {{ index }}
-</li>
-</ul>
+  Foreign keys:<br/>
+  <table class="admin">
+  <thead>
+  <tr>
+    <th>Name</th>
+    <th>Column</th>
+    <th>Referenced table</th>
+    <th>Referenced column</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tbody>
+  <tr ng-repeat="fk in table.foreignKeys">
+    <td>{{ fk.name }}</td>
+    <td>{{ fk.column }}</td>
+    <td>{{ fk.refTable }}</td>
+    <td>{{ fk.refColumn }}</td>
+  </tr>
+  </tbody>
+  </table>
+  
+  Reverse foreign keys:<br/>
+  <table class="admin">
+  <thead>
+  <tr>
+    <th>Name</th>
+    <th>Column</th>
+    <th>Referenced table</th>
+    <th>Referenced column</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tbody>
+  <tr ng-repeat="fk in table.reverseForeignKeys">
+    <td>{{ fk.name }}</td>
+    <td>{{ fk.column }}</td>
+    <td>{{ fk.refTable }}</td>
+    <td>{{ fk.refColumn }}</td>
+  </tr>
+  </tbody>
+  </table>
+</div>

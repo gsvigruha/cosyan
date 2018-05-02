@@ -6,27 +6,28 @@
   <title>Cosyan DB</title>
   <meta name="description" content="">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  
+
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css">
 </head>
 <body>
   <div>Cosyan DB</div>
 
-  <ul class="menu">
-    <li><a href="#!/sql">sql</a></li>
-    <li><a href="#!/admin">admin</a></li>
-    <li><a href="#!/monitoring">monitoring</a></li>
-  </ul>
-  
+  <div class="menu">
+    <span><a href="#!/sql">sql</a></span>
+    <span><a href="#!/admin">admin</a></span>
+    <span><a href="#!/monitoring">monitoring</a></span>
+  </div>
+
   <div ng-view></div>
 
   <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
   <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-route.js"></script>
-  
+
   <script src="app.js"></script>
   <script src="sql/sql.js"></script>
   <script src="admin/admin.js"></script>
   <script src="admin/monitoring.js"></script>
-  
+  <link rel="stylesheet" href="admin/style.css"/>
+
 </body>
 </html>

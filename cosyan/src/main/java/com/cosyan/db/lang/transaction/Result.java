@@ -1,7 +1,10 @@
 package com.cosyan.db.lang.transaction;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
 import com.cosyan.db.model.DateFunctions;
 import com.google.common.collect.ImmutableList;
@@ -25,6 +28,10 @@ public abstract class Result {
       super(true);
       this.header = ImmutableList.copyOf(header);
       this.values = ImmutableList.copyOf(values);
+    }
+
+    public List<List<Object>> listValues() {
+      return values.stream().map(v -> Arrays.asList(v)).collect(Collectors.toList());
     }
 
     public String prettyPrint() {

@@ -41,7 +41,7 @@ public class MetaRepoConnector {
       tableObj.put("columns", columns);
 
       if (tableMeta.primaryKey().isPresent()) {
-        tableObj.put("primaryKeys", tableMeta.primaryKey().get().getName());
+        tableObj.put("primaryKeys", tableMeta.primaryKey().get().getName().getString());
       }
 
       JSONArray foreignKeys = new JSONArray();

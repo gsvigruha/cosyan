@@ -1,16 +1,16 @@
-<textarea class="form-control" rows="5" ng-model="query"></textarea>
+<textarea class="sql" rows="5" ng-model="query"></textarea>
 
 <div>
-  <button ng-click="run()">Run query</button>
+  <button ng-click="run()" class="btn btn-primary">Run query</button>
 </div>
 
-<div ng-repeat="r in data.result">
-  <table class="table table-striped" ng-show="r.type == 'query'">
-    <th ng-repeat="column in r.header">
+<div ng-repeat="r in data.result track by $index">
+  <table class="admin" ng-show="r.type == 'query'">
+    <th ng-repeat="column in r.header track by $index">
       {{ column }}
     </th>
-    <tr ng-repeat="row in r.values">
-      <td ng-repeat="element in row">
+    <tr ng-repeat="row in r.values track by $index">
+      <td ng-repeat="element in row track by $index">
       {{ element }}
       </td>
     </tr>

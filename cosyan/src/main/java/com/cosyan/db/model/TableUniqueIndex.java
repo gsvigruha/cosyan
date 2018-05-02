@@ -37,7 +37,7 @@ public abstract class TableUniqueIndex implements IndexReader {
 
   public static class LongTableIndex extends TableUniqueIndex {
 
-    private LongIndex index;
+    private final LongIndex index;
 
     public LongTableIndex(LongIndex index) {
       this.index = index;
@@ -101,7 +101,7 @@ public abstract class TableUniqueIndex implements IndexReader {
 
   public static class StringTableIndex extends TableUniqueIndex {
 
-    private StringIndex index;
+    private final StringIndex index;
 
     public StringTableIndex(StringIndex index) {
       this.index = index;
@@ -165,7 +165,7 @@ public abstract class TableUniqueIndex implements IndexReader {
 
   public static class IDTableIndex extends TableUniqueIndex {
 
-    private IDIndex index;
+    private final IDIndex index;
 
     public IDTableIndex(IDIndex index) {
       this.index = index;
@@ -218,8 +218,7 @@ public abstract class TableUniqueIndex implements IndexReader {
 
     @Override
     public ByteTrieStat stats() throws IOException {
-      // TODO
-      return null;
+      return index.stats();
     }
 
     @Override

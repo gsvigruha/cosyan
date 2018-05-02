@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
+import com.cosyan.db.index.IndexStat.ByteTrieStat;
 
 public class IDIndex {
 
@@ -154,5 +155,9 @@ public class IDIndex {
 
   public long getLastID() {
     return lastID;
+  }
+
+  public ByteTrieStat stats() throws IOException {
+    return new ByteTrieStat(raf.length(), cachedIndices.size(), dirty.size());
   }
 }
