@@ -141,4 +141,34 @@ public class GrantsTest extends UnitTestBase {
     metaStatement("grant insert on t10 to u10;", u12);
     metaStatement("grant all on t10 to u10;", u12);
   }
+
+  @Test
+  public void testAlterAccess() throws AuthException {
+    execute("create table t11 (a varchar);");
+    execute("create user u13 identified by 'abc';");
+    Session u13 = dbApi.authSession("u13", "abc", Method.LOCAL);
+
+    ErrorResult e1 = (ErrorResult) u13.execute("drop table t11;");
+    assertEquals("User 'u13' has no ownership right on 't11'.", e1.getError().getMessage());
+    ErrorResult e2 = (ErrorResult) u13.execute("create index t11.a;");
+    assertEquals("User 'u13' has no INSERT right on 't11'.", e2.getError().getMessage());
+    ErrorResult e3 = (ErrorResult) u13.execute("drop index t11.a;");
+    assertEquals("User 'u13' has no ownership right on 't11'.", e3.getError().getMessage());
+    ErrorResult e4 = (ErrorResult) u13.execute("alter table t11 add b varchar;");
+    assertEquals("User 'u13' has no INSERT right on 't11'.", e4.getError().getMessage());
+
+    ErrorResult e6 = (ErrorResult) u13.execute("alter table t11 add constraint c_1 check (a = 'abc');");
+    assertEquals("User 'u13' has no INSERT right on 't11'.", e6.getError().getMessage());
+    ErrorResult e7 = (ErrorResult) u13.execute("alter table t11 alter a varchar, immutable;");
+    assertEquals("User 'u13' has no INSERT right on 't11'.", e7.getError().getMessage());
+    ErrorResult e8 = (ErrorResult) u13.execute("alter table t11 drop a;");
+    assertEquals("User 'u13' has no INSERT right on 't11'.", e8.getError().getMessage());
+
+    // TODO fk
+    execute("create table t12 (a varchar, constraint pk_a primary key (a));");
+    execute("create table t13 (a varchar, constraint fk_a foreign key (a) references t12);");
+    ErrorResult e9 = (ErrorResult) u13.execute("alter table t12 add ref s (select count(1) from rev_fk_a);");
+    assertEquals("User 'u13' has no INSERT right on 't12'.", e9.getError().getMessage());
+
+  }
 }

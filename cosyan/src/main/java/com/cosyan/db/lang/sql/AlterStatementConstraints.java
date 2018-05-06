@@ -3,6 +3,7 @@ package com.cosyan.db.lang.sql;
 import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
+import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
@@ -47,9 +48,14 @@ public class AlterStatementConstraints {
     @Override
     public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
+      foreignKey.getColumn().setIndexed(true);
       tableMeta.addForeignKey(foreignKey);
       metaRepo.syncIndex(tableMeta);
       metaRepo.syncMeta(tableMeta);
+      TableWriter writer = resources.writer(table.getString());
+      writer.checkForeignKey(foreignKey, resources);
+      String colName = foreignKey.getColumn().getName();
+      writer.buildIndex(colName, metaRepo.indexWriter(table.getString(), colName));
       return Result.META_OK;
     }
   }
@@ -77,6 +83,8 @@ public class AlterStatementConstraints {
     @Override
     public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
+      TableWriter writer = resources.writer(table.getString());
+      writer.checkRule(rule, resources);
       tableMeta.addRule(rule);
       metaRepo.syncMeta(tableMeta);
       return Result.META_OK;

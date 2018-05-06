@@ -140,6 +140,7 @@ public class CreateStatement {
       for (ForeignKeyDefinition foreignKeyDefinition : foreignKeyDefinitions) {
         MaterializedTable refTable = metaRepo.table(foreignKeyDefinition.getRefTable());
         ForeignKey foreignKey = tableMeta.createForeignKey(foreignKeyDefinition, refTable);
+        foreignKey.getColumn().setIndexed(true);
         tableMeta.addForeignKey(foreignKey);
       }
 
@@ -181,9 +182,8 @@ public class CreateStatement {
 
     @Override
     public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
-      MaterializedTable tableMeta = resources.meta(table.getString());
       TableWriter writer = resources.writer(table.getString());
-      writer.buildIndex(column.getString());
+      writer.buildIndex(column.getString(), writer.getIndexWriter(column.getString()));
       return Result.META_OK;
     }
   }

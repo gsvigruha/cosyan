@@ -61,15 +61,14 @@ public class DropStatement {
     private BasicColumn basicColumn;
 
     @Override
-    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
+    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException, GrantException {
       MaterializedTable tableMeta = metaRepo.table(table);
       basicColumn = tableMeta.column(column);
       if (basicColumn.isUnique()) {
         throw new ModelException(String.format("Cannot drop index '%s.%s', column is unique.",
             tableMeta.tableName(), basicColumn.getName()), column);
       }
-      metaRepo.dropIndex(tableMeta, basicColumn);
-      basicColumn.setIndexed(false);
+      metaRepo.dropIndex(tableMeta, basicColumn, authToken);
       return Result.META_OK;
     }
 

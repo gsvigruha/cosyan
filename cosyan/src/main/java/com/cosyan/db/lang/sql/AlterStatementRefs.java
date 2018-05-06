@@ -42,9 +42,6 @@ public class AlterStatementRefs {
     @Override
     public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException {
       MaterializedTable tableMeta = metaRepo.table(table);
-      if (!tableMeta.isEmpty()) {
-        throw new ModelException(String.format("Cannot add ref to a non-empty table."), table);
-      }
       tableMeta.checkName(ref.getName());
       ReferencedMultiTableMeta srcTableMeta = (ReferencedMultiTableMeta) ref.getSelect().getTable()
           .compile(tableMeta.reader());

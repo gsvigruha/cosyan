@@ -35,7 +35,7 @@ public class LockManager {
     List<Lock> locks = new ArrayList<>();
     for (Resource resource : metaResources.all()) {
       ReentrantReadWriteLock rwlock = lockMap.get(resource.getResourceId());
-      assert rwlock != null : resource.getResourceId();
+      assert rwlock != null : String.format("No lock '%s'", resource.getResourceId());
       Lock lock;
       if (resource.isWrite()) {
         lock = rwlock.writeLock();

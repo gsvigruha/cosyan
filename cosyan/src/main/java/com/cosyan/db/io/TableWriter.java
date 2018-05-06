@@ -29,6 +29,7 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
+import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.TableMultiIndex;
@@ -377,9 +378,8 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     };
   }
 
-  public void buildIndex(String column) throws IOException, RuleException {
+  public void buildIndex(String column, IndexWriter indexWriter) throws IOException, RuleException {
     RecordReader reader = recordReader();
-    IndexWriter indexWriter = getIndexWriter(column);
     int columnIndex = tableMeta.columnNames().asList().indexOf(column);
     Record record;
     try {
@@ -388,6 +388,43 @@ public class TableWriter extends SeekableTableReader implements TableIO {
           indexWriter.put(record.getValues()[columnIndex], record.getFilePointer());
         } catch (IndexException e) {
           throw new RuleException(e);
+        }
+      }
+    } finally {
+      reader.close();
+    }
+  }
+
+  public void checkForeignKey(ForeignKey foreignKey, Resources resources) throws RuleException, IOException {
+    RecordReader reader = recordReader();
+    IndexReader index = resources.getPrimaryKeyIndex(foreignKey.getRefTable().tableName());
+    int columnIndex = tableMeta.columnNames().asList().indexOf(foreignKey.getColumn().getName());
+    Record record;
+    try {
+      while ((record = reader.read()) != RecordReader.EMPTY) {
+        Object key = record.getValues()[columnIndex];
+        if (!index.contains(key)) {
+          throw new RuleException(
+              String.format("Invalid key '%s' (value of '%s.%s'), not found in referenced table '%s.%s'.",
+                  key,
+                  foreignKey.getTable().tableName(),
+                  foreignKey.getColumn().getName(),
+                  foreignKey.getRefTable().tableName(),
+                  foreignKey.getRefColumn().getName()));
+        }
+      }
+    } finally {
+      reader.close();
+    }
+  }
+
+  public void checkRule(BooleanRule rule, Resources resources) throws IOException, RuleException {
+    RecordReader reader = recordReader();
+    Record record;
+    try {
+      while ((record = reader.read()) != RecordReader.EMPTY) {
+        if (!rule.check(resources, record.getFilePointer())) {
+          throw new RuleException(String.format("Constraint check %s failed.", rule.getName()));
         }
       }
     } finally {

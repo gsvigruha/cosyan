@@ -268,7 +268,6 @@ public class MaterializedTable {
           foreignKeyDefinition.getName());
     }
     assert refColumn.isUnique() && !refColumn.isNullable();
-    keyColumn.addIndex(this);
     return new ForeignKey(
         foreignKeyDefinition.getName().getString(),
         foreignKeyDefinition.getRevName().getString(),

@@ -21,6 +21,7 @@ import com.cosyan.db.index.IDIndex;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Indexes.IndexReader;
+import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
@@ -216,7 +217,7 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
     tableMeta.drop();
     for (BasicColumn column : tableMeta.allColumns()) {
       if (column.isIndexed()) {
-        dropIndex(tableMeta, column);
+        dropIndex(tableMeta, column, authToken);
       }
     }
     lockManager.removeLock(tableName);
@@ -261,12 +262,14 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
     }
   }
 
-  public void dropIndex(MaterializedTable tableMeta, BasicColumn column) throws IOException {
+  public void dropIndex(MaterializedTable tableMeta, BasicColumn column, AuthToken authToken) throws IOException, GrantException {
+    grants.checkOwner(tableMeta, authToken);
     if (column.isUnique()) {
       dropUniqueIndex(tableMeta, column);
     } else {
       dropMultiIndex(tableMeta, column);
     }
+    column.setIndexed(false);
   }
 
   private void dropUniqueIndex(MaterializedTable table, BasicColumn column) throws IOException {
@@ -428,5 +431,15 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
 
   public ImmutableMap<String, ByteMultiTrieStat> multiIndexStats() throws IOException {
     return Util.<String, TableMultiIndex, ByteMultiTrieStat>mapValuesIOException(multiIndexes, TableMultiIndex::stats);
+  }
+
+  @Deprecated
+  public IndexWriter indexWriter(String table, String column) {
+    String id = table + "." + column;
+    if (multiIndexes.containsKey(id)) {
+      return multiIndexes.get(id);
+    } else {
+      return uniqueIndexes.get(id);
+    }
   }
 }

@@ -1,6 +1,6 @@
 package com.cosyan.db.lang.sql;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import org.junit.Test;
 
@@ -11,6 +11,8 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
+import com.cosyan.db.model.Keys.ForeignKey;
+import com.cosyan.db.model.TableMultiIndex;
 
 public class AlterStatementTest extends UnitTestBase {
 
@@ -207,10 +209,52 @@ public class AlterStatementTest extends UnitTestBase {
   }
 
   @Test
-  public void testAlterTableAddConstraint() throws Exception {
+  public void testAlterTableAddConstraintRule() throws Exception {
     execute("create table t13 (a integer);");
     execute("alter table t13 add constraint c1 check (a > 0);");
     ErrorResult result = error("insert into t13 values (0);");
     assertEquals("Constraint check c1 failed.", result.getError().getMessage());
   }
+
+  @Test
+  public void testAlterTableAddRef() throws Exception {
+    execute("create table t14 (a id, b varchar);");
+    execute("create table t15 (a integer, constraint fk_a foreign key (a) references t14);");
+    execute("insert into t14 values ('x');");
+    execute("insert into t15 values (0);");
+    execute("alter table t14 add ref s (select count(1) as c from rev_fk_a);");
+    QueryResult result = query("select a, b, s.c from t14;");
+    assertHeader(new String[] { "a", "b", "c" }, result);
+    assertValues(new Object[][] { { 0L, "x", 1L } }, result);
+  }
+
+  @Test
+  public void testAlterTableAddForeignKey() throws Exception {
+    execute("create table t16 (a id, b varchar);");
+    execute("create table t17 (a integer);");
+    execute("insert into t16 values ('x'), ('y');");
+    execute("insert into t17 values (1), (0), (1);");
+    execute("alter table t17 add constraint fk_a foreign key (a) references t16;");
+
+    MaterializedTable t17 = metaRepo.table(new Ident("t17"));
+    ForeignKey fk = t17.foreignKey(new Ident("fk_a"));
+    assertEquals("fk_a", fk.getName());
+    assertEquals("rev_fk_a", fk.getRevName());
+    assertEquals(t17, fk.getTable());
+    assertEquals("t16", fk.getRefTable().tableName());
+    assertEquals("a", fk.getColumn().getName());
+    assertEquals("a", fk.getRefColumn().getName());
+    TableMultiIndex index = metaRepo.collectMultiIndexes(t17).get("a");
+    assertArrayEquals(new long[] { 18L }, index.get(0L));
+    assertArrayEquals(new long[] { 0L, 36L }, index.get(1L));
+  }
+
+  @Test
+  public void testAlterTableAddConstraintRuleWithExistingData() throws Exception {
+    execute("create table t18 (a integer);");
+    execute("insert into t18 values (1), (2), (0);");
+    ErrorResult e = error("alter table t18 add constraint c1 check (a > 0);");
+    assertEquals("Constraint check c1 failed.", e.getError().getMessage());
+  }
+
 }

@@ -8,6 +8,7 @@ import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.util.Util;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMap;
 
 import lombok.Data;
@@ -82,9 +83,13 @@ public class MetaResources {
   }
 
   private final ImmutableMap<String, TableMetaResource> tables;
+  private final ImmutableCollection<Resource> resources;
 
   public MetaResources(ImmutableMap<String, TableMetaResource> tables) {
     this.tables = tables;
+    this.resources = Util.merge(
+        Util.mapValues(tables, TableMetaResource::resources).values(),
+        Resource::merge).values();
   }
 
   public MetaResources merge(MetaResources other) {
@@ -171,8 +176,6 @@ public class MetaResources {
   }
 
   public Iterable<Resource> all() {
-    return Util.merge(
-        Util.mapValues(tables, TableMetaResource::resources).values(),
-        Resource::merge).values();
+    return resources;
   }
 }
