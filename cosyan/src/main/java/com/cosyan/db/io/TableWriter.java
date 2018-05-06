@@ -15,6 +15,7 @@ import java.util.function.Predicate;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.io.Indexes.IndexReader;
+import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.RecordProvider.RecordReader;
 import com.cosyan.db.io.RecordProvider.SeekableRecordReader;
@@ -24,7 +25,7 @@ import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.Dependencies.ReverseRuleDependencies;
-import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
@@ -42,7 +43,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
 
   private final String fileName;
   private final SeekableOutputStream writer;
-  private final MaterializedTableMeta tableMeta;
+  private final MaterializedTable tableMeta;
   private final SeekableRecordReader reader;
   private final ImmutableList<BasicColumn> columns;
   private final ImmutableMap<String, TableUniqueIndex> uniqueIndexes;
@@ -59,7 +60,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   private final TreeMap<Long, byte[]> recordsToInsert = new TreeMap<>();
 
   public TableWriter(
-      MaterializedTableMeta tableMeta,
+      MaterializedTable tableMeta,
       String fileName,
       SeekableOutputStream fileWriter,
       SeekableInputStream fileReader,
@@ -319,6 +320,14 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     }
   }
 
+  public IndexWriter getIndexWriter(String name) {
+    if (uniqueIndexes.containsKey(name)) {
+      return uniqueIndexes.get(name);
+    } else {
+      return multiIndexes.get(name);
+    }
+  }
+
   @Override
   public Record get(long position) throws IOException {
     reader.seek(position);
@@ -366,5 +375,23 @@ public class TableWriter extends SeekableTableReader implements TableIO {
         reader.close();
       }
     };
+  }
+
+  public void buildIndex(String column) throws IOException, RuleException {
+    RecordReader reader = recordReader();
+    IndexWriter indexWriter = getIndexWriter(column);
+    int columnIndex = tableMeta.columnNames().asList().indexOf(column);
+    Record record;
+    try {
+      while ((record = reader.read()) != RecordReader.EMPTY) {
+        try {
+          indexWriter.put(record.getValues()[columnIndex], record.getFilePointer());
+        } catch (IndexException e) {
+          throw new RuleException(e);
+        }
+      }
+    } finally {
+      reader.close();
+    }
   }
 }

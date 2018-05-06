@@ -1,6 +1,6 @@
 package com.cosyan.db.model;
 
-import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 
 import lombok.Data;
 
@@ -18,11 +18,11 @@ public class Keys {
 
     String getRevName();
 
-    MaterializedTableMeta getTable();
+    MaterializedTable getTable();
 
     BasicColumn getColumn();
 
-    MaterializedTableMeta getRefTable();
+    MaterializedTable getRefTable();
 
     BasicColumn getRefColumn();
 
@@ -33,9 +33,9 @@ public class Keys {
   public static class ForeignKey implements Ref {
     private final String name;
     private final String revName;
-    private final MaterializedTableMeta table;
+    private final MaterializedTable table;
     private final BasicColumn column;
-    private final MaterializedTableMeta refTable;
+    private final MaterializedTable refTable;
     private final BasicColumn refColumn;
 
     @Override
@@ -56,9 +56,9 @@ public class Keys {
   public static class ReverseForeignKey implements Ref {
     private final String name;
     private final String revName;
-    private final MaterializedTableMeta table;
+    private final MaterializedTable table;
     private final BasicColumn column;
-    private final MaterializedTableMeta refTable;
+    private final MaterializedTable refTable;
     private final BasicColumn refColumn;
 
     @Override

@@ -4,13 +4,13 @@ import java.util.Optional;
 
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
-import com.cosyan.db.meta.MaterializedTableMeta;
-import com.cosyan.db.meta.MaterializedTableMeta.SeekableTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Rule;
+import com.cosyan.db.model.SeekableTableMeta;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -42,7 +42,7 @@ public class TableDefinition {
       return name + " [" + expr.print() + "]";
     }
 
-    public Rule compile(MaterializedTableMeta tableMeta) throws ModelException {
+    public Rule compile(MaterializedTable tableMeta) throws ModelException {
       SeekableTableMeta table = tableMeta.reader();
       ColumnMeta column = expr.compileColumn(table);
       return new Rule(name.getString(), table, column, expr, nullIsTrue, column.tableDependencies());

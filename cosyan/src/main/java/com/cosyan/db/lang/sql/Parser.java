@@ -28,7 +28,8 @@ import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAddColumn;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAlterColumn;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableDropColumn;
-import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddConstraint;
+import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddForeignKey;
+import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddRule;
 import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableAddRef;
 import com.cosyan.db.lang.sql.CreateStatement.CreateIndex;
 import com.cosyan.db.lang.sql.CreateStatement.CreateTable;
@@ -49,7 +50,7 @@ import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.sql.UpdateStatement.SetExpression;
 import com.cosyan.db.lang.sql.UpdateStatement.Update;
 import com.cosyan.db.lang.sql.Users.CreateUser;
-import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.DateFunctions;
@@ -199,13 +200,13 @@ public class Parser implements IParser {
 
   private MetaStatement parseCreate(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.CREATE);
-    MaterializedTableMeta.Type type = MaterializedTableMeta.Type.LOG;
+    MaterializedTable.Type type = MaterializedTable.Type.LOG;
     if (tokens.peek().is(Tokens.LOG)) {
       tokens.next();
-      type = MaterializedTableMeta.Type.LOG;
+      type = MaterializedTable.Type.LOG;
     } else if (tokens.peek().is(Tokens.LOOKUP)) {
       tokens.next();
-      type = MaterializedTableMeta.Type.LOOKUP;
+      type = MaterializedTable.Type.LOOKUP;
     }
     assertPeek(tokens, Tokens.TABLE, Tokens.INDEX, Tokens.USER);
     if (tokens.peek().is(Tokens.TABLE)) {
@@ -288,7 +289,13 @@ public class Parser implements IParser {
         return new AlterTableAddRef(ident, ref);
       } else if (tokens.peek().is(Tokens.CONSTRAINT)) {
         ConstraintDefinition constraint = parseConstraint(tokens);
-        return new AlterTableAddConstraint(ident, constraint);
+        if (constraint instanceof ForeignKeyDefinition) {
+          return new AlterTableAddForeignKey(ident, (ForeignKeyDefinition) constraint);
+        } else if (constraint instanceof RuleDefinition) {
+          return new AlterTableAddRule(ident, (RuleDefinition) constraint);
+        } else {
+          throw new ParserException(String.format("Expected foreign key or rule definition, got '%s'.", constraint));
+        }
       } else {
         ColumnDefinition column = parseColumnDefinition(tokens);
         return new AlterTableAddColumn(ident, column);

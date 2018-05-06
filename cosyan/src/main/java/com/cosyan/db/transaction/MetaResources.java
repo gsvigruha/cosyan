@@ -3,7 +3,7 @@ package com.cosyan.db.transaction;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
@@ -29,13 +29,14 @@ public class MetaResources {
 
   @Data
   public static class TableMetaResource {
-    private final MaterializedTableMeta tableMeta;
+    private final MaterializedTable tableMeta;
     private final boolean select;
     private final boolean insert;
     private final boolean delete;
     private final boolean update;
     private final boolean foreignIndexes;
     private final boolean reverseForeignIndexes;
+    private final boolean meta;
 
     public TableMetaResource merge(TableMetaResource other) {
       assert (this.tableMeta == other.tableMeta);
@@ -46,7 +47,8 @@ public class MetaResources {
           this.delete || other.delete,
           this.update || other.update,
           this.foreignIndexes || other.foreignIndexes,
-          this.reverseForeignIndexes || other.reverseForeignIndexes);
+          this.reverseForeignIndexes || other.reverseForeignIndexes,
+          this.meta || other.meta);
     }
 
     public boolean write() {
@@ -94,7 +96,7 @@ public class MetaResources {
     return tables.values();
   }
 
-  public static MetaResources readTable(MaterializedTableMeta tableMeta) {
+  public static MetaResources readTable(MaterializedTable tableMeta) {
     return new MetaResources(ImmutableMap.of(
         tableMeta.tableName(),
         new TableMetaResource(
@@ -104,10 +106,11 @@ public class MetaResources {
             /* delete= */false,
             /* update= */false,
             /* foreignIndexes= */false,
-            /* reverseForeignIndexes= */false)));
+            /* reverseForeignIndexes= */false,
+            /* meta= */false)));
   }
 
-  public static MetaResources updateTable(MaterializedTableMeta tableMeta) {
+  public static MetaResources updateTable(MaterializedTable tableMeta) {
     return new MetaResources(ImmutableMap.of(
         tableMeta.tableName(),
         new TableMetaResource(
@@ -117,10 +120,11 @@ public class MetaResources {
             /* delete= */false,
             /* update= */true,
             /* foreignIndexes= */true,
-            /* reverseForeignIndexes= */true)));
+            /* reverseForeignIndexes= */true,
+            /* meta= */false)));
   }
 
-  public static MetaResources insertIntoTable(MaterializedTableMeta tableMeta) {
+  public static MetaResources insertIntoTable(MaterializedTable tableMeta) {
     return new MetaResources(ImmutableMap.of(
         tableMeta.tableName(),
         new TableMetaResource(
@@ -130,10 +134,11 @@ public class MetaResources {
             /* delete= */false,
             /* update= */false,
             /* foreignIndexes= */true, // New records have to satisfy foreign key constraints.
-            /* reverseForeignIndexes= */false)));
+            /* reverseForeignIndexes= */false,
+            /* meta= */false)));
   }
 
-  public static MetaResources deleteFromTable(MaterializedTableMeta tableMeta) {
+  public static MetaResources deleteFromTable(MaterializedTable tableMeta) {
     return new MetaResources(ImmutableMap.of(
         tableMeta.tableName(),
         new TableMetaResource(
@@ -143,7 +148,22 @@ public class MetaResources {
             /* delete= */true,
             /* update= */false,
             /* foreignIndexes= */false,
-            /* reverseForeignIndexes= */true))); // Cannot delete records referenced by foreign keys.
+            /* reverseForeignIndexes= */true, // Cannot delete records referenced by foreign keys.
+            /* meta= */false)));
+  }
+
+  public static MetaResources tableMeta(MaterializedTable tableMeta) {
+    return new MetaResources(ImmutableMap.of(
+        tableMeta.tableName(),
+        new TableMetaResource(
+            tableMeta,
+            /* select= */true,
+            /* insert= */true,
+            /* delete= */true,
+            /* update= */true,
+            /* foreignIndexes= */true,
+            /* reverseForeignIndexes= */true,
+            /* meta= */true)));
   }
 
   public static MetaResources empty() {

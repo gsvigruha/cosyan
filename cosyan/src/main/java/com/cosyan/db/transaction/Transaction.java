@@ -1,44 +1,39 @@
 package com.cosyan.db.transaction;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
-import com.cosyan.db.lang.transaction.Result.TransactionResult;
 import com.cosyan.db.logging.TransactionJournal;
-import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.Grants.GrantException;
+import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.session.Session;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
-import com.google.common.collect.ImmutableList;
 
-public class Transaction {
+public abstract class Transaction {
 
   private final long trxNumber;
-  private final ImmutableList<Statement> statements;
 
-  private AtomicBoolean cancelled = new AtomicBoolean(false);
+  protected AtomicBoolean cancelled = new AtomicBoolean(false);
 
-  public Transaction(long trxNumber, Iterable<Statement> statements) {
+  public Transaction(long trxNumber) {
     this.trxNumber = trxNumber;
-    this.statements = ImmutableList.copyOf(statements);
   }
 
   public long getTrxNumber() {
     return trxNumber;
   }
 
-  public ImmutableList<Statement> getStatements() {
-    return statements;
-  }
+  protected abstract MetaResources collectResources(MetaRepo metaRepo, AuthToken authToken)
+      throws ModelException, GrantException, IOException;
+
+  protected abstract Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException;
 
   public void lock(MetaResources metaResources, MetaRepo metaRepo) {
     boolean locked = false;
@@ -56,21 +51,13 @@ public class Transaction {
     }
   }
 
-  protected MetaResources collectResources(MetaRepo metaRepo) throws ModelException {
-    MetaResources metaResources = MetaResources.empty();
-    for (Statement statement : statements) {
-      metaResources = metaResources.merge(statement.compile(metaRepo));
-    }
-    return metaResources;
-  }
-
   public Result execute(MetaRepo metaRepo, Session session) {
     TransactionJournal journal = session.transactionJournal();
     metaRepo.metaRepoReadLock();
     MetaResources metaResources;
     try {
-      metaResources = collectResources(metaRepo);
-    } catch (ModelException e) {
+      metaResources = collectResources(metaRepo, session.authToken());
+    } catch (ModelException | GrantException | IOException e) {
       return new ErrorResult(e);
     } finally {
       metaRepo.metaRepoReadUnlock();
@@ -85,12 +72,10 @@ public class Transaction {
     try {
       lock(metaResources, metaRepo);
       journal.start(trxNumber);
-      List<Result> results = new ArrayList<>();
+      Result result;
       Resources resources = metaRepo.resources(metaResources);
       try {
-        for (Statement statement : statements) {
-          results.add(statement.execute(resources));
-        }
+        result = execute(metaRepo, resources);
       } catch (RuleException e) {
         resources.rollback();
         journal.userError(trxNumber);
@@ -103,7 +88,7 @@ public class Transaction {
       try {
         resources.commit();
         journal.success(trxNumber);
-        return new TransactionResult(results);
+        return result;
       } catch (IOException e) {
         // Need to restore db;
         journal.ioWriteError(trxNumber);
@@ -117,13 +102,6 @@ public class Transaction {
       return new CrashResult(e);
     } finally {
       metaRepo.unlock(metaResources);
-    }
-  }
-
-  public void cancel() {
-    cancelled.set(true);
-    for (Statement statement : statements) {
-      statement.cancel();
     }
   }
 }

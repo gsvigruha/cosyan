@@ -13,8 +13,7 @@ import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
-import com.cosyan.db.meta.MaterializedTableMeta;
-import com.cosyan.db.meta.MaterializedTableMeta.SeekableTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
@@ -39,7 +38,7 @@ public class DerivedTables {
   }
 
   private static MetaResources resourcesFromColumn(ColumnMeta column) {
-    return MaterializedTableMeta.readResources(column.tableDependencies().getDeps().values());
+    return MaterializedTable.readResources(column.tableDependencies().getDeps().values());
   }
 
   @Data

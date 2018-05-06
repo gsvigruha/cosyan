@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
 public abstract class UnitTestBase {
-  private static Session session;
+  protected static Session session;
 
   protected static Config config;
   protected static DBApi dbApi;

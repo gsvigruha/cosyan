@@ -22,7 +22,7 @@ public class Dependencies {
 
   public static interface TransitiveTableDependency {
 
-    MaterializedTableMeta table();
+    MaterializedTable table();
 
     Iterable<? extends TransitiveTableDependency> childDeps();
 
@@ -61,7 +61,7 @@ public class Dependencies {
     }
 
     @Override
-    public MaterializedTableMeta table() {
+    public MaterializedTable table() {
       return ref.getRefTable();
     }
 
@@ -172,7 +172,7 @@ public class Dependencies {
     }
 
     @Override
-    public MaterializedTableMeta table() {
+    public MaterializedTable table() {
       return key.getRefTable();
     }
 

@@ -23,7 +23,7 @@ public class Grants {
 
     public boolean withGrantOption();
 
-    public boolean hasAccess(Method method, MaterializedTableMeta tableMeta, AuthToken authToken);
+    public boolean hasAccess(Method method, MaterializedTable tableMeta, AuthToken authToken);
 
     public String objects();
 
@@ -64,7 +64,7 @@ public class Grants {
     }
 
     @Override
-    public boolean hasAccess(Method method, MaterializedTableMeta tableMeta, AuthToken authToken) {
+    public boolean hasAccess(Method method, MaterializedTable tableMeta, AuthToken authToken) {
       return authToken.isAdmin()
           || (authToken.username().equals(username)
               && (method == this.method || this.method == Method.ALL));
@@ -85,10 +85,10 @@ public class Grants {
   public static class GrantTableToken implements GrantToken {
     private final String username;
     private final Method method;
-    private final MaterializedTableMeta table;
+    private final MaterializedTable table;
     private final boolean withGrantOption;
 
-    public GrantTableToken(String username, Method method, MaterializedTableMeta table, boolean withGrantOption) {
+    public GrantTableToken(String username, Method method, MaterializedTable table, boolean withGrantOption) {
       this.username = username;
       this.method = method;
       this.table = table;
@@ -116,7 +116,7 @@ public class Grants {
     }
 
     @Override
-    public boolean hasAccess(Method method, MaterializedTableMeta tableMeta, AuthToken authToken) {
+    public boolean hasAccess(Method method, MaterializedTable tableMeta, AuthToken authToken) {
       return authToken.isAdmin()
           || (authToken.username().equals(username)
               && (method == this.method || this.method == Method.ALL)
@@ -174,7 +174,7 @@ public class Grants {
   }
 
   private void checkAccess(
-      Collection<GrantToken> grants, MaterializedTableMeta tableMeta, Method method, String table, AuthToken authToken)
+      Collection<GrantToken> grants, MaterializedTable tableMeta, Method method, String table, AuthToken authToken)
       throws GrantException {
     for (GrantToken grant : grants) {
       if (grant.hasAccess(method, tableMeta, authToken)) {
@@ -185,7 +185,7 @@ public class Grants {
   }
 
   public void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
-    MaterializedTableMeta tableMeta = resource.getTableMeta();
+    MaterializedTable tableMeta = resource.getTableMeta();
     String table = tableMeta.tableName();
     if (authToken.isAdmin() || authToken.username().equals(resource.getTableMeta().owner())) {
       return;
@@ -208,6 +208,14 @@ public class Grants {
     }
   }
 
+  public void checkOwner(MaterializedTable tableMeta, AuthToken authToken) throws GrantException {
+    if (authToken.isAdmin() || authToken.username().equals(tableMeta.owner())) {
+      return;
+    }
+    throw new GrantException(String.format("User '%s' has no ownership right on '%s'.",
+        authToken.username(), tableMeta.tableName()));
+  }
+
   public static class GrantException extends Exception {
 
     private static final long serialVersionUID = 1L;
@@ -220,4 +228,5 @@ public class Grants {
       super(cause);
     }
   }
+
 }

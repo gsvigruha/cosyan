@@ -8,7 +8,7 @@ import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
-import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
@@ -169,7 +169,7 @@ public class References {
 
     private final ReferencedTable parent;
     private final ReverseForeignKey reverseForeignKey;
-    private final MaterializedTableMeta sourceTable;
+    private final MaterializedTable sourceTable;
 
     public ReferencedMultiTableMeta(ReferencedTable parent, ReverseForeignKey reverseForeignKey) {
       this.parent = parent;

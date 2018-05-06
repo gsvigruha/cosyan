@@ -11,6 +11,7 @@ import com.cosyan.db.lang.sql.Tokens.StringToken;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.session.ILexer;
 import com.cosyan.db.session.IParser.ParserException;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.PeekingIterator;
@@ -25,14 +26,23 @@ public class Lexer implements ILexer {
   private static final int STATE_IDENT = 5;
 
   public PeekingIterator<Token> tokenize(String sql) throws ParserException {
-    return Iterators.peekingIterator(tokens(sql).iterator());
+    return Iterators.peekingIterator(tokens(sql, /* fullSQL= */true).iterator());
   }
 
+  public PeekingIterator<Token> tokenizeExpression(String sql) throws ParserException {
+    return Iterators.peekingIterator(tokens(sql, /* fullSQL= */false).iterator());
+  }
+
+  @VisibleForTesting
   ImmutableList<Token> tokens(String sql) throws ParserException {
+    return tokens(sql, /* fullSQL= */true);
+  }
+
+  private ImmutableList<Token> tokens(String sql, boolean fullSQL) throws ParserException {
     if (sql == null || sql.isEmpty()) {
       throw new ParserException("Query must not be empty.");
     }
-    if (!sql.endsWith(";")) {
+    if (fullSQL && !sql.trim().endsWith(";")) {
       throw new ParserException("Query must end with ';'.");
     }
     int state = STATE_DEFAULT;

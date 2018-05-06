@@ -54,10 +54,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 
-public class MetaRepo implements TableProvider {
+public class MetaRepo implements TableProvider, MetaRepoReader {
 
   private final Config config;
-  private final HashMap<String, MaterializedTableMeta> tables;
+  private final HashMap<String, MaterializedTable> tables;
   private final HashMap<String, TableUniqueIndex> uniqueIndexes;
   private final HashMap<String, TableMultiIndex> multiIndexes;
   private final Grants grants;
@@ -82,13 +82,13 @@ public class MetaRepo implements TableProvider {
   }
 
   public void init() throws IOException {
-    for (MaterializedTableMeta tableMeta : tables.values()) {
+    for (MaterializedTable tableMeta : tables.values()) {
       tableMeta.loadStats();
     }
   }
 
   public void shutdown() throws IOException {
-    for (MaterializedTableMeta tableMeta : tables.values()) {
+    for (MaterializedTable tableMeta : tables.values()) {
       tableMeta.saveStats();
     }
   }
@@ -98,14 +98,18 @@ public class MetaRepo implements TableProvider {
     return table(ident).reader();
   }
 
-  public MaterializedTableMeta table(Ident ident) throws ModelException {
+  public MaterializedTable table(String name) throws ModelException {
+    return tables.get(name);
+  }
+
+  public MaterializedTable table(Ident ident) throws ModelException {
     if (!tables.containsKey(ident.getString())) {
       throw new ModelException("Table '" + ident.getString() + "' does not exist.", ident);
     }
     return tables.get(ident.getString());
   }
 
-  public ImmutableMap<String, IndexReader> collectIndexReaders(MaterializedTableMeta table) {
+  public ImmutableMap<String, IndexReader> collectIndexReaders(MaterializedTable table) {
     ImmutableMap.Builder<String, IndexReader> builder = ImmutableMap.builder();
     for (BasicColumn column : table.columns().values()) {
       if (column.isIndexed()) {
@@ -121,7 +125,7 @@ public class MetaRepo implements TableProvider {
   }
 
   @VisibleForTesting
-  public ImmutableMap<String, TableUniqueIndex> collectUniqueIndexes(MaterializedTableMeta table) {
+  public ImmutableMap<String, TableUniqueIndex> collectUniqueIndexes(MaterializedTable table) {
     ImmutableMap.Builder<String, TableUniqueIndex> builder = ImmutableMap.builder();
     for (BasicColumn column : table.columns().values()) {
       String indexName = table.tableName() + "." + column.getName();
@@ -133,7 +137,7 @@ public class MetaRepo implements TableProvider {
   }
 
   @VisibleForTesting
-  public ImmutableMap<String, TableMultiIndex> collectMultiIndexes(MaterializedTableMeta table) {
+  public ImmutableMap<String, TableMultiIndex> collectMultiIndexes(MaterializedTable table) {
     ImmutableMap.Builder<String, TableMultiIndex> builder = ImmutableMap.builder();
     for (BasicColumn column : table.columns().values()) {
       String indexName = table.tableName() + "." + column.getName();
@@ -144,7 +148,7 @@ public class MetaRepo implements TableProvider {
     return builder.build();
   }
 
-  public ImmutableMultimap<String, IndexReader> collectForeignIndexes(MaterializedTableMeta table) {
+  public ImmutableMultimap<String, IndexReader> collectForeignIndexes(MaterializedTable table) {
     ImmutableMultimap.Builder<String, IndexReader> builder = ImmutableMultimap.builder();
     for (ForeignKey foreignKey : table.foreignKeys().values()) {
       builder.put(
@@ -154,7 +158,7 @@ public class MetaRepo implements TableProvider {
     return builder.build();
   }
 
-  public ImmutableMultimap<String, IndexReader> collectReverseForeignIndexes(MaterializedTableMeta table) {
+  public ImmutableMultimap<String, IndexReader> collectReverseForeignIndexes(MaterializedTable table) {
     ImmutableMultimap.Builder<String, IndexReader> builder = ImmutableMultimap.builder();
     for (ReverseForeignKey reverseForeignKey : table.reverseForeignKeys().values()) {
       String indexName = reverseForeignKey.getRefTable().tableName() + "."
@@ -168,7 +172,7 @@ public class MetaRepo implements TableProvider {
     return builder.build();
   }
 
-  public void sync(MaterializedTableMeta tableMeta) throws IOException {
+  public void syncIndex(MaterializedTable tableMeta) throws IOException {
     for (BasicColumn column : tableMeta.allColumns()) {
       if (column.isIndexed()) {
         if (column.isDeleted()) {
@@ -186,6 +190,9 @@ public class MetaRepo implements TableProvider {
         }
       }
     }
+  }
+
+  public void syncMeta(MaterializedTable tableMeta) {
     for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
       foreignKey.getRefTable().addReverseForeignKey(foreignKey.createReverse());
     }
@@ -194,39 +201,22 @@ public class MetaRepo implements TableProvider {
     }
   }
 
-  public void registerTable(MaterializedTableMeta tableMeta) throws IOException {
+  public void registerTable(MaterializedTable tableMeta) throws IOException {
     String tableName = tableMeta.tableName();
-    sync(tableMeta);
+    syncIndex(tableMeta);
+    syncMeta(tableMeta);
     tables.put(tableName, tableMeta);
     lockManager.registerLock(tableName);
   }
 
-  public void dropTable(Ident table) throws IOException, ModelException {
-    MaterializedTableMeta tableMeta = table(table);
-    if (!tableMeta.foreignKeys().isEmpty()) {
-      ForeignKey foreignKey = tableMeta.foreignKeys().values().iterator().next();
-      throw new ModelException(String.format("Cannot drop table '%s', has foreign key '%s'.",
-          table.getString(), foreignKey),
-          table);
-    }
-    if (!tableMeta.reverseForeignKeys().isEmpty()) {
-      ReverseForeignKey foreignKey = tableMeta.reverseForeignKeys().values().iterator().next();
-      throw new ModelException(String.format("Cannot drop table '%s', referenced by foreign key '%s.%s'.",
-          table.getString(),
-          foreignKey.getRefTable().tableName(),
-          foreignKey.getReverse()),
-          table);
-    }
-
-    String tableName = table.getString();
+  public void dropTable(MaterializedTable tableMeta, AuthToken authToken) throws IOException, GrantException {
+    String tableName = tableMeta.tableName();
+    grants.checkOwner(tableMeta, authToken);
     tables.remove(tableName);
+    tableMeta.drop();
     for (BasicColumn column : tableMeta.allColumns()) {
       if (column.isIndexed()) {
-        if (column.isUnique()) {
-          dropUniqueIndex(tableMeta, column);
-        } else {
-          dropMultiIndex(tableMeta, column);
-        }
+        dropIndex(tableMeta, column);
       }
     }
     lockManager.removeLock(tableName);
@@ -236,7 +226,7 @@ public class MetaRepo implements TableProvider {
     return tables.containsKey(tableName);
   }
 
-  private void registerUniqueIndex(MaterializedTableMeta table, BasicColumn column)
+  private void registerUniqueIndex(MaterializedTable table, BasicColumn column)
       throws IOException {
     String indexName = table.tableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
@@ -255,7 +245,7 @@ public class MetaRepo implements TableProvider {
     }
   }
 
-  private void registerMultiIndex(MaterializedTableMeta table, BasicColumn column)
+  private void registerMultiIndex(MaterializedTable table, BasicColumn column)
       throws IOException {
     String indexName = table.tableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
@@ -271,7 +261,15 @@ public class MetaRepo implements TableProvider {
     }
   }
 
-  private void dropUniqueIndex(MaterializedTableMeta table, BasicColumn column) throws IOException {
+  public void dropIndex(MaterializedTable tableMeta, BasicColumn column) throws IOException {
+    if (column.isUnique()) {
+      dropUniqueIndex(tableMeta, column);
+    } else {
+      dropMultiIndex(tableMeta, column);
+    }
+  }
+
+  private void dropUniqueIndex(MaterializedTable table, BasicColumn column) throws IOException {
     String indexName = table.tableName() + "." + column.getName();
     if (!uniqueIndexes.containsKey(indexName)) {
       return;
@@ -281,7 +279,7 @@ public class MetaRepo implements TableProvider {
     index.drop();
   }
 
-  private void dropMultiIndex(MaterializedTableMeta table, BasicColumn column) throws IOException {
+  private void dropMultiIndex(MaterializedTable table, BasicColumn column) throws IOException {
     String indexName = table.tableName() + "." + column.getName();
     if (!multiIndexes.containsKey(indexName)) {
       return;
@@ -311,9 +309,10 @@ public class MetaRepo implements TableProvider {
   public Resources resources(MetaResources metaResources) throws IOException {
     ImmutableMap.Builder<String, SeekableTableReader> readers = ImmutableMap.builder();
     ImmutableMap.Builder<String, TableWriter> writers = ImmutableMap.builder();
+    ImmutableMap.Builder<String, MaterializedTable> metas = ImmutableMap.builder();
     for (TableMetaResource resource : metaResources.tables()) {
       if (resource.write()) {
-        MaterializedTableMeta tableMeta = resource.getTableMeta();
+        MaterializedTable tableMeta = resource.getTableMeta();
         writers.put(resource.getTableMeta().tableName(), new TableWriter(
             tableMeta,
             tableMeta.fileName(),
@@ -328,7 +327,7 @@ public class MetaRepo implements TableProvider {
             tableMeta.reverseRuleDependencies(),
             tableMeta.primaryKey()));
       } else {
-        MaterializedTableMeta tableMeta = resource.getTableMeta();
+        MaterializedTable tableMeta = resource.getTableMeta();
         readers.put(resource.getTableMeta().tableName(), new MaterializedTableReader(
             tableMeta,
             tableMeta.fileName(),
@@ -336,8 +335,12 @@ public class MetaRepo implements TableProvider {
             tableMeta.allColumns(),
             collectIndexReaders(tableMeta)));
       }
+      if (resource.isMeta()) {
+        MaterializedTable tableMeta = resource.getTableMeta();
+        metas.put(resource.getTableMeta().tableName(), tableMeta);
+      }
     }
-    return new Resources(readers.build(), writers.build());
+    return new Resources(readers.build(), writers.build(), metas.build());
   }
 
   public ImmutableList<String> uniqueIndexNames() {
@@ -348,7 +351,7 @@ public class MetaRepo implements TableProvider {
     return ImmutableList.copyOf(multiIndexes.keySet());
   }
 
-  public ImmutableMap<String, MaterializedTableMeta> getTables() {
+  public ImmutableMap<String, MaterializedTable> getTables() {
     return ImmutableMap.copyOf(tables);
   }
 

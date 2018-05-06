@@ -25,7 +25,7 @@ public class DBApi {
   private final Authenticator authenticator;
 
   public DBApi(Config config) throws IOException, DBException {
-    System.out.println("Server starting in root directory " + config.confDir());
+    // System.out.println("Server starting in root directory " + config.confDir());
     LockManager lockManager = new LockManager();
     authenticator = new Authenticator(config);
     metaRepo = new MetaRepo(config, lockManager, authenticator.localUsers());
@@ -35,7 +35,7 @@ public class DBApi {
     Session initSession = adminSession(/* innerSession= */true);
     metaJournal.reload(initSession);
     metaRepo.init();
-    System.out.println("Server started.");
+    // System.out.println("Server started.");
   }
 
   public MetaRepo getMetaRepo() {

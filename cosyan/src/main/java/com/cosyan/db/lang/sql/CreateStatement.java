@@ -6,9 +6,10 @@ import java.util.List;
 import java.util.Optional;
 
 import com.cosyan.db.auth.AuthToken;
-import com.cosyan.db.index.ByteTrie.IndexException;
+import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Expression;
-import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
+import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
+import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ConstraintDefinition;
@@ -16,15 +17,19 @@ import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.PrimaryKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.transaction.Result;
-import com.cosyan.db.lang.transaction.Result.MetaStatementResult;
-import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
+import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
+import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.transaction.MetaResources;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -36,9 +41,9 @@ public class CreateStatement {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class CreateTable extends Node implements MetaStatement {
+  public static class CreateTable extends Node implements GlobalStatement {
     private final Ident name;
-    private final MaterializedTableMeta.Type type;
+    private final MaterializedTable.Type type;
     private final ImmutableList<ColumnDefinition> columnDefinitions;
     private final ImmutableList<ConstraintDefinition> constraints;
     private final Optional<Expression> partitioning;
@@ -92,7 +97,7 @@ public class CreateStatement {
             primaryKeyDefinition.get().getName());
       }
 
-      MaterializedTableMeta tableMeta = new MaterializedTableMeta(
+      MaterializedTable tableMeta = new MaterializedTable(
           metaRepo.config(),
           name.getString(),
           authToken.username(),
@@ -108,14 +113,14 @@ public class CreateStatement {
       }
 
       metaRepo.registerTable(tableMeta);
-      return new MetaStatementResult();
+      return Result.META_OK;
     }
 
-    public static void addConstraints(
+    private void addConstraints(
         MetaRepo metaRepo,
-        MaterializedTableMeta tableMeta,
+        MaterializedTable tableMeta,
         List<ConstraintDefinition> constraints)
-        throws ModelException, IOException {
+        throws ModelException {
       List<RuleDefinition> ruleDefinitions = Lists.newArrayList();
       List<ForeignKeyDefinition> foreignKeyDefinitions = Lists.newArrayList();
       for (ConstraintDefinition constraint : constraints) {
@@ -128,17 +133,19 @@ public class CreateStatement {
         } else if (constraint instanceof PrimaryKeyDefinition) {
           // Pass.
         } else {
-          throw new ModelException(String.format("Invalid constraint %s.", constraint), constraint.getName());
+          throw new ModelException(String.format("Invalid constraint '%s'.", constraint), constraint.getName());
         }
       }
 
       for (ForeignKeyDefinition foreignKeyDefinition : foreignKeyDefinitions) {
-        MaterializedTableMeta refTable = metaRepo.table(foreignKeyDefinition.getRefTable());
-        tableMeta.addForeignKey(foreignKeyDefinition, refTable);
+        MaterializedTable refTable = metaRepo.table(foreignKeyDefinition.getRefTable());
+        ForeignKey foreignKey = tableMeta.createForeignKey(foreignKeyDefinition, refTable);
+        tableMeta.addForeignKey(foreignKey);
       }
 
       for (RuleDefinition ruleDefinition : ruleDefinitions) {
-        tableMeta.addRule(ruleDefinition);
+        BooleanRule rule = tableMeta.createRule(ruleDefinition);
+        tableMeta.addRule(rule);
       }
     }
 
@@ -150,23 +157,34 @@ public class CreateStatement {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class CreateIndex extends Node implements MetaStatement {
+  public static class CreateIndex extends Node implements AlterStatement {
 
     private final Ident table;
     private final Ident column;
 
+    private BasicColumn basicColumn;
+
     @Override
-    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IndexException, IOException {
-      MaterializedTableMeta tableMeta = metaRepo.table(table);
-      BasicColumn column = tableMeta.column(this.column);
-      column.addIndex(tableMeta);
-      metaRepo.sync(tableMeta);
-      return new MetaStatementResult();
+    public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
+      MaterializedTable tableMeta = metaRepo.table(table);
+      basicColumn = tableMeta.column(this.column);
+      basicColumn.checkIndexType();
+      basicColumn.setIndexed(true);
+      metaRepo.syncIndex(tableMeta);
+      return MetaResources.tableMeta(tableMeta);
     }
 
     @Override
     public boolean log() {
       return true;
+    }
+
+    @Override
+    public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
+      MaterializedTable tableMeta = resources.meta(table.getString());
+      TableWriter writer = resources.writer(table.getString());
+      writer.buildIndex(column.getString());
+      return Result.META_OK;
     }
   }
 }

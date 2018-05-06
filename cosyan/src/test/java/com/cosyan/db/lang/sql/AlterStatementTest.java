@@ -7,7 +7,7 @@ import org.junit.Test;
 import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
-import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
@@ -18,7 +18,7 @@ public class AlterStatementTest extends UnitTestBase {
   public void testDropColumn() throws Exception {
     execute("create table t1 (a varchar, b integer, c float);");
     execute("alter table t1 drop b;");
-    MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t1"));
+    MaterializedTable tableMeta = metaRepo.table(new Ident("t1"));
     assertEquals(2, tableMeta.columns().size());
     assertEquals(new BasicColumn(0, new Ident("a"), DataTypes.StringType, true, false, false),
         tableMeta.column(new Ident("a")));
@@ -74,7 +74,7 @@ public class AlterStatementTest extends UnitTestBase {
   public void testAddColumn() throws Exception {
     execute("create table t5 (a varchar, b integer);");
     execute("alter table t5 add c float;");
-    MaterializedTableMeta tableMeta = metaRepo.table(new Ident("t5"));
+    MaterializedTable tableMeta = metaRepo.table(new Ident("t5"));
     assertEquals(3, tableMeta.columns().size());
     assertEquals(new BasicColumn(0, new Ident("a"), DataTypes.StringType, true, false, false),
         tableMeta.column(new Ident("a")));

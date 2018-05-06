@@ -11,8 +11,7 @@ import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.StatementResult;
 import com.cosyan.db.logic.PredicateHelper;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
-import com.cosyan.db.meta.MaterializedTableMeta;
-import com.cosyan.db.meta.MaterializedTableMeta.SeekableTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
@@ -20,6 +19,7 @@ import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
+import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -57,7 +57,7 @@ public class UpdateStatement {
 
     @Override
     public MetaResources compile(MetaRepo metaRepo) throws ModelException {
-      MaterializedTableMeta materializedTableMeta = metaRepo.table(table);
+      MaterializedTable materializedTableMeta = metaRepo.table(table);
       tableMeta = materializedTableMeta.reader();
       ImmutableMap.Builder<Integer, ColumnMeta> columnExprsBuilder = ImmutableMap.builder();
       for (SetExpression update : updates) {
@@ -85,10 +85,8 @@ public class UpdateStatement {
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
       // The rules must be re-evaluated for updated records. In addition, rules of
-      // other
-      // tables referencing this table have to be re-evaluated as well. We need the
-      // rule
-      // dependencies for the rules of this table and referencing rules.
+      // other tables referencing this table have to be re-evaluated as well. We need
+      // the rule dependencies for the rules of this table and referencing rules.
       TableWriter writer = resources.writer(tableMeta.tableName());
       if (clause == null) {
         return new StatementResult(writer.update(resources, columnExprs, whereColumn));

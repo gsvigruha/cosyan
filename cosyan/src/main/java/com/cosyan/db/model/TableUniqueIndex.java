@@ -8,8 +8,9 @@ import com.cosyan.db.index.ByteTrie.StringIndex;
 import com.cosyan.db.index.IDIndex;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Indexes.IndexReader;
+import com.cosyan.db.io.Indexes.IndexWriter;
 
-public abstract class TableUniqueIndex implements IndexReader {
+public abstract class TableUniqueIndex implements IndexReader, IndexWriter {
 
   public abstract void put(Object key, long fileIndex) throws IOException, IndexException;
 

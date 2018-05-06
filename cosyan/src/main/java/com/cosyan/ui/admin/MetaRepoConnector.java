@@ -5,7 +5,7 @@ import java.util.Map;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
-import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
@@ -24,10 +24,10 @@ public class MetaRepoConnector {
   public JSONObject tables() throws ModelException {
     JSONObject obj = new JSONObject();
     JSONArray list = new JSONArray();
-    for (Map.Entry<String, MaterializedTableMeta> table : metaRepo.getTables().entrySet()) {
+    for (Map.Entry<String, MaterializedTable> table : metaRepo.getTables().entrySet()) {
       JSONObject tableObj = new JSONObject();
       tableObj.put("name", table.getKey());
-      MaterializedTableMeta tableMeta = table.getValue();
+      MaterializedTable tableMeta = table.getValue();
       JSONArray columns = new JSONArray();
       for (BasicColumn column : tableMeta.columns().values()) {
         JSONObject columnObj = new JSONObject();

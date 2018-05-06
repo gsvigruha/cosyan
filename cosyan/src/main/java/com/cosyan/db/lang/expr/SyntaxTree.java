@@ -3,7 +3,6 @@ package com.cosyan.db.lang.expr;
 import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
-import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
@@ -39,10 +38,19 @@ public class SyntaxTree {
 
   public static interface MetaStatement {
 
-    public Result execute(MetaRepo metaRepo, AuthToken authToken)
-        throws ModelException, IndexException, IOException, GrantException;
-
     public boolean log();
+  }
+
+  public static interface AlterStatement extends MetaStatement {
+
+    public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException;
+
+    public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException;
+  }
+
+  public static interface GlobalStatement extends MetaStatement {
+
+    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException;
   }
 
   public static void assertType(DataType<?> expectedType, DataType<?> dataType, Loc loc) throws ModelException {

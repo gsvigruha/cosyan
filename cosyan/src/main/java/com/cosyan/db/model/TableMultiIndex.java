@@ -7,8 +7,9 @@ import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.io.Indexes.IndexReader;
+import com.cosyan.db.io.Indexes.IndexWriter;
 
-public abstract class TableMultiIndex implements IndexReader {
+public abstract class TableMultiIndex implements IndexReader, IndexWriter {
   public abstract void put(Object key, long fileIndex) throws IOException, IndexException;
 
   public abstract boolean delete(Object key) throws IOException;

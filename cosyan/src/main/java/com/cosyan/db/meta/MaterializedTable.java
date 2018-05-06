@@ -12,12 +12,9 @@ import java.util.Optional;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.io.MemoryBufferedSeekableFileStream;
 import com.cosyan.db.io.RAFBufferedInputStream;
-import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.SeekableInputStream;
 import com.cosyan.db.io.SeekableOutputStream;
 import com.cosyan.db.io.SeekableOutputStream.RAFSeekableOutputStream;
-import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
-import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
@@ -29,29 +26,23 @@ import com.cosyan.db.meta.Dependencies.TransitiveTableDependency;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
-import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
-import com.cosyan.db.model.References;
-import com.cosyan.db.model.References.ReferencedMultiTableMeta;
-import com.cosyan.db.model.References.ReferencedTable;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
-import com.cosyan.db.model.TableMeta;
-import com.cosyan.db.model.TableMeta.ExposedTableMeta;
+import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.model.TableRef;
 import com.cosyan.db.model.stat.TableStats;
 import com.cosyan.db.transaction.MetaResources;
-import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-public class MaterializedTableMeta {
+public class MaterializedTable {
 
   public static enum Type {
     LOG, LOOKUP
@@ -76,7 +67,7 @@ public class MaterializedTableMeta {
   private SeekableInputStream fileReader;
   private boolean isEmpty;
 
-  public MaterializedTableMeta(
+  public MaterializedTable(
       Config config,
       String tableName,
       String owner,
@@ -224,13 +215,17 @@ public class MaterializedTableMeta {
     return Collections.unmodifiableMap(refs);
   }
 
-  private void checkName(Ident ident) throws ModelException {
+  public void checkName(Ident ident) throws ModelException {
     String name = ident.getString();
     if (columnNames().contains(name) || foreignKeys.containsKey(name) || reverseForeignKeys.containsKey(name)) {
       throw new ModelException(
           String.format("Duplicate column, foreign key or reversed foreign key name in '%s': '%s'.", tableName, name),
           ident);
     }
+  }
+
+  private void assertName(String name) {
+    assert !columnNames().contains(name) && !foreignKeys.containsKey(name) && !reverseForeignKeys.containsKey(name);
   }
 
   public void insert(int insertedLines) {
@@ -246,8 +241,10 @@ public class MaterializedTableMeta {
     return stats;
   }
 
-  public void addForeignKey(ForeignKeyDefinition foreignKeyDefinition, MaterializedTableMeta refTable)
+  public ForeignKey createForeignKey(ForeignKeyDefinition foreignKeyDefinition, MaterializedTable refTable)
       throws ModelException {
+    checkName(foreignKeyDefinition.getName());
+    refTable.checkName(foreignKeyDefinition.getRevName());
     BasicColumn keyColumn = column(foreignKeyDefinition.getKeyColumn());
     Ident refTableName = foreignKeyDefinition.getRefTable();
 
@@ -272,16 +269,16 @@ public class MaterializedTableMeta {
     }
     assert refColumn.isUnique() && !refColumn.isNullable();
     keyColumn.addIndex(this);
-    ForeignKey foreignKey = new ForeignKey(
+    return new ForeignKey(
         foreignKeyDefinition.getName().getString(),
         foreignKeyDefinition.getRevName().getString(),
         this,
         keyColumn,
         refTable,
         refColumn);
+  }
 
-    checkName(foreignKeyDefinition.getName());
-    foreignKey.getRefTable().checkName(foreignKeyDefinition.getRevName());
+  public void addForeignKey(ForeignKey foreignKey) {
     foreignKeys.put(foreignKey.getName(), foreignKey);
   }
 
@@ -294,7 +291,7 @@ public class MaterializedTableMeta {
     }
   }
 
-  public void addColumn(ColumnDefinition columnDefiniton) throws ModelException, IOException {
+  public BasicColumn createColumn(ColumnDefinition columnDefiniton) throws ModelException {
     checkName(columnDefiniton.getName());
     BasicColumn column = new BasicColumn(
         allColumns().size(),
@@ -311,15 +308,20 @@ public class MaterializedTableMeta {
               column.getName()),
           column.getIdent());
     }
+    return column;
+  }
+
+  public void addColumn(BasicColumn column) {
+    assertName(column.getName());
     columns.add(column);
   }
 
-  public void addRef(Ident ident, TableRef ref) throws ModelException {
-    checkName(ident);
+  public void addRef(TableRef ref) {
+    assertName(ref.getName());
     refs.put(ref.getName(), ref);
   }
 
-  public void addRule(RuleDefinition ruleDefinition) throws ModelException {
+  public BooleanRule createRule(RuleDefinition ruleDefinition) throws ModelException {
     checkName(ruleDefinition.getName());
     Rule rule = ruleDefinition.compile(this);
     if (rule.getType() != DataTypes.BoolType) {
@@ -327,9 +329,11 @@ public class MaterializedTableMeta {
           String.format("Constraint check expression has to return a 'boolean': '%s'.", rule.getExpr().print()),
           ruleDefinition.getName());
     }
-    BooleanRule booleanRule = rule.toBooleanRule();
+    return rule.toBooleanRule();
+  }
 
-    rules.put(ruleDefinition.getName().getString(), booleanRule);
+  public void addRule(BooleanRule booleanRule) {
+    rules.put(booleanRule.getName(), booleanRule);
     ruleDependencies.addToThis(booleanRule.getDeps());
   }
 
@@ -411,7 +415,7 @@ public class MaterializedTableMeta {
     return stats.isEmpty();
   }
 
-  public void deleteColumn(Ident column) throws ModelException, IOException {
+  public void checkDeleteColumn(Ident column) throws ModelException {
     BasicColumn basicColumn = column(column);
     basicColumn.setDeleted(true);
     try {
@@ -446,83 +450,10 @@ public class MaterializedTableMeta {
     } finally {
       basicColumn.setDeleted(false);
     }
-    basicColumn.setDeleted(true);
   }
 
-  public static class SeekableTableMeta extends ExposedTableMeta implements ReferencedTable, TableProvider {
-
-    private final MaterializedTableMeta tableMeta;
-
-    public SeekableTableMeta(MaterializedTableMeta tableMeta) {
-      this.tableMeta = tableMeta;
-    }
-
-    public Record get(Resources resources, long position) throws IOException {
-      return resources.reader(tableName()).get(position);
-    }
-
-    @Override
-    public ImmutableList<String> columnNames() {
-      return tableMeta.columnNames();
-    }
-
-    @Override
-    public IndexColumn getColumn(Ident ident) throws ModelException {
-      BasicColumn column = tableMeta.column(ident);
-      if (column == null) {
-        return null;
-      }
-      int index = tableMeta.columnNames().indexOf(column.getName());
-      return new IndexColumn(this, index, column.getType(), new TableDependencies());
-    }
-
-    @Override
-    public TableMeta getRefTable(Ident ident) throws ModelException {
-      return References.getRefTable(
-          this,
-          tableMeta.tableName(),
-          ident,
-          tableMeta.foreignKeys(),
-          tableMeta.reverseForeignKeys(),
-          tableMeta.refs());
-    }
-
-    @Override
-    public MetaResources readResources() {
-      return MetaResources.readTable(tableMeta);
-    }
-
-    public String tableName() {
-      return tableMeta.tableName();
-    }
-
-    public MaterializedTableMeta tableMeta() {
-      return tableMeta;
-    }
-
-    @Override
-    public Iterable<Ref> foreignKeyChain() {
-      return ImmutableList.of();
-    }
-
-    @Override
-    public ExposedTableMeta tableMeta(Ident ident) throws ModelException {
-      if (tableMeta.hasReverseForeignKey(ident.getString())) {
-        return new ReferencedMultiTableMeta(this, tableMeta.reverseForeignKey(ident));
-      } else {
-        throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
-      }
-    }
-
-    @Override
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      return new DerivedIterableTableReader(resources.createIterableReader(tableName())) {
-
-        @Override
-        public Object[] next() throws IOException {
-          return sourceReader.next();
-        }
-      };
-    }
+  public void drop() throws IOException {
+    raf.close();
+    new File(fileName()).delete();
   }
 }

@@ -31,9 +31,9 @@ public class LockManager {
     metaRepoLock.writeLock().unlock();
   }
 
-  public synchronized boolean tryLock(MetaResources resources) {
+  public synchronized boolean tryLock(MetaResources metaResources) {
     List<Lock> locks = new ArrayList<>();
-    for (Resource resource : resources.all()) {
+    for (Resource resource : metaResources.all()) {
       ReentrantReadWriteLock rwlock = lockMap.get(resource.getResourceId());
       assert rwlock != null : resource.getResourceId();
       Lock lock;

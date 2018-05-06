@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,6 +13,7 @@ import org.junit.Test;
 import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
+import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.session.IParser.ParserException;
 import com.cosyan.db.transaction.MetaResources.Resource;
@@ -22,10 +24,10 @@ public class MetaResourcesTest extends UnitTestBase {
   private Parser parser = new Parser();
   private Lexer lexer = new Lexer();
 
-  private Map<String, Resource> resources(String sql) throws ModelException, ParserException {
+  private Map<String, Resource> resources(String sql) throws ModelException, ParserException, GrantException, IOException {
     Transaction transaction = transactionHandler
         .begin(parser.parseStatements(lexer.tokenize(sql)));
-    Iterable<Resource> ress = transaction.collectResources(metaRepo).all();
+    Iterable<Resource> ress = transaction.collectResources(metaRepo, session.authToken()).all();
     Map<String, Resource> map = new HashMap<>();
     for (Resource res : ress) {
       map.put(res.getResourceId(), res);

@@ -8,7 +8,7 @@ import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.RecordProvider.RecordReader;
 import com.cosyan.db.io.RecordProvider.SeekableRecordReader;
-import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.TableUniqueIndex;
@@ -64,10 +64,10 @@ public abstract class TableReader implements TableIO {
 
   public static abstract class SeekableTableReader implements TableIO {
 
-    protected final MaterializedTableMeta tableMeta;
+    protected final MaterializedTable tableMeta;
 
     public SeekableTableReader(
-        MaterializedTableMeta tableMeta) {
+        MaterializedTable tableMeta) {
       this.tableMeta = tableMeta;
     }
 
@@ -95,7 +95,7 @@ public abstract class TableReader implements TableIO {
     private final ImmutableList<BasicColumn> columns;
 
     public MaterializedTableReader(
-        MaterializedTableMeta tableMeta,
+        MaterializedTable tableMeta,
         String fileName,
         SeekableInputStream fileReader,
         ImmutableList<BasicColumn> columns,

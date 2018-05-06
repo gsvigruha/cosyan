@@ -10,7 +10,7 @@ import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.StatementResult;
-import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
@@ -48,7 +48,7 @@ public class InsertIntoStatement {
     private final Optional<ImmutableList<Ident>> columns;
     private final ImmutableList<ImmutableList<Literal>> valuess;
 
-    private MaterializedTableMeta tableMeta;
+    private MaterializedTable tableMeta;
     private ImmutableMap<Ident, Integer> indexes;
 
     @Override

@@ -1,6 +1,6 @@
 package com.cosyan.db.model;
 
-import com.cosyan.db.meta.MaterializedTableMeta;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.DataTypes.DataType;
 
@@ -77,22 +77,22 @@ public class BasicColumn {
     return immutable;
   }
 
-  public void setNullable(boolean nullable) throws ModelException {
+  public void setNullable(boolean nullable) {
     this.nullable = nullable;
   }
 
-  public void setImmutable(boolean immutable) throws ModelException {
+  public void setImmutable(boolean immutable) {
     this.immutable = immutable;
   }
 
-  private void checkIndexType() throws ModelException {
+  public void checkIndexType() throws ModelException {
     if (type != DataTypes.StringType && type != DataTypes.LongType && type != DataTypes.IDType) {
       throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
           ", " + DataTypes.LongType + " and " + DataTypes.IDType + " types, not " + getType() + ".", ident);
     }
   }
 
-  public void addIndex(MaterializedTableMeta parentTable) throws ModelException {
+  public void addIndex(MaterializedTable parentTable) throws ModelException {
     assert parentTable.column(ident) == this;
     if (indexed) {
       return;
@@ -101,7 +101,7 @@ public class BasicColumn {
     indexed = true;
   }
 
-  public void dropIndex(MaterializedTableMeta parentTable) throws ModelException {
+  public void dropIndex(MaterializedTable parentTable) throws ModelException {
     assert parentTable.column(ident) == this;
     if (!indexed) {
       return;
@@ -115,5 +115,9 @@ public class BasicColumn {
 
   public void setDeleted(boolean deleted) {
     this.deleted = deleted;
+  }
+
+  public void setIndexed(boolean indexed) {
+    this.indexed = indexed;
   }
 }

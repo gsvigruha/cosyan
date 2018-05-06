@@ -1,8 +1,12 @@
 package com.cosyan.db.session;
 
+import java.io.IOException;
+
 import com.cosyan.db.auth.AuthToken;
+import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.transaction.Result;
+import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.logging.MetaJournal;
 import com.cosyan.db.logging.TransactionJournal;
@@ -48,11 +52,20 @@ public class Session {
     try {
       PeekingIterator<Token> tokens = lexer.tokenize(sql);
       if (parser.isMeta(tokens)) {
-        MetaTransaction transaction = transactionHandler.begin(parser.parseMetaStatement(tokens));
+        MetaStatement stmt = parser.parseMetaStatement(tokens);
+        MetaTransaction transaction = transactionHandler.begin(stmt);
         if (innerSession) {
           return transaction.innerExecute(metaRepo, this);
         } else {
-          return transaction.execute(metaRepo, this, sql);
+          Result result = transaction.execute(metaRepo, this);
+          if (stmt.log() && result.isSuccess()) {
+            try {
+              metaJournal.log(sql);
+            } catch (IOException e) {
+              return new CrashResult(e);
+            }
+          }
+          return result;
         }
       } else {
         Transaction transaction = transactionHandler.begin(parser.parseStatements(tokens));

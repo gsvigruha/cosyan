@@ -64,7 +64,7 @@ public class DropStatementTest extends UnitTestBase {
 
     {
       ErrorResult e = error("drop index t6.a;");
-      assertEquals("[17, 18]: Cannot drop index 't6.a', column is unique.", e.getError().getMessage());
+      assertEquals("[14, 15]: Cannot drop index 't6.a', column is unique.", e.getError().getMessage());
     }
     execute("drop index t6.b;");
     {

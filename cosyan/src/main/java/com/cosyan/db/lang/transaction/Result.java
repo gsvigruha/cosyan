@@ -72,12 +72,25 @@ public abstract class Result {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
+  public static class EmptyResult extends Result {
+
+    public EmptyResult() {
+      super(true);
+    }
+  }
+
+  public static final Result EMPTY = new EmptyResult();
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
   public static class MetaStatementResult extends Result {
 
     public MetaStatementResult() {
       super(true);
     }
   }
+  
+  public static final Result META_OK = new MetaStatementResult();
 
   @Data
   @EqualsAndHashCode(callSuper = true)
