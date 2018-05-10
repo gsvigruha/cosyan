@@ -338,7 +338,7 @@ public class MaterializedTable {
     return new RefTableMeta(
         aggrTable, tableColumns.getColumns(), srcTableMeta.getReverseForeignKey());
   }
-  
+
   public void addRef(TableRef ref) {
     assertName(ref.getName());
     refs.put(ref.getName(), ref);

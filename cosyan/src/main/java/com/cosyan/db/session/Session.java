@@ -9,7 +9,6 @@ import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.logging.MetaJournal;
-import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.session.IParser.ParserException;
@@ -54,13 +53,10 @@ public class Session {
         MetaTransaction transaction = transactionHandler.begin(stmt);
         Result result = transaction.execute(metaRepo, this);
         try {
-          if (result.isSuccess()) {
-            metaRepo.writeTables();
-            if (stmt.log()) {
-              metaJournal.log(sql);
-            }
+          if (result.isSuccess() && stmt.log()) {
+            metaJournal.log(sql);
           }
-        } catch (IOException | DBException e) {
+        } catch (IOException e) {
           return new CrashResult(e);
         }
         return result;

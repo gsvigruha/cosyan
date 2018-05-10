@@ -148,14 +148,9 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
     } catch (IOException | ParserException | ModelException | JSONException e) {
       throw new DBException(e);
     }
-    for (String oldTable : tables.keySet()) {
-      lockManager.removeLock(oldTable);
-    }
     this.tables.clear();
     this.tables.putAll(newTables);
-    for (String newTable : tables.keySet()) {
-      lockManager.registerLock(newTable);
-    }
+    lockManager.syncLocks(tables.keySet());
     try {
       for (MaterializedTable table : tables.values()) {
         syncIndex(table);

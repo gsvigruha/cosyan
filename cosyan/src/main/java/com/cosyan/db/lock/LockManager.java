@@ -2,8 +2,10 @@ package com.cosyan.db.lock;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -73,5 +75,19 @@ public class LockManager {
 
   public synchronized void removeLock(String resourceId) {
     lockMap.remove(resourceId);
+  }
+
+  public synchronized void syncLocks(Set<String> ids) {
+    for (String resourceId : ids) {
+      if (!lockMap.containsKey(resourceId)) {
+        lockMap.put(resourceId, new ReentrantReadWriteLock());
+      }
+    }
+    Set<String> oldIds = new HashSet<>(lockMap.keySet());
+    for (String resourceId : oldIds) {
+      if (!ids.contains(resourceId)) {
+        lockMap.remove(resourceId);
+      }
+    }
   }
 }
