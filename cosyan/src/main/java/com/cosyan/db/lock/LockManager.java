@@ -58,6 +58,7 @@ public class LockManager {
   public synchronized void unlock(MetaResources metaResources) {
     for (Resource resource : metaResources.all()) {
       ReentrantReadWriteLock lock = lockMap.get(resource.getResourceId());
+      assert lock != null : String.format("Invalid resource '%s'.", resource.getResourceId());
       if (resource.isWrite()) {
         lock.writeLock().unlock();
       } else {

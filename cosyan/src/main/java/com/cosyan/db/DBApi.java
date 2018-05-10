@@ -28,12 +28,10 @@ public class DBApi {
     // System.out.println("Server starting in root directory " + config.confDir());
     LockManager lockManager = new LockManager();
     authenticator = new Authenticator(config);
-    metaRepo = new MetaRepo(config, lockManager, authenticator.localUsers());
+    metaRepo = new MetaRepo(config, lockManager, authenticator.localUsers(), new Lexer(), new Parser());
     transactionHandler = new TransactionHandler();
     transactionJournal = new TransactionJournal(config);
     metaJournal = new MetaJournal(config);
-    Session initSession = adminSession(/* innerSession= */true);
-    metaJournal.reload(initSession);
     metaRepo.init();
     // System.out.println("Server started.");
   }
@@ -42,11 +40,11 @@ public class DBApi {
     return metaRepo;
   }
 
-  public Session adminSession() {
-    return adminSession(/* innerSession= */false);
+  public Authenticator authenticator() {
+    return authenticator;
   }
 
-  private Session adminSession(boolean innerSession) {
+  public Session adminSession() {
     return new Session(
         metaRepo,
         transactionHandler,
@@ -54,8 +52,7 @@ public class DBApi {
         metaJournal,
         AuthToken.ADMIN_AUTH,
         new Parser(),
-        new Lexer(),
-        innerSession);
+        new Lexer());
   }
 
   public Session authSession(String username, String password, Authenticator.Method method) throws AuthException {
@@ -66,8 +63,7 @@ public class DBApi {
         metaJournal,
         authenticator.auth(username, password, method),
         new Parser(),
-        new Lexer(),
-        /* innerSession= */false);
+        new Lexer());
   }
 
   public void shutdown() throws IOException {

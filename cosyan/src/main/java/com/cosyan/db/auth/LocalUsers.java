@@ -1,18 +1,14 @@
 package com.cosyan.db.auth;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.cosyan.db.auth.Authenticator.AuthException;
-import com.cosyan.db.conf.Config;
 
 public class LocalUsers {
 
@@ -39,22 +35,10 @@ public class LocalUsers {
     }
   }
 
-  private final Config config;
   private final Map<String, String> users;
 
-  public LocalUsers(Config config) throws IOException {
-    this.config = config;
+  public LocalUsers() throws IOException {
     users = new HashMap<>();
-    BufferedReader reader = new BufferedReader(new FileReader(config.usersFile()));
-    String line = null;
-    try {
-      while ((line = reader.readLine()) != null) {
-        String[] parts = line.split(":");
-        users.put(parts[0], parts[1]);
-      }
-    } finally {
-      reader.close();
-    }
   }
 
   private String hash(String password) throws NoSuchAlgorithmException {
@@ -84,16 +68,28 @@ public class LocalUsers {
     if (users.containsKey(username)) {
       throw new AuthException(String.format("User '%s' already exists.", username));
     }
-
-    BufferedWriter writer = new BufferedWriter(new FileWriter(config.usersFile(), /* append= */true));
     try {
       String hashedPW = hash(password);
-      writer.write("\n" + username + ":" + hashedPW);
       users.put(username, hashedPW);
     } catch (NoSuchAlgorithmException e) {
       throw new AuthException(e.getMessage());
-    } finally {
-      writer.close();
     }
+  }
+
+  public boolean isLocalUser(String username) {
+    return users.containsKey(username);
+  }
+
+  public String hashedPW(String username) {
+    return users.get(username);
+  }
+
+  public void reload(Map<String, String> users) {
+    this.users.clear();
+    this.users.putAll(users);
+  }
+
+  public Set<String> users() {
+    return users.keySet();
   }
 }

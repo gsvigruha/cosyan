@@ -2,6 +2,11 @@ package com.cosyan.db.meta;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.auth.Authenticator.AuthException;
@@ -9,6 +14,7 @@ import com.cosyan.db.auth.LocalUsers;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 public class Grants {
 
@@ -30,6 +36,8 @@ public class Grants {
     public boolean providesGrantTo(GrantToken grantToken);
 
     public boolean ownedBy(AuthToken authToken);
+
+    public JSONObject toJSON();
   }
 
   public static class GrantAllTablesToken implements GrantToken {
@@ -79,6 +87,15 @@ public class Grants {
     @Override
     public boolean ownedBy(AuthToken authToken) {
       return authToken.isAdmin();
+    }
+
+    @Override
+    public JSONObject toJSON() {
+      JSONObject obj = new JSONObject();
+      obj.put("method", method.name());
+      obj.put("grant", withGrantOption);
+      obj.put("table", "*");
+      return obj;
     }
   }
 
@@ -134,6 +151,15 @@ public class Grants {
     public boolean ownedBy(AuthToken authToken) {
       return authToken.isAdmin() || table.owner().equals(authToken.username());
     }
+
+    @Override
+    public JSONObject toJSON() {
+      JSONObject obj = new JSONObject();
+      obj.put("method", method.name());
+      obj.put("grant", withGrantOption);
+      obj.put("table", table.tableName());
+      return obj;
+    }
   }
 
   private final LocalUsers localUsers;
@@ -142,6 +168,59 @@ public class Grants {
   public Grants(LocalUsers localUsers) {
     this.userGrants = HashMultimap.create();
     this.localUsers = localUsers;
+  }
+
+  public void fromJSON(JSONArray tokensObj, Map<String, MaterializedTable> tables) {
+    Multimap<String, GrantToken> tokens = HashMultimap.create();
+    Map<String, String> users = new HashMap<>();
+    for (int i = 0; i < tokensObj.length(); i++) {
+      String username = tokensObj.getJSONObject(i).getString("username");
+      if (tokensObj.getJSONObject(i).has("password")) {
+        users.put(username, tokensObj.getJSONObject(i).getString("password"));
+      }
+      if (tokensObj.getJSONObject(i).has("tokens")) {
+        JSONArray arr = tokensObj.getJSONObject(i).getJSONArray("tokens");
+        for (int j = 0; j < arr.length(); j++) {
+          JSONObject tokenObj = arr.getJSONObject(j);
+          if (tokenObj.getString("table").equals("*")) {
+            tokens.put(username, new GrantAllTablesToken(
+                username,
+                Method.valueOf(tokenObj.getString("method")),
+                tokenObj.getBoolean("grant")));
+          } else {
+            tokens.put(username, new GrantTableToken(
+                username,
+                Method.valueOf(tokenObj.getString("method")),
+                tables.get(tokenObj.getString("table")),
+                tokenObj.getBoolean("grant")));
+          }
+        }
+      }
+    }
+    userGrants.clear();
+    userGrants.putAll(tokens);
+    localUsers.reload(users);
+  }
+
+  public JSONArray toJSON() {
+    JSONArray arr = new JSONArray();
+    Collection<String> users = Sets.union(localUsers.users(), userGrants.keySet());
+    for (String username : users) {
+      JSONObject userObj = new JSONObject();
+      userObj.put("username", username);
+      if (localUsers.isLocalUser(username)) {
+        userObj.put("password", localUsers.hashedPW(username));
+      }
+      if (userGrants.containsKey(username)) {
+        JSONArray tokenObj = new JSONArray();
+        for (GrantToken token : userGrants.get(username)) {
+          tokenObj.put(token.toJSON());
+        }
+        userObj.put("tokens", tokenObj);
+      }
+      arr.put(userObj);
+    }
+    return arr;
   }
 
   public void createGrant(GrantToken grantToken, AuthToken authToken) throws GrantException {

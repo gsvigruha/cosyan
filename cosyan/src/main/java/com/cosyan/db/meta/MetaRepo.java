@@ -5,9 +5,16 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.commons.io.FileUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.auth.LocalUsers;
@@ -22,6 +29,7 @@ import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.Indexes.IndexWriter;
+import com.cosyan.db.io.MetaSerializer;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
@@ -29,6 +37,7 @@ import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lock.LockManager;
+import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.Grants.GrantToken;
 import com.cosyan.db.model.BasicColumn;
@@ -45,6 +54,9 @@ import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.model.TableUniqueIndex.IDTableIndex;
 import com.cosyan.db.model.TableUniqueIndex.LongTableIndex;
 import com.cosyan.db.model.TableUniqueIndex.StringTableIndex;
+import com.cosyan.db.session.ILexer;
+import com.cosyan.db.session.IParser;
+import com.cosyan.db.session.IParser.ParserException;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 import com.cosyan.db.transaction.Resources;
@@ -64,10 +76,13 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
   private final Grants grants;
 
   private final LockManager lockManager;
+  private final MetaSerializer metaSerializer;
 
-  public MetaRepo(Config config, LockManager lockManager, LocalUsers localUsers) throws IOException {
+  public MetaRepo(Config config, LockManager lockManager, LocalUsers localUsers, ILexer lexer, IParser parser)
+      throws IOException, DBException {
     this.config = config;
     this.lockManager = lockManager;
+    this.metaSerializer = new MetaSerializer(lexer, parser);
     this.tables = new HashMap<>();
     this.uniqueIndexes = new HashMap<>();
     this.multiIndexes = new HashMap<>();
@@ -76,6 +91,9 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
     Files.createDirectories(Paths.get(config.tableDir()));
     Files.createDirectories(Paths.get(config.indexDir()));
     Files.createDirectories(Paths.get(config.journalDir()));
+    Files.createDirectories(Paths.get(config.metaDir()));
+
+    readTables();
   }
 
   public Config config() {
@@ -94,12 +112,82 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
     }
   }
 
+  public void writeTables() throws DBException {
+    try {
+      for (MaterializedTable table : tables.values()) {
+        JSONObject obj = metaSerializer.toJSON(table);
+        FileUtils.writeStringToFile(
+            new File(config.metaDir() + File.separator + table.tableName()),
+            obj.toString(),
+            Charset.defaultCharset());
+      }
+      FileUtils.writeStringToFile(
+          new File(config.usersFile()),
+          grants.toJSON().toString(),
+          Charset.defaultCharset());
+    } catch (Exception e) {
+      throw new DBException(e);
+    }
+  }
+
+  public void readTables() throws DBException {
+    Map<String, MaterializedTable> tables = new HashMap<>();
+    try {
+      File file = new File(config.metaDir());
+      Map<String, JSONObject> jsons = new HashMap<>();
+      for (String fileName : file.list()) {
+        JSONObject json = new JSONObject(FileUtils.readFileToString(
+            new File(config.metaDir() + File.separator + fileName),
+            Charset.defaultCharset()));
+        MaterializedTable table = metaSerializer.table(config, fileName, json);
+        tables.put(fileName, table);
+        jsons.put(fileName, json);
+      }
+      for (Map.Entry<String, JSONObject> entry : jsons.entrySet()) {
+        metaSerializer.loadForeignKeys(tables.get(entry.getKey()), entry.getValue(), tables);
+      }
+      for (MaterializedTable table : tables.values()) {
+        syncMeta(table);
+      }
+      for (Map.Entry<String, JSONObject> entry : jsons.entrySet()) {
+        metaSerializer.loadRefs(tables.get(entry.getKey()), entry.getValue());
+      }
+      for (Map.Entry<String, JSONObject> entry : jsons.entrySet()) {
+        metaSerializer.loadRules(tables.get(entry.getKey()), entry.getValue());
+      }
+      for (MaterializedTable table : tables.values()) {
+        syncMeta(table);
+      }
+      grants.fromJSON(new JSONArray(FileUtils.readFileToString(
+          new File(config.usersFile()),
+          Charset.defaultCharset())), tables);
+    } catch (IOException | ParserException | ModelException | JSONException e) {
+      throw new DBException(e);
+    }
+    for (String oldTable : this.tables.keySet()) {
+      lockManager.removeLock(oldTable);
+    }
+    this.tables.clear();
+    this.tables.putAll(tables);
+    for (String newTable : this.tables.keySet()) {
+      lockManager.registerLock(newTable);
+    }
+    try {
+      for (MaterializedTable table : tables.values()) {
+        syncIndex(table);
+      }
+    } catch (Exception e) {
+      throw new DBException(e);
+    }
+  }
+
   @Override
   public ExposedTableMeta tableMeta(Ident ident) throws ModelException {
     return table(ident).reader();
   }
 
   public MaterializedTable table(String name) throws ModelException {
+    assert tables.containsKey(name) : String.format("Table '%s' does not exist.", name);
     return tables.get(name);
   }
 
@@ -236,13 +324,10 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
     }
     if (column.getType() == DataTypes.StringType) {
       uniqueIndexes.put(indexName, new StringTableIndex(new StringIndex(path)));
-      lockManager.registerLock(indexName);
     } else if (column.getType() == DataTypes.LongType) {
       uniqueIndexes.put(indexName, new LongTableIndex(new LongIndex(path)));
-      lockManager.registerLock(indexName);
     } else if (column.getType() == DataTypes.IDType) {
       uniqueIndexes.put(indexName, new IDTableIndex(new IDIndex(path)));
-      lockManager.registerLock(indexName);
     }
   }
 
@@ -255,14 +340,13 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
     }
     if (column.getType() == DataTypes.StringType) {
       multiIndexes.put(indexName, new StringTableMultiIndex(new StringMultiIndex(path)));
-      lockManager.registerLock(indexName);
     } else if (column.getType() == DataTypes.LongType || column.getType() == DataTypes.IDType) {
       multiIndexes.put(indexName, new LongTableMultiIndex(new LongMultiIndex(path)));
-      lockManager.registerLock(indexName);
     }
   }
 
-  public void dropIndex(MaterializedTable tableMeta, BasicColumn column, AuthToken authToken) throws IOException, GrantException {
+  public void dropIndex(MaterializedTable tableMeta, BasicColumn column, AuthToken authToken)
+      throws IOException, GrantException {
     grants.checkOwner(tableMeta, authToken);
     if (column.isUnique()) {
       dropUniqueIndex(tableMeta, column);
@@ -278,7 +362,6 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
       return;
     }
     TableUniqueIndex index = uniqueIndexes.remove(indexName);
-    lockManager.removeLock(indexName);
     index.drop();
   }
 
@@ -288,7 +371,6 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
       return;
     }
     TableMultiIndex index = multiIndexes.remove(indexName);
-    lockManager.removeLock(indexName);
     index.drop();
   }
 

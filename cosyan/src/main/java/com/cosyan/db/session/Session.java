@@ -9,6 +9,7 @@ import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.logging.MetaJournal;
+import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.session.IParser.ParserException;
@@ -27,7 +28,6 @@ public class Session {
   private final TransactionJournal transactionJournal;
   private final MetaJournal metaJournal;
   private final AuthToken authToken;
-  private final boolean innerSession;
 
   public Session(
       MetaRepo metaRepo,
@@ -36,8 +36,7 @@ public class Session {
       MetaJournal metaJournal,
       AuthToken authToken,
       IParser parser,
-      ILexer lexer,
-      boolean innerSession) {
+      ILexer lexer) {
     this.metaRepo = metaRepo;
     this.transactionHandler = transactionHandler;
     this.transactionJournal = transactionJournal;
@@ -45,7 +44,6 @@ public class Session {
     this.authToken = authToken;
     this.parser = parser;
     this.lexer = lexer;
-    this.innerSession = innerSession;
   }
 
   public Result execute(String sql) {
@@ -54,19 +52,18 @@ public class Session {
       if (parser.isMeta(tokens)) {
         MetaStatement stmt = parser.parseMetaStatement(tokens);
         MetaTransaction transaction = transactionHandler.begin(stmt);
-        if (innerSession) {
-          return transaction.innerExecute(metaRepo, this);
-        } else {
-          Result result = transaction.execute(metaRepo, this);
-          if (stmt.log() && result.isSuccess()) {
-            try {
+        Result result = transaction.execute(metaRepo, this);
+        try {
+          if (result.isSuccess()) {
+            metaRepo.writeTables();
+            if (stmt.log()) {
               metaJournal.log(sql);
-            } catch (IOException e) {
-              return new CrashResult(e);
             }
           }
-          return result;
+        } catch (IOException | DBException e) {
+          return new CrashResult(e);
         }
+        return result;
       } else {
         Transaction transaction = transactionHandler.begin(parser.parseStatements(tokens));
         return transaction.execute(metaRepo, this);

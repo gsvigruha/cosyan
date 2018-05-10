@@ -6,6 +6,10 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
@@ -98,6 +102,10 @@ public class DataTypes {
     public abstract int size(Object value);
 
     public void check(Object value) throws RuleException {
+    }
+
+    public JSONObject toJSON() {
+      return new JSONObject(ImmutableMap.of("type", name));
     }
   }
 
@@ -274,7 +282,15 @@ public class DataTypes {
     }
   };
 
-  public static DataType<?> enumType(final ArrayList<String> values) {
+  public static DataType<?> enumType(JSONArray arr) {
+    List<String> values = new ArrayList<>();
+    for (int i = 0; i < arr.length(); i++) {
+      values.add(arr.getString(i));
+    }
+    return enumType(values);
+  }
+
+  public static DataType<?> enumType(final List<String> values) {
 
     ImmutableMap.Builder<String, Byte> builder = ImmutableMap.builder();
     for (byte b = 0; b < values.size(); b++) {
@@ -304,11 +320,36 @@ public class DataTypes {
       }
 
       @Override
+      public JSONObject toJSON() {
+        JSONObject obj = super.toJSON();
+        obj.put("values", values);
+        return obj;
+      }
+
+      @Override
       public void check(Object value) throws RuleException {
         if (!map.containsKey((String) value)) {
           throw new RuleException(String.format("Invalid enum value '%s'.", value));
         }
       }
     };
+  }
+
+  public static DataType<?> fromJSON(JSONObject obj) {
+    String name = obj.getString("type");
+    if (name.equals(StringType.getName())) {
+      return StringType;
+    } else if (name.equals(DoubleType.getName())) {
+      return DoubleType;
+    } else if (name.equals(LongType.getName())) {
+      return LongType;
+    } else if (name.equals(IDType.getName())) {
+      return IDType;
+    } else if (name.equals(DateType.getName())) {
+      return DateType;
+    } else if (name.equals("enum")) {
+      return enumType(obj.getJSONArray("values"));
+    }
+    throw new IllegalArgumentException();
   }
 }

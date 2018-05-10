@@ -43,7 +43,8 @@ public class SyntaxTree {
 
   public static interface AlterStatement extends MetaStatement {
 
-    public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException;
+    public MetaResources compile(MetaRepo metaRepo, AuthToken authToken)
+        throws ModelException, GrantException, IOException;
 
     public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException;
   }

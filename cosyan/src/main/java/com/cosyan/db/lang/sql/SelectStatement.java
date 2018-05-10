@@ -50,6 +50,7 @@ import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMeta.IterableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -252,12 +253,42 @@ public class SelectStatement {
       }
       return orderColumnsBuilder.build();
     }
+
+    public String print() {
+      StringBuilder sb = new StringBuilder();
+      sb.append("select ");
+      if (distinct) {
+        sb.append("distinct ");
+      }
+      sb.append(Joiner.on(", ").join(columns.stream().map(c -> c.print()).iterator())).append(" ");
+      sb.append("from ");
+      sb.append(table.print()).append(" ");
+      if (where.isPresent()) {
+        sb.append("where ").append(where.get().print());
+      }
+      if (groupBy.isPresent()) {
+        sb.append("group by ")
+            .append(Joiner.on(", ").join(groupBy.get().stream().map(e -> e.print()).iterator()))
+            .append(" ");
+      }
+      if (having.isPresent()) {
+        sb.append("having ").append(having.get().print());
+      }
+      if (orderBy.isPresent()) {
+        sb.append("order by ")
+            .append(Joiner.on(", ").join(orderBy.get().stream().map(e -> e.print()).iterator()))
+            .append(" ");
+      }
+      return sb.toString();
+    }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static abstract class Table extends Node {
     public abstract ExposedTableMeta compile(TableProvider tableProvider) throws ModelException;
+
+    public abstract String print();
   }
 
   @Data
@@ -265,8 +296,14 @@ public class SelectStatement {
   public static class TableRef extends Table {
     private final Ident ident;
 
+    @Override
     public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
       return tableProvider.tableMeta(ident);
+    }
+
+    @Override
+    public String print() {
+      return ident.getString();
     }
   }
 
@@ -277,6 +314,11 @@ public class SelectStatement {
 
     public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
       return select.compileTable(tableProvider);
+    }
+
+    @Override
+    public String print() {
+      return select.print();
     }
   }
 
@@ -324,6 +366,11 @@ public class SelectStatement {
       }
       return collector;
     }
+
+    @Override
+    public String print() {
+      return left.print() + " " + joinType.getString() + " join " + right.print() + " on " + onExpr.print();
+    }
   }
 
   @Data
@@ -362,6 +409,11 @@ public class SelectStatement {
     @Override
     public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
       return new AliasedTableMeta(ident, table.compile(tableProvider));
+    }
+
+    @Override
+    public String print() {
+      return table.print() + " as " + ident.getString();
     }
   }
 

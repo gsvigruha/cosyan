@@ -66,7 +66,7 @@ public class RestartDBTest {
     dbApi = new DBApi(config);
     MaterializedTable newTableMeta = dbApi.getMetaRepo().table("t1");
     assertEquals(tableMeta.columns(), newTableMeta.columns());
-    assertEquals(tableMeta.rules(), newTableMeta.rules());
+    assertEquals(tableMeta.rules().toString(), newTableMeta.rules().toString());
     assertEquals(tableMeta.primaryKey(), newTableMeta.primaryKey());
     assertEquals(tableMeta.foreignKeys(), newTableMeta.foreignKeys());
     assertEquals(tableMeta.reverseForeignKeys(), newTableMeta.reverseForeignKeys());
@@ -217,18 +217,31 @@ public class RestartDBTest {
     dbApi.adminSession().execute("create table t13(a integer);");
     dbApi.adminSession().execute("insert into t13 values(1);");
     dbApi.adminSession().execute("create user u1 identified by 'abc';");
+    dbApi.adminSession().execute("create user u2 identified by 'abc';");
 
     Session u1 = dbApi.authSession("u1", "abc", Method.LOCAL);
-    ErrorResult e = (ErrorResult) u1.execute("select * from t13;");
-    assertEquals("User 'u1' has no SELECT right on 't13'.", e.getError().getMessage());
-    dbApi.adminSession().execute("grant select on t13 to u1;");
+    ErrorResult e1 = (ErrorResult) u1.execute("select * from t13;");
+    assertEquals("User 'u1' has no SELECT right on 't13'.", e1.getError().getMessage());
 
+    dbApi.adminSession().execute("grant select on t13 to u1;");
     QueryResult r1 = query("select * from t13;", u1);
     assertArrayEquals(new Object[] { 1L }, r1.getValues().get(0));
 
+    Session u2 = dbApi.authSession("u2", "abc", Method.LOCAL);
+    ErrorResult e2 = (ErrorResult) u2.execute("select * from t13;");
+    assertEquals("User 'u2' has no SELECT right on 't13'.", e2.getError().getMessage());
+
+    dbApi.adminSession().execute("grant all on * to u2;");
+    QueryResult r2 = query("select * from t13;", u2);
+    assertArrayEquals(new Object[] { 1L }, r2.getValues().get(0));
+
     dbApi = new DBApi(config);
     Session u1_2 = dbApi.authSession("u1", "abc", Method.LOCAL);
-    QueryResult r2 = query("select * from t13;", u1_2);
-    assertArrayEquals(new Object[] { 1L }, r2.getValues().get(0));
+    QueryResult r1_2 = query("select * from t13;", u1_2);
+    assertArrayEquals(new Object[] { 1L }, r1_2.getValues().get(0));
+
+    Session u2_2 = dbApi.authSession("u2", "abc", Method.LOCAL);
+    QueryResult r2_2 = query("select * from t13;", u2_2);
+    assertArrayEquals(new Object[] { 1L }, r2_2.getValues().get(0));
   }
 }

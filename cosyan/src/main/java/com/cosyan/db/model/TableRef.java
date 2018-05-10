@@ -8,6 +8,7 @@ import lombok.Data;
 public class TableRef {
   
   private final String name;
+  private final String expr;
   protected final transient RefTableMeta tableMeta;
 
 }

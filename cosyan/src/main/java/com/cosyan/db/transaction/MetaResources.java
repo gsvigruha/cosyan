@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.cosyan.db.meta.MaterializedTable;
-import com.cosyan.db.model.BasicColumn;
-import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.util.Util;
 import com.google.common.collect.ImmutableCollection;
@@ -60,22 +58,10 @@ public class MetaResources {
       Map<String, Resource> builder = new HashMap<>();
       String tableName = tableMeta.tableName();
       builder.put(tableName, new Resource(tableName, write()));
-      for (BasicColumn column : tableMeta.columns().values()) {
-        if (column.isIndexed()) {
-          String indexName = tableName + "." + column.getName();
-          builder.put(indexName, new Resource(indexName, write()));
-        }
-      }
-      if (foreignIndexes) {
-        for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
-          String indexName = foreignKey.getRefTable().tableName() + "." + foreignKey.getRefColumn().getName();
-          builder.put(indexName, new Resource(indexName, /* write= */false));
-        }
-      }
       if (reverseForeignIndexes) {
         for (ReverseForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
-          String indexName = foreignKey.getRefTable().tableName() + "." + foreignKey.getRefColumn().getName();
-          builder.put(indexName, new Resource(indexName, /* write= */false));
+          String refTableName = foreignKey.getRefTable().tableName();
+          builder.put(refTableName, new Resource(refTableName, /* write= */false));
         }
       }
       return ImmutableMap.copyOf(builder);

@@ -1,6 +1,5 @@
 package com.cosyan.db.model;
 
-import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.DataTypes.DataType;
 
@@ -9,9 +8,9 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode()
 public class BasicColumn {
 
+  private final String name;
   private final DataType<?> type;
   private final int index;
-  private final Ident ident;
   private boolean nullable;
   private boolean unique;
   private boolean indexed;
@@ -30,19 +29,19 @@ public class BasicColumn {
     assert !nullable || type != DataTypes.IDType;
     this.type = type;
     this.index = index;
-    this.ident = ident;
+    this.name = ident.getString();
     this.nullable = nullable;
     this.unique = unique;
     this.indexed = unique;
     this.immutable = immutable;
     this.deleted = false;
     if (unique) {
-      checkIndexType();
+      checkIndexType(ident);
     }
   }
 
   public String getName() {
-    return ident.getString();
+    return name;
   }
 
   public DataType<?> getType() {
@@ -51,10 +50,6 @@ public class BasicColumn {
 
   public int getIndex() {
     return index;
-  }
-
-  public Ident getIdent() {
-    return ident;
   }
 
   public boolean isNullable() {
@@ -85,32 +80,11 @@ public class BasicColumn {
     this.immutable = immutable;
   }
 
-  public void checkIndexType() throws ModelException {
+  public void checkIndexType(Ident ident) throws ModelException {
     if (type != DataTypes.StringType && type != DataTypes.LongType && type != DataTypes.IDType) {
       throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
           ", " + DataTypes.LongType + " and " + DataTypes.IDType + " types, not " + getType() + ".", ident);
     }
-  }
-
-  public void addIndex(MaterializedTable parentTable) throws ModelException {
-    assert parentTable.column(ident) == this;
-    if (indexed) {
-      return;
-    }
-    checkIndexType();
-    indexed = true;
-  }
-
-  public void dropIndex(MaterializedTable parentTable) throws ModelException {
-    assert parentTable.column(ident) == this;
-    if (!indexed) {
-      return;
-    }
-    if (unique) {
-      throw new ModelException(String.format("Cannot drop index '%s.%s', column is unique.",
-          parentTable.tableName(), getName()), ident);
-    }
-    indexed = false;
   }
 
   public void setDeleted(boolean deleted) {

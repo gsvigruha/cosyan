@@ -12,7 +12,7 @@ public class AuthenticatorTest extends UnitTestBase {
 
   @Test
   public void testAuth() throws Exception {
-    Authenticator auth = new Authenticator(config);
+    Authenticator auth = dbApi.authenticator();
     AuthToken token = auth.auth("admin", "admin", Method.LOCAL);
     assertEquals("admin", token.username());
     assertTrue(token.isAdmin());
@@ -20,7 +20,7 @@ public class AuthenticatorTest extends UnitTestBase {
 
   @Test
   public void testCreateUser() throws Exception {
-    Authenticator auth = new Authenticator(config);
+    Authenticator auth = dbApi.authenticator();
     auth.localUsers().createUser("u1", "abc");
     AuthToken token = auth.auth("u1", "abc", Method.LOCAL);
     assertEquals("u1", token.username());
@@ -29,7 +29,7 @@ public class AuthenticatorTest extends UnitTestBase {
 
   @Test
   public void testInvalidLogin() throws Exception {
-    Authenticator auth = new Authenticator(config);
+    Authenticator auth = dbApi.authenticator();
     try {
       auth.auth("u2", "abc", Method.LOCAL);
       fail();

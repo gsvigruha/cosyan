@@ -285,8 +285,7 @@ public class Parser implements IParser {
     if (tokens.peek().is(Tokens.ADD)) {
       tokens.next();
       if (tokens.peek().is(Tokens.REF)) {
-        RefDefinition ref = parseRef(tokens);
-        return new AlterTableAddRef(ident, ref);
+        return new AlterTableAddRef(ident, parseRef(tokens));
       } else if (tokens.peek().is(Tokens.CONSTRAINT)) {
         ConstraintDefinition constraint = parseConstraint(tokens);
         if (constraint instanceof ForeignKeyDefinition) {
@@ -446,7 +445,7 @@ public class Parser implements IParser {
     throw new ParserException("Unknown data type '" + token + "'.");
   }
 
-  private Select parseSelect(PeekingIterator<Token> tokens) throws ParserException {
+  public Select parseSelect(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.SELECT);
     boolean distinct = false;
     if (tokens.peek().is(Tokens.DISTINCT)) {

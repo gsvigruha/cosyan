@@ -12,6 +12,7 @@ import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lock.LockManager;
+import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
@@ -26,9 +27,9 @@ public class CSVConverterTest {
   private static Lexer lexer;
 
   @BeforeClass
-  public static void setUp() throws IOException, ModelException, ParserException, ConfigException {
+  public static void setUp() throws IOException, ModelException, ParserException, ConfigException, DBException {
     Config config = new Config("/tmp/data");
-    metaRepo = new MetaRepo(config, new LockManager(), new LocalUsers(config));
+    metaRepo = new MetaRepo(config, new LockManager(), new LocalUsers(), new Lexer(), new Parser());
     parser = new Parser();
     lexer = new Lexer();
   }

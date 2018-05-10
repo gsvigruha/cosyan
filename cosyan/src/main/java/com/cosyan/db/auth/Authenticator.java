@@ -11,7 +11,7 @@ public class Authenticator {
 
   public Authenticator(Config config) throws IOException {
     ldapConnector = new LDAPConnector(config);
-    localUsers = new LocalUsers(config);
+    localUsers = new LocalUsers();
   }
 
   public LocalUsers localUsers() {

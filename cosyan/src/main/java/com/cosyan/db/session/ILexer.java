@@ -8,4 +8,6 @@ public interface ILexer {
 
   PeekingIterator<Token> tokenize(String sql) throws ParserException;
 
+  PeekingIterator<Token> tokenizeExpression(String sql) throws ParserException;
+
 }

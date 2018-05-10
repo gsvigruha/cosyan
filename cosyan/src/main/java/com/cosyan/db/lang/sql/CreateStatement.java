@@ -3,6 +3,7 @@ package com.cosyan.db.lang.sql;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import com.cosyan.db.auth.AuthToken;
@@ -82,7 +83,7 @@ public class CreateStatement {
           primaryKey = Optional.of(new PrimaryKey(primaryKeyDefinition.get().getName(), basicColumn));
         } else if (isID) {
           if (primaryKey.isPresent()) {
-            throw new ModelException("There can only be one primary key.", basicColumn.getIdent());
+            throw new ModelException("There can only be one primary key.", column.getName());
           }
           primaryKey = Optional.of(new PrimaryKey(new Ident("pk_id", name.getLoc()), basicColumn));
         }
@@ -95,6 +96,13 @@ public class CreateStatement {
             String.format("Invalid primary key definition '%s': column '%s' not found.",
                 primaryKeyDefinition.get().getName(), primaryKeyDefinition.get().getKeyColumn()),
             primaryKeyDefinition.get().getName());
+      }
+
+      for (Entry<Ident, BasicColumn> column : columns.entrySet()) {
+        if (column.getValue().getType() == DataTypes.IDType && column.getValue().getIndex() > 0) {
+          throw new ModelException(String.format(
+              "The ID column '%s' has to be the first one.", column.getValue().getName()), column.getKey());
+        }
       }
 
       MaterializedTable tableMeta = new MaterializedTable(
@@ -169,7 +177,7 @@ public class CreateStatement {
     public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTable tableMeta = metaRepo.table(table);
       basicColumn = tableMeta.column(this.column);
-      basicColumn.checkIndexType();
+      basicColumn.checkIndexType(this.column);
       basicColumn.setIndexed(true);
       metaRepo.syncIndex(tableMeta);
       return MetaResources.tableMeta(tableMeta);
