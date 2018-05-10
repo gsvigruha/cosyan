@@ -130,7 +130,7 @@ public class RestartDBTest {
   }
 
   @Test
-  public void testRefsAfterRestart() throws Exception {
+  public void testRefRulesAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
     dbApi.adminSession().execute("create table t7("
         + "a integer,"
@@ -145,11 +145,16 @@ public class RestartDBTest {
     assertEquals(1, t7.refs().size());
     assertEquals("rev_fk_a1", t7.refs().get("s").getTableMeta().getReverseForeignKey().getName());
     assertEquals(1, t7.rules().size());
+
     dbApi = new DBApi(config);
     MaterializedTable newT7 = dbApi.getMetaRepo().table("t7");
     assertEquals(1, newT7.refs().size());
     assertEquals("rev_fk_a1", newT7.refs().get("s").getTableMeta().getReverseForeignKey().getName());
     assertEquals(1, newT7.rules().size());
+
+    dbApi.adminSession().execute("insert into t7 values (11);");
+    ErrorResult e = (ErrorResult) dbApi.adminSession().execute("insert into t8 values (11);");
+    assertEquals("Referencing constraint check t7.c_1 failed.", e.getError().getMessage());
   }
 
   @Test

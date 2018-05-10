@@ -131,7 +131,7 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
   }
 
   public void readTables() throws DBException {
-    Map<String, MaterializedTable> tables = new HashMap<>();
+    Map<String, MaterializedTable> newTables;
     try {
       File file = new File(config.metaDir());
       Map<String, JSONObject> jsons = new HashMap<>();
@@ -139,44 +139,28 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
         JSONObject json = new JSONObject(FileUtils.readFileToString(
             new File(config.metaDir() + File.separator + fileName),
             Charset.defaultCharset()));
-        MaterializedTable table = metaSerializer.table(config, fileName, json);
-        tables.put(fileName, table);
         jsons.put(fileName, json);
       }
-      for (Map.Entry<String, JSONObject> entry : jsons.entrySet()) {
-        metaSerializer.loadForeignKeys(tables.get(entry.getKey()), entry.getValue(), tables);
-      }
-      for (MaterializedTable table : tables.values()) {
-        syncMeta(table);
-      }
-      for (Map.Entry<String, JSONObject> entry : jsons.entrySet()) {
-        metaSerializer.loadRefs(tables.get(entry.getKey()), entry.getValue());
-      }
-      for (Map.Entry<String, JSONObject> entry : jsons.entrySet()) {
-        metaSerializer.loadRules(tables.get(entry.getKey()), entry.getValue());
-      }
-      for (MaterializedTable table : tables.values()) {
-        syncMeta(table);
-      }
+      newTables = metaSerializer.loadTables(config, jsons);
       grants.fromJSON(new JSONArray(FileUtils.readFileToString(
           new File(config.usersFile()),
-          Charset.defaultCharset())), tables);
+          Charset.defaultCharset())), newTables);
     } catch (IOException | ParserException | ModelException | JSONException e) {
       throw new DBException(e);
     }
-    for (String oldTable : this.tables.keySet()) {
+    for (String oldTable : tables.keySet()) {
       lockManager.removeLock(oldTable);
     }
     this.tables.clear();
-    this.tables.putAll(tables);
-    for (String newTable : this.tables.keySet()) {
+    this.tables.putAll(newTables);
+    for (String newTable : tables.keySet()) {
       lockManager.registerLock(newTable);
     }
     try {
       for (MaterializedTable table : tables.values()) {
         syncIndex(table);
       }
-    } catch (Exception e) {
+    } catch (IOException e) {
       throw new DBException(e);
     }
   }

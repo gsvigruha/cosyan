@@ -2,6 +2,7 @@ package com.cosyan.db.io;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -91,6 +92,37 @@ public class MetaSerializer {
     obj.put("null_is_true", rule.isNullIsTrue());
     obj.put("expr", rule.getExpr().print());
     return obj;
+  }
+
+  public Map<String, MaterializedTable> loadTables(Config config, Map<String, JSONObject> jsons)
+      throws JSONException, IOException, ModelException, ParserException {
+    Map<String, MaterializedTable> tables = new HashMap<>();
+    for (Map.Entry<String, JSONObject> entry : jsons.entrySet()) {
+      String name = entry.getKey();
+      MaterializedTable table = table(config, name, entry.getValue());
+      tables.put(name, table);
+    }
+
+    for (Map.Entry<String, JSONObject> entry : jsons.entrySet()) {
+      loadForeignKeys(tables.get(entry.getKey()), entry.getValue(), tables);
+    }
+    for (MaterializedTable table : tables.values()) {
+      for (ForeignKey foreignKey : table.foreignKeys().values()) {
+        foreignKey.getRefTable().addReverseForeignKey(foreignKey.createReverse());
+      }
+    }
+    for (Map.Entry<String, JSONObject> entry : jsons.entrySet()) {
+      loadRefs(tables.get(entry.getKey()), entry.getValue());
+    }
+    for (Map.Entry<String, JSONObject> entry : jsons.entrySet()) {
+      loadRules(tables.get(entry.getKey()), entry.getValue());
+    }
+    for (MaterializedTable table : tables.values()) {
+      for (BooleanRule rule : table.rules().values()) {
+        rule.getDeps().addAllReverseRuleDependencies(rule);
+      }
+    }
+    return tables;
   }
 
   public void loadForeignKeys(MaterializedTable table, JSONObject obj, Map<String, MaterializedTable> tables)

@@ -284,7 +284,7 @@ public class MaterializedTable {
     foreignKeys.put(foreignKey.getName(), foreignKey);
   }
 
-  void addReverseForeignKey(ReverseForeignKey reverseForeignKey) {
+  public void addReverseForeignKey(ReverseForeignKey reverseForeignKey) {
     ReverseForeignKey existingKey = reverseForeignKeys.get(reverseForeignKey.getName());
     if (existingKey == null) {
       reverseForeignKeys.put(reverseForeignKey.getName(), reverseForeignKey);
