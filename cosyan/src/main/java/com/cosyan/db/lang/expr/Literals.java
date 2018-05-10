@@ -8,6 +8,7 @@ import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.DateFunctions;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -150,7 +151,7 @@ public class Literals {
 
     @Override
     public String print() {
-      return "'" + value + "'";
+      return String.valueOf(value);
     }
 
     @Override
@@ -177,7 +178,7 @@ public class Literals {
 
     @Override
     public String print() {
-      return String.valueOf(value);
+      return "dt " + "'" + DateFunctions.sdf1.format(value) + "'";
     }
 
     @Override

@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.junit.Test;
 
 import com.cosyan.db.lang.expr.BinaryExpression;
+import com.cosyan.db.lang.expr.CaseExpression;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.Expression.UnaryExpression;
 import com.cosyan.db.lang.expr.FuncCallExpression;
@@ -291,5 +292,16 @@ public class ParserTest {
             ImmutableList.of()),
         ImmutableList.of()));
     assertEquals("a.b.f.c.g", expr.print());
+  }
+
+  @Test
+  public void testCase() throws ParserException {
+    Expression expr = parseExpression("case when a then 1 else 0 end;");
+    assertEquals(expr, new CaseExpression(
+        ImmutableList.of(FuncCallExpression.of(new Ident("a"))),
+        ImmutableList.of(new LongLiteral(1L, new Loc(17, 18))),
+        new LongLiteral(0L, new Loc(24, 25)),
+        new Loc(0, 4)));
+    assertEquals("case when a then 1 else 0 end", expr.print());
   }
 }

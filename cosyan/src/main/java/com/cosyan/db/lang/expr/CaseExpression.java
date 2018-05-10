@@ -95,8 +95,17 @@ public class CaseExpression extends Expression {
 
   @Override
   public String print() {
-    // TODO Auto-generated method stub
-    return null;
+    StringBuilder sb = new StringBuilder();
+    sb.append("case ");
+    for (int i = 0; i < conditions.size(); i++) {
+      sb.append("when ")
+          .append(conditions.get(i).print())
+          .append(" then ")
+          .append(values.get(i).print());
+    }
+    sb.append(" else ").append(elseValue.print());
+    sb.append(" end");
+    return sb.toString();
   }
 
   @Override
