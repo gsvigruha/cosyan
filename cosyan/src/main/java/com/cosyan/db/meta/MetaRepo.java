@@ -67,7 +67,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 
-public class MetaRepo implements TableProvider, MetaRepoReader {
+public class MetaRepo implements TableProvider, MetaRepoExecutor {
 
   private final Config config;
   private final HashMap<String, MaterializedTable> tables;
@@ -252,6 +252,7 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
     }
   }
 
+  @Override
   public void syncMeta(MaterializedTable tableMeta) {
     for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
       foreignKey.getRefTable().addReverseForeignKey(foreignKey.createReverse());
@@ -317,6 +318,7 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
     return multiIndexes.get(indexName);
   }
 
+  @Override
   public IndexWriter registerIndex(MaterializedTable tableMeta, BasicColumn column)
       throws IOException {
     IndexWriter index;

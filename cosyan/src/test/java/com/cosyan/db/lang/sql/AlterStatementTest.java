@@ -12,6 +12,7 @@ import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
+import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.TableMultiIndex;
 
 public class AlterStatementTest extends UnitTestBase {
@@ -236,14 +237,23 @@ public class AlterStatementTest extends UnitTestBase {
     execute("insert into t17 values (1), (0), (1);");
     execute("alter table t17 add constraint fk_a foreign key (a) references t16;");
 
+    MaterializedTable t16 = metaRepo.table(new Ident("t16"));
     MaterializedTable t17 = metaRepo.table(new Ident("t17"));
+
     ForeignKey fk = t17.foreignKey(new Ident("fk_a"));
     assertEquals("fk_a", fk.getName());
     assertEquals("rev_fk_a", fk.getRevName());
-    assertEquals(t17, fk.getTable());
-    assertEquals("t16", fk.getRefTable().tableName());
+    assertSame(t17, fk.getTable());
+    assertSame(t16, fk.getRefTable());
     assertEquals("a", fk.getColumn().getName());
     assertEquals("a", fk.getRefColumn().getName());
+
+    ReverseForeignKey rfk = t16.reverseForeignKey(new Ident("rev_fk_a"));
+    assertEquals("rev_fk_a", rfk.getName());
+    assertSame(t16, rfk.getTable());
+    assertSame(t17, rfk.getRefTable());
+    assertEquals("a", rfk.getColumn().getName());
+    assertEquals("a", rfk.getRefColumn().getName());
 
     assertTrue(t17.column(new Ident("a")).isIndexed());
     TableMultiIndex index = metaRepo.collectMultiIndexes(t17).get("a");

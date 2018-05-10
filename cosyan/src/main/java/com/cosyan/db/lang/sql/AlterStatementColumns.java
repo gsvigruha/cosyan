@@ -11,6 +11,7 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.MetaRepoExecutor;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.transaction.MetaResources;
@@ -42,7 +43,7 @@ public class AlterStatementColumns {
     }
 
     @Override
-    public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
+    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
       tableMeta.addColumn(basicColumn);
       return Result.META_OK;
@@ -71,7 +72,7 @@ public class AlterStatementColumns {
     }
 
     @Override
-    public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
+    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       basicColumn.setDeleted(true);
       return Result.META_OK;
     }
@@ -114,7 +115,7 @@ public class AlterStatementColumns {
     }
 
     @Override
-    public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
+    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       originalColumn.setNullable(column.isNullable());
       originalColumn.setImmutable(column.isImmutable());
       return Result.META_OK;

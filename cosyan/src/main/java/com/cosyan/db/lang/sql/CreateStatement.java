@@ -23,6 +23,7 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.MetaRepoExecutor;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
@@ -188,7 +189,7 @@ public class CreateStatement {
     }
 
     @Override
-    public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
+    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       IndexWriter indexWriter = metaRepo.registerIndex(resources.meta(table.getString()), basicColumn);
       TableWriter writer = resources.writer(table.getString());
       writer.buildIndex(column.getString(), indexWriter);

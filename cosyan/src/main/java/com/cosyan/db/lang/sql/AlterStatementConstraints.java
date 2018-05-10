@@ -3,8 +3,8 @@ package com.cosyan.db.lang.sql;
 import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
-import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.io.Indexes.IndexWriter;
+import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
@@ -14,6 +14,7 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.MetaRepoExecutor;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Rule.BooleanRule;
@@ -47,14 +48,15 @@ public class AlterStatementConstraints {
     }
 
     @Override
-    public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
+    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
-      tableMeta.addForeignKey(foreignKey);
       IndexWriter indexWriter = metaRepo.registerIndex(tableMeta, foreignKey.getColumn());
       TableWriter writer = resources.writer(table.getString());
       writer.checkForeignKey(foreignKey, resources);
       String colName = foreignKey.getColumn().getName();
       writer.buildIndex(colName, indexWriter);
+      tableMeta.addForeignKey(foreignKey);
+      metaRepo.syncMeta(tableMeta);
       return Result.META_OK;
     }
   }
@@ -80,7 +82,7 @@ public class AlterStatementConstraints {
     }
 
     @Override
-    public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
+    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
       TableWriter writer = resources.writer(table.getString());
       writer.checkRule(rule, resources);

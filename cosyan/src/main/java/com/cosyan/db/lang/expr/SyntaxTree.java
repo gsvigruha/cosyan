@@ -9,6 +9,7 @@ import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.MetaRepoExecutor;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -46,7 +47,7 @@ public class SyntaxTree {
     public MetaResources compile(MetaRepo metaRepo, AuthToken authToken)
         throws ModelException, GrantException, IOException;
 
-    public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException;
+    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException;
   }
 
   public static interface GlobalStatement extends MetaStatement {

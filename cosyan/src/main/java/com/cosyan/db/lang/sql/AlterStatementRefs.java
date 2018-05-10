@@ -12,6 +12,7 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.MetaRepoExecutor;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.References.RefTableMeta;
 import com.cosyan.db.model.TableRef;
@@ -44,7 +45,7 @@ public class AlterStatementRefs {
     }
 
     @Override
-    public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
+    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
       tableMeta.addRef(new TableRef(ref.getName().getString(), ref.getSelect().print(), refTableMeta));
       return Result.META_OK;
