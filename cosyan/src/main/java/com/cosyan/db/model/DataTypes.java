@@ -347,9 +347,11 @@ public class DataTypes {
       return IDType;
     } else if (name.equals(DateType.getName())) {
       return DateType;
+    } else if (name.equals(BoolType.getName())) {
+      return BoolType;
     } else if (name.equals("enum")) {
       return enumType(obj.getJSONArray("values"));
     }
-    throw new IllegalArgumentException();
+    throw new IllegalArgumentException(String.format("Invalid data type '%s'.", name));
   }
 }

@@ -9,7 +9,7 @@ public class TransactionHandler {
 
   private long trxCntr = 0L;
 
-  public synchronized Transaction begin(Iterable<Statement> statements) {
+  public synchronized DataTransaction begin(Iterable<Statement> statements) {
     return new DataTransaction(trxCntr++, statements);
   }
 

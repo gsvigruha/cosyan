@@ -1,6 +1,5 @@
 package com.cosyan.db.meta;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -241,7 +240,7 @@ public class Grants {
             grantToken.objects()));
   }
 
-  public void createUser(String username, String password, AuthToken authToken) throws GrantException, IOException {
+  public void createUser(String username, String password, AuthToken authToken) throws GrantException {
     if (!authToken.isAdmin()) {
       throw new GrantException("Only the administrator can create users.");
     }

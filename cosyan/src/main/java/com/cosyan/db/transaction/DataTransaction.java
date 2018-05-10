@@ -31,7 +31,6 @@ public class DataTransaction extends Transaction {
     return statements;
   }
 
-  @Override
   protected MetaResources collectResources(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
     MetaResources metaResources = MetaResources.empty();
     for (Statement statement : statements) {
@@ -40,7 +39,6 @@ public class DataTransaction extends Transaction {
     return metaResources;
   }
 
-  @Override
   protected Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
     List<Result> results = new ArrayList<>();
     for (Statement statement : statements) {

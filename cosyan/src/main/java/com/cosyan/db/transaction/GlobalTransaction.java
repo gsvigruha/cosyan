@@ -2,10 +2,12 @@ package com.cosyan.db.transaction;
 
 import java.io.IOException;
 
-import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
+import com.cosyan.db.lang.transaction.Result.ErrorResult;
+import com.cosyan.db.logging.TransactionJournal;
+import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -21,22 +23,31 @@ public class GlobalTransaction extends MetaTransaction {
   }
 
   @Override
-  protected Result execute(MetaRepo metaRepo, Resources resources) {
-    return Result.META_OK;
-  }
-
-  public Result innerExecute(MetaRepo metaRepo, Session session) {
+  public Result execute(MetaRepo metaRepo, Session session) {
+    TransactionJournal journal = session.transactionJournal();
+    metaRepo.metaRepoReadLock();
     try {
-      return globalStatement.execute(metaRepo, session.authToken());
-    } catch (IOException | ModelException | GrantException e) {
+      try {
+        journal.start(trxNumber);
+        globalStatement.execute(metaRepo, session.authToken());
+        metaRepo.writeTables();
+        return Result.META_OK;
+      } catch (ModelException | GrantException e) {
+        // Restore metaRepo.
+        metaRepo.readTables();
+        journal.userError(trxNumber);
+        return new ErrorResult(e);
+      } catch (IOException e) {
+        // Restore metaRepo.
+        metaRepo.readTables();
+        journal.ioWriteError(trxNumber);
+        return new CrashResult(e);
+      }
+    } catch (DBException e) {
+      journal.crash(trxNumber);
       return new CrashResult(e);
+    } finally {
+      metaRepo.metaRepoReadUnlock();
     }
-  }
-
-  @Override
-  protected MetaResources collectResources(MetaRepo metaRepo, AuthToken authToken)
-      throws ModelException, GrantException, IOException {
-    globalStatement.execute(metaRepo, authToken);
-    return MetaResources.empty();
   }
 }

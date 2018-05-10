@@ -112,22 +112,18 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
     }
   }
 
-  public void writeTables() throws DBException {
-    try {
-      for (MaterializedTable table : tables.values()) {
-        JSONObject obj = metaSerializer.toJSON(table);
-        FileUtils.writeStringToFile(
-            new File(config.metaDir() + File.separator + table.tableName()),
-            obj.toString(),
-            Charset.defaultCharset());
-      }
+  public void writeTables() throws IOException {
+    for (MaterializedTable table : tables.values()) {
+      JSONObject obj = metaSerializer.toJSON(table);
       FileUtils.writeStringToFile(
-          new File(config.usersFile()),
-          grants.toJSON().toString(),
+          new File(config.metaDir() + File.separator + table.tableName()),
+          obj.toString(),
           Charset.defaultCharset());
-    } catch (Exception e) {
-      throw new DBException(e);
     }
+    FileUtils.writeStringToFile(
+        new File(config.usersFile()),
+        grants.toJSON().toString(),
+        Charset.defaultCharset());
   }
 
   public void readTables() throws DBException {
@@ -250,11 +246,7 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
             dropMultiIndex(tableMeta, column);
           }
         } else {
-          if (column.isUnique()) {
-            registerUniqueIndex(tableMeta, column);
-          } else {
-            registerMultiIndex(tableMeta, column);
-          }
+          registerIndex(tableMeta, column);
         }
       }
     }
@@ -294,34 +286,47 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
     return tables.containsKey(tableName);
   }
 
-  private void registerUniqueIndex(MaterializedTable table, BasicColumn column)
+  private TableUniqueIndex registerUniqueIndex(MaterializedTable table, BasicColumn column)
       throws IOException {
     String indexName = table.tableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
-    if (uniqueIndexes.containsKey(indexName)) {
-      return;
+    if (!uniqueIndexes.containsKey(indexName)) {
+      if (column.getType() == DataTypes.StringType) {
+        uniqueIndexes.put(indexName, new StringTableIndex(new StringIndex(path)));
+      } else if (column.getType() == DataTypes.LongType) {
+        uniqueIndexes.put(indexName, new LongTableIndex(new LongIndex(path)));
+      } else if (column.getType() == DataTypes.IDType) {
+        uniqueIndexes.put(indexName, new IDTableIndex(new IDIndex(path)));
+      }
     }
-    if (column.getType() == DataTypes.StringType) {
-      uniqueIndexes.put(indexName, new StringTableIndex(new StringIndex(path)));
-    } else if (column.getType() == DataTypes.LongType) {
-      uniqueIndexes.put(indexName, new LongTableIndex(new LongIndex(path)));
-    } else if (column.getType() == DataTypes.IDType) {
-      uniqueIndexes.put(indexName, new IDTableIndex(new IDIndex(path)));
-    }
+    return uniqueIndexes.get(indexName);
   }
 
-  private void registerMultiIndex(MaterializedTable table, BasicColumn column)
+  private TableMultiIndex registerMultiIndex(MaterializedTable table, BasicColumn column)
       throws IOException {
     String indexName = table.tableName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
-    if (multiIndexes.containsKey(indexName)) {
-      return;
+    if (!multiIndexes.containsKey(indexName)) {
+
+      if (column.getType() == DataTypes.StringType) {
+        multiIndexes.put(indexName, new StringTableMultiIndex(new StringMultiIndex(path)));
+      } else if (column.getType() == DataTypes.LongType || column.getType() == DataTypes.IDType) {
+        multiIndexes.put(indexName, new LongTableMultiIndex(new LongMultiIndex(path)));
+      }
     }
-    if (column.getType() == DataTypes.StringType) {
-      multiIndexes.put(indexName, new StringTableMultiIndex(new StringMultiIndex(path)));
-    } else if (column.getType() == DataTypes.LongType || column.getType() == DataTypes.IDType) {
-      multiIndexes.put(indexName, new LongTableMultiIndex(new LongMultiIndex(path)));
+    return multiIndexes.get(indexName);
+  }
+
+  public IndexWriter registerIndex(MaterializedTable tableMeta, BasicColumn column)
+      throws IOException {
+    IndexWriter index;
+    if (column.isUnique()) {
+      index = registerUniqueIndex(tableMeta, column);
+    } else {
+      index = registerMultiIndex(tableMeta, column);
     }
+    column.setIndexed(true);
+    return index;
   }
 
   public void dropIndex(MaterializedTable tableMeta, BasicColumn column, AuthToken authToken)
@@ -357,7 +362,7 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
     grants.createGrant(grant, authToken);
   }
 
-  public void createUser(String username, String password, AuthToken authToken) throws GrantException, IOException {
+  public void createUser(String username, String password, AuthToken authToken) throws GrantException {
     grants.createUser(username, password, authToken);
   }
 
@@ -492,15 +497,5 @@ public class MetaRepo implements TableProvider, MetaRepoReader {
 
   public ImmutableMap<String, ByteMultiTrieStat> multiIndexStats() throws IOException {
     return Util.<String, TableMultiIndex, ByteMultiTrieStat>mapValuesIOException(multiIndexes, TableMultiIndex::stats);
-  }
-
-  @Deprecated
-  public IndexWriter indexWriter(String table, String column) {
-    String id = table + "." + column;
-    if (multiIndexes.containsKey(id)) {
-      return multiIndexes.get(id);
-    } else {
-      return uniqueIndexes.get(id);
-    }
   }
 }

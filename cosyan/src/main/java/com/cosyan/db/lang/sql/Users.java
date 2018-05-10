@@ -1,7 +1,5 @@
 package com.cosyan.db.lang.sql;
 
-import java.io.IOException;
-
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
 import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
@@ -24,8 +22,7 @@ public class Users {
     private final StringLiteral password;
 
     @Override
-    public Result execute(MetaRepo metaRepo, AuthToken authToken)
-        throws ModelException, GrantException, IOException {
+    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException {
       metaRepo.createUser(username.getString(), password.getValue(), authToken);
       return Result.META_OK;
     }

@@ -26,7 +26,7 @@ public class MetaResourcesTest extends UnitTestBase {
 
   private Map<String, Resource> resources(String sql)
       throws ModelException, ParserException, GrantException, IOException {
-    Transaction transaction = transactionHandler
+    DataTransaction transaction = transactionHandler
         .begin(parser.parseStatements(lexer.tokenize(sql)));
     Iterable<Resource> ress = transaction.collectResources(metaRepo, session.authToken()).all();
     Map<String, Resource> map = new HashMap<>();

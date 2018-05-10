@@ -213,23 +213,24 @@ public class CreateStatementTest extends UnitTestBase {
     assertEquals("[100, 101]: Column 'b' not found in table 't24'.", e1.getError().getMessage());
     MaterializedTable t23 = metaRepo.table(new Ident("t23"));
     assertEquals(0, t23.reverseForeignKeys().size());
+    assertFalse(metaRepo.hasTable("t24"));
   }
 
   @Test
   public void testCreateTableCheckNotBoolean() throws Exception {
-    ErrorResult e1 = error("create table t24 (a varchar, constraint c check (a.substr(1, 2)));");
+    ErrorResult e1 = error("create table t25 (a varchar, constraint c check (a.substr(1, 2)));");
     assertEquals("[40, 41]: Constraint check expression has to return a 'boolean': 'a.substr(1, 2)'.",
         e1.getError().getMessage());
   }
 
   @Test
   public void testCreateIndexWithData() throws Exception {
-    execute("create table t25 (a varchar);");
-    execute("insert into t25 values('x'), ('y'), ('x');");
-    execute("create index t25.a;");
-    MaterializedTable t25 = metaRepo.table(new Ident("t25"));
-    assertTrue(t25.column(new Ident("a")).isIndexed());
-    TableMultiIndex index = metaRepo.collectMultiIndexes(t25).get("a");
+    execute("create table t26 (a varchar);");
+    execute("insert into t26 values ('x'), ('y'), ('x');");
+    execute("create index t26.a;");
+    MaterializedTable t26 = metaRepo.table(new Ident("t26"));
+    assertTrue(t26.column(new Ident("a")).isIndexed());
+    TableMultiIndex index = metaRepo.collectMultiIndexes(t26).get("a");
     assertArrayEquals(new long[] { 0L, 32L }, index.get("x"));
     assertArrayEquals(new long[] { 16L }, index.get("y"));
   }

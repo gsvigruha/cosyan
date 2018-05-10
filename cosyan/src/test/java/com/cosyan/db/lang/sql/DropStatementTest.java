@@ -46,7 +46,8 @@ public class DropStatementTest extends UnitTestBase {
     execute("create table t4 (a varchar, constraint fk_a foreign key (a) references t3(a));");
 
     ErrorResult e = error("drop table t3;");
-    assertEquals("[11, 13]: Cannot drop table 't3', referenced by foreign key 't4.fk_a [a -> t3.a]'.", e.getError().getMessage());
+    assertEquals("[11, 13]: Cannot drop table 't3', referenced by foreign key 't4.fk_a [a -> t3.a]'.",
+        e.getError().getMessage());
   }
 
   @Test

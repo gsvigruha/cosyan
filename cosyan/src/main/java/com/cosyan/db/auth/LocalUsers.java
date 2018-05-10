@@ -64,7 +64,7 @@ public class LocalUsers {
     }
   }
 
-  public void createUser(String username, String password) throws AuthException, IOException {
+  public void createUser(String username, String password) throws AuthException {
     if (users.containsKey(username)) {
       throw new AuthException(String.format("User '%s' already exists.", username));
     }

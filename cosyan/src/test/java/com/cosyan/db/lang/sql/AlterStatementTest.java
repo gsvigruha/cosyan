@@ -244,6 +244,8 @@ public class AlterStatementTest extends UnitTestBase {
     assertEquals("t16", fk.getRefTable().tableName());
     assertEquals("a", fk.getColumn().getName());
     assertEquals("a", fk.getRefColumn().getName());
+
+    assertTrue(t17.column(new Ident("a")).isIndexed());
     TableMultiIndex index = metaRepo.collectMultiIndexes(t17).get("a");
     assertArrayEquals(new long[] { 18L }, index.get(0L));
     assertArrayEquals(new long[] { 0L, 36L }, index.get(1L));
@@ -257,4 +259,21 @@ public class AlterStatementTest extends UnitTestBase {
     assertEquals("Constraint check c1 failed.", e.getError().getMessage());
   }
 
+  @Test
+  public void testAlterTableAddForeignKeyBadData() throws Exception {
+    execute("create table t19 (a id, b varchar);");
+    execute("create table t20 (a integer);");
+    execute("insert into t19 values ('x'), ('y');");
+    execute("insert into t20 values (1), (0), (2);");
+    ErrorResult e = error("alter table t20 add constraint fk_a foreign key (a) references t19;");
+    assertEquals("Invalid key '2' (value of 't20.a'), not found in referenced table 't19.a'.",
+        e.getError().getMessage());
+
+    MaterializedTable t20 = metaRepo.table(new Ident("t20"));
+    assertEquals(0, t20.foreignKeys().size());
+    MaterializedTable t19 = metaRepo.table(new Ident("t19"));
+    assertEquals(0, t19.reverseForeignKeys().size());
+    assertFalse(t20.column(new Ident("a")).isIndexed());
+    assertEquals(0, metaRepo.collectIndexReaders(t20).size());
+  }
 }

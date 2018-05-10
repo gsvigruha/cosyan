@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 
 import com.cosyan.db.auth.AuthToken;
+import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
@@ -176,10 +177,8 @@ public class CreateStatement {
     @Override
     public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTable tableMeta = metaRepo.table(table);
-      basicColumn = tableMeta.column(this.column);
-      basicColumn.checkIndexType(this.column);
-      basicColumn.setIndexed(true);
-      metaRepo.syncIndex(tableMeta);
+      basicColumn = tableMeta.column(column);
+      basicColumn.checkIndexType(column);
       return MetaResources.tableMeta(tableMeta);
     }
 
@@ -190,8 +189,9 @@ public class CreateStatement {
 
     @Override
     public Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
+      IndexWriter indexWriter = metaRepo.registerIndex(resources.meta(table.getString()), basicColumn);
       TableWriter writer = resources.writer(table.getString());
-      writer.buildIndex(column.getString(), writer.getIndexWriter(column.getString()));
+      writer.buildIndex(column.getString(), indexWriter);
       return Result.META_OK;
     }
   }
