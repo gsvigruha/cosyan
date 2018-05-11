@@ -1,7 +1,5 @@
 package com.cosyan.db.lang.sql;
 
-import java.io.IOException;
-
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.Node;
@@ -11,7 +9,6 @@ import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.meta.MetaRepoExecutor;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.References.RefTableMeta;
@@ -45,7 +42,7 @@ public class AlterStatementRefs {
     }
 
     @Override
-    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
+    public Result execute(MetaRepoExecutor metaRepo, Resources resources) {
       MaterializedTable tableMeta = resources.meta(table.getString());
       tableMeta.addRef(new TableRef(ref.getName().getString(), ref.getSelect().print(), refTableMeta));
       return Result.META_OK;

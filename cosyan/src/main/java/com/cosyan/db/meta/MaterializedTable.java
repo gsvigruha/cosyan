@@ -440,6 +440,7 @@ public class MaterializedTable {
 
   public void checkDeleteColumn(Ident column) throws ModelException {
     BasicColumn basicColumn = column(column);
+    boolean originalValue = basicColumn.isDeleted();
     basicColumn.setDeleted(true);
     try {
       for (ForeignKey foreignKey : foreignKeys().values()) {
@@ -471,7 +472,7 @@ public class MaterializedTable {
         }
       }
     } finally {
-      basicColumn.setDeleted(false);
+      basicColumn.setDeleted(originalValue);
     }
   }
 

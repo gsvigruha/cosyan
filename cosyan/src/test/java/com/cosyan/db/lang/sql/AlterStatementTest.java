@@ -1,6 +1,11 @@
 package com.cosyan.db.lang.sql;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -13,6 +18,7 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
+import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.TableMultiIndex;
 
 public class AlterStatementTest extends UnitTestBase {
@@ -230,7 +236,7 @@ public class AlterStatementTest extends UnitTestBase {
   }
 
   @Test
-  public void testAlterTableAddForeignKey() throws Exception {
+  public void testAlterTableAddForeignKeyWithData() throws Exception {
     execute("create table t16 (a id, b varchar);");
     execute("create table t17 (a integer);");
     execute("insert into t16 values ('x'), ('y');");
@@ -262,15 +268,20 @@ public class AlterStatementTest extends UnitTestBase {
   }
 
   @Test
-  public void testAlterTableAddConstraintRuleWithExistingData() throws Exception {
+  public void testAlterTableAddConstraintRuleWithData() throws Exception {
     execute("create table t18 (a integer);");
-    execute("insert into t18 values (1), (2), (0);");
-    ErrorResult e = error("alter table t18 add constraint c1 check (a > 0);");
+    execute("insert into t18 values (1), (2);");
+    execute("alter table t18 add constraint c1 check (a > 0);");
+
+    MaterializedTable t18 = metaRepo.table(new Ident("t18"));
+    assertNotNull(t18.rules().get("c1"));
+
+    ErrorResult e = error("insert into t18 values (0);");
     assertEquals("Constraint check c1 failed.", e.getError().getMessage());
   }
 
   @Test
-  public void testAlterTableAddForeignKeyBadData() throws Exception {
+  public void testAlterTableAddForeignKeyWithBadData() throws Exception {
     execute("create table t19 (a id, b varchar);");
     execute("create table t20 (a integer);");
     execute("insert into t19 values ('x'), ('y');");
@@ -285,5 +296,55 @@ public class AlterStatementTest extends UnitTestBase {
     assertEquals(0, t19.reverseForeignKeys().size());
     assertFalse(t20.column(new Ident("a")).isIndexed());
     assertEquals(0, metaRepo.collectIndexReaders(t20).size());
+  }
+
+  @Test
+  public void testAlterTableAddConstraintRuleWithBadData() throws Exception {
+    execute("create table t21 (a integer);");
+    execute("insert into t21 values (1), (2), (0);");
+    ErrorResult e = error("alter table t21 add constraint c1 check (a > 0);");
+    assertEquals("Constraint check c1 failed.", e.getError().getMessage());
+    statement("insert into t21 values (0);");
+  }
+
+  @Test
+  public void testAlterTableAddConstraintRefRuleWithData() throws Exception {
+    execute("create table t22 (a integer, constraint pk_a primary key (a));");
+    execute("create table t23 (a integer, b integer, constraint fk_a foreign key (a) references t22);");
+    execute("alter table t22 add ref s (select sum(b) as b from rev_fk_a);");
+
+    execute("insert into t22 values (1);");
+    execute("insert into t23 values (1, 2), (1, 2);");
+    execute("alter table t22 add constraint c1 check (s.b < 5);");
+
+    MaterializedTable t22 = metaRepo.table(new Ident("t22"));
+    Rule r1 = t22.rules().get("c1");
+    assertNotNull(r1);
+    MaterializedTable t23 = metaRepo.table(new Ident("t23"));
+    Rule r2 = t23.reverseRuleDependencies().getDeps().get("fk_a").rule("c1");
+    assertNotNull(r2);
+    assertSame(r1, r2);
+
+    ErrorResult e = error("insert into t23 values (1, 1);");
+    assertEquals("Referencing constraint check t22.c1 failed.", e.getError().getMessage());
+  }
+
+  @Test
+  public void testAlterTableAddConstraintRefRuleWithBadData() throws Exception {
+    execute("create table t24 (a integer, constraint pk_a primary key (a));");
+    execute("create table t25 (a integer, b integer, constraint fk_a foreign key (a) references t24);");
+    execute("alter table t24 add ref s (select sum(b) as b from rev_fk_a);");
+
+    execute("insert into t24 values (1);");
+    execute("insert into t25 values (1, 2), (1, 2), (1, 2);");
+    ErrorResult e = error("alter table t24 add constraint c1 check (s.b < 5);");
+    assertEquals("Constraint check c1 failed.", e.getError().getMessage());
+
+    MaterializedTable t24 = metaRepo.table(new Ident("t24"));
+    assertEquals(0, t24.rules().size());
+    MaterializedTable t25 = metaRepo.table(new Ident("t25"));
+    assertEquals(0, t25.reverseRuleDependencies().getDeps().size());
+
+    statement("insert into t25 values (1, 1);");
   }
 }
