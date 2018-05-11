@@ -12,7 +12,6 @@ import com.cosyan.db.logging.MetaJournal;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.session.IParser.ParserException;
-import com.cosyan.db.transaction.MetaTransaction;
 import com.cosyan.db.transaction.Transaction;
 import com.cosyan.db.transaction.TransactionHandler;
 import com.google.common.collect.PeekingIterator;
@@ -50,7 +49,7 @@ public class Session {
       PeekingIterator<Token> tokens = lexer.tokenize(sql);
       if (parser.isMeta(tokens)) {
         MetaStatement stmt = parser.parseMetaStatement(tokens);
-        MetaTransaction transaction = transactionHandler.begin(stmt);
+        Transaction transaction = transactionHandler.begin(stmt);
         Result result = transaction.execute(metaRepo, this);
         try {
           if (result.isSuccess() && stmt.log()) {

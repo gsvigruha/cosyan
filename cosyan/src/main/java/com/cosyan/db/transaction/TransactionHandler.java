@@ -13,7 +13,7 @@ public class TransactionHandler {
     return new DataTransaction(trxCntr++, statements);
   }
 
-  public synchronized MetaTransaction begin(MetaStatement metaStatement) {
+  public synchronized Transaction begin(MetaStatement metaStatement) {
     if (metaStatement instanceof AlterStatement) {
       return new AlterTransaction(trxCntr++, (AlterStatement) metaStatement);
     } else if (metaStatement instanceof GlobalStatement) {

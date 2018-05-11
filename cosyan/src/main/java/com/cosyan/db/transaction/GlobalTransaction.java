@@ -7,13 +7,12 @@ import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.logging.TransactionJournal;
-import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.session.Session;
 
-public class GlobalTransaction extends MetaTransaction {
+public class GlobalTransaction extends Transaction {
 
   private final GlobalStatement globalStatement;
 
@@ -43,8 +42,10 @@ public class GlobalTransaction extends MetaTransaction {
         journal.ioWriteError(trxNumber);
         return new CrashResult(e);
       }
-    } catch (DBException e) {
+    }  catch (Throwable e) {
+      // Unspecified error, need to restore db;
       journal.crash(trxNumber);
+      e.printStackTrace();
       return new CrashResult(e);
     } finally {
       metaRepo.metaRepoReadUnlock();

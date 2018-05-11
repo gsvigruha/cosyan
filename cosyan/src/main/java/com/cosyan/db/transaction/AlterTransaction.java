@@ -2,7 +2,6 @@ package com.cosyan.db.transaction;
 
 import java.io.IOException;
 
-import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
@@ -15,7 +14,7 @@ import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.session.Session;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 
-public class AlterTransaction extends MetaTransaction {
+public class AlterTransaction extends Transaction {
 
   private final AlterStatement alterStatement;
 
@@ -24,22 +23,13 @@ public class AlterTransaction extends MetaTransaction {
     this.alterStatement = alterStatement;
   }
 
-  protected MetaResources collectResources(MetaRepo metaRepo, AuthToken authToken)
-      throws ModelException, GrantException, IOException {
-    return alterStatement.compile(metaRepo, authToken);
-  }
-
-  protected Result execute(MetaRepo metaRepo, Resources resources) throws RuleException, IOException {
-    return alterStatement.execute(metaRepo, resources);
-  }
-
   @Override
   public Result execute(MetaRepo metaRepo, Session session) {
     TransactionJournal journal = session.transactionJournal();
     metaRepo.metaRepoReadLock();
     MetaResources metaResources;
     try {
-      metaResources = collectResources(metaRepo, session.authToken());
+      metaResources = alterStatement.compile(metaRepo, session.authToken());
     } catch (ModelException | GrantException | IOException e) {
       return new ErrorResult(e);
     } finally {
@@ -58,7 +48,7 @@ public class AlterTransaction extends MetaTransaction {
       Result result;
       Resources resources = metaRepo.resources(metaResources);
       try {
-        result = execute(metaRepo, resources);
+        result = alterStatement.execute(metaRepo, resources);
       } catch (RuleException e) {
         resources.rollback();
         metaRepo.readTables();
