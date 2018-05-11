@@ -9,7 +9,7 @@ repositories {
 
 dependencies {
   compile "org.projectlombok:lombok:1.16.16"
-  compile "com.google.guava:guava:21.0"
+  compile "com.google.guava:guava:23.0"
   compile "com.google.code.findbugs:jsr305:3.0.2"
   compile "org.apache.commons:commons-csv:1.4"
   compile "commons-lang:commons-lang:2.6"
@@ -19,6 +19,7 @@ dependencies {
   compile "org.eclipse.jetty:jetty-servlet:9.4.9.v20180320"
   compile "com.unboundid:unboundid-ldapsdk:4.0.5"
   compile "org.json:json:20180130"
+  compile "net.agkn:hll:1.6.0"
   testCompile "junit:junit:4.12"
 }
 

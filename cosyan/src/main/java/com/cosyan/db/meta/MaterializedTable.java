@@ -75,7 +75,6 @@ public class MaterializedTable {
   private ReverseRuleDependencies reverseRuleDependencies;
   private Optional<ColumnMeta> partitioning;
   private SeekableInputStream fileReader;
-  private boolean isEmpty;
 
   public MaterializedTable(
       Config config,
@@ -89,7 +88,6 @@ public class MaterializedTable {
     this.owner = owner;
     this.type = type;
     this.raf = new RandomAccessFile(fileName(), "rw");
-    this.isEmpty = raf.length() == 0L;
     this.stats = new TableStats(config, tableName);
     this.columns = Lists.newArrayList(columns);
     this.primaryKey = primaryKey;
@@ -232,7 +230,6 @@ public class MaterializedTable {
   }
 
   public void insert(int insertedLines) {
-    isEmpty = false;
     stats.insert(insertedLines);
   }
 
@@ -304,7 +301,7 @@ public class MaterializedTable {
         columnDefiniton.isImmutable());
 
     assert column.getIndex() == columns.size();
-    if (!isEmpty && !column.isNullable()) {
+    if (!column.isNullable()) {
       throw new ModelException(
           String.format("Cannot add column '%s', new columns on a non empty table have to be nullable.",
               column.getName()),
