@@ -11,11 +11,12 @@ import java.util.zip.CRC32;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.logging.MetaJournal.DBException;
 
 public class TransactionJournal {
 
   private final Config config;
-  private FileOutputStream stream;
+  private FileOutputStream stream = null;
 
   private final ByteArrayOutputStream bos = new ByteArrayOutputStream(13);
   private final DataOutputStream dos = new DataOutputStream(bos);
@@ -34,11 +35,15 @@ public class TransactionJournal {
   public TransactionJournal(Config config) throws IOException {
     this.config = config;
     Files.createDirectories(Paths.get(config.journalDir()));
-    this.stream = new FileOutputStream(config.journalDir() + File.separator + "transaction.journal", /* append= */true);
   }
 
-  private synchronized void log(byte event, long trxNumber) {
+  private synchronized void log(byte event, long trxNumber) throws DBException {
     try {
+      if (stream == null || !stream.getChannel().isOpen()) {
+        this.stream = new FileOutputStream(
+            config.journalDir() + File.separator + "transaction.journal",
+            /* append= */true);
+      }
       bos.reset();
       CRC32 checksum = new CRC32();
       dos.write(event);
@@ -47,36 +52,41 @@ public class TransactionJournal {
       checksum.update(b);
       dos.writeInt((int) checksum.getValue());
       stream.write(bos.toByteArray());
+      stream.flush();
     } catch (IOException e) {
-      // log error.
+      throw new DBException(e);
     }
   }
 
-  public void start(long trxNumber) {
+  public synchronized void close() throws IOException {
+    stream.close();
+  }
+
+  public void start(long trxNumber) throws DBException {
     log(START, trxNumber);
   }
 
-  public void success(long trxNumber) {
+  public void success(long trxNumber) throws DBException {
     log(SUCCESS, trxNumber);
   }
 
-  public void userError(long trxNumber) {
+  public void userError(long trxNumber) throws DBException {
     log(USER_ERROR, trxNumber);
   }
 
-  public void ioReadError(long trxNumber) {
+  public void ioReadError(long trxNumber) throws DBException {
     log(IO_READ_ERROR, trxNumber);
   }
 
-  public void ioWriteError(long trxNumber) {
+  public void ioWriteError(long trxNumber) throws DBException {
     log(IO_WRITE_ERROR, trxNumber);
   }
 
-  public void crash(long trxNumber) {
+  public void crash(long trxNumber) throws DBException {
     log(CRASH, trxNumber);
   }
 
-  public void checkpoint(long trxNumber) {
+  public void checkpoint(long trxNumber) throws DBException {
     log(CHECKPOINT, trxNumber);
   }
 }

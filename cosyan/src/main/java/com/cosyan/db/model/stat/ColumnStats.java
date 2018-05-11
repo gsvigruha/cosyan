@@ -42,4 +42,8 @@ public class ColumnStats {
   public long cardinality() {
     return hll.cardinality();
   }
+
+  public long notNull() {
+    return notNull;
+  }
 }
