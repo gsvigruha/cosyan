@@ -8,11 +8,11 @@ public class ColumnStats {
 
   public static final int CNTS_SIZE = 256;
   private long notNull;
-  private HLL hll;
-  private long[] cnts;
+  private final HLL hll;
+  private final long[] cnts;
 
   public ColumnStats() {
-    this.cnts = new long[CNTS_SIZE];
+    cnts = new long[CNTS_SIZE];
     hll = new HLL(13, 5);
   }
 

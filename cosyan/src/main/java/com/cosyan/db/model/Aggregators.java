@@ -4,11 +4,13 @@ import java.util.Date;
 import java.util.HashSet;
 
 import com.cosyan.db.doc.FunctionDocumentation.Func;
+import com.cosyan.db.doc.FunctionDocumentation.FuncCat;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
 
+@FuncCat(name = "aggr", doc = "General aggregators.")
 public class Aggregators {
 
   public static abstract class Aggregator<T, U> {

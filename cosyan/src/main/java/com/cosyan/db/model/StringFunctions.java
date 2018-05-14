@@ -1,10 +1,12 @@
 package com.cosyan.db.model;
 
 import com.cosyan.db.doc.FunctionDocumentation.Func;
+import com.cosyan.db.doc.FunctionDocumentation.FuncCat;
 import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+@FuncCat(name = "string", doc = "String functions.")
 public class StringFunctions {
   @Func(doc = "Number of characters in self.")
   public static class Length extends SimpleFunction<Long> {

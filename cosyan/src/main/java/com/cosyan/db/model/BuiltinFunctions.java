@@ -25,6 +25,8 @@ import com.cosyan.db.model.DateFunctions.GetSecond;
 import com.cosyan.db.model.DateFunctions.GetWeekOfMonth;
 import com.cosyan.db.model.DateFunctions.GetWeekOfYear;
 import com.cosyan.db.model.DateFunctions.GetYear;
+import com.cosyan.db.model.ListAggregators.ListAggregator;
+import com.cosyan.db.model.ListAggregators.SetAggregator;
 import com.cosyan.db.model.MathFunctions.Abs;
 import com.cosyan.db.model.MathFunctions.Ceil;
 import com.cosyan.db.model.MathFunctions.Cos;

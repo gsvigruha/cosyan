@@ -11,6 +11,14 @@ import com.cosyan.db.model.DataTypes.DataType;
 import com.google.common.collect.ImmutableCollection;
 
 public class FunctionDocumentation {
+  
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target({ ElementType.TYPE })
+  public static @interface FuncCat {
+    public String name();
+    public String doc();
+  }
+
   @Retention(RetentionPolicy.RUNTIME)
   @Target({ ElementType.TYPE })
   public static @interface Func {
