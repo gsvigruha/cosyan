@@ -48,6 +48,10 @@ public class AlterStatementColumns {
       tableMeta.addColumn(basicColumn);
       return Result.META_OK;
     }
+
+    @Override
+    public void cancel() {
+    }
   }
 
   @Data
@@ -75,6 +79,10 @@ public class AlterStatementColumns {
     public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       basicColumn.setDeleted(true);
       return Result.META_OK;
+    }
+
+    @Override
+    public void cancel() {
     }
   }
 
@@ -119,6 +127,10 @@ public class AlterStatementColumns {
       originalColumn.setNullable(column.isNullable());
       originalColumn.setImmutable(column.isImmutable());
       return Result.META_OK;
+    }
+
+    @Override
+    public void cancel() {
     }
   }
 }

@@ -60,6 +60,8 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   private final Set<Long> recordsToDelete = new LinkedHashSet<>();
   private final TreeMap<Long, byte[]> recordsToInsert = new TreeMap<>();
 
+  private boolean cancelled = false;
+
   public TableWriter(
       MaterializedTable tableMeta,
       String fileName,
@@ -193,6 +195,10 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     writer.close();
   }
 
+  public void cancel() {
+    this.cancelled = true;
+  }
+
   private void delete(Record record, Resources resources, Predicate<Integer> checkReversedForeignIndex,
       boolean checkReverseRuleDependencies)
       throws IOException, RuleException {
@@ -227,7 +233,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     long deletedLines = 0L;
     do {
       Record record = recordProvider.read();
-      if (record == RecordReader.EMPTY) {
+      if (record == RecordReader.EMPTY || cancelled) {
         recordProvider.close();
         return deletedLines;
       }
@@ -262,15 +268,17 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     ImmutableList.Builder<Object[]> updatedRecords = ImmutableList.builder();
     do {
       Record record = recordProvider.read();
-      if (record == RecordReader.EMPTY) {
+      if (record == RecordReader.EMPTY || cancelled) {
         recordProvider.close();
         return updatedRecords.build();
       }
       Object[] values = record.getValues();
       if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.value(values, resources)) {
-        delete(record, resources, (columnIndex) -> updateExprs.containsKey(columnIndex), /*
-                                                                                          * checkReverseRuleDependencies=
-                                                                                          */false);
+        delete(
+            record,
+            resources,
+            (columnIndex) -> updateExprs.containsKey(columnIndex),
+            /* checkReverseRuleDependencies= */false);
         Object[] newValues = new Object[values.length];
         System.arraycopy(values, 0, newValues, 0, values.length);
         for (Map.Entry<Integer, ColumnMeta> updateExpr : updateExprs.entrySet()) {
@@ -288,6 +296,9 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       ImmutableList<Object[]> valuess = deleteAndCollectUpdated(reader, resources, columnExprs, whereColumn);
       for (Object[] values : valuess) {
         insert(resources, values, /* checkReferencingRules= */true);
+        if (cancelled) {
+          return -1;
+        }
       }
       return valuess.size();
     } finally {
@@ -304,6 +315,9 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     ImmutableList<Object[]> valuess = deleteAndCollectUpdated(reader, resources, columnExprs, whereColumn);
     for (Object[] values : valuess) {
       insert(resources, values, /* checkReferencingRules= */true);
+      if (cancelled) {
+        return -1;
+      }
     }
     return valuess.size();
   }
@@ -383,7 +397,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     int columnIndex = tableMeta.columnNames().asList().indexOf(column);
     Record record;
     try {
-      while ((record = reader.read()) != RecordReader.EMPTY) {
+      while ((record = reader.read()) != RecordReader.EMPTY && !cancelled) {
         try {
           indexWriter.put(record.getValues()[columnIndex], record.getFilePointer());
         } catch (IndexException e) {
@@ -401,7 +415,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     int columnIndex = tableMeta.columnNames().asList().indexOf(foreignKey.getColumn().getName());
     Record record;
     try {
-      while ((record = reader.read()) != RecordReader.EMPTY) {
+      while ((record = reader.read()) != RecordReader.EMPTY && !cancelled) {
         Object key = record.getValues()[columnIndex];
         if (!index.contains(key)) {
           throw new RuleException(
@@ -422,7 +436,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     RecordReader reader = recordReader();
     Record record;
     try {
-      while ((record = reader.read()) != RecordReader.EMPTY) {
+      while ((record = reader.read()) != RecordReader.EMPTY && !cancelled) {
         if (!rule.check(resources, record.getFilePointer())) {
           throw new RuleException(String.format("Constraint check %s failed.", rule.getName()));
         }

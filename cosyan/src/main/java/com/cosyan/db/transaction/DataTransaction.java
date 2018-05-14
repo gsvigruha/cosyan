@@ -48,6 +48,7 @@ public class DataTransaction extends Transaction {
     return new TransactionResult(results);
   }
 
+  @Override
   public void cancel() {
     cancelled.set(true);
     for (Statement statement : statements) {

@@ -43,7 +43,7 @@ public class GlobalTransaction extends Transaction {
         journal.ioWriteError(trxNumber);
         return new CrashResult(e);
       }
-    }  catch (Throwable e) {
+    } catch (Throwable e) {
       // Unspecified error, need to restore db;
       try {
         journal.crash(trxNumber);
@@ -54,5 +54,10 @@ public class GlobalTransaction extends Transaction {
     } finally {
       metaRepo.metaRepoReadUnlock();
     }
+  }
+
+  @Override
+  public void cancel() {
+    // Global statements cannot be cancelled.
   }
 }

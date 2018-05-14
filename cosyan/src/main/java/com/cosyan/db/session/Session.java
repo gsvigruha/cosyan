@@ -27,6 +27,8 @@ public class Session {
   private final MetaJournal metaJournal;
   private final AuthToken authToken;
 
+  private Transaction activeTransaction = null;
+
   public Session(
       MetaRepo metaRepo,
       TransactionHandler transactionHandler,
@@ -49,8 +51,8 @@ public class Session {
       PeekingIterator<Token> tokens = lexer.tokenize(sql);
       if (parser.isMeta(tokens)) {
         MetaStatement stmt = parser.parseMetaStatement(tokens);
-        Transaction transaction = transactionHandler.begin(stmt);
-        Result result = transaction.execute(metaRepo, this);
+        activeTransaction = transactionHandler.begin(stmt);
+        Result result = activeTransaction.execute(metaRepo, this);
         try {
           if (result.isSuccess() && stmt.log()) {
             metaJournal.log(sql);
@@ -65,11 +67,15 @@ public class Session {
       }
     } catch (ParserException e) {
       return new ErrorResult(e);
+    } finally {
+      activeTransaction = null;
     }
   }
 
-  public MetaJournal metaJournal() {
-    return metaJournal;
+  public void cancel() {
+    if (activeTransaction != null) {
+      activeTransaction.cancel();
+    }
   }
 
   public AuthToken authToken() {

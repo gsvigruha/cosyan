@@ -38,4 +38,6 @@ public abstract class Transaction {
   }
 
   public abstract Result execute(MetaRepo metaRepo, Session session);
+
+  public abstract void cancel();
 }

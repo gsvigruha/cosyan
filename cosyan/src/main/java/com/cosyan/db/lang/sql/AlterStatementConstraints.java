@@ -33,6 +33,7 @@ public class AlterStatementConstraints {
     private final ForeignKeyDefinition constraint;
 
     private ForeignKey foreignKey;
+    private TableWriter writer;
 
     @Override
     public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
@@ -51,13 +52,18 @@ public class AlterStatementConstraints {
     public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
       IndexWriter indexWriter = metaRepo.registerIndex(tableMeta, foreignKey.getColumn());
-      TableWriter writer = resources.writer(table.getString());
+      writer = resources.writer(table.getString());
       writer.checkForeignKey(foreignKey, resources);
       String colName = foreignKey.getColumn().getName();
       writer.buildIndex(colName, indexWriter);
       tableMeta.addForeignKey(foreignKey);
       metaRepo.syncMeta(tableMeta);
       return Result.META_OK;
+    }
+
+    @Override
+    public void cancel() {
+      writer.cancel();
     }
   }
 
@@ -68,6 +74,7 @@ public class AlterStatementConstraints {
     private final RuleDefinition constraint;
 
     private BooleanRule rule;
+    private TableWriter writer;
 
     @Override
     public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
@@ -84,11 +91,16 @@ public class AlterStatementConstraints {
     @Override
     public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
-      TableWriter writer = resources.writer(table.getString());
+      writer = resources.writer(table.getString());
       writer.checkRule(rule, resources);
       tableMeta.addRule(rule);
       metaRepo.syncMeta(tableMeta);
       return Result.META_OK;
+    }
+
+    @Override
+    public void cancel() {
+      writer.cancel();
     }
   }
 }

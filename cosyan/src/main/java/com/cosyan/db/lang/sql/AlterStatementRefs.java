@@ -47,5 +47,9 @@ public class AlterStatementRefs {
       tableMeta.addRef(new TableRef(ref.getName().getString(), ref.getSelect().print(), refTableMeta));
       return Result.META_OK;
     }
+
+    @Override
+    public void cancel() {
+    }
   }
 }

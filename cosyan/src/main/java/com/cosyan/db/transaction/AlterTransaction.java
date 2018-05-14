@@ -84,4 +84,10 @@ public class AlterTransaction extends Transaction {
       metaRepo.unlock(metaResources);
     }
   }
+
+  @Override
+  public void cancel() {
+    cancelled.set(true);
+    alterStatement.cancel();
+  }
 }

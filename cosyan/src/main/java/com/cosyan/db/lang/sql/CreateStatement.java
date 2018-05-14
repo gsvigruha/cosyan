@@ -174,6 +174,7 @@ public class CreateStatement {
     private final Ident column;
 
     private BasicColumn basicColumn;
+    private TableWriter writer;
 
     @Override
     public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
@@ -191,9 +192,14 @@ public class CreateStatement {
     @Override
     public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       IndexWriter indexWriter = metaRepo.registerIndex(resources.meta(table.getString()), basicColumn);
-      TableWriter writer = resources.writer(table.getString());
+      writer = resources.writer(table.getString());
       writer.buildIndex(column.getString(), indexWriter);
       return Result.META_OK;
+    }
+
+    @Override
+    public void cancel() {
+      writer.cancel();
     }
   }
 }

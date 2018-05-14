@@ -48,6 +48,8 @@ public class SyntaxTree {
         throws ModelException, GrantException, IOException;
 
     public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException;
+
+    public void cancel();
   }
 
   public static interface GlobalStatement extends MetaStatement {
