@@ -3,7 +3,6 @@ package com.cosyan.db.lang.sql;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
 import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
-import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MetaRepo;
@@ -16,7 +15,7 @@ import lombok.EqualsAndHashCode;
 public class Users {
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class CreateUser extends Node implements GlobalStatement {
+  public static class CreateUser extends GlobalStatement {
 
     private final Ident username;
     private final StringLiteral password;

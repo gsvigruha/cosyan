@@ -12,7 +12,6 @@ import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
-import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ConstraintDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
@@ -44,7 +43,7 @@ public class CreateStatement {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class CreateTable extends Node implements GlobalStatement {
+  public static class CreateTable extends GlobalStatement {
     private final Ident name;
     private final MaterializedTable.Type type;
     private final ImmutableList<ColumnDefinition> columnDefinitions;
@@ -168,7 +167,7 @@ public class CreateStatement {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class CreateIndex extends Node implements AlterStatement {
+  public static class CreateIndex extends AlterStatement {
 
     private final Ident table;
     private final Ident column;

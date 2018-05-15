@@ -10,7 +10,7 @@ import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
-import com.cosyan.db.lang.sql.SelectStatement.Select;
+import com.cosyan.db.lang.sql.SelectStatement;
 import com.cosyan.db.lock.LockManager;
 import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.meta.MetaRepo;
@@ -36,7 +36,7 @@ public class CSVConverterTest {
 
   private ExposedTableMeta query(String sql) throws ModelException, ParserException {
     ImmutableList<Statement> tree = parser.parseStatements(lexer.tokenize(sql));
-    return ((Select) Iterables.getOnlyElement(tree)).compileTable(metaRepo);
+    return ((SelectStatement) Iterables.getOnlyElement(tree)).getSelect().compileTable(metaRepo);
   }
 
   /*

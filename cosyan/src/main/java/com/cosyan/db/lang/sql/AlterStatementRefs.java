@@ -2,7 +2,6 @@ package com.cosyan.db.lang.sql;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
-import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.expr.TableDefinition.RefDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
@@ -23,7 +22,7 @@ public class AlterStatementRefs {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class AlterTableAddRef extends Node implements AlterStatement {
+  public static class AlterTableAddRef extends AlterStatement {
     private final Ident table;
     private final RefDefinition ref;
 

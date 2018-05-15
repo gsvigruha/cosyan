@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
-import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MaterializedTable;
@@ -22,7 +21,7 @@ public class DropStatement {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class DropTable extends Node implements GlobalStatement {
+  public static class DropTable extends GlobalStatement {
     private final Ident table;
 
     @Override
@@ -54,7 +53,7 @@ public class DropStatement {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class DropIndex extends Node implements GlobalStatement {
+  public static class DropIndex extends GlobalStatement {
     private final Ident table;
     private final Ident column;
 

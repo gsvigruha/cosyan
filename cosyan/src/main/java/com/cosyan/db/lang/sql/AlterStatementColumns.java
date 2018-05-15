@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
-import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.MaterializedTable;
@@ -24,7 +23,7 @@ public class AlterStatementColumns {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class AlterTableAddColumn extends Node implements AlterStatement {
+  public static class AlterTableAddColumn extends AlterStatement {
     private final Ident table;
     private final ColumnDefinition column;
 
@@ -56,7 +55,7 @@ public class AlterStatementColumns {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class AlterTableDropColumn extends Node implements AlterStatement {
+  public static class AlterTableDropColumn extends AlterStatement {
     private final Ident table;
     private final Ident column;
 
@@ -88,7 +87,7 @@ public class AlterStatementColumns {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class AlterTableAlterColumn extends Node implements AlterStatement {
+  public static class AlterTableAlterColumn extends AlterStatement {
     private final Ident table;
     private final ColumnDefinition column;
 

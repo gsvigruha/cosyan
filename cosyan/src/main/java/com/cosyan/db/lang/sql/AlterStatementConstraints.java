@@ -6,7 +6,6 @@ import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
-import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.transaction.Result;
@@ -28,7 +27,7 @@ public class AlterStatementConstraints {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class AlterTableAddForeignKey extends Node implements AlterStatement {
+  public static class AlterTableAddForeignKey extends AlterStatement {
     private final Ident table;
     private final ForeignKeyDefinition constraint;
 
@@ -70,7 +69,7 @@ public class AlterStatementConstraints {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class AlterTableAddRule extends Node implements AlterStatement {
+  public static class AlterTableAddRule extends AlterStatement {
     private final Ident table;
     private final RuleDefinition constraint;
 

@@ -36,33 +36,33 @@ public class ParserTest {
   @Test
   public void testSelect() throws ParserException {
     ImmutableList<Statement> tree = parse("select * from table;");
-    assertEquals(tree, ImmutableList.of(new SelectStatement(new Select(
+    assertEquals(((SelectStatement) tree.get(0)).getSelect(), new Select(
         ImmutableList.of(new AsteriskExpression(new Loc(6, 7))),
         new TableRef(new Ident("table")),
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
-        /* distinct= */false))));
+        /* distinct= */false));
   }
 
   @Test
   public void testSelectColumns() throws ParserException {
     ImmutableList<Statement> tree = parse("select a, b from table;");
-    assertEquals(tree, ImmutableList.of(new SelectStatement(new Select(
+    assertEquals(((SelectStatement) tree.get(0)).getSelect(), new Select(
         ImmutableList.of(FuncCallExpression.of(new Ident("a")), FuncCallExpression.of(new Ident("b"))),
         new TableRef(new Ident("table")),
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
-        /* distinct= */false))));
+        /* distinct= */false));
   }
 
   @Test
   public void testSelectAggr() throws ParserException {
     ImmutableList<Statement> tree = parse("select sum(a) from table;");
-    assertEquals(tree, ImmutableList.of(new SelectStatement(new Select(
+    assertEquals(((SelectStatement) tree.get(0)).getSelect(), new Select(
         ImmutableList.of(new FuncCallExpression(
             new Ident("sum"),
             null,
@@ -72,13 +72,13 @@ public class ParserTest {
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
-        /* distinct= */false))));
+        /* distinct= */false));
   }
 
   @Test
   public void testSelectWhere() throws ParserException {
     ImmutableList<Statement> tree = parse("select * from table where a = 1;");
-    assertEquals(tree, ImmutableList.of(new SelectStatement(new Select(
+    assertEquals(((SelectStatement) tree.get(0)).getSelect(), new Select(
         ImmutableList.of(new AsteriskExpression(new Loc(6, 7))),
         new TableRef(new Ident("table")),
         Optional.of(new BinaryExpression(
@@ -88,13 +88,13 @@ public class ParserTest {
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
-        /* distinct= */false))));
+        /* distinct= */false));
   }
 
   @Test
   public void testSelectGroupBy() throws ParserException {
     ImmutableList<Statement> tree = parse("select sum(b) from table group by a;");
-    assertEquals(tree, ImmutableList.of(new SelectStatement(new Select(
+    assertEquals(((SelectStatement) tree.get(0)).getSelect(), new Select(
         ImmutableList.of(new FuncCallExpression(
             new Ident("sum"),
             null,
@@ -104,13 +104,13 @@ public class ParserTest {
         Optional.of(ImmutableList.of(FuncCallExpression.of(new Ident("a")))),
         Optional.empty(),
         Optional.empty(),
-        /* distinct= */false))));
+        /* distinct= */false));
   }
 
   @Test
   public void testSelectComplex() throws ParserException {
     ImmutableList<Statement> tree = parse("select a, b + 1, c * 2.0 > 3.0 from table;");
-    assertEquals(tree, ImmutableList.of(new SelectStatement(new Select(
+    assertEquals(((SelectStatement) tree.get(0)).getSelect(), new Select(
         ImmutableList.of(
             FuncCallExpression.of(new Ident("a")),
             new BinaryExpression(
@@ -129,7 +129,7 @@ public class ParserTest {
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
-        /* distinct= */false))));
+        /* distinct= */false));
   }
 
   private Expression parseExpression(String sql) throws ParserException {

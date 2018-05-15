@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Expression;
-import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.StatementResult;
@@ -27,7 +26,7 @@ public class DeleteStatement {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class Delete extends Node implements Statement {
+  public static class Delete extends Statement {
     private final Ident table;
     private final Expression where;
 

@@ -29,32 +29,35 @@ public class SyntaxTree {
 
   }
 
-  public static interface Statement {
-    public MetaResources compile(MetaRepo metaRepo) throws ModelException;
+  public static abstract class Statement {
 
-    public Result execute(Resources resources) throws RuleException, IOException;
+    public abstract MetaResources compile(MetaRepo metaRepo) throws ModelException;
 
-    public void cancel();
+    public abstract Result execute(Resources resources) throws RuleException, IOException;
+
+    public abstract void cancel();
   }
 
-  public static interface MetaStatement {
+  public static abstract class MetaStatement {
 
-    public boolean log();
+    public abstract boolean log();
   }
 
-  public static interface AlterStatement extends MetaStatement {
+  public static abstract class AlterStatement extends MetaStatement {
 
-    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken)
+    public abstract MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken)
         throws ModelException, GrantException, IOException;
 
-    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException;
+    public abstract Result executeData(MetaRepoExecutor metaRepo, Resources resources)
+        throws RuleException, IOException;
 
-    public void cancel();
+    public abstract void cancel();
   }
 
-  public static interface GlobalStatement extends MetaStatement {
+  public static abstract class GlobalStatement extends MetaStatement {
 
-    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException;
+    public abstract Result execute(MetaRepo metaRepo, AuthToken authToken)
+        throws ModelException, GrantException, IOException;
   }
 
   public static void assertType(DataType<?> expectedType, DataType<?> dataType, Loc loc) throws ModelException {

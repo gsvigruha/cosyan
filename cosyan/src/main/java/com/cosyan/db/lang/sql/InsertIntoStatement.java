@@ -6,7 +6,6 @@ import java.util.Optional;
 
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Literals.Literal;
-import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.StatementResult;
@@ -43,7 +42,7 @@ public class InsertIntoStatement {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class InsertInto extends Node implements Statement {
+  public static class InsertInto extends Statement {
     private final Ident table;
     private final Optional<ImmutableList<Ident>> columns;
     private final ImmutableList<ImmutableList<Literal>> valuess;

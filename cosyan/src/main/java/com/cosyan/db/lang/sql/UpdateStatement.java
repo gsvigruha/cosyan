@@ -45,7 +45,7 @@ public class UpdateStatement {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class Update extends Node implements Statement {
+  public static class Update extends Statement {
     private final Ident table;
     private final ImmutableList<SetExpression> updates;
     private final Optional<Expression> where;

@@ -60,12 +60,12 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SelectStatement extends Node implements Statement {
+public class SelectStatement extends Statement {
 
   private final Select select;
-  private transient final AtomicBoolean cancelled = new AtomicBoolean(false);
+  private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
-  private transient ExposedTableMeta tableMeta;
+  private ExposedTableMeta tableMeta;
 
   @Override
   public MetaResources compile(MetaRepo metaRepo) throws ModelException {

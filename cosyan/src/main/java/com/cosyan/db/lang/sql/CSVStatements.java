@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
-import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.transaction.Result;
@@ -34,7 +33,7 @@ public class CSVStatements {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class CSVImport extends Node implements Statement {
+  public static class CSVImport extends Statement {
     private final StringLiteral fileName;
     private final Ident table;
     private final boolean withHeader;
@@ -92,7 +91,7 @@ public class CSVStatements {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class CSVExport extends Node implements Statement {
+  public static class CSVExport extends Statement {
     private final StringLiteral fileName;
     private final Select select;
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
