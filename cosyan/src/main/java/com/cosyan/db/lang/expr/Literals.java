@@ -25,6 +25,8 @@ public class Literals {
     public String print();
 
     public DataType<?> getType() throws ModelException;
+
+    public Loc getLoc();
   }
 
   private static class LiteralColumn extends DerivedColumn {

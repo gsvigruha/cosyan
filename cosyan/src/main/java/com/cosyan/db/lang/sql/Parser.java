@@ -85,33 +85,35 @@ public class Parser implements IParser {
   }
 
   public MetaStatement parseMetaStatement(PeekingIterator<Token> tokens) throws ParserException {
-    if (tokens.peek().is(Tokens.CREATE)) {
+    Token token = tokens.peek();
+    if (token.is(Tokens.CREATE)) {
       return parseCreate(tokens);
-    } else if (tokens.peek().is(Tokens.DROP)) {
+    } else if (token.is(Tokens.DROP)) {
       return parseDrop(tokens);
-    } else if (tokens.peek().is(Tokens.ALTER)) {
+    } else if (token.is(Tokens.ALTER)) {
       return parseAlter(tokens);
-    } else if (tokens.peek().is(Tokens.GRANT)) {
+    } else if (token.is(Tokens.GRANT)) {
       return parseGrant(tokens);
     }
-    throw new ParserException("Syntax error, expected create, drop or alter.");
+    throw new ParserException("Syntax error, expected create, drop or alter.", token);
   }
 
   private Statement parseStatement(PeekingIterator<Token> tokens) throws ParserException {
-    if (tokens.peek().is(Tokens.SELECT)) {
+    Token token = tokens.peek();
+    if (token.is(Tokens.SELECT)) {
       return new SelectStatement(parseSelect(tokens));
-    } else if (tokens.peek().is(Tokens.INSERT)) {
+    } else if (token.is(Tokens.INSERT)) {
       return parseInsert(tokens);
-    } else if (tokens.peek().is(Tokens.DELETE)) {
+    } else if (token.is(Tokens.DELETE)) {
       return parseDelete(tokens);
-    } else if (tokens.peek().is(Tokens.UPDATE)) {
+    } else if (token.is(Tokens.UPDATE)) {
       return parseUpdate(tokens);
-    } else if (tokens.peek().is(Tokens.IMPORT)) {
+    } else if (token.is(Tokens.IMPORT)) {
       return parseImport(tokens);
-    } else if (tokens.peek().is(Tokens.EXPORT)) {
+    } else if (token.is(Tokens.EXPORT)) {
       return parseExport(tokens);
     }
-    throw new ParserException("Syntax error, expected select, insert, delete or update.");
+    throw new ParserException("Syntax error, expected select, insert, delete or update.", token);
   }
 
   private Statement parseImport(PeekingIterator<Token> tokens) throws ParserException {
@@ -129,7 +131,8 @@ public class Parser implements IParser {
       }
       return new CSVImport(fileName, table, withHeader);
     } else {
-      throw new ParserException(String.format("Invalid file format '%s'.", tokens.next().getString()));
+      Token token = tokens.next();
+      throw new ParserException(String.format("Invalid file format '%s'.", token), token);
     }
   }
 
@@ -144,7 +147,8 @@ public class Parser implements IParser {
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
       return new CSVExport(fileName, select);
     } else {
-      throw new ParserException(String.format("Invalid file format '%s'.", tokens.next().getString()));
+      Token token = tokens.next();
+      throw new ParserException(String.format("Invalid file format '%s'.", token), token);
     }
   }
 
@@ -206,7 +210,7 @@ public class Parser implements IParser {
   private Literal parseLiteral(PeekingIterator<Token> tokens) throws ParserException {
     Expression expr = parsePrimary(tokens);
     if (!(expr instanceof Literal)) {
-      throw new ParserException("Expected literal but got '" + expr + "'.");
+      throw new ParserException("Expected literal but got '" + expr + "'.", expr.loc());
     }
     return (Literal) expr;
   }
@@ -333,7 +337,9 @@ public class Parser implements IParser {
         } else if (constraint instanceof RuleDefinition) {
           return new AlterTableAddRule(ident, (RuleDefinition) constraint);
         } else {
-          throw new ParserException(String.format("Expected foreign key or rule definition, got '%s'.", constraint));
+          throw new ParserException(
+              String.format("Expected foreign key or rule definition, got '%s'.", constraint),
+              constraint.getName().getLoc());
         }
       } else {
         ColumnDefinition column = parseColumnDefinition(tokens);
@@ -348,7 +354,8 @@ public class Parser implements IParser {
       ColumnDefinition column = parseColumnDefinition(tokens);
       return new AlterTableAlterColumn(ident, column);
     } else {
-      throw new ParserException("Unsupported alter operation '" + tokens.peek() + "'.");
+      Token token = tokens.peek();
+      throw new ParserException("Unsupported alter operation '" + token + "'.", token);
     }
   }
 
@@ -419,7 +426,8 @@ public class Parser implements IParser {
         return new ForeignKeyDefinition(ident, ident.map(i -> "rev_" + i), column, refTable, refColumn);
       }
     } else {
-      throw new ParserException("Unsupported constraint '" + tokens.peek() + "'.");
+      Token token = tokens.peek();
+      throw new ParserException("Unsupported constraint '" + token + "'.", token);
     }
   }
 
@@ -473,7 +481,9 @@ public class Parser implements IParser {
         if (literal instanceof StringLiteral) {
           list.add((String) literal.getValue());
         } else {
-          throw new ParserException(String.format("Expected string literal but got '%s'.", literal));
+          throw new ParserException(
+              String.format("Expected string literal but got '%s'.", literal),
+              literal.getLoc());
         }
         if (tokens.peek().is(Tokens.COMMA)) {
           tokens.next();
@@ -482,7 +492,7 @@ public class Parser implements IParser {
       tokens.next();
       return DataTypes.enumType(list);
     }
-    throw new ParserException("Unknown data type '" + token + "'.");
+    throw new ParserException("Unknown data type '" + token + "'.", token);
   }
 
   public Select parseSelect(PeekingIterator<Token> tokens) throws ParserException {
@@ -561,7 +571,9 @@ public class Parser implements IParser {
       Token value = tokens.next();
       Object date = DateFunctions.convert(value.getString());
       if (date == null) {
-        throw new ParserException(String.format("Expected a valid date string but got '%s'.", value.getString()));
+        throw new ParserException(
+            String.format("Expected a valid date string but got '%s'.", value),
+            value);
       }
       expr = new DateLiteral((java.util.Date) date, value.getLoc());
     } else if (token.isIdent()) {
@@ -580,7 +592,7 @@ public class Parser implements IParser {
       tokens.next();
       expr = new BooleanLiteral(Boolean.valueOf(token.getString()), token.getLoc());
     } else {
-      throw new ParserException("Expected literal but got " + token.getString() + ".");
+      throw new ParserException("Expected literal but got " + token + ".", token);
     }
     if (tokens.peek().is(Tokens.DOT)) {
       tokens.next();
@@ -667,7 +679,7 @@ public class Parser implements IParser {
     if (token.isIdent()) {
       return new Ident(token.getString(), token.getLoc());
     } else {
-      throw new ParserException("Expected identifier but got " + token.getString() + ".");
+      throw new ParserException("Expected identifier but got " + token + ".", token);
     }
   }
 
@@ -749,16 +761,16 @@ public class Parser implements IParser {
   }
 
   private void assertNext(PeekingIterator<Token> tokens, String... values) throws ParserException {
-    String next = tokens.next().getString();
-    if (!ImmutableSet.copyOf(values).contains(next)) {
-      throw new ParserException("Expected '" + join(values) + "' but got '" + next + "'.");
+    Token next = tokens.next();
+    if (!ImmutableSet.copyOf(values).contains(next.getString())) {
+      throw new ParserException("Expected '" + join(values) + "' but got '" + next + "'.", next);
     }
   }
 
   private void assertPeek(PeekingIterator<Token> tokens, String... values) throws ParserException {
-    String next = tokens.peek().getString();
-    if (!ImmutableSet.copyOf(values).contains(next)) {
-      throw new ParserException("Expected '" + join(values) + "' but got '" + next + "'.");
+    Token next = tokens.peek();
+    if (!ImmutableSet.copyOf(values).contains(next.getString())) {
+      throw new ParserException("Expected '" + join(values) + "' but got '" + next + "'.", next);
     }
   }
 

@@ -4,6 +4,7 @@ import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
+import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.google.common.collect.PeekingIterator;
 
@@ -12,8 +13,21 @@ public interface IParser {
   public static class ParserException extends Exception {
     private static final long serialVersionUID = 1L;
 
-    public ParserException(String msg) {
+    private final Loc loc;
+
+    public ParserException(String msg, Token token) {
       super(msg);
+      this.loc = token.getLoc();
+    }
+
+    public ParserException(String msg, Loc loc) {
+      super(msg);
+      this.loc = loc;
+    }
+
+    @Override
+    public String getMessage() {
+      return loc.toString() + ": " + super.getMessage();
     }
   }
 

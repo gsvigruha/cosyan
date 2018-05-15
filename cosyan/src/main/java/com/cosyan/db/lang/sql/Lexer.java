@@ -40,10 +40,11 @@ public class Lexer implements ILexer {
 
   private ImmutableList<Token> tokens(String sql, boolean fullSQL) throws ParserException {
     if (sql == null || sql.isEmpty()) {
-      throw new ParserException("Query must not be empty.");
+      throw new ParserException("Query must not be empty.", new Loc(0, 0));
     }
-    if (fullSQL && !sql.trim().endsWith(";")) {
-      throw new ParserException("Query must end with ';'.");
+    String trimmedSQL = sql.trim();
+    if (fullSQL && !trimmedSQL.endsWith(";")) {
+      throw new ParserException("Query must end with ';'.", new Loc(trimmedSQL.length() - 1, trimmedSQL.length()));
     }
     int state = STATE_DEFAULT;
     ArrayList<Token> builder = new ArrayList<>();
@@ -72,7 +73,7 @@ public class Lexer implements ILexer {
           i--;
         } else {
           if (!Tokens.isDigit(c)) {
-            throw new ParserException("Wrong number.");
+            throw new ParserException("Wrong number.", new Loc(literalStartIndex, i));
           }
         }
       } else if (state == STATE_FLOAT_LITERAL) {
@@ -83,7 +84,7 @@ public class Lexer implements ILexer {
           i--;
         } else {
           if (!Tokens.isDigit(c)) {
-            throw new ParserException("Wrong number.");
+            throw new ParserException("Wrong number.", new Loc(literalStartIndex, i));
           }
         }
       } else if (state == STATE_IDENT) {
@@ -99,7 +100,7 @@ public class Lexer implements ILexer {
           i--;
         } else {
           if (!(Tokens.isDigit(c) || Tokens.isLowerCaseLetter(c) || Tokens.isUpperCaseLetter(c) || c == '_')) {
-            throw new ParserException("Wrong ident.");
+            throw new ParserException("Wrong ident.", new Loc(literalStartIndex, i));
           }
         }
       } else if (state == STATE_DEFAULT) {
@@ -131,7 +132,7 @@ public class Lexer implements ILexer {
           state = STATE_IDENT;
           literalStartIndex = i;
         } else {
-          throw new ParserException("Syntax error.");
+          throw new ParserException("Syntax error.", new Loc(literalStartIndex, i));
         }
       }
     }
