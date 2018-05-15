@@ -9,7 +9,7 @@ import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.StatAggregators.Skewness.SkewnessAggregator;
 
-@FuncCat(name = "stats", doc = "Statistical functions.")
+@FuncCat(name = "stats", doc = "Statistical functions")
 public class StatAggregators {
 
   @Func(doc = "The sum of the elements.")

@@ -1,4 +1,4 @@
-## String functions.
+## Text functions
 
  * `concat(self: varchar, str: varchar): varchar`<br/>
    Concatenates `self` with `str`.
@@ -33,7 +33,7 @@
  * `upper(self: varchar): varchar`<br/>
    Converts all characters of `self` to uppercase.
 
-## Mathematical functions.
+## Arithmetical functions
 
  * `abs(self: float): float`<br/>
    The absolute value of `self`.
@@ -86,7 +86,7 @@
  * `tanh(self: float): float`<br/>
    Hyperbolic tangent of `self`.
 
-## Date functions.
+## Date functions
 
  * `add_days(self: timestamp, n: integer): timestamp`<br/>
    Adds `n` days to `self`.

@@ -13,8 +13,9 @@ import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
 
-@FuncCat(name = "list", doc = "List aggregators.")
+@FuncCat(name = "list", doc = "List aggregators")
 public class ListAggregators {
+
   @Func(doc = "Aggregates the elements into a list.")
   public static class ListAggregator extends AggrFunction {
     public ListAggregator() {

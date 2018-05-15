@@ -1,4 +1,4 @@
-## General aggregators.
+## General aggregators
 
  * `count(arg)`<br/>
    Counts the non `null` elements.
@@ -12,7 +12,7 @@
  * `min(arg)`<br/>
    The minimum of the elements.
 
-## Statistical functions.
+## Statistical functions
 
  * `avg(arg)`<br/>
    The average of the elements.
@@ -32,7 +32,7 @@
  * `sum(arg)`<br/>
    The sum of the elements.
 
-## List aggregators.
+## List aggregators
 
  * `list(arg)`<br/>
    Aggregates the elements into a list.

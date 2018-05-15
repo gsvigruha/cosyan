@@ -10,7 +10,7 @@ import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-@FuncCat(name = "date", doc = "Date functions.")
+@FuncCat(name = "date", doc = "Date functions")
 public class DateFunctions {
 
   public static final SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

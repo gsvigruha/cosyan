@@ -10,7 +10,7 @@ import com.cosyan.db.model.BuiltinFunctions.AggrFunction;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
 
-@FuncCat(name = "aggr", doc = "General aggregators.")
+@FuncCat(name = "aggr", doc = "General aggregators")
 public class Aggregators {
 
   public static abstract class Aggregator<T, U> {
