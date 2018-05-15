@@ -7,6 +7,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.csv.CSVRecord;
+
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
@@ -55,29 +60,27 @@ public class CSVStatements {
     public Result execute(Resources resources) throws RuleException, IOException {
       TableWriter writer = resources.writer(tableMeta.tableName());
       BufferedReader reader = new BufferedReader(new FileReader(fileName.getValue()));
+      CSVFormat format = CSVFormat.DEFAULT.withRecordSeparator("\n");
+      if (withHeader) {
+        format = format.withFirstRecordAsHeader();
+      }
       int lines = 0;
+      CSVParser csvParser = new CSVParser(reader, format);
       try {
-        if (withHeader) {
-          String[] header = reader.readLine().split(",");
-          for (int i = 0; i < header.length; i++) {
-            if (!header[i].equals(columns.get(i).getName())) {
-              throw new RuleException(
-                  String.format("Column name mismatch '%s' and '%s'.", header[i], columns.get(i).getName()));
-            }
-          }
-        }
-        String line;
-        while ((line = reader.readLine()) != null && !cancelled.get()) {
-          String[] stringValues = line.split(",");
-          Object[] values = new Object[stringValues.length];
-          for (int i = 0; i < stringValues.length; i++) {
-            values[i] = columns.get(i).getType().fromString(stringValues[i]);
+        int numCols = csvParser.getHeaderMap().size();
+        for (CSVRecord csvRecord : csvParser) {
+          Object[] values = new Object[numCols];
+          for (int i = 0; i < numCols; i++) {
+            values[i] = columns.get(i).getType().fromString(csvRecord.get(i));
           }
           writer.insert(resources, values, /* checkReferencingRules= */true);
           lines++;
+          if (cancelled.get()) {
+            break;
+          }
         }
       } finally {
-        reader.close();
+        csvParser.close();
       }
       tableMeta.insert(lines);
       return new StatementResult(lines);
@@ -108,20 +111,23 @@ public class CSVStatements {
     public Result execute(Resources resources) throws RuleException, IOException {
       BufferedWriter writer = new BufferedWriter(new FileWriter(fileName.getValue()));
       long lines = 0L;
+      CSVFormat format = CSVFormat.DEFAULT
+          .withRecordSeparator("\n")
+          .withHeader(tableMeta.columnNames().toArray(new String[] {}));
+      CSVPrinter csvPrinter = new CSVPrinter(writer, format);
       try {
         IterableTableReader reader = tableMeta.reader(resources);
         try {
-          writer.write(QueryResult.prettyPrintHeader(tableMeta.columnNames()));
           Object[] values = null;
           while ((values = reader.next()) != null && !cancelled.get()) {
-            writer.write(QueryResult.prettyPrint(values));
+            csvPrinter.printRecord(QueryResult.prettyPrintToList(values));
             lines++;
           }
         } finally {
           reader.close();
         }
       } finally {
-        writer.close();
+        csvPrinter.close();
       }
       return new StatementResult(lines);
     }

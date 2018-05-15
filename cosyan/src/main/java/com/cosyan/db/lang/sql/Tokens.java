@@ -37,6 +37,8 @@ public class Tokens {
 
   public static String WITH = "with";
 
+  public static String HEADER = "header";
+
   public static String OPTION = "option";
 
   public static String ALL = "all";

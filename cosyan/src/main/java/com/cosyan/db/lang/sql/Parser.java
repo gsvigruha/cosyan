@@ -125,9 +125,12 @@ public class Parser implements IParser {
       assertNext(tokens, Tokens.INTO);
       Ident table = parseIdent(tokens);
       boolean withHeader = false;
-      if (tokens.peek().is(Tokens.TRUE)) {
-        withHeader = true;
+      if (tokens.peek().is(Tokens.WITH)) {
         tokens.next();
+        if (tokens.peek().is(Tokens.HEADER)) {
+          tokens.next();
+          withHeader = true;
+        }
       }
       return new CSVImport(fileName, table, withHeader);
     } else {

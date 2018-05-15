@@ -1,5 +1,6 @@
 package com.cosyan.db.lang.transaction;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -34,18 +35,30 @@ public abstract class Result {
       return values.stream().map(v -> Arrays.asList(v)).collect(Collectors.toList());
     }
 
+    private static String prettyPrint(Object obj) {
+      if (obj == null) {
+        return "null";
+      } else if (obj instanceof Date) {
+        return DateFunctions.sdf1.format((Date) obj);
+      } else {
+        return obj.toString();
+      }
+    }
+
     public static String prettyPrint(Object[] values) {
       StringJoiner vsj = new StringJoiner(",");
       for (Object obj : values) {
-        if (obj == null) {
-          vsj.add("null");
-        } else if (obj instanceof Date) {
-          vsj.add(DateFunctions.sdf1.format((Date) obj));
-        } else {
-          vsj.add(obj.toString());
-        }
+        vsj.add(prettyPrint(obj));
       }
       return vsj.toString() + "\n";
+    }
+
+    public static List<String> prettyPrintToList(Object[] values) {
+      ArrayList<String> result = new ArrayList<>();
+      for (int i = 0; i < values.length; i++) {
+        result.add(prettyPrint(values[i]));
+      }
+      return result;
     }
 
     public static String prettyPrintHeader(Iterable<String> header) {
