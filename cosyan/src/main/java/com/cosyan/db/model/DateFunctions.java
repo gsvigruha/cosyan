@@ -14,11 +14,11 @@ import com.google.common.collect.ImmutableMap;
 public class DateFunctions {
 
   public static final SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-  private static final SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd");
+  public static final SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd");
 
-  public static Object convert(Object arg) {
+  public static java.util.Date convert(Object arg) {
     if (arg == null) {
-      return arg;
+      return null;
     }
     String sarg = (String) arg;
     try {

@@ -122,7 +122,12 @@ public class Parser implements IParser {
       StringLiteral fileName = (StringLiteral) parseLiteral(tokens);
       assertNext(tokens, Tokens.INTO);
       Ident table = parseIdent(tokens);
-      return new CSVImport(fileName, table);
+      boolean withHeader = false;
+      if (tokens.peek().is(Tokens.TRUE)) {
+        withHeader = true;
+        tokens.next();
+      }
+      return new CSVImport(fileName, table, withHeader);
     } else {
       throw new ParserException(String.format("Invalid file format '%s'.", tokens.next().getString()));
     }

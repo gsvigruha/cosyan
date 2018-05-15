@@ -66,6 +66,11 @@ public class DataTypes {
           }
           return i;
         }
+
+        @Override
+        public Object fromString(String string) throws RuleException {
+          throw new RuleException("List types are not uspported here.");
+        }
       };
     }
 
@@ -107,6 +112,8 @@ public class DataTypes {
     public JSONObject toJSON() {
       return new JSONObject(ImmutableMap.of("type", name));
     }
+
+    public abstract Object fromString(String string) throws RuleException;
   }
 
   public static final DataType<String> StringType = new DataType<String>("varchar") {
@@ -137,6 +144,11 @@ public class DataTypes {
     public int size(Object value) {
       return 4 + ((String) value).length() * 2;
     }
+
+    @Override
+    public Object fromString(String string) throws RuleException {
+      return string;
+    }
   };
 
   public static final DataType<Double> DoubleType = new DataType<Double>("float") {
@@ -159,6 +171,15 @@ public class DataTypes {
     @Override
     public int size(Object value) {
       return 8;
+    }
+
+    @Override
+    public Object fromString(String string) throws RuleException {
+      try {
+        return Double.valueOf(string);
+      } catch (NumberFormatException e) {
+        throw new RuleException(String.format("Invalid float '%s'.", string));
+      }
     }
   };
 
@@ -183,6 +204,15 @@ public class DataTypes {
     public int size(Object value) {
       return 8;
     }
+
+    @Override
+    public Object fromString(String string) throws RuleException {
+      try {
+        return Long.valueOf(string);
+      } catch (NumberFormatException e) {
+        throw new RuleException(String.format("Invalid integer '%s'.", string));
+      }
+    }
   };
 
   public static final DataType<Boolean> BoolType = new DataType<Boolean>("boolean") {
@@ -206,6 +236,11 @@ public class DataTypes {
     public int size(Object value) {
       return 1;
     }
+
+    @Override
+    public Object fromString(String string) throws RuleException {
+      return Boolean.valueOf(string);
+    }
   };
 
   public static final DataType<Date> DateType = new DataType<Date>("timestamp") {
@@ -228,6 +263,15 @@ public class DataTypes {
     @Override
     public int size(Object value) {
       return 8;
+    }
+
+    @Override
+    public Object fromString(String string) throws RuleException {
+      Date date = DateFunctions.convert(string);
+      if (date == null) {
+        throw new RuleException(String.format("Invalid timestamp '%s'.", string));
+      }
+      return date;
     }
   };
 
@@ -257,6 +301,11 @@ public class DataTypes {
     public boolean isNull() {
       return true;
     }
+
+    @Override
+    public Object fromString(String string) throws RuleException {
+      throw new UnsupportedOperationException();
+    }
   };
 
   public static final DataType<Long> IDType = new DataType<Long>("id") {
@@ -279,6 +328,11 @@ public class DataTypes {
     @Override
     public int size(Object value) {
       return 8;
+    }
+
+    @Override
+    public Object fromString(String string) throws RuleException {
+      throw new UnsupportedOperationException();
     }
   };
 
@@ -331,6 +385,12 @@ public class DataTypes {
         if (!map.containsKey((String) value)) {
           throw new RuleException(String.format("Invalid enum value '%s'.", value));
         }
+      }
+
+      @Override
+      public Object fromString(String string) throws RuleException {
+        check(string);
+        return string;
       }
     };
   }
