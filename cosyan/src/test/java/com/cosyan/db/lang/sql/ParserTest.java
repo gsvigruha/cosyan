@@ -1,6 +1,6 @@
 package com.cosyan.db.lang.sql;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 import java.util.Optional;
 
@@ -303,5 +303,15 @@ public class ParserTest {
         new LongLiteral(0L, new Loc(24, 25)),
         new Loc(0, 4)));
     assertEquals("case when a then 1 else 0 end", expr.print());
+  }
+
+  @Test
+  public void parseErrorMessage() throws ParserException {
+    try {
+      parse("insert into t1 (1);");
+      fail();
+    } catch (ParserException e) {
+      assertEquals("[16, 17]: Expected identifier but got 1.", e.getMessage());
+    }
   }
 }
