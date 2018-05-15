@@ -20,6 +20,7 @@ dependencies {
   compile "com.unboundid:unboundid-ldapsdk:4.0.5"
   compile "org.json:json:20180130"
   compile "net.agkn:hll:1.6.0"
+
   testCompile "junit:junit:4.12"
 }
 
