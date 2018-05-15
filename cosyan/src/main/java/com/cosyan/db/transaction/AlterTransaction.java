@@ -30,7 +30,7 @@ public class AlterTransaction extends Transaction {
     metaRepo.metaRepoReadLock();
     MetaResources metaResources;
     try {
-      metaResources = alterStatement.compile(metaRepo, session.authToken());
+      metaResources = alterStatement.executeMeta(metaRepo, session.authToken());
     } catch (ModelException | GrantException | IOException e) {
       return new ErrorResult(e);
     } finally {
@@ -49,7 +49,7 @@ public class AlterTransaction extends Transaction {
       Result result;
       Resources resources = metaRepo.resources(metaResources);
       try {
-        result = alterStatement.execute(metaRepo, resources);
+        result = alterStatement.executeData(metaRepo, resources);
       } catch (RuleException e) {
         resources.rollback();
         metaRepo.readTables();

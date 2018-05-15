@@ -30,7 +30,7 @@ public class AlterStatementRefs {
     private RefTableMeta refTableMeta;
 
     @Override
-    public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException {
+    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException {
       MaterializedTable tableMeta = metaRepo.table(table);
       refTableMeta = tableMeta.createRef(ref);
       return MetaResources.tableMeta(tableMeta);
@@ -42,7 +42,7 @@ public class AlterStatementRefs {
     }
 
     @Override
-    public Result execute(MetaRepoExecutor metaRepo, Resources resources) {
+    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) {
       MaterializedTable tableMeta = resources.meta(table.getString());
       tableMeta.addRef(new TableRef(ref.getName().getString(), ref.getSelect().print(), refTableMeta));
       return Result.META_OK;

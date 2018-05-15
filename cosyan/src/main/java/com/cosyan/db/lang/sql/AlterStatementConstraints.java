@@ -34,12 +34,14 @@ public class AlterStatementConstraints {
 
     private ForeignKey foreignKey;
     private TableWriter writer;
+    private IndexWriter indexWriter;
 
     @Override
-    public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
+    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTable tableMeta = metaRepo.table(table);
       MaterializedTable refTable = metaRepo.table(constraint.getRefTable());
       foreignKey = tableMeta.createForeignKey(constraint, refTable);
+      indexWriter = metaRepo.registerIndex(tableMeta, foreignKey.getColumn());
       return MetaResources.tableMeta(tableMeta).merge(MetaResources.tableMeta(refTable));
     }
 
@@ -49,9 +51,8 @@ public class AlterStatementConstraints {
     }
 
     @Override
-    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
+    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
-      IndexWriter indexWriter = metaRepo.registerIndex(tableMeta, foreignKey.getColumn());
       writer = resources.writer(table.getString());
       writer.checkForeignKey(foreignKey, resources);
       String colName = foreignKey.getColumn().getName();
@@ -77,7 +78,7 @@ public class AlterStatementConstraints {
     private TableWriter writer;
 
     @Override
-    public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
+    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
       MaterializedTable tableMeta = metaRepo.table(table);
       rule = tableMeta.createRule(constraint);
       return MetaResources.tableMeta(tableMeta).merge(rule.getColumn().readResources());
@@ -89,7 +90,7 @@ public class AlterStatementConstraints {
     }
 
     @Override
-    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
+    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
       writer = resources.writer(table.getString());
       writer.checkRule(rule, resources);

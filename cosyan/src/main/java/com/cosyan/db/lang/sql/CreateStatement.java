@@ -175,12 +175,14 @@ public class CreateStatement {
 
     private BasicColumn basicColumn;
     private TableWriter writer;
+    private IndexWriter indexWriter;
 
     @Override
-    public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
+    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
       MaterializedTable tableMeta = metaRepo.table(table);
       basicColumn = tableMeta.column(column);
       basicColumn.checkIndexType(column);
+      indexWriter = metaRepo.registerIndex(tableMeta, basicColumn);
       return MetaResources.tableMeta(tableMeta);
     }
 
@@ -190,8 +192,7 @@ public class CreateStatement {
     }
 
     @Override
-    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
-      IndexWriter indexWriter = metaRepo.registerIndex(resources.meta(table.getString()), basicColumn);
+    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       writer = resources.writer(table.getString());
       writer.buildIndex(column.getString(), indexWriter);
       return Result.META_OK;

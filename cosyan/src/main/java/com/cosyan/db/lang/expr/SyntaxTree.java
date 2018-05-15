@@ -44,10 +44,10 @@ public class SyntaxTree {
 
   public static interface AlterStatement extends MetaStatement {
 
-    public MetaResources compile(MetaRepo metaRepo, AuthToken authToken)
+    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken)
         throws ModelException, GrantException, IOException;
 
-    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException;
+    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException;
 
     public void cancel();
   }

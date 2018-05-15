@@ -16,6 +16,7 @@ import com.cosyan.db.DBApi;
 import com.cosyan.db.auth.Authenticator.Method;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.conf.Config.ConfigException;
+import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
@@ -248,5 +249,27 @@ public class RestartDBTest {
     Session u2_2 = dbApi.authSession("u2", "abc", Method.LOCAL);
     QueryResult r2_2 = query("select * from t13;", u2_2);
     assertArrayEquals(new Object[] { 1L }, r2_2.getValues().get(0));
+  }
+
+  @Test
+  public void testIndexesCreatedWithDataAfterRestart() throws Exception {
+    DBApi dbApi = new DBApi(config);
+    dbApi.adminSession().execute("create table t14(a integer);");
+    dbApi.adminSession().execute("insert into t14 values (1), (2);");
+    dbApi.adminSession().execute("create index t14.a;");
+    {
+      MaterializedTable t14 = dbApi.getMetaRepo().table("t14");
+      IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t14).get("a");
+      assertArrayEquals(new long[] { 0L }, index.get(1L));
+      assertArrayEquals(new long[] { 18L }, index.get(2L));
+    }
+
+    dbApi = new DBApi(config);
+    {
+      MaterializedTable t14 = dbApi.getMetaRepo().table("t14");
+      IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t14).get("a");
+      assertArrayEquals(new long[] { 0L }, index.get(1L));
+      assertArrayEquals(new long[] { 18L }, index.get(2L));
+    }
   }
 }

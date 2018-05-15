@@ -31,7 +31,7 @@ public class AlterStatementColumns {
     private BasicColumn basicColumn;
 
     @Override
-    public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
+    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
       MaterializedTable tableMeta = metaRepo.table(table);
       basicColumn = tableMeta.createColumn(column);
       return MetaResources.tableMeta(tableMeta);
@@ -43,7 +43,7 @@ public class AlterStatementColumns {
     }
 
     @Override
-    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
+    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
       tableMeta.addColumn(basicColumn);
       return Result.META_OK;
@@ -63,7 +63,7 @@ public class AlterStatementColumns {
     private BasicColumn basicColumn;
 
     @Override
-    public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
+    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
       MaterializedTable tableMeta = metaRepo.table(table);
       basicColumn = tableMeta.column(column);
       tableMeta.checkDeleteColumn(column);
@@ -76,7 +76,7 @@ public class AlterStatementColumns {
     }
 
     @Override
-    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
+    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       basicColumn.setDeleted(true);
       return Result.META_OK;
     }
@@ -95,7 +95,7 @@ public class AlterStatementColumns {
     private BasicColumn originalColumn;
 
     @Override
-    public MetaResources compile(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
+    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
       MaterializedTable tableMeta = metaRepo.table(table);
       originalColumn = tableMeta.column(column.getName());
       if (originalColumn.getType() != column.getType()) {
@@ -123,7 +123,7 @@ public class AlterStatementColumns {
     }
 
     @Override
-    public Result execute(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
+    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       originalColumn.setNullable(column.isNullable());
       originalColumn.setImmutable(column.isImmutable());
       return Result.META_OK;

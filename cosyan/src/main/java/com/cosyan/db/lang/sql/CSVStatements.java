@@ -75,6 +75,7 @@ public class CSVStatements {
             values[i] = columns.get(i).getType().fromString(stringValues[i]);
           }
           writer.insert(resources, values, /* checkReferencingRules= */true);
+          lines++;
         }
       } finally {
         reader.close();
