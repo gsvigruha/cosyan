@@ -34,25 +34,33 @@ public abstract class Result {
       return values.stream().map(v -> Arrays.asList(v)).collect(Collectors.toList());
     }
 
-    public String prettyPrint() {
-      StringBuilder sb = new StringBuilder();
+    public static String prettyPrint(Object[] values) {
+      StringJoiner vsj = new StringJoiner(",");
+      for (Object obj : values) {
+        if (obj == null) {
+          vsj.add("null");
+        } else if (obj instanceof Date) {
+          vsj.add(DateFunctions.sdf1.format((Date) obj));
+        } else {
+          vsj.add(obj.toString());
+        }
+      }
+      return vsj.toString() + "\n";
+    }
+
+    public static String prettyPrintHeader(Iterable<String> header) {
       StringJoiner sj = new StringJoiner(",");
       for (String col : header) {
         sj.add(col);
       }
-      sb.append(sj.toString()).append("\n");
+      return sj.toString() + "\n";
+    }
+
+    public String prettyPrint() {
+      StringBuilder sb = new StringBuilder();
+      sb.append(prettyPrintHeader(header));
       for (Object[] row : values) {
-        StringJoiner vsj = new StringJoiner(",");
-        for (Object obj : row) {
-          if (obj == null) {
-            vsj.add("null");
-          } else if (obj instanceof Date) {
-            vsj.add(DateFunctions.sdf1.format((Date) obj));
-          } else {
-            vsj.add(obj.toString());
-          }
-        }
-        sb.append(vsj.toString()).append("\n");
+        sb.append(prettyPrint(row));
       }
       return sb.toString();
     }
@@ -89,7 +97,7 @@ public abstract class Result {
       super(true);
     }
   }
-  
+
   public static final Result META_OK = new MetaStatementResult();
 
   @Data

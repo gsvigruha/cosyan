@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.lang.expr.BinaryExpression;
@@ -57,10 +58,43 @@ import com.google.common.collect.ImmutableMap;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-public class SelectStatement {
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class SelectStatement extends Node implements Statement {
+
+  private final Select select;
+  private transient final AtomicBoolean cancelled = new AtomicBoolean(false);
+
+  private transient ExposedTableMeta tableMeta;
+
+  @Override
+  public MetaResources compile(MetaRepo metaRepo) throws ModelException {
+    tableMeta = select.compileTable(metaRepo);
+    return tableMeta.readResources();
+  }
+
+  @Override
+  public Result execute(Resources resources) throws RuleException, IOException {
+    List<Object[]> valuess = new ArrayList<>();
+    IterableTableReader reader = tableMeta.reader(resources);
+    try {
+      Object[] values = null;
+      while ((values = reader.next()) != null && !cancelled.get()) {
+        valuess.add(values);
+      }
+    } finally {
+      reader.close();
+    }
+    return new QueryResult(tableMeta.columnNames(), valuess);
+  }
+
+  @Override
+  public void cancel() {
+    cancelled.set(true);
+  }
+
   @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class Select extends Node implements Statement {
+  public static class Select {
     private final ImmutableList<Expression> columns;
     private final Table table;
     private final Optional<Expression> where;
@@ -68,8 +102,6 @@ public class SelectStatement {
     private final Optional<Expression> having;
     private final Optional<ImmutableList<Expression>> orderBy;
     private final boolean distinct;
-
-    private ExposedTableMeta tableMeta;
 
     public ExposedTableMeta compileTable(TableProvider tableProvider) throws ModelException {
       ExposedTableMeta sourceTable = table.compile(tableProvider);
@@ -101,29 +133,6 @@ public class SelectStatement {
         finalTable = distinctTable;
       }
       return finalTable;
-    }
-
-    @Override
-    public MetaResources compile(MetaRepo metaRepo) throws ModelException {
-      tableMeta = compileTable(metaRepo);
-      return tableMeta.readResources();
-    }
-
-    @Override
-    public Result execute(Resources resources) throws RuleException, IOException {
-      List<Object[]> valuess = new ArrayList<>();
-      IterableTableReader reader = tableMeta.reader(resources);
-      Object[] values = null;
-      while ((values = reader.next()) != null) {
-        valuess.add(values);
-      }
-      reader.close();
-      return new QueryResult(tableMeta.columnNames(), valuess);
-    }
-
-    @Override
-    public void cancel() {
-
     }
 
     public static DerivedTableMeta selectTable(

@@ -139,6 +139,12 @@ public class Tokens {
 
   public static String ID = "id";
 
+  public static String IMPORT = "import";
+
+  public static String EXPORT = "export";
+
+  public static String CSV = "csv";
+
   public static char SPACE = ' ';
 
   public static char TAB = '\t';

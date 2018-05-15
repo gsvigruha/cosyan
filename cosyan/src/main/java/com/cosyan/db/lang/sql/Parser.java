@@ -31,6 +31,8 @@ import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableDropColumn;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddForeignKey;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddRule;
 import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableAddRef;
+import com.cosyan.db.lang.sql.CSVStatements.CSVExport;
+import com.cosyan.db.lang.sql.CSVStatements.CSVImport;
 import com.cosyan.db.lang.sql.CreateStatement.CreateIndex;
 import com.cosyan.db.lang.sql.CreateStatement.CreateTable;
 import com.cosyan.db.lang.sql.DeleteStatement.Delete;
@@ -97,15 +99,48 @@ public class Parser implements IParser {
 
   private Statement parseStatement(PeekingIterator<Token> tokens) throws ParserException {
     if (tokens.peek().is(Tokens.SELECT)) {
-      return parseSelect(tokens);
+      return new SelectStatement(parseSelect(tokens));
     } else if (tokens.peek().is(Tokens.INSERT)) {
       return parseInsert(tokens);
     } else if (tokens.peek().is(Tokens.DELETE)) {
       return parseDelete(tokens);
     } else if (tokens.peek().is(Tokens.UPDATE)) {
       return parseUpdate(tokens);
+    } else if (tokens.peek().is(Tokens.IMPORT)) {
+      return parseImport(tokens);
+    } else if (tokens.peek().is(Tokens.EXPORT)) {
+      return parseExport(tokens);
     }
     throw new ParserException("Syntax error, expected select, insert, delete or update.");
+  }
+
+  private Statement parseImport(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.IMPORT);
+    assertNext(tokens, Tokens.FROM);
+    if (tokens.peek().is(Tokens.CSV)) {
+      tokens.next();
+      StringLiteral fileName = (StringLiteral) parseLiteral(tokens);
+      assertNext(tokens, Tokens.INTO);
+      Ident table = parseIdent(tokens);
+      return new CSVImport(fileName, table);
+    } else {
+      throw new ParserException(String.format("Invalid file format '%s'.", tokens.next().getString()));
+    }
+  }
+
+  private Statement parseExport(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.EXPORT);
+    assertNext(tokens, Tokens.INTO);
+    if (tokens.peek().is(Tokens.CSV)) {
+      tokens.next();
+      StringLiteral fileName = (StringLiteral) parseLiteral(tokens);
+      assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+      Select select = parseSelect(tokens);
+      assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+      return new CSVExport(fileName, select);
+    } else {
+      throw new ParserException(String.format("Invalid file format '%s'.", tokens.next().getString()));
+    }
   }
 
   private Delete parseDelete(PeekingIterator<Token> tokens) throws ParserException {
