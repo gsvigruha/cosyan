@@ -15,7 +15,6 @@ import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 public class SyntaxTree {
 
@@ -24,7 +23,6 @@ public class SyntaxTree {
   }
 
   @Data
-  @EqualsAndHashCode(callSuper = false)
   public static abstract class Node {
 
   }
