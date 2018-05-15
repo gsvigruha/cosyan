@@ -14,15 +14,13 @@ import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 
-import lombok.Data;
-
 public class SyntaxTree {
 
   public static enum AggregationExpression {
     YES, NO, EITHER
   }
 
-  @Data
+  @lombok.Data
   public static abstract class Node {
 
   }
