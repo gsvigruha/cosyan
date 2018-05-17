@@ -80,7 +80,7 @@ public class BackupManager {
       } finally {
         stream.close();
       }
-      metaRepo.readTables();
+      metaRepo.resetAndReadTables();
     } finally {
       metaRepo.metaRepoWriteUnlock();
     }

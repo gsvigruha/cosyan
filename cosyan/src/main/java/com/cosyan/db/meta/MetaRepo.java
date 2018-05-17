@@ -126,6 +126,12 @@ public class MetaRepo implements TableProvider, MetaRepoExecutor {
         Charset.defaultCharset());
   }
 
+  public void resetAndReadTables() throws DBException {
+    this.uniqueIndexes.clear();
+    this.multiIndexes.clear();
+    readTables();
+  }
+
   public void readTables() throws DBException {
     Map<String, MaterializedTable> newTables;
     try {
