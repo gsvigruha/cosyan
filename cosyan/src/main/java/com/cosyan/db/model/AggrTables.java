@@ -111,7 +111,7 @@ public abstract class AggrTables extends IterableTableMeta {
               return null;
             }
             values = iterator.next();
-          } while (!(boolean) havingColumn.value(values, resources) && !cancelled);
+          } while (!(boolean) havingColumn.value(values, resources) && !cancelled.get());
           return values;
         }
 
@@ -125,7 +125,7 @@ public abstract class AggrTables extends IterableTableMeta {
 
         private void aggregate(Resources resources) throws IOException {
           HashMap<ArrayList<Object>, Aggregator<?, ?>[]> aggregatedValues = new HashMap<>();
-          while (!cancelled) {
+          while (!cancelled.get()) {
             Object[] sourceValues = sourceReader.next();
             if (sourceValues == null) {
               break;
@@ -199,7 +199,7 @@ public abstract class AggrTables extends IterableTableMeta {
               return null;
             }
             values = iterator.next();
-          } while (!(boolean) havingColumn.value(values, resources) && !cancelled);
+          } while (!(boolean) havingColumn.value(values, resources) && !cancelled.get());
           return values;
         }
 
@@ -209,7 +209,7 @@ public abstract class AggrTables extends IterableTableMeta {
           for (AggrColumn column : aggrColumns) {
             aggrValues[i++] = column.getFunction().create();
           }
-          while (!cancelled) {
+          while (!cancelled.get()) {
             Object[] sourceValues = sourceReader.next();
             if (sourceValues == null) {
               break;

@@ -191,7 +191,7 @@ public class JoinTables {
 
         private void join() throws IOException {
           joinValues = LinkedListMultimap.create();
-          while (!cancelled) {
+          while (!cancelled.get()) {
             Object[] joinSourceValues = joinReader.next();
             if (joinSourceValues == null) {
               break;

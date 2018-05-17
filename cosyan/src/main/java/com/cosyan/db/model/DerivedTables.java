@@ -135,7 +135,7 @@ public class DerivedTables {
             } else {
               values = null;
             }
-          } while (values == null && !cancelled);
+          } while (values == null && !cancelled.get());
           return values;
         }
       };
@@ -277,7 +277,7 @@ public class DerivedTables {
               return 0;
             }
           });
-          while (!cancelled) {
+          while (!cancelled.get()) {
             Object[] sourceValues = sourceReader.next();
             if (sourceValues == null) {
               break;
@@ -342,7 +342,7 @@ public class DerivedTables {
 
         private void distinct() throws IOException {
           LinkedHashSet<ImmutableList<Object>> values = new LinkedHashSet<>();
-          while (!cancelled) {
+          while (!cancelled.get()) {
             Object[] sourceValues = sourceReader.next();
             if (sourceValues == null) {
               break;

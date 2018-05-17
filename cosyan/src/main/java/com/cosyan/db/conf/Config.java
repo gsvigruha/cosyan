@@ -54,6 +54,10 @@ public class Config {
     return props.getProperty(DATA_DIR) + File.separator + "journal";
   }
 
+  public String backupDir() {
+    return props.getProperty(DATA_DIR) + File.separator + "backup";
+  }
+
   public String confDir() {
     return confDir;
   }

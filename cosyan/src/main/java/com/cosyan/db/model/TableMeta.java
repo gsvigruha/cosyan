@@ -1,6 +1,7 @@
 package com.cosyan.db.model;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.Nullable;
 
@@ -82,5 +83,5 @@ public abstract class TableMeta implements CompiledObject {
     public abstract ImmutableList<String> columnNames();
   }
 
-  protected boolean cancelled = false;
+  protected AtomicBoolean cancelled = new AtomicBoolean(false);
 }

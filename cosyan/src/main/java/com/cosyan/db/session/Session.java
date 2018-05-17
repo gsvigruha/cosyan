@@ -27,7 +27,8 @@ public class Session {
   private final MetaJournal metaJournal;
   private final AuthToken authToken;
 
-  private Transaction activeTransaction = null;
+  private Transaction lastTransaction = null;
+  private boolean running;
 
   public Session(
       MetaRepo metaRepo,
@@ -47,12 +48,13 @@ public class Session {
   }
 
   public Result execute(String sql) {
+    running = true;
     try {
       PeekingIterator<Token> tokens = lexer.tokenize(sql);
       if (parser.isMeta(tokens)) {
         MetaStatement stmt = parser.parseMetaStatement(tokens);
-        activeTransaction = transactionHandler.begin(stmt);
-        Result result = activeTransaction.execute(metaRepo, this);
+        lastTransaction = transactionHandler.begin(stmt);
+        Result result = lastTransaction.execute(metaRepo, this);
         try {
           if (result.isSuccess() && stmt.log()) {
             metaJournal.log(sql);
@@ -68,13 +70,17 @@ public class Session {
     } catch (ParserException e) {
       return new ErrorResult(e);
     } finally {
-      activeTransaction = null;
+      running = false;
     }
   }
 
+  public boolean running() {
+    return running;
+  }
+
   public void cancel() {
-    if (activeTransaction != null) {
-      activeTransaction.cancel();
+    if (lastTransaction != null && running) {
+      lastTransaction.cancel();
     }
   }
 
