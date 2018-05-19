@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import com.cosyan.db.model.DateFunctions;
 import com.google.common.collect.ImmutableList;
 
@@ -17,6 +20,8 @@ import lombok.EqualsAndHashCode;
 public abstract class Result {
 
   private final boolean success;
+
+  public abstract JSONObject toJSON();
 
   @Data
   @EqualsAndHashCode(callSuper = true)
@@ -35,7 +40,7 @@ public abstract class Result {
       return values.stream().map(v -> Arrays.asList(v)).collect(Collectors.toList());
     }
 
-    private static String prettyPrint(Object obj) {
+    public static String prettyPrint(Object obj) {
       if (obj == null) {
         return "null";
       } else if (obj instanceof Date) {
@@ -77,6 +82,15 @@ public abstract class Result {
       }
       return sb.toString();
     }
+
+    @Override
+    public JSONObject toJSON() {
+      JSONObject obj = new JSONObject();
+      obj.put("type", "query");
+      obj.put("header", getHeader());
+      obj.put("values", listValues());
+      return obj;
+    }
   }
 
   @Data
@@ -89,6 +103,14 @@ public abstract class Result {
       super(true);
       this.affectedLines = affectedLines;
     }
+
+    @Override
+    public JSONObject toJSON() {
+      JSONObject obj = new JSONObject();
+      obj.put("type", "statement");
+      obj.put("lines", getAffectedLines());
+      return obj;
+    }
   }
 
   @Data
@@ -97,6 +119,12 @@ public abstract class Result {
 
     public EmptyResult() {
       super(true);
+    }
+
+    @Override
+    public JSONObject toJSON() {
+      JSONObject obj = new JSONObject();
+      return obj;
     }
   }
 
@@ -108,6 +136,14 @@ public abstract class Result {
 
     public MetaStatementResult() {
       super(true);
+    }
+
+    @Override
+    public JSONObject toJSON() {
+      JSONObject obj = new JSONObject();
+      obj.put("type", "statement");
+      obj.put("lines", "1");
+      return obj;
     }
   }
 
@@ -123,6 +159,13 @@ public abstract class Result {
       super(false);
       this.error = error;
     }
+
+    @Override
+    public JSONObject toJSON() {
+      JSONObject obj = new JSONObject();
+      obj.put("error", error.getMessage());
+      return obj;
+    }
   }
 
   @Data
@@ -135,6 +178,13 @@ public abstract class Result {
       super(false);
       this.error = error;
     }
+
+    @Override
+    public JSONObject toJSON() {
+      JSONObject obj = new JSONObject();
+      obj.put("error", error.getMessage());
+      return obj;
+    }
   }
 
   @Data
@@ -146,6 +196,17 @@ public abstract class Result {
     public TransactionResult(Iterable<Result> results) {
       super(true);
       this.results = ImmutableList.copyOf(results);
+    }
+
+    @Override
+    public JSONObject toJSON() {
+      JSONObject obj = new JSONObject();
+      JSONArray list = new JSONArray();
+      for (Result result : results) {
+        list.put(result.toJSON());
+      }
+      obj.put("result", list);
+      return obj;
     }
   }
 }

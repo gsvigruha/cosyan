@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.http.HttpStatus;
-import org.json.simple.JSONObject;
+import org.json.JSONObject;
 
 import com.cosyan.db.DBApi;
 
@@ -26,7 +26,7 @@ public class SQLServlet extends HttpServlet {
       throws ServletException, IOException {
     String sql = req.getParameter("sql");
     JSONObject result = sqlConnector.run(sql);
-    if (result.containsKey("error")) {
+    if (result.has("error")) {
       resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);  
     } else {
       resp.setStatus(HttpStatus.OK_200);  

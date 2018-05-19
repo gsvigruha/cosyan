@@ -2,29 +2,31 @@ package com.cosyan.ui.admin;
 
 import java.util.Map;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
+import com.cosyan.db.DBApi;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
+import com.cosyan.db.session.Session;
 
 public class MetaRepoConnector {
 
   private final MetaRepo metaRepo;
+  private Session session;
 
-  public MetaRepoConnector(MetaRepo metaRepo) {
-    this.metaRepo = metaRepo;
+  public MetaRepoConnector(DBApi dbApi) {
+    this.metaRepo = dbApi.getMetaRepo();
+    this.session = dbApi.adminSession();
   }
 
-  @SuppressWarnings("unchecked")
-  public JSONObject tables() throws ModelException {
-    JSONObject obj = new JSONObject();
+  public JSONArray tables() throws ModelException {
     JSONArray list = new JSONArray();
-    for (Map.Entry<String, MaterializedTable> table : metaRepo.getTables().entrySet()) {
+    for (Map.Entry<String, MaterializedTable> table : metaRepo.getTables(session.authToken()).entrySet()) {
       JSONObject tableObj = new JSONObject();
       tableObj.put("name", table.getKey());
       MaterializedTable tableMeta = table.getValue();
@@ -36,7 +38,7 @@ public class MetaRepoConnector {
         columnObj.put("nullable", column.isNullable());
         columnObj.put("unique", column.isUnique());
         columnObj.put("indexed", column.isIndexed());
-        columns.add(columnObj);
+        columns.put(columnObj);
       }
       tableObj.put("columns", columns);
 
@@ -51,7 +53,7 @@ public class MetaRepoConnector {
         fkObj.put("column", foreignKey.getColumn().getName());
         fkObj.put("refTable", foreignKey.getRefTable().tableName());
         fkObj.put("refColumn", foreignKey.getRefColumn().getName());
-        foreignKeys.add(fkObj);
+        foreignKeys.put(fkObj);
       }
       tableObj.put("foreignKeys", foreignKeys);
 
@@ -62,22 +64,12 @@ public class MetaRepoConnector {
         fkObj.put("column", foreignKey.getColumn().getName());
         fkObj.put("refTable", foreignKey.getRefTable().tableName());
         fkObj.put("refColumn", foreignKey.getRefColumn().getName());
-        reverseForeignKeys.add(fkObj);
+        reverseForeignKeys.put(fkObj);
       }
       tableObj.put("reverseForeignKeys", reverseForeignKeys);
 
-      list.add(tableObj);
+      list.put(tableObj);
     }
-    obj.put("tables", list);
-
-    return obj;
-  }
-
-  @SuppressWarnings("unchecked")
-  public JSONObject indexes() throws ModelException {
-    JSONObject obj = new JSONObject();
-    obj.put("uniqueIndexes", metaRepo.uniqueIndexNames());
-    obj.put("multiIndexes", metaRepo.multiIndexNames());
-    return obj;
+    return list;
   }
 }

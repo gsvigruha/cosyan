@@ -29,9 +29,9 @@ public class GlobalTransaction extends Transaction {
     try {
       try {
         journal.start(trxNumber);
-        globalStatement.execute(metaRepo, session.authToken());
+        Result result = globalStatement.execute(metaRepo, session.authToken());
         metaRepo.writeTables();
-        return Result.META_OK;
+        return result;
       } catch (ModelException | GrantException e) {
         // Restore metaRepo.
         metaRepo.readTables();

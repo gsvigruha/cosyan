@@ -38,6 +38,13 @@ button.sql {
     margin: 4px;
 }
 
+button.tab {
+    background-color: #FFF4E0;
+    padding: 4px;
+    margin: 4px;
+    width: 80px;
+}
+
 div.sql {
     padding: 4px;
     margin: 4px;

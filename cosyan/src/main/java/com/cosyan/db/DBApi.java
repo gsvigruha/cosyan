@@ -6,6 +6,7 @@ import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.auth.Authenticator;
 import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.entity.EntityHandler;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
 import com.cosyan.db.lock.LockManager;
@@ -26,6 +27,7 @@ public class DBApi {
   private final MetaJournal metaJournal;
   private final Authenticator authenticator;
   private final BackupManager backupManager;
+  private final EntityHandler entityHandler;
 
   public DBApi(Config config) throws IOException, DBException {
     // System.out.println("Server starting in root directory " + config.confDir());
@@ -36,12 +38,17 @@ public class DBApi {
     transactionJournal = new TransactionJournal(config);
     metaJournal = new MetaJournal(config);
     backupManager = new BackupManager(config, metaRepo);
+    entityHandler = new EntityHandler(metaRepo, transactionHandler);
     metaRepo.init();
     // System.out.println("Server started.");
   }
 
   public MetaRepo getMetaRepo() {
     return metaRepo;
+  }
+
+  public EntityHandler entityHandler() {
+    return entityHandler;
   }
 
   public Authenticator authenticator() {

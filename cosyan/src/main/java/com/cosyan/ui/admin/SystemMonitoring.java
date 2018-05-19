@@ -5,8 +5,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.util.Map.Entry;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
@@ -20,7 +20,6 @@ public class SystemMonitoring {
     this.metaRepo = metaRepo;
   }
 
-  @SuppressWarnings("unchecked")
   public JSONObject usage() throws IOException {
     JSONObject obj = new JSONObject();
     OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
@@ -36,7 +35,7 @@ public class SystemMonitoring {
       index.put("indexFileSize", entry.getValue().getIndexFileSize());
       index.put("inMemNodes", entry.getValue().getInMemNodes());
       index.put("pendingNodes", entry.getValue().getPendingNodes());
-      uniqueIndexes.add(index);
+      uniqueIndexes.put(index);
     }
     obj.put("uniqueIndexes", uniqueIndexes);
     JSONArray multiIndexes = new JSONArray();
@@ -48,7 +47,7 @@ public class SystemMonitoring {
       index.put("trieInMemNodes", entry.getValue().getTrieInMemNodes());
       index.put("triePendingNodes", entry.getValue().getTriePendingNodes());
       index.put("pendingNodes", entry.getValue().getPendingNodes());
-      uniqueIndexes.add(index);
+      uniqueIndexes.put(index);
     }
     obj.put("multiIndexes", multiIndexes);
     return obj;

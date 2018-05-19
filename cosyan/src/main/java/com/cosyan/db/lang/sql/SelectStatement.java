@@ -105,7 +105,12 @@ public class SelectStatement extends Statement {
 
     public ExposedTableMeta compileTable(TableProvider tableProvider) throws ModelException {
       ExposedTableMeta sourceTable = table.compile(tableProvider);
-      ExposedTableMeta filteredTable = filteredTable(sourceTable, where);
+      ExposedTableMeta filteredTable;
+      if (where.isPresent()) {
+        filteredTable = filteredTable(sourceTable, where.get());
+      } else {
+        filteredTable = sourceTable;
+      }
       DerivedTableMeta fullTable;
       if (groupBy.isPresent()) {
         KeyValueTableMeta intermediateTable = keyValueTable(filteredTable, groupBy.get());
@@ -196,25 +201,21 @@ public class SelectStatement extends Statement {
       tableColumns.put(columnName, columnMeta);
     }
 
-    private ExposedTableMeta filteredTable(
-        ExposedTableMeta sourceTable, Optional<Expression> where)
+    public static ExposedTableMeta filteredTable(
+        ExposedTableMeta sourceTable, Expression where)
         throws ModelException {
-      if (where.isPresent()) {
-        ColumnMeta whereColumn = where.get().compileColumn(sourceTable);
-        assertType(DataTypes.BoolType, whereColumn.getType(), where.get().loc());
-        if (sourceTable instanceof SeekableTableMeta) {
-          SeekableTableMeta tableMeta = (SeekableTableMeta) sourceTable;
-          VariableEquals clause = PredicateHelper.getBestClause(tableMeta, where.get());
-          if (clause != null) {
-            return new IndexFilteredTableMeta(tableMeta, whereColumn, clause);
-          } else {
-            return new FilteredTableMeta(sourceTable, whereColumn);
-          }
+      ColumnMeta whereColumn = where.compileColumn(sourceTable);
+      assertType(DataTypes.BoolType, whereColumn.getType(), where.loc());
+      if (sourceTable instanceof SeekableTableMeta) {
+        SeekableTableMeta tableMeta = (SeekableTableMeta) sourceTable;
+        VariableEquals clause = PredicateHelper.getBestClause(tableMeta, where);
+        if (clause != null) {
+          return new IndexFilteredTableMeta(tableMeta, whereColumn, clause);
         } else {
           return new FilteredTableMeta(sourceTable, whereColumn);
         }
       } else {
-        return sourceTable;
+        return new FilteredTableMeta(sourceTable, whereColumn);
       }
     }
 

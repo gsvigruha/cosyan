@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
@@ -63,7 +64,6 @@ import com.cosyan.db.transaction.Resources;
 import com.cosyan.db.util.Util;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 
@@ -420,16 +420,12 @@ public class MetaRepo implements TableProvider, MetaRepoExecutor {
     return new Resources(readers.build(), writers.build(), metas.build());
   }
 
-  public ImmutableList<String> uniqueIndexNames() {
-    return ImmutableList.copyOf(uniqueIndexes.keySet());
-  }
-
-  public ImmutableList<String> multiIndexNames() {
-    return ImmutableList.copyOf(multiIndexes.keySet());
-  }
-
-  public ImmutableMap<String, MaterializedTable> getTables() {
-    return ImmutableMap.copyOf(tables);
+  public ImmutableMap<String, MaterializedTable> getTables(AuthToken authToken) {
+    return ImmutableMap.copyOf(tables
+        .entrySet()
+        .stream()
+        .filter(t -> grants.hasAccess(t.getValue(), authToken))
+        .collect(Collectors.toList()));
   }
 
   public static class ModelException extends Exception {

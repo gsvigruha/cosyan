@@ -21,5 +21,9 @@ angular.module('cosyan', [
       .when('/monitoring', {
         templateUrl: 'admin/monitoring.html',
         controller: 'MonitoringCtrl',
+      })
+      .when('/entity', {
+        templateUrl: 'entity/entity.html',
+        controller: 'EntityCtrl',
       });
 });

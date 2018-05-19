@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.http.HttpStatus;
-import org.json.simple.JSONObject;
+import org.json.JSONObject;
 
 import com.cosyan.db.meta.MetaRepo;
 
@@ -21,7 +21,6 @@ public class MonitoringServlet extends HttpServlet {
     this.systemMonitoring = new SystemMonitoring(metaRepo);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {

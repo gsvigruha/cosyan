@@ -63,7 +63,8 @@ public class RestartDBTest {
     assertEquals(1, tableMeta.columns().size());
     assertEquals(1, tableMeta.rules().size());
     assertEquals(true, tableMeta.primaryKey().isPresent());
-    assertTrue(dbApi.getMetaRepo().uniqueIndexNames().contains("t1.a"));
+    assertTrue(dbApi.getMetaRepo().collectUniqueIndexes(tableMeta).containsKey("a"));
+
     dbApi = new DBApi(config);
     MaterializedTable newTableMeta = dbApi.getMetaRepo().table("t1");
     assertEquals(tableMeta.columns(), newTableMeta.columns());
@@ -71,7 +72,7 @@ public class RestartDBTest {
     assertEquals(tableMeta.primaryKey(), newTableMeta.primaryKey());
     assertEquals(tableMeta.foreignKeys(), newTableMeta.foreignKeys());
     assertEquals(tableMeta.reverseForeignKeys(), newTableMeta.reverseForeignKeys());
-    assertTrue(dbApi.getMetaRepo().uniqueIndexNames().contains("t1.a"));
+    assertTrue(dbApi.getMetaRepo().collectUniqueIndexes(newTableMeta).containsKey("a"));
   }
 
   @Test

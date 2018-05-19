@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
@@ -12,8 +11,8 @@ import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.TransactionResult;
 import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.logging.TransactionJournal;
-import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.Grants.GrantException;
+import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.session.Session;
@@ -32,7 +31,7 @@ public class DataTransaction extends Transaction {
     return statements;
   }
 
-  protected MetaResources collectResources(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
+  protected MetaResources collectResources(MetaRepo metaRepo) throws ModelException {
     MetaResources metaResources = MetaResources.empty();
     for (Statement statement : statements) {
       metaResources = metaResources.merge(statement.compile(metaRepo));
@@ -62,7 +61,7 @@ public class DataTransaction extends Transaction {
     metaRepo.metaRepoReadLock();
     MetaResources metaResources;
     try {
-      metaResources = collectResources(metaRepo, session.authToken());
+      metaResources = collectResources(metaRepo);
     } catch (ModelException e) {
       return new ErrorResult(e);
     } finally {
@@ -97,12 +96,13 @@ public class DataTransaction extends Transaction {
         return result;
       } catch (IOException e) {
         // Need to restore db;
-        journal.ioWriteError(trxNumber);
         e.printStackTrace();
+        journal.ioWriteError(trxNumber);
         return new CrashResult(e);
       }
     } catch (Throwable e) {
       // Unspecified error, need to restore db;
+      e.printStackTrace();
       try {
         journal.crash(trxNumber);
       } catch (DBException e1) {

@@ -254,12 +254,20 @@ public class Grants {
   private void checkAccess(
       Collection<GrantToken> grants, MaterializedTable tableMeta, Method method, String table, AuthToken authToken)
       throws GrantException {
+    if (!hasAccess(grants, tableMeta, method, table, authToken)) {
+      throw new GrantException(
+          String.format("User '%s' has no %s right on '%s'.", authToken.username(), method, table));
+    }
+  }
+
+  private boolean hasAccess(
+      Collection<GrantToken> grants, MaterializedTable tableMeta, Method method, String table, AuthToken authToken) {
     for (GrantToken grant : grants) {
       if (grant.hasAccess(method, tableMeta, authToken)) {
-        return;
+        return true;
       }
     }
-    throw new GrantException(String.format("User '%s' has no %s right on '%s'.", authToken.username(), method, table));
+    return false;
   }
 
   public void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
@@ -286,6 +294,15 @@ public class Grants {
     }
   }
 
+  public boolean hasAccess(MaterializedTable tableMeta, AuthToken authToken) {
+    String table = tableMeta.tableName();
+    if (authToken.isAdmin() || authToken.username().equals(tableMeta.owner())) {
+      return true;
+    }
+    Collection<GrantToken> grants = userGrants.get(authToken.username());
+    return hasAccess(grants, tableMeta, Method.SELECT, table, authToken);
+  }
+
   public void checkOwner(MaterializedTable tableMeta, AuthToken authToken) throws GrantException {
     if (authToken.isAdmin() || authToken.username().equals(tableMeta.owner())) {
       return;
@@ -306,5 +323,4 @@ public class Grants {
       super(cause);
     }
   }
-
 }

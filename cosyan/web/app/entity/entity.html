@@ -1,0 +1,33 @@
+<div>
+  <span ng-repeat="entity in data.entities">
+    <button ng-click="switchEntity(entity.name);" class="tab">{{ entity.name }}</button>
+  </span>
+</div>
+
+<hr/>
+
+<h4>{{ activeEntity.name }}</h4>
+<div>
+  <span ng-repeat="field in activeEntity.fields">
+    <span ng-show="field.search">
+      {{ field.name }}<input ng-model="searchFields[field.name]"/>
+    </span>
+  </span>
+</div>
+
+<div>
+  <button ng-click="searchEntity()" class="sql">Search</button>
+</div>
+
+<div>
+  <table>
+    <th ng-repeat="header in entityList.header track by $index">
+      {{ header.name }}
+    </th>
+    <tr ng-repeat="row in entityList.values track by $index">
+      <td ng-repeat="element in row track by $index">
+      {{ element }}
+      </td>
+    </tr>
+  </table>
+</div>
