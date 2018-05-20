@@ -33,7 +33,7 @@ public class LoadEntityStatement extends Statement {
 
   @Override
   public MetaResources compile(MetaRepo metaRepo) throws ModelException {
-    MaterializedTable tableMeta = metaRepo.table(new Ident(table));
+    MaterializedTable tableMeta = metaRepo.table(new Ident(table, new Loc(0, 0)));
     header = tableMeta.columns().values().asList();
     Optional<BasicColumn> pkColumn = tableMeta.pkColumn();
     if (pkColumn.isPresent()) {

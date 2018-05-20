@@ -39,5 +39,24 @@ angular.module('cosyan')
     });
   };
   
+  $scope.openEntity = function(table, id) {
+    $http.get("/cosyan/loadEntity", {
+      params: { table: table, id: id }
+    }).then(function success(response) {
+      $scope.loadedEntity = response.data.result[0];
+      $scope.$error = undefined;
+    }, function error(response) {
+      $scope.loadedEntity = undefined;
+      $scope.$error = response.data.error;
+    });
+  };
+  
+  $scope.deleteEntity = function(table, id) {
+    $http.post("/cosyan/openEntity", {
+      table: table,
+      id: id,
+    });
+  };
+  
   $scope.load();
 });

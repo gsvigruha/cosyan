@@ -1,0 +1,24 @@
+.entity table {
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    border-collapse: collapse;
+    width: 300px;
+}
+
+.entity td, .entity th {
+    border: 1px solid #ddd;
+    padding: 2px;
+    font-size: 12px;
+}
+
+.entity tr:nth-child(even){background-color: #F2F2F2;}
+
+.entity tr:hover {background-color: #DDD;}
+
+.entity th {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    text-align: left;
+    background-color: #602040;
+    color: white;
+}
