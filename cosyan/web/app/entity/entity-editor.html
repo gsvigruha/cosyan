@@ -1,0 +1,12 @@
+<div class="editor">
+  <table>
+    <th>Name</th>
+    <th>Type</th>
+    <th>Value</th>
+    <tr ng-repeat="field in entity.fields track by $index">
+      <td>{{ field.name }}</td>
+      <td>{{ field.type }}</td>
+      <td><input ng-model="field.value"></input></td>
+    </tr>
+  </table>
+</div>

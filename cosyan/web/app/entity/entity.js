@@ -52,9 +52,10 @@ angular.module('cosyan')
   };
   
   $scope.deleteEntity = function(table, id) {
-    $http.post("/cosyan/openEntity", {
-      table: table,
-      id: id,
+    $http.get("/cosyan/deleteEntity", {
+      params: { table: table, id: id }
+    }).then(function reload(response) {
+      $scope.load();
     });
   };
   
