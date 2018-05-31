@@ -112,7 +112,9 @@ public class MetaResources {
             /* update= */true,
             /* foreignIndexes= */true,
             /* reverseForeignIndexes= */true,
-            /* meta= */false)));
+            /* meta= */false)))
+                .merge(tableMeta.ruleDependenciesReadResources())
+                .merge(tableMeta.reverseRuleDependenciesReadResources());
   }
 
   public static MetaResources insertIntoTable(MaterializedTable tableMeta) {

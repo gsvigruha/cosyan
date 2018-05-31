@@ -50,7 +50,7 @@ public class LoadEntityStatement extends Statement {
     SeekableTableReader reader = resources.reader(table);
     TableUniqueIndex index = resources.getPrimaryKeyIndex(table);
     Record record = reader.get(index.get0(key));
-    return new Entity(table, header, record.getValues());
+    return new Entity(table, column.getName(), header, record.getValues());
   }
 
   @Override

@@ -14,14 +14,14 @@ import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.session.Session;
 import com.google.common.collect.ImmutableList;
 
-public class EntitySearchServlet extends HttpServlet {
+public class EntitySaveServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
 
   private final DBApi dbApi;
   private Session session;
   private EntityHandler entityHandler;
 
-  public EntitySearchServlet(DBApi dbApi) {
+  public EntitySaveServlet(DBApi dbApi) {
     this.dbApi = dbApi;
     session = dbApi.adminSession();
     entityHandler = dbApi.entityHandler();
@@ -33,11 +33,12 @@ public class EntitySearchServlet extends HttpServlet {
     String table = req.getParameter("table");
     ImmutableList.Builder<ValueField> fields = ImmutableList.builder();
     for (String param : req.getParameterMap().keySet()) {
-      if (param.startsWith("filter_")) {
-        fields.add(new ValueField(param.substring(7), req.getParameter(param)));
+      if (param.startsWith("param_")) {
+        fields.add(new ValueField(param.substring(6), req.getParameter(param)));
       }
     }
-    Result result = entityHandler.searchEntity(table, fields.build(), session);
+    ValueField idField = new ValueField(req.getParameter("id_name"), req.getParameter("id_value"));
+    Result result = entityHandler.saveEntity(table, fields.build(), idField, session);
     resp.getWriter().println(result.toJSON().toString());
   }
 }

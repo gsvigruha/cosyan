@@ -14,6 +14,7 @@ import com.cosyan.ui.admin.MonitoringServlet;
 import com.cosyan.ui.entity.EntityDeleteServlet;
 import com.cosyan.ui.entity.EntityLoadServlet;
 import com.cosyan.ui.entity.EntityMetaServlet;
+import com.cosyan.ui.entity.EntitySaveServlet;
 import com.cosyan.ui.entity.EntitySearchServlet;
 import com.cosyan.ui.sql.SQLServlet;
 
@@ -31,6 +32,7 @@ public class WebServer {
     handler.addServlet(new ServletHolder(new EntityMetaServlet(dbApi)), "/entityMeta");
     handler.addServlet(new ServletHolder(new EntityLoadServlet(dbApi)), "/loadEntity");
     handler.addServlet(new ServletHolder(new EntityDeleteServlet(dbApi)), "/deleteEntity");
+    handler.addServlet(new ServletHolder(new EntitySaveServlet(dbApi)), "/saveEntity");
 
     ResourceHandler resourceHandler = new ResourceHandler();
     resourceHandler.setDirectoriesListed(false);

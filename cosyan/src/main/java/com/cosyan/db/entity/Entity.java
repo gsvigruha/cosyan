@@ -19,11 +19,13 @@ public class Entity extends Result {
   }
 
   private final String entityType;
+  private final String pkColumn;
   private final ImmutableList<Field> fields;
 
-  public Entity(String entityType, ImmutableList<BasicColumn> header, Object[] values) {
+  public Entity(String entityType, String pkColumn, ImmutableList<BasicColumn> header, Object[] values) {
     super(true);
     this.entityType = entityType;
+    this.pkColumn = pkColumn;
     ImmutableList.Builder<Field> fields = ImmutableList.builder();
     for (int i = 0; i < header.size(); i++) {
       BasicColumn column = header.get(i);
@@ -36,6 +38,7 @@ public class Entity extends Result {
   public JSONObject toJSON() {
     JSONObject obj = new JSONObject();
     obj.put("type", entityType);
+    obj.put("pk", pkColumn);
     JSONArray list = new JSONArray();
     for (Field field : fields) {
       JSONObject fieldObj = new JSONObject();

@@ -1,8 +1,13 @@
 package com.cosyan.db.entity;
 
-import com.cosyan.db.entity.EntitySearchStatement.SearchField;
+import java.util.Optional;
+
+import com.cosyan.db.entity.EntityFields.ValueField;
+import com.cosyan.db.lang.sql.Tokens.Loc;
+import com.cosyan.db.lang.sql.UpdateStatement.Update;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.model.Ident;
 import com.cosyan.db.session.Session;
 import com.cosyan.db.transaction.TransactionHandler;
 import com.google.common.collect.ImmutableList;
@@ -43,8 +48,17 @@ public class EntityHandler {
     return transaction.execute(metaRepo, session);
   }
 
-  public Result searchEntity(String table, ImmutableList<SearchField> searchFields, Session session) {
+  public Result searchEntity(String table, ImmutableList<ValueField> searchFields, Session session) {
     val stmt = new EntitySearchStatement(table, searchFields);
+    val transaction = transactionHandler.begin(ImmutableList.of(stmt));
+    return transaction.execute(metaRepo, session);
+  }
+
+  public Result saveEntity(String table, ImmutableList<ValueField> valueFields, ValueField idField, Session session) {
+    val stmt = new Update(
+        new Ident(table, new Loc(0, 0)),
+        valueFields.stream().map(f -> f.toSetExpr()).collect(ImmutableList.toImmutableList()),
+        Optional.of(idField.toFilterExpr()));
     val transaction = transactionHandler.begin(ImmutableList.of(stmt));
     return transaction.execute(metaRepo, session);
   }

@@ -49,3 +49,10 @@
     background-color: #602040;
     color: white;
 }
+
+
+
+input.search {
+    margin-left: 4px;
+    width: 80px;
+}

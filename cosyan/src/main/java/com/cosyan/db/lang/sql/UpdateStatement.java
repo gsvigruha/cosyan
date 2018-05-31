@@ -77,9 +77,7 @@ public class UpdateStatement {
       } else {
         whereColumn = ColumnMeta.TRUE_COLUMN;
       }
-      return MetaResources.updateTable(materializedTableMeta)
-          .merge(materializedTableMeta.ruleDependenciesReadResources())
-          .merge(materializedTableMeta.reverseRuleDependenciesReadResources());
+      return MetaResources.updateTable(materializedTableMeta);
     }
 
     @Override
