@@ -150,7 +150,7 @@ public class MaterializedTable {
     return columnsMap(columns);
   }
 
-  public Optional<BasicColumn> pkColumn() throws ModelException {
+  public Optional<BasicColumn> pkColumn() {
     return primaryKey.map(pk -> pk.getColumn());
   }
 

@@ -66,10 +66,7 @@ public class InsertIntoStatement {
         }
       }
       indexes = indexesBuilder.build();
-      return MetaResources
-          .insertIntoTable(tableMeta)
-          .merge(tableMeta.ruleDependenciesReadResources())
-          .merge(tableMeta.reverseRuleDependenciesReadResources());
+      return MetaResources.insertIntoTable(tableMeta);
     }
 
     @Override

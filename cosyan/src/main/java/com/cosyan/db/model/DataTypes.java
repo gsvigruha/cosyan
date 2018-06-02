@@ -332,7 +332,11 @@ public class DataTypes {
 
     @Override
     public Object fromString(String string) throws RuleException {
-      throw new UnsupportedOperationException();
+      try {
+        return Long.valueOf(string);
+      } catch (NumberFormatException e) {
+        throw new RuleException(String.format("Invalid integer '%s'.", string));
+      }
     }
   };
 

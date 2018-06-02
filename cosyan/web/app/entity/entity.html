@@ -8,6 +8,7 @@
 
 <h4>{{ activeEntity.name }}</h4>
 <div>
+  <span><button ng-click="newEntity()" class="sql">New</button></span>
   <span><button ng-click="searchEntity()" class="sql">Search</button></span>
   <span ng-repeat="field in activeEntity.fields">
     <span ng-show="field.search">

@@ -60,6 +60,19 @@ angular.module('cosyan')
     });
   };
   
+  $scope.newEntity = function() {
+    if (!$scope.activeEntity) {
+      return;
+    }
+    var entity = { type: $scope.activeEntity.name, fields: [] };
+    for (var i in $scope.activeEntity.fields) {
+      var field = $scope.activeEntity.fields[i];
+      entity.fields.push({ name: field.name, type: field.type, value: undefined });
+    }
+    $scope.loadedEntity = entity;
+    $scope.$error = undefined;
+  };
+  
   $scope.deleteEntity = function(table, id) {
     $http.get("/cosyan/deleteEntity", {
       params: { table: table, id: id }

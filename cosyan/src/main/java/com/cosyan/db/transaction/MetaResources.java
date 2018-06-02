@@ -128,7 +128,9 @@ public class MetaResources {
             /* update= */false,
             /* foreignIndexes= */true, // New records have to satisfy foreign key constraints.
             /* reverseForeignIndexes= */false,
-            /* meta= */false)));
+            /* meta= */false)))
+                .merge(tableMeta.ruleDependenciesReadResources())
+                .merge(tableMeta.reverseRuleDependenciesReadResources());
   }
 
   public static MetaResources deleteFromTable(MaterializedTable tableMeta) {
@@ -142,7 +144,8 @@ public class MetaResources {
             /* update= */false,
             /* foreignIndexes= */false,
             /* reverseForeignIndexes= */true, // Cannot delete records referenced by foreign keys.
-            /* meta= */false)));
+            /* meta= */false)))
+                .merge(tableMeta.reverseRuleDependenciesReadResources());
   }
 
   public static MetaResources tableMeta(MaterializedTable tableMeta) {

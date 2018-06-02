@@ -6,7 +6,12 @@
     <tr ng-repeat="field in entity.fields track by $index">
       <td>{{ field.name }}</td>
       <td>{{ field.type }}</td>
-      <td><input ng-model="field.value"></input></td>
+      <td ng-switch on="field.type">
+        <input ng-model="field.value" disabled ng-switch-when="id"></input>
+        <input ng-model="field.value" placeholder="###" ng-switch-when="integer"></input>
+        <input ng-model="field.value" placeholder="##.#" ng-switch-when="float"></input>
+        <input ng-model="field.value" ng-switch-default></input>
+      </td>
     </tr>
   </table>
   <button ng-click="saveEntity();" class="tab">Save</button>
