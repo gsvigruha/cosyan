@@ -1,0 +1,16 @@
+<div class="entity">
+  <table>
+    <th ng-repeat="header in entities.header track by $index">
+      {{ header.name }}
+    </th>
+    <th>Open</th>
+    <th>Delete</th>
+    <tr ng-repeat="row in entities.values track by $index">
+      <td ng-repeat="element in row track by $index">
+      {{ element }}
+      </td>
+      <td><button ng-click="open({id: row[0]});" class="tab">Open</button></td>
+      <td><button ng-click="delete({id: row[0]});" class="tab">Delete</button></td>
+    </tr>
+  </table>
+</div>

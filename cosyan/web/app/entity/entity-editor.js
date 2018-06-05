@@ -5,11 +5,13 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
     restrict: 'E',
     scope: {
       entity: '=',
+      meta: '=',
       reload: '&',
     },
     templateUrl: 'entity/entity-editor.html',
     link: function(scope, element) {
       scope.dirty = false;
+      scope.entityList = {};
       
       scope.format = function(field) {
         if (field.type === 'varchar') {
@@ -51,6 +53,21 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
           scope.reload();
         }, function error(response) {
           scope.reload();
+        });
+      };
+      
+      scope.expandEntity = function(fk) {
+        console.log(fk);
+      };
+      
+      scope.expandEntityList = function(rfk) {
+        var query = 'select * from ' + rfk.refTable + ' where ' + rfk.refColumn + ' = ' + scope.entity.fields[0].value + ';';
+        $http.get("/cosyan/sql", {
+          params: { sql: query }
+        }).then(function success(response) {
+          scope.entityList[rfk.name] = response.data.result[0];
+        }, function error(response) {
+          scope.$error = response.data.error;
         });
       };
     },

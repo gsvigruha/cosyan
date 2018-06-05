@@ -1,5 +1,7 @@
 package com.cosyan.db.entity;
 
+import java.util.stream.Collectors;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -16,15 +18,15 @@ public class EntityMeta extends Result {
   public static class Entity {
     private final String name;
     private final ImmutableList<Field> fields;
+    private final ImmutableList<ForeignKey> foreignKeys;
+    private final ImmutableList<ReverseForeignKey> reverseForeignKeys;
 
     public JSONObject toJSON() {
       JSONObject obj = new JSONObject();
       obj.put("name", name);
-      JSONArray fieldsObj = new JSONArray();
-      for (Field field : fields) {
-        fieldsObj.put(field.toJSON());
-      }
-      obj.put("fields", fieldsObj);
+      obj.put("fields", fields.stream().map(f -> f.toJSON()).collect(Collectors.toList()));
+      obj.put("foreignKeys", foreignKeys.stream().map(f -> f.toJSON()).collect(Collectors.toList()));
+      obj.put("reverseForeignKeys", reverseForeignKeys.stream().map(f -> f.toJSON()).collect(Collectors.toList()));
       return obj;
     }
   }
@@ -44,6 +46,36 @@ public class EntityMeta extends Result {
     }
   }
 
+  @Data
+  public static class ForeignKey {
+    private final String name;
+    private final String column;
+    private final String refTable;
+
+    public JSONObject toJSON() {
+      JSONObject obj = new JSONObject();
+      obj.put("name", name);
+      obj.put("column", column);
+      obj.put("refTable", refTable);
+      return obj;
+    }
+  }
+
+  @Data
+  public static class ReverseForeignKey {
+    private final String name;
+    private final String refColumn;
+    private final String refTable;
+
+    public JSONObject toJSON() {
+      JSONObject obj = new JSONObject();
+      obj.put("name", name);
+      obj.put("refColumn", refColumn);
+      obj.put("refTable", refTable);
+      return obj;
+    }
+  }
+
   private final ImmutableList<Entity> entities;
 
   public EntityMeta(ImmutableList<MaterializedTable> tables) {
@@ -53,9 +85,25 @@ public class EntityMeta extends Result {
       ImmutableList.Builder<Field> fields = ImmutableList.builder();
       for (BasicColumn column : table.columns().values()) {
         // TODO: search field based on stats
-        fields.add(new Field(column.getName(), column.getType().getName(), true));
+        if (!table.isColumnForeignKey(column.getName())) {
+          fields.add(new Field(column.getName(), column.getType().getName(), true));
+        }
       }
-      entities.add(new Entity(table.tableName(), fields.build()));
+      ImmutableList.Builder<ForeignKey> foreignKeys = ImmutableList.builder();
+      for (com.cosyan.db.model.Keys.ForeignKey foreignKey : table.foreignKeys().values()) {
+        foreignKeys.add(new ForeignKey(
+            foreignKey.getName(),
+            foreignKey.getColumn().getName(),
+            foreignKey.getRefTable().tableName()));
+      }
+      ImmutableList.Builder<ReverseForeignKey> reverseForeignKeys = ImmutableList.builder();
+      for (com.cosyan.db.model.Keys.ReverseForeignKey reverseForeignKey : table.reverseForeignKeys().values()) {
+        reverseForeignKeys.add(new ReverseForeignKey(
+            reverseForeignKey.getName(),
+            reverseForeignKey.getRefColumn().getName(),
+            reverseForeignKey.getRefTable().tableName()));
+      }
+      entities.add(new Entity(table.tableName(), fields.build(), foreignKeys.build(), reverseForeignKeys.build()));
     }
     this.entities = entities.build();
   }

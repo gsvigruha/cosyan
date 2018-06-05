@@ -37,12 +37,6 @@ public class EntityHandler {
     return transaction.execute(metaRepo, session);
   }
 
-  public Result deleteEntity(String table, String id, Session session) {
-    val stmt = new DeleteEntityStatement(table, id);
-    val transaction = transactionHandler.begin(ImmutableList.of(stmt));
-    return transaction.execute(metaRepo, session);
-  }
-
   public Result searchEntity(String table, ImmutableList<ValueField> searchFields, Session session) {
     val stmt = new EntitySearchStatement(table, searchFields);
     val transaction = transactionHandler.begin(ImmutableList.of(stmt));

@@ -273,4 +273,26 @@ public class RestartDBTest {
       assertArrayEquals(new long[] { 18L }, index.get(2L));
     }
   }
+
+  @Test
+  public void testIDIndexesAfterRestart() throws Exception {
+    DBApi dbApi = new DBApi(config);
+    dbApi.adminSession().execute("create table t15(a id, b varchar);");
+    dbApi.adminSession().execute("insert into t15 values ('x');");
+    dbApi.adminSession().execute("insert into t15 values ('y');");
+    {
+      MaterializedTable t15 = dbApi.getMetaRepo().table("t15");
+      IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t15).get("a");
+      assertArrayEquals(new long[] { 0L }, index.get(0L));
+      assertArrayEquals(new long[] { 25L }, index.get(1L));
+    }
+
+    dbApi = new DBApi(config);
+    {
+      MaterializedTable t15 = dbApi.getMetaRepo().table("t15");
+      IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t15).get("a");
+      assertArrayEquals(new long[] { 0L }, index.get(0L));
+      assertArrayEquals(new long[] { 25L }, index.get(1L));
+    }
+  }
 }

@@ -381,4 +381,18 @@ public class UpdateTest extends UnitTestBase {
     ErrorResult e1 = error("update t30 set a = 'z';");
     assertError(RuleException.class, "Invalid enum value 'z'.", e1);
   }
+
+  @Test
+  public void testUpdateIDIndex() throws Exception {
+    execute("create table t31 (a id, b varchar);");
+    execute("insert into t31 values ('x'), ('y');");
+
+    TableUniqueIndex index = (TableUniqueIndex) metaRepo.collectIndexReaders(metaRepo.table("t31")).get("a");
+    assertEquals(0L, index.get0(0L));
+
+    execute("update t31 set b = 'z' where a = 0;");
+    assertEquals(50L, index.get0(0L));
+    QueryResult r1 = query("select * from t31 where a = 0;");
+    assertValues(new Object[][] { { 0L, "z" } }, r1);
+  }
 }

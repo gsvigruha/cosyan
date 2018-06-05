@@ -378,8 +378,12 @@ public class MaterializedTable {
     return foreignKeys.get(name);
   }
 
-  public boolean hasForeignKey(String name) {
-    return foreignKeys.containsKey(name);
+  public boolean hasForeignKey(String fkName) {
+    return foreignKeys.containsKey(fkName);
+  }
+
+  public boolean isColumnForeignKey(String columnName) {
+    return foreignKeys.values().stream().anyMatch(fk -> fk.getColumn().getName().equals(columnName));
   }
 
   public ReverseForeignKey reverseForeignKey(Ident ident) throws ModelException {

@@ -93,20 +93,22 @@ public class IDIndex {
     if (cachedValues == null) {
       if (key * 8 >= filePointer) {
         for (long i = filePointer / BYTE_SIZE; i <= segment; i++) {
-          cachedValues = new long[SIZE];
-          Arrays.fill(cachedValues, -1);
-          cachedIndices.put(i, cachedValues);
-          dirty.add(i);
+          if (!cachedIndices.containsKey(i)) {
+            cachedValues = new long[SIZE];
+            Arrays.fill(cachedValues, -1);
+            cachedIndices.put(i, cachedValues);
+            dirty.add(i);
+          }
         }
       } else {
         cachedValues = read(segment);
         cachedIndices.put(segment, cachedValues);
-        dirty.add(segment);
       }
     }
     if (cachedValues[(int) (key % SIZE)] != -1) {
       throw new IndexException("Key '" + key + "' already present in index.");
     }
+    dirty.add(segment);
     cachedValues[(int) (key % SIZE)] = value;
     lastID = Math.max(lastID, key);
   }
@@ -121,13 +123,13 @@ public class IDIndex {
       }
       cachedValues = read(segment);
       cachedIndices.put(segment, cachedValues);
-      dirty.add(segment);
     }
     int idx = (int) (key - blockStart);
     long cachedValue = cachedValues[idx];
     if (cachedValue == -1) {
       return false;
     } else {
+      dirty.add(segment);
       cachedValues[idx] = -1;
       return true;
     }

@@ -48,7 +48,8 @@ angular.module('cosyan')
     });
   };
   
-  $scope.openEntity = function(table, id) {
+  $scope.openEntity = function(id) {
+    var table = $scope.activeEntity.name;
     $http.get("/cosyan/loadEntity", {
       params: { table: table, id: id }
     }).then(function success(response) {
@@ -73,10 +74,13 @@ angular.module('cosyan')
     $scope.$error = undefined;
   };
   
-  $scope.deleteEntity = function(table, id) {
-    $http.get("/cosyan/deleteEntity", {
-      params: { table: table, id: id }
-    }).then(function reload(response) {
+  $scope.deleteEntity = function(id) {
+    var table = $scope.activeEntity.name;
+    var idName = $scope.activeEntity.fields[0].name;
+    var query = 'delete from ' + table + ' where ' + idName + ' = ' + id + ';';
+    $http.get("/cosyan/sql", {
+      params: { sql: query }
+    }).then(function success(response) {
       $scope.searchEntity();
     });
   };

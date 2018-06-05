@@ -17,23 +17,8 @@
   </span>
 </div>
 
-<div class="entity" ng-show="entityList">
-  <table>
-    <th ng-repeat="header in entityList.header track by $index">
-      {{ header.name }}
-    </th>
-    <th>Open</th>
-    <th>Delete</th>
-    <tr ng-repeat="row in entityList.values track by $index">
-      <td ng-repeat="element in row track by $index">
-      {{ element }}
-      </td>
-      <td><button ng-click="openEntity(activeEntity.name, row[0]);" class="tab">Open</button></td>
-      <td><button ng-click="deleteEntity(activeEntity.name, row[0]);" class="tab">Delete</button></td>
-    </tr>
-  </table>
-</div>
+<entity-list entities="entityList" open="openEntity(id)" delete="deleteEntity(id)" ng-if="entityList"></entity-list>
 
 <hr/>
 
-<entity-editor entity="loadedEntity" reload="searchEntity()" ng-if="loadedEntity"></entity-editor>
+<entity-editor entity="loadedEntity" meta="activeEntity" reload="searchEntity()" ng-if="loadedEntity"></entity-editor>
