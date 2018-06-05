@@ -5,7 +5,6 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
     restrict: 'E',
     scope: {
       entity: '=',
-      meta: '=',
       reload: '&',
     },
     templateUrl: 'entity/entity-editor.html',
@@ -57,10 +56,24 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
       };
       
       scope.expandEntity = function(fk) {
-        console.log(fk);
+        if (scope.entityList[fk.name] || !fk.value) {
+          scope.entityList[fk.name] = undefined;
+          return;
+        }
+        $http.get("/cosyan/loadEntity", {
+          params: { table: fk.refTable, id: fk.value }
+        }).then(function success(response) {
+          scope.entityList[fk.name] = response.data.result[0];
+        }, function error(response) {
+          $scope.$error = response.data.error;
+        });
       };
       
       scope.expandEntityList = function(rfk) {
+        if (scope.entityList[rfk.name]) {
+          scope.entityList[rfk.name] = undefined;
+          return;
+        }
         var query = 'select * from ' + rfk.refTable + ' where ' + rfk.refColumn + ' = ' + scope.entity.fields[0].value + ';';
         $http.get("/cosyan/sql", {
           params: { sql: query }
@@ -69,6 +82,10 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
         }, function error(response) {
           scope.$error = response.data.error;
         });
+      };
+      
+      scope.pickEntity = function(fk) {
+        console.log(fk);
       };
     },
   };

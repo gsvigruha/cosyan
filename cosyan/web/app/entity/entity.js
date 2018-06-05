@@ -65,10 +65,14 @@ angular.module('cosyan')
     if (!$scope.activeEntity) {
       return;
     }
-    var entity = { type: $scope.activeEntity.name, fields: [] };
+    var entity = { type: $scope.activeEntity.name, fields: [], foreignKeys: [] };
     for (var i in $scope.activeEntity.fields) {
       var field = $scope.activeEntity.fields[i];
       entity.fields.push({ name: field.name, type: field.type, value: undefined });
+    }
+    for (var i in $scope.activeEntity.foreignKeys) {
+      var fk = $scope.activeEntity.foreignKeys[i];
+      entity.foreignKeys.push({ name: fk.name, type: fk.type, refTable: fk.refTable, refColumn: fk.refColumn, value: undefined });
     }
     $scope.loadedEntity = entity;
     $scope.$error = undefined;

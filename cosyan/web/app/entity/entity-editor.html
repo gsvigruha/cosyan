@@ -14,10 +14,13 @@
       </td>
     </tr>
   </table>
-  <div ng-repeat="fk in entity.foreignKeys track by $index">
-    <button ng-click="expandEntity(fk);" class="tab">Expand</button>
+  <div ng-repeat="fk in entity.foreignKeys track by $index" class="subentity">
+    {{ fk.name}}
+    <button ng-click="expandEntity(fk);" class="tab" ng-if="fk.value">Expand</button>
+    <button ng-click="pickEntity(fk);" class="tab">Pick</button>
+    <entity-editor entity="entityList[fk.name]" ng-if="entityList[fk.name]"></entity-editor>
   </div>
-  <div ng-repeat="rfk in meta.reverseForeignKeys track by $index">
+  <div ng-repeat="rfk in entity.reverseForeignKeys track by $index" class="subentity">
     {{ rfk.name }} <button ng-click="expandEntityList(rfk);" class="tab">Expand</button>
     <entity-list entities="entityList[rfk.name]" ng-if="entityList[rfk.name]"></entity-list>
   </div>
