@@ -3,9 +3,7 @@
 angular.module('cosyan')
 .controller('EntityCtrl', function($scope, $http) {
   $scope.load = function() {
-    $http.get("/cosyan/entityMeta", {
-      params: { sql: $scope.query }
-    }).then(function success(response) {
+    $http.get("/cosyan/entityMeta").then(function success(response) {
       $scope.data = response.data;
       $scope.$error = undefined;
       $scope.loadedEntity = undefined;

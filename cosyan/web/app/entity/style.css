@@ -61,3 +61,17 @@ input.search {
     margin-left: 4px;
     width: 80px;
 }
+
+div.popup {
+    position:absolute;
+    margin:0 auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #C0B0A0;
+    background-color: #FFFFF0;
+    padding: 12px;
+}
