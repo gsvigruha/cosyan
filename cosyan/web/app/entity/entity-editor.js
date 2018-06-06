@@ -106,6 +106,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
       
       scope.pick = function(fk, id) {
         fk.value = id;
+        scope.entityPick[fk.name] = undefined;
       };
     },
   };

@@ -74,4 +74,5 @@ div.popup {
     border-color: #C0B0A0;
     background-color: #FFFFF0;
     padding: 12px;
+    min-height: 80px;
 }
