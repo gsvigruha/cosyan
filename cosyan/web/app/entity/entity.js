@@ -70,7 +70,12 @@ angular.module('cosyan')
     }
     for (var i in $scope.activeEntity.foreignKeys) {
       var fk = $scope.activeEntity.foreignKeys[i];
-      entity.foreignKeys.push({ name: fk.name, type: fk.type, refTable: fk.refTable, refColumn: fk.refColumn, value: undefined });
+      entity.foreignKeys.push({
+        name: fk.name,
+        type: fk.type,
+        refTable: fk.refTable,
+        columnName: fk.column,
+        value: undefined });
     }
     $scope.loadedEntity = entity;
     $scope.$error = undefined;
