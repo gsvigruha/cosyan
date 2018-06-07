@@ -5,8 +5,9 @@ angular.module('cosyan').directive('entityList', ['$http', function($http) {
     restrict: 'E',
     scope: {
       entities: '=',
-      open: '&',
-      delete: '&',
+      open: '&?',
+      delete: '&?',
+      pick: '&?',
     },
     templateUrl: 'entity/entity-list.html',
     link: function(scope, element) {

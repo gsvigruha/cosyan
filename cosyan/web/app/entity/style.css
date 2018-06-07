@@ -23,7 +23,13 @@
     color: white;
 }
 
+span.button {
+    padding: 4px;
+}
 
+span.button:hover {background-color: #80C0FF;}
+
+span.button:active {background-color: #60A0FF;}
 
 .editor table {
     font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
@@ -50,6 +56,14 @@
     color: white;
 }
 
+div.entity-menu {
+    margin: 4px;
+}
+
+span.entity-menu-label {
+    margin-left: 8px;
+    margin-right: 16px;
+}
 
 div.subentity {
     border-style: solid;
@@ -74,5 +88,11 @@ div.popup {
     border-color: #C0B0A0;
     background-color: #FFFFF0;
     padding: 12px;
-    min-height: 80px;
+    height: 60%;
+    width: 80%;
+}
+
+object.icons {
+    height: 20px;
+    width: 20px;
 }

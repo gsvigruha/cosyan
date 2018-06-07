@@ -1,10 +1,10 @@
 <div class="popup">
-  <span><button ng-click="searchEntity()" class="sql">Search</button></span>
+  <span ng-click="searchEntity()" title="Search" class="button glyphicon glyphicon-search"></span>
   <span ng-repeat="field in meta.fields">
     <span ng-show="field.search">
       {{ field.name }}<input ng-model="searchFields[field.name]" class="search"/>
     </span>
   </span>
 
-  <entity-list entities="entityList" open="pick({id: id})" ng-if="entityList"></entity-list>
+  <entity-list entities="entityList" pick="pick({id: id})" ng-if="entityList"></entity-list>
 </div>

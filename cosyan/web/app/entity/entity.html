@@ -8,8 +8,8 @@
 
 <h4>{{ activeEntity.name }}</h4>
 <div>
-  <span><button ng-click="newEntity()" class="sql">New</button></span>
-  <span><button ng-click="searchEntity()" class="sql">Search</button></span>
+  <span ng-click="newEntity()" title="New" class="button glyphicon glyphicon-new-window"></span>
+  <span ng-click="searchEntity()" title="Search" class="button glyphicon glyphicon-search"></span>
   <span ng-repeat="field in activeEntity.fields">
     <span ng-show="field.search">
       {{ field.name }}<input ng-model="searchFields[field.name]" class="search"/>

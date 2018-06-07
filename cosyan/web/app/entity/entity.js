@@ -20,6 +20,9 @@ angular.module('cosyan')
     for (var i = 0; i < $scope.data.entities.length; i++) {
       if ($scope.data.entities[i].name == name) {
         $scope.activeEntity = $scope.data.entities[i];
+        $scope.$error = undefined;
+        $scope.loadedEntity = undefined;
+        $scope.entityList = undefined;
       }
     }
   };
