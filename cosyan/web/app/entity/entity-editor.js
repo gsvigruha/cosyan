@@ -109,11 +109,14 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
       
       scope.unsetEntity = function(fk) {
         fk.value = undefined;
+        scope.entityList[fk.name] = undefined;
       };
       
       scope.pick = function(fk, id) {
-        fk.value = id;
         scope.entityPick[fk.name] = undefined;
+        scope.entityList[fk.name] = undefined;
+        fk.value = id;
+        scope.expandEntity(fk);
       };
     },
   };

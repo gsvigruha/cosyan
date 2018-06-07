@@ -105,25 +105,27 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       if (!column.isNullable() && value == null) {
         throw new RuleException("Column is not nullable (mandatory).");
       }
-      if (column.isUnique() && value != null) {
-        try {
-          uniqueIndexes.get(column.getName()).put(value, fileIndex);
-        } catch (IndexException e) {
-          throw new RuleException(e);
+      if (value != null) {
+        if (column.isUnique()) {
+          try {
+            uniqueIndexes.get(column.getName()).put(value, fileIndex);
+          } catch (IndexException e) {
+            throw new RuleException(e);
+          }
         }
-      }
-      if (value != null && multiIndexes.containsKey(column.getName())) {
-        try {
-          multiIndexes.get(column.getName()).put(value, fileIndex);
-        } catch (IndexException e) {
-          throw new RuleException(e);
+        if (multiIndexes.containsKey(column.getName())) {
+          try {
+            multiIndexes.get(column.getName()).put(value, fileIndex);
+          } catch (IndexException e) {
+            throw new RuleException(e);
+          }
         }
-      }
-      if (value != null && foreignIndexes.containsKey(column.getName())) {
-        for (IndexReader foreignIndex : foreignIndexes.get(column.getName())) {
-          if (!foreignIndex.contains(value)) {
-            throw new RuleException(String.format(
-                "Foreign key violation, value '%s' not present.", value));
+        if (foreignIndexes.containsKey(column.getName())) {
+          for (IndexReader foreignIndex : foreignIndexes.get(column.getName())) {
+            if (!foreignIndex.contains(value)) {
+              throw new RuleException(String.format(
+                  "Foreign key violation, value '%s' not present.", value));
+            }
           }
         }
       }
