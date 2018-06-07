@@ -14,6 +14,9 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
       scope.entityPick = {};
       
       scope.format = function(field) {
+        if (field.value === undefined) {
+          return 'null';
+        }
         if (field.type === 'varchar') {
           return '\'' + field.value + '\'';
         } else {
@@ -102,6 +105,10 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
         } else {
           scope.entityPick[fk.name] = undefined;
         }
+      };
+      
+      scope.unsetEntity = function(fk) {
+        fk.value = undefined;
       };
       
       scope.pick = function(fk, id) {

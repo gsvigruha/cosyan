@@ -65,6 +65,12 @@ span.entity-menu-label {
     margin-right: 16px;
 }
 
+span.entity-title {
+    font-size: 18px;
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
 div.subentity {
     border-style: solid;
     border-width: 1px;
@@ -92,7 +98,25 @@ div.popup {
     width: 80%;
 }
 
+div.error {
+    color: #CC0000;
+    background-color: #F8F8F8;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #F0F0F0;
+}
+
+div.message {
+    margin: 2px;
+    height: 22px;
+}
+
 object.icons {
     height: 20px;
     width: 20px;
+}
+
+hr.entity {
+  margin-top: 4px;
+  margin-bottom: 4px;
 }

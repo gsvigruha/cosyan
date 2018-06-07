@@ -1,4 +1,5 @@
 <div class="editor">
+  <span ng-click="saveEntity();" title="Save" class="button glyphicon glyphicon-floppy-disk"></span>
   <table>
     <th>Name</th>
     <th>Type</th>
@@ -20,6 +21,7 @@
       <span class="entity-menu-label">{{ fk.name }}</span>
       <span ng-click="expandEntity(fk);" title="Expand" class="button glyphicon glyphicon-collapse-down" ng-if="fk.value"></span>
       <span ng-click="pickEntity(fk);" title="Pick" class="button glyphicon glyphicon-list-alt"></span>
+      <span ng-click="unsetEntity(fk);" title="Unset" class="button glyphicon glyphicon-remove"></span>
     </div>
     <entity-editor entity="entityList[fk.name]" ng-if="entityList[fk.name]"></entity-editor>
     <entity-pick type="fk.refTable" pick="pick(fk, id)" ng-if="entityPick[fk.name]"></entity-pick>
@@ -32,5 +34,4 @@
     </div>
     <entity-list entities="entityList[rfk.name]" ng-if="entityList[rfk.name]"></entity-list>
   </div>
-  <span ng-click="saveEntity();" title="Save" class="button glyphicon glyphicon-floppy-disk"></span>
 </div>

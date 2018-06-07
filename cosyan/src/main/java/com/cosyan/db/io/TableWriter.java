@@ -205,18 +205,20 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     recordsToDelete.add(record.getFilePointer());
     for (BasicColumn column : columns) {
       Object value = record.getValues()[column.getIndex()];
-      if (uniqueIndexes.containsKey(column.getName())) {
-        uniqueIndexes.get(column.getName()).delete(value);
-      }
-      if (multiIndexes.containsKey(column.getName())) {
-        multiIndexes.get(column.getName()).delete(value, record.getFilePointer());
-      }
-      if (checkReversedForeignIndex.test(column.getIndex())) {
-        if (reversedForeignIndexes.containsKey(column.getName())) {
-          for (IndexReader reverseForeignIndex : reversedForeignIndexes.get(column.getName())) {
-            if (reverseForeignIndex.contains(value)) {
-              throw new RuleException(String.format(
-                  "Foreign key violation, key value '%s' has references.", value));
+      if (value != null) {
+        if (uniqueIndexes.containsKey(column.getName())) {
+          uniqueIndexes.get(column.getName()).delete(value);
+        }
+        if (multiIndexes.containsKey(column.getName())) {
+          multiIndexes.get(column.getName()).delete(value, record.getFilePointer());
+        }
+        if (checkReversedForeignIndex.test(column.getIndex())) {
+          if (reversedForeignIndexes.containsKey(column.getName())) {
+            for (IndexReader reverseForeignIndex : reversedForeignIndexes.get(column.getName())) {
+              if (reverseForeignIndex.contains(value)) {
+                throw new RuleException(String.format(
+                    "Foreign key violation, key value '%s' has references.", value));
+              }
             }
           }
         }

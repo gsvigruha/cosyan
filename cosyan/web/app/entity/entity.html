@@ -6,10 +6,11 @@
 
 <hr/>
 
-<h4>{{ activeEntity.name }}</h4>
-<div>
+<div ng-if="activeEntity">
+  <span class="entity-title">{{ activeEntity.name }}</span>
   <span ng-click="newEntity()" title="New" class="button glyphicon glyphicon-new-window"></span>
   <span ng-click="searchEntity()" title="Search" class="button glyphicon glyphicon-search"></span>
+  <span ng-click="collapse()" title="Collapse" class="button glyphicon glyphicon-collapse-up"></span>
   <span ng-repeat="field in activeEntity.fields">
     <span ng-show="field.search">
       {{ field.name }}<input ng-model="searchFields[field.name]" class="search"/>
@@ -17,8 +18,10 @@
   </span>
 </div>
 
+<div class="message" ng-class="{error: $error}">{{ $error }}</div>
+
 <entity-list entities="entityList" open="openEntity(id)" delete="deleteEntity(id)" ng-if="entityList"></entity-list>
 
-<hr/>
+<hr class="entity"/>
 
 <entity-editor entity="loadedEntity" reload="searchEntity()" ng-if="loadedEntity"></entity-editor>
