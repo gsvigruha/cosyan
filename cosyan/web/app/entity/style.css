@@ -12,6 +12,7 @@
 }
 
 .entity tr:nth-child(even){background-color: #F2F2F2;}
+.entity tr:nth-child(odd){background-color: #FFFFFF;}
 
 .entity tr:hover {background-color: #DDD;}
 
@@ -53,6 +54,7 @@ span.button:active {background-color: #60A0FF;}
 }
 
 .editor tr:nth-child(even){background-color: #F2F2F2;}
+.editor tr:nth-child(odd){background-color: #FFFFFF;}
 
 .editor tr:hover {background-color: #DDD;}
 
@@ -70,11 +72,12 @@ div.entity {
 
 div.editor {
     padding-left: 4px;
-    padding-bottom: 2px;
+    padding-bottom: 4px;
     border-width: 1px;
     border-style: solid;
     border-color: #F0ECE8;
     background-color: #FCF8F0;
+    border-radius: 8px;
 }
 
 div.entity-menu {
@@ -93,11 +96,12 @@ span.entity-title {
 }
 
 div.subentity {
-    padding-bottom: 2px;
+    padding-bottom: 4px;
     border-style: solid;
     border-width: 1px;
     border-color: #E8E8E8;
     background-color: #F8F4F0;
+    border-radius: 8px;
 }
 
 input.search {
@@ -115,10 +119,11 @@ div.popup {
     border-style: solid;
     border-width: 1px;
     border-color: #C0B0A0;
-    background-color: #FFFFF0;
+    border-radius: 8px;
     padding: 12px;
     height: 60%;
     width: 80%;
+    background: rgba(255, 255, 239, 0.9);
 }
 
 div.error {
