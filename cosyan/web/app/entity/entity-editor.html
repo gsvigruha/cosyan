@@ -1,5 +1,6 @@
 <div class="editor">
-  <span ng-click="saveEntity();" title="Save" class="button glyphicon glyphicon-floppy-disk"></span>
+  <span ng-click="saveEntity();" title="Save" ng-class="{enabled: dirty}" class="button disabled glyphicon glyphicon-floppy-disk"></span>
+  <span ng-click="discardEntity();" title="Discard" class="button enabled glyphicon glyphicon-ban-circle"></span>
   <table>
     <th>Name</th>
     <th>Type</th>
@@ -8,10 +9,10 @@
       <td>{{ field.name }}</td>
       <td>{{ field.type }}</td>
       <td ng-switch on="field.type">
-        <input ng-model="field.value" disabled ng-switch-when="id"></input>
-        <input ng-model="field.value" placeholder="###" ng-switch-when="integer"></input>
-        <input ng-model="field.value" placeholder="##.#" ng-switch-when="float"></input>
-        <input ng-model="field.value" ng-switch-default></input>
+        <input ng-model="field.value" ng-change="valueChange()" disabled ng-switch-when="id"></input>
+        <input ng-model="field.value" ng-change="valueChange()" placeholder="###" ng-switch-when="integer"></input>
+        <input ng-model="field.value" ng-change="valueChange()" placeholder="##.#" ng-switch-when="float"></input>
+        <input ng-model="field.value" ng-change="valueChange()" ng-switch-default></input>
       </td>
     </tr>
   </table>

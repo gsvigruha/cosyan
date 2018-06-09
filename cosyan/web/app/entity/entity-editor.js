@@ -25,6 +25,9 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
       }
       
       scope.saveEntity = function() {
+    	if (!scope.dirty) {
+    	  return;
+    	}
         var table = scope.entity.type;
         var query;
         if (scope.entity.fields[0].value) {
@@ -70,6 +73,14 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
         });
       };
       
+      scope.discardEntity = function() {
+        scope.reload();
+      };
+      
+      scope.valueChange = function() {
+        scope.dirty = true;
+      };
+      
       scope.expandEntity = function(fk) {
         if (scope.entityList[fk.name] || !fk.value) {
           scope.entityList[fk.name] = undefined;
@@ -110,6 +121,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
       scope.unsetEntity = function(fk) {
         fk.value = undefined;
         scope.entityList[fk.name] = undefined;
+        scope.dirty = true;
       };
       
       scope.pick = function(fk, id) {
@@ -117,6 +129,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
         scope.entityList[fk.name] = undefined;
         fk.value = id;
         scope.expandEntity(fk);
+        scope.dirty = true;
       };
     },
   };
