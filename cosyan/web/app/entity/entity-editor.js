@@ -17,7 +17,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
         if (field.value === undefined) {
           return 'null';
         }
-        if (field.type === 'varchar') {
+        if (field.type.type === 'varchar' || field.type.type === 'enum') {
           return '\'' + field.value + '\'';
         } else {
           return field.value;

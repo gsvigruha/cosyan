@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.model.BasicColumn;
+import com.cosyan.db.model.DataTypes.DataType;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
@@ -15,14 +16,14 @@ public class Entity extends Result {
   @Data
   public static class Field {
     private final String name;
-    private final String type;
+    private final DataType<?>  type;
     private final Object value;
   }
 
   @Data
   public static class ForeignKey {
     private final String columnName;
-    private final String type;
+    private final DataType<?> type;
     private final String fkName;
     private final String refTable;
     private final Object value;
@@ -50,12 +51,12 @@ public class Entity extends Result {
     for (int i = 0; i < header.size(); i++) {
       BasicColumn column = header.get(i);
       if (!tableMeta.isColumnForeignKey(column.getName())) {
-        fields.add(new Field(column.getName(), column.getType().getName(), values[i]));
+        fields.add(new Field(column.getName(), column.getType(), values[i]));
       } else {
         com.cosyan.db.model.Keys.ForeignKey foreignKey = tableMeta.getColumnForeignKey(column.getName());
         foreignKeys.add(new ForeignKey(
             column.getName(),
-            column.getType().getName(),
+            column.getType(),
             foreignKey.getName(),
             foreignKey.getRefTable().tableName(),
             values[i]));
@@ -80,7 +81,7 @@ public class Entity extends Result {
     for (Field field : fields) {
       JSONObject fieldObj = new JSONObject();
       fieldObj.put("name", field.getName());
-      fieldObj.put("type", field.getType());
+      fieldObj.put("type", field.getType().toJSON());
       fieldObj.put("value", QueryResult.prettyPrint(field.getValue()));
       fieldList.put(fieldObj);
     }
@@ -89,7 +90,7 @@ public class Entity extends Result {
     for (ForeignKey foreignKey : foreignKeys) {
       JSONObject fkObj = new JSONObject();
       fkObj.put("columnName", foreignKey.getColumnName());
-      fkObj.put("type", foreignKey.getType());
+      fkObj.put("type", foreignKey.getType().toJSON());
       fkObj.put("name", foreignKey.getFkName());
       fkObj.put("refTable", foreignKey.getRefTable());
       fkObj.put("value", foreignKey.getValue());
