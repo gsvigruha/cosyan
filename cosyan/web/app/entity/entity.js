@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('cosyan')
-.controller('EntityCtrl', function($scope, $http) {
+.controller('EntityCtrl', function($scope, $http, util) {
   $scope.load = function() {
     $http.get("/cosyan/entityMeta").then(function success(response) {
       $scope.data = response.data;
@@ -67,24 +67,7 @@ angular.module('cosyan')
   };
   
   $scope.newEntity = function() {
-    if (!$scope.activeEntity) {
-      return;
-    }
-    var entity = { type: $scope.activeEntity.name, fields: [], foreignKeys: [] };
-    for (var i in $scope.activeEntity.fields) {
-      var field = $scope.activeEntity.fields[i];
-      entity.fields.push({ name: field.name, type: field.type, value: undefined });
-    }
-    for (var i in $scope.activeEntity.foreignKeys) {
-      var fk = $scope.activeEntity.foreignKeys[i];
-      entity.foreignKeys.push({
-        name: fk.name,
-        type: fk.type,
-        refTable: fk.refTable,
-        columnName: fk.column,
-        value: undefined });
-    }
-    $scope.loadedEntity = entity;
+    $scope.loadedEntity = util.createNewEntity($scope.activeEntity);
     $scope.$error = undefined;
   };
   

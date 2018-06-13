@@ -39,10 +39,29 @@ button.sql {
 }
 
 button.tab {
-    background-color: #FFF4E0;
+    background-color: #FFFFF0;
     padding: 4px;
     margin: 4px;
     width: 80px;
+    border: none;
+}
+
+button.tab:hover {
+    background: radial-gradient(rgba(239, 239, 192, 1), rgba(239, 239, 192, 0.0) 90%);
+}
+
+button.tab:active {
+    border: none;
+    outline: 0;
+}
+
+button.tab:focus {
+    border: none;
+    outline: 0;
+}
+
+button.selected {
+    background: radial-gradient(rgba(223, 192, 128, 1), rgba(223, 192, 128, 0.0) 90%);
 }
 
 div.sql {

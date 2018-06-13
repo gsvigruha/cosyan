@@ -36,9 +36,9 @@ span.enabled {
     opacity: 1;
 }
 
-span.button:hover {background-color: #80C0FF;}
+span.button:hover {background: radial-gradient(rgba(64, 160, 255, 1), rgba(64, 160, 255, 0.0) 80%);}
 
-span.button:active {background-color: #60A0FF;}
+span.button:active {background: radial-gradient(rgba(32, 128, 255, 1), rgba(32, 128, 255, 0.0) 80%);}
 
 .editor table {
     font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
@@ -115,7 +115,7 @@ div.popup {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 9999;
+    z-index: 1;
     border-style: solid;
     border-width: 1px;
     border-color: #C0B0A0;

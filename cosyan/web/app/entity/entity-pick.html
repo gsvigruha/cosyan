@@ -1,5 +1,6 @@
 <div class="popup">
   <div class="entity-menu">
+    <span ng-click="cancel()" title="Search" class="button glyphicon glyphicon-ban-circle"></span>
     <span ng-click="searchEntity()" title="Search" class="button glyphicon glyphicon-search"></span>
     <span ng-repeat="field in meta.fields">
       <span ng-show="field.search">

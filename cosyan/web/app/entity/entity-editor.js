@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
+angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($http, util) {
   return {
     restrict: 'E',
     scope: {
@@ -130,6 +130,21 @@ angular.module('cosyan').directive('entityEditor', ['$http', function($http) {
         fk.value = id;
         scope.expandEntity(fk);
         scope.dirty = true;
+      };
+      
+      scope.cancelPick = function(fk) {
+        scope.entityPick[fk.name] = undefined;
+      };
+      
+      scope.newEntity = function(fk) {
+    	var entityType;
+    	$http.get("/cosyan/entityMeta").then(function success(response) {
+    	  entityType = response.data.entities.find(function(entity) {
+    	    return entity.name === fk.refTable;
+    	  });
+    	  
+    	  scope.entityList[fk.name] = util.createNewEntity(entityType);
+    	});
       };
     },
   };

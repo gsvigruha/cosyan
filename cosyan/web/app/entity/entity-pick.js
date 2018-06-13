@@ -6,6 +6,7 @@ angular.module('cosyan').directive('entityPick', ['$http', function($http) {
     scope: {
       type: '=',
       pick: '&',
+      cancel: '&',
     },
     templateUrl: 'entity/entity-pick.html',
     link: function(scope, element) {
