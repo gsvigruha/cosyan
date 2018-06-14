@@ -53,6 +53,10 @@ span.button:active {background: radial-gradient(rgba(32, 128, 255, 1), rgba(32, 
     font-size: 12px;
 }
 
+td.empty {
+    background-color: #FFF0F0;
+}
+
 .editor tr:nth-child(even){background-color: #F2F2F2;}
 .editor tr:nth-child(odd){background-color: #FFFFFF;}
 

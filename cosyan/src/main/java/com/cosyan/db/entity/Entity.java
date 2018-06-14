@@ -82,7 +82,9 @@ public class Entity extends Result {
       JSONObject fieldObj = new JSONObject();
       fieldObj.put("name", field.getName());
       fieldObj.put("type", field.getType().toJSON());
-      fieldObj.put("value", QueryResult.prettyPrint(field.getValue()));
+      if (field.getValue() != null) {
+        fieldObj.put("value", QueryResult.prettyPrint(field.getValue()));
+      }
       fieldList.put(fieldObj);
     }
     obj.put("fields", fieldList);

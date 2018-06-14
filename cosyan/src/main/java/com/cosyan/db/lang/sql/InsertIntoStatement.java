@@ -1,14 +1,16 @@
 package com.cosyan.db.lang.sql;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Literals.Literal;
 import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.transaction.Result;
-import com.cosyan.db.lang.transaction.Result.StatementResult;
+import com.cosyan.db.lang.transaction.Result.InsertIntoResult;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -77,11 +79,13 @@ public class InsertIntoStatement {
 
       long lastID = hasID ? ((IDTableIndex) resources.getPrimaryKeyIndex(table.getString())).getLastID() : -1;
       TableWriter writer = resources.writer(tableMeta.tableName());
+      List<Long> newIDs = new ArrayList<>();
       for (ImmutableList<Literal> values : valuess) {
         if (columns.isPresent()) {
           Arrays.fill(fullValues, null);
           if (hasID) {
             fullValues[0] = ++lastID;
+            newIDs.add(lastID);
           }
           for (int i = 0; i < columns.get().size(); i++) {
             int idx = indexes.get(columns.get().get(i));
@@ -91,6 +95,7 @@ public class InsertIntoStatement {
           int offset = 0;
           if (hasID) {
             fullValues[0] = ++lastID;
+            newIDs.add(lastID);
             offset = 1;
           }
           if (values.size() + offset != fullValues.length) {
@@ -104,7 +109,7 @@ public class InsertIntoStatement {
         writer.insert(resources, fullValues, /* checkReferencingRules= */true);
       }
       tableMeta.insert(valuess.size());
-      return new StatementResult(valuess.size());
+      return new InsertIntoResult(valuess.size(), newIDs);
     }
 
     @Override

@@ -115,6 +115,25 @@ public abstract class Result {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
+  public static class InsertIntoResult extends StatementResult {
+
+    private final List<Long> newIDs;
+
+    public InsertIntoResult(long affectedLines, List<Long> newIDs) {
+      super(affectedLines);
+      this.newIDs = newIDs;
+    }
+
+    @Override
+    public JSONObject toJSON() {
+      JSONObject obj = super.toJSON();
+      obj.put("newIDs", newIDs);
+      return obj;
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
   public static class EmptyResult extends Result {
 
     public EmptyResult() {

@@ -6,6 +6,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
     scope: {
       entity: '=',
       reload: '&',
+      setparent: '&',
     },
     templateUrl: 'entity/entity-editor.html',
     link: function(scope, element) {
@@ -67,6 +68,11 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
           params: { sql: query }
         }).then(function success(response) {
           scope.dirty = false;
+          var newIDs = response.data.result[0].newIDs;
+          if (newIDs) {
+        	scope.entity.fields[0].value = newIDs[0];
+        	scope.setparent({newID: newIDs[0]});
+          }
           scope.reload();
         }, function error(response) {
           scope.reload();
@@ -124,6 +130,11 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
         scope.dirty = true;
       };
       
+      scope.unsetValue = function(field) {
+    	field.value = undefined;
+        scope.dirty = true;
+      };
+      
       scope.pick = function(fk, id) {
         scope.entityPick[fk.name] = undefined;
         scope.entityList[fk.name] = undefined;
@@ -134,6 +145,11 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
       
       scope.cancelPick = function(fk) {
         scope.entityPick[fk.name] = undefined;
+      };
+      
+      scope.setNewFK = function(fk, newID) {
+    	fk.value = newID;
+    	scope.dirty = true;
       };
       
       scope.newEntity = function(fk) {

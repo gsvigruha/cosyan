@@ -5,10 +5,11 @@
     <th>Name</th>
     <th>Type</th>
     <th>Value</th>
+    <th>Unset</th>
     <tr ng-repeat="field in entity.fields track by $index">
       <td>{{ field.name }}</td>
       <td>{{ field.type.type }}</td>
-      <td ng-switch on="field.type.type">
+      <td ng-switch on="field.type.type" ng-class="{'empty': field.value == undefined}">
         <input ng-model="field.value" ng-change="valueChange()" disabled ng-switch-when="id"></input>
         <input ng-model="field.value" ng-change="valueChange()" placeholder="###" ng-switch-when="integer"></input>
         <input ng-model="field.value" ng-change="valueChange()" placeholder="##.#" ng-switch-when="float"></input>
@@ -17,6 +18,7 @@
         </select>
         <input ng-model="field.value" ng-change="valueChange()" ng-switch-default></input>
       </td>
+      <td><span ng-click="unsetValue(field);" title="Unset" class="button glyphicon glyphicon-remove" ng-if="field.type.type != 'id'"></span></td>
     </tr>
   </table>
   <div ng-repeat="fk in entity.foreignKeys track by $index" class="subentity">
@@ -28,7 +30,7 @@
       <span ng-click="newEntity(fk);" title="New" class="button glyphicon glyphicon-new-window"></span>
       <span ng-click="unsetEntity(fk);" title="Unset" class="button glyphicon glyphicon-remove"></span>
     </div>
-    <entity-editor entity="entityList[fk.name]" ng-if="entityList[fk.name]"></entity-editor>
+    <entity-editor entity="entityList[fk.name]" setparent="setNewFK(fk, newID)" ng-if="entityList[fk.name]"></entity-editor>
     <entity-pick type="fk.refTable" pick="pick(fk, id)" cancel="cancelPick(fk)" ng-if="entityPick[fk.name]"></entity-pick>
   </div>
   <div ng-repeat="rfk in entity.reverseForeignKeys track by $index" class="subentity">
