@@ -18,7 +18,10 @@
         </select>
         <input ng-model="field.value" ng-change="valueChange()" ng-switch-default></input>
       </td>
-      <td><span ng-click="unsetValue(field);" title="Unset" class="button glyphicon glyphicon-remove" ng-if="field.type.type != 'id'"></span></td>
+      <td>
+        <span ng-click="unsetValue(field);" title="Unset" ng-class="{enabled: field.value != undefined}"
+              class="button disabled glyphicon glyphicon-remove" ng-if="field.type.type != 'id'"></span>
+      </td>
     </tr>
   </table>
   <div ng-repeat="fk in entity.foreignKeys track by $index" class="subentity">

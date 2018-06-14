@@ -1,5 +1,5 @@
 body {
-    background-color: #FFFFF0;
+    background-color: #FFFFFF;
 }
 
 .admin table {
@@ -29,17 +29,17 @@ body {
 
 textarea.sql {
     width: 500px;
-    background-color: #FFF4E0;
+    background-color: #F0F0F0;
 }
 
 button.sql {
-    background-color: #FFF4E0;
+    background-color: #F0F0F0;
     padding: 4px;
     margin: 4px;
 }
 
 button.tab {
-    background-color: #FFFFF0;
+    background-color: #FAFAFA;
     padding: 4px;
     margin: 4px;
     width: 80px;
@@ -47,7 +47,7 @@ button.tab {
 }
 
 button.tab:hover {
-    background: radial-gradient(rgba(239, 239, 192, 1), rgba(239, 239, 192, 0.0) 90%);
+    background: radial-gradient(rgba(128, 192, 255, 1) 10%, rgba(128, 192, 255, 0.0) 90%);
 }
 
 button.tab:active {
@@ -61,7 +61,7 @@ button.tab:focus {
 }
 
 button.selected {
-    background: radial-gradient(rgba(223, 192, 128, 1), rgba(223, 192, 128, 0.0) 90%);
+    background: radial-gradient(rgba(64, 160, 255, 1) 10%, rgba(64, 160, 255, 0.0) 90%);
 }
 
 div.sql {

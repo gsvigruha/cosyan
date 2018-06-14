@@ -1,3 +1,7 @@
+div.toolbar {
+    background-color: #FAFAFA;
+}
+
 .entity table {
     font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
     font-size: 12px;
@@ -79,8 +83,8 @@ div.editor {
     padding-bottom: 4px;
     border-width: 1px;
     border-style: solid;
-    border-color: #F0ECE8;
-    background-color: #FCF8F0;
+    border-color: #F0F0F0;
+    background-color: #FFFFFF;
     border-radius: 8px;
 }
 
@@ -103,8 +107,8 @@ div.subentity {
     padding-bottom: 4px;
     border-style: solid;
     border-width: 1px;
-    border-color: #E8E8E8;
-    background-color: #F8F4F0;
+    border-color: #F0F0F0;
+    background-color: #FDFDFD;
     border-radius: 8px;
 }
 
