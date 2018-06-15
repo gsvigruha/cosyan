@@ -395,4 +395,23 @@ public class UpdateTest extends UnitTestBase {
     QueryResult r1 = query("select * from t31 where a = 0;");
     assertValues(new Object[][] { { 0L, "z" } }, r1);
   }
+
+  @Test
+  public void testUpdateForeignKeyFromNull() {
+    execute("create table t32 (a1 varchar, b1 integer, constraint pk_a primary key (a1));");
+    execute("create table t33 (a2 varchar, b2 varchar, constraint fk_a foreign key (a2) references t32(a1));");
+
+    execute("insert into t32 values ('x', 1);");
+    execute("insert into t33 (b2) values ('a');");
+
+    QueryResult r1 = query("select a2, b2, fk_a.b1 from t33;");
+    assertHeader(new String[] { "a2", "b2", "b1" }, r1);
+    assertValues(new Object[][] { { null, "a", null } }, r1);
+
+    execute("update t26 set a2 = 'x';");
+
+    QueryResult r2 = query("select a2, b2, fk_a.b1 from t26;");
+    assertHeader(new String[] { "a2", "b2", "b1" }, r2);
+    assertValues(new Object[][] { { "x", "a", 1L } }, r2);
+  }
 }
