@@ -75,7 +75,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
           }
           scope.reload();
         }, function error(response) {
-          scope.reload();
+          scope.$error = response.data.error;
         });
       };
       

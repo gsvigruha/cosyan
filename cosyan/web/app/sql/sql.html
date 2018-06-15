@@ -2,10 +2,11 @@
 
 <textarea class="sql" rows="5" ng-model="query"></textarea>
 
-<div class="sql">
-  <button ng-click="run()" class="sql">Run query</button>
+<div class="sql-result">
+  <button ng-click="run()" class="tab">Run query</button>
 </div>
 
+<div class="sql-result">
 <div ng-repeat="r in data.result track by $index">
   <table class="admin" ng-show="r.type == 'query'">
     <th ng-repeat="column in r.header track by $index">
@@ -23,4 +24,5 @@
 </div>
 <div ng-show="$error">
   {{ $error }}
+</div>
 </div>

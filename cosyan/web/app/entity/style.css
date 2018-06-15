@@ -126,12 +126,12 @@ div.popup {
     z-index: 1;
     border-style: solid;
     border-width: 1px;
-    border-color: #C0B0A0;
+    border-color: #D0D0D0;
     border-radius: 8px;
     padding: 12px;
     height: 60%;
     width: 80%;
-    background: rgba(255, 255, 239, 0.9);
+    background: rgba(240, 244, 248, 0.9);
 }
 
 div.error {
@@ -143,6 +143,19 @@ div.error {
 }
 
 div.message {
+    margin: 2px;
+    height: 22px;
+}
+
+span.error {
+    color: #CC0000;
+    background-color: #F8F8F8;
+    border-width: 1px;
+    border-style: solid;
+    border-color: #F0F0F0;
+}
+
+span.message {
     margin: 2px;
     height: 22px;
 }

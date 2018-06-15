@@ -29,13 +29,12 @@ body {
 
 textarea.sql {
     width: 500px;
-    background-color: #F0F0F0;
+    background-color: #F8FBFF;
+    margin: 8px;
 }
 
-button.sql {
-    background-color: #F0F0F0;
-    padding: 4px;
-    margin: 4px;
+div.sql-result {
+    padding: 8px;
 }
 
 button.tab {
