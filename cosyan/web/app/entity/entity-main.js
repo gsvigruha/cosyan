@@ -18,8 +18,6 @@ angular.module('cosyan')
   
   $scope.switchEntityType = function(name) {
 	for (var i = 0; i < $scope.data.entities.length; i++) {
-      console.log($scope.data.entities);
-      console.log($scope.data.entities.length);
       if ($scope.data.entities[i].name == name) {
     	$scope.searchFields = {};
     	var aet = $scope.data.entities[i];

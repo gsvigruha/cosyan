@@ -22,6 +22,7 @@ angular.module('cosyan').directive('entityPick', ['$http', 'util', function($htt
             }
           }
         }, function error(response) {
+          $scope.$error = response.data.error;
           scope.meta = undefined;
         });
       };

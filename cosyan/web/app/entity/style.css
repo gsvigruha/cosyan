@@ -174,7 +174,7 @@ div.message {
 
 span.error {
     color: #CC0000;
-    background-color: #F8F8F8;
+    background-color: rgba(255, 240, 240, 0.1);
     border-width: 1px;
     border-style: solid;
     border-color: #F0F0F0;

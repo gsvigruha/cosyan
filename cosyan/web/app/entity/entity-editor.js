@@ -86,7 +86,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
         }).then(function success(response) {
           scope.entityList[fk.name] = response.data.result[0];
         }, function error(response) {
-          $scope.$error = response.data.error;
+          scope.$error = response.data.error;
         });
       };
       
@@ -149,7 +149,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
     	  });
     	  scope.entityList[fk.name] = util.createNewEntity(entityType);
     	}, function error(response) {
-          $scope.$error = response.data.error;
+          scope.$error = response.data.error;
         });
       };
     },
