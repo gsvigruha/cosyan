@@ -17,12 +17,14 @@ angular.module('cosyan')
   };
   
   $scope.switchEntityType = function(name) {
-    for (var i = 0; i < $scope.data.entities.length; i++) {
+	for (var i = 0; i < $scope.data.entities.length; i++) {
+      console.log($scope.data.entities);
+      console.log($scope.data.entities.length);
       if ($scope.data.entities[i].name == name) {
     	$scope.searchFields = {};
     	var aet = $scope.data.entities[i];
-    	for (var i in aet.fields) {
-    	  var field = aet.fields[i];
+    	for (var j in aet.fields) {
+    	  var field = aet.fields[j];
     	  if (field.search) {
     	    $scope.searchFields[field.name] = { value: undefined, type: field.type };
     	  }
@@ -31,6 +33,7 @@ angular.module('cosyan')
     	$scope.$error = undefined;
         $scope.loadedEntity = undefined;
         $scope.entityList = undefined;
+        break;
       }
     }
   };

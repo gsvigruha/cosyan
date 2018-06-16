@@ -9,5 +9,7 @@
     </span>
   </div>
   
+  <div class="message" ng-class="{error: $error}">{{ $error }}</div>
+  
   <entity-list entities="entityList" pick="pick({id: id})" ng-if="entityList"></entity-list>
 </div>

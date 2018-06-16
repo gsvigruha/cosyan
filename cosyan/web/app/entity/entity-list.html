@@ -1,12 +1,16 @@
-<div class="entity">
+<div class="entity entity-list">
   <table>
+    <thead>
     <th ng-repeat="header in entities.header track by $index">
       {{ header.name ? header.name : header }}
     </th>
     <th ng-if="pick">Pick</th>
     <th ng-if="open">Open</th>
     <th ng-if="delete">Delete</th>
+    </thead>
+    <tbody>
     <tr ng-repeat="row in entities.values track by $index">
+    
       <td ng-repeat="element in row track by $index">
         {{ element }}
       </td>
@@ -14,5 +18,6 @@
       <td ng-if="open"><span ng-click="open({id: row[0]});" title="Open" class="button glyphicon glyphicon-folder-open"></span></td>
       <td ng-if="delete"><span ng-click="delete({id: row[0]});" title="Delete" class="button glyphicon glyphicon-trash"></span></td>
     </tr>
+    </tbody>
   </table>
 </div>

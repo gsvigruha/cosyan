@@ -78,6 +78,27 @@ div.entity {
     padding-left: 4px;
 }
 
+div.entity-list {
+    padding-left: 4px;
+}
+
+.entity-list tbody {
+    overflow-y: scroll;
+    display: block;
+}
+
+.entity-list thead {
+    display: table;
+    width: calc(100% - 15px);
+    table-layout: fixed;
+}
+
+.entity-list tr {
+    width: 100%;
+    table-layout: fixed;
+    display: table;
+}
+
 div.editor {
     padding-left: 4px;
     padding-bottom: 4px;
@@ -129,14 +150,18 @@ div.popup {
     border-color: #D0D0D0;
     border-radius: 8px;
     padding: 12px;
-    height: 60%;
+    height: 440px;
     width: 80%;
     background: rgba(240, 244, 248, 0.9);
 }
 
+.popup tbody {
+    max-height: 320px;
+}
+
 div.error {
     color: #CC0000;
-    background-color: #F8F8F8;
+    background-color: rgba(255, 240, 240, 0.1);
     border-width: 1px;
     border-style: solid;
     border-color: #F0F0F0;
@@ -166,6 +191,10 @@ object.icons {
 }
 
 hr.entity-main {
-  margin-top: 4px;
-  margin-bottom: 4px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.entity-main tbody {
+    max-height: 200px;
 }
