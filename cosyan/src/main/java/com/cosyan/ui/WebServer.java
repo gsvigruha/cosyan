@@ -13,7 +13,6 @@ import com.cosyan.ui.admin.AdminServlet;
 import com.cosyan.ui.admin.MonitoringServlet;
 import com.cosyan.ui.entity.EntityLoadServlet;
 import com.cosyan.ui.entity.EntityMetaServlet;
-import com.cosyan.ui.entity.EntitySearchServlet;
 import com.cosyan.ui.sql.SQLServlet;
 
 public class WebServer {
@@ -26,7 +25,6 @@ public class WebServer {
     handler.addServlet(new ServletHolder(new AdminServlet(dbApi)), "/admin");
     handler.addServlet(new ServletHolder(new MonitoringServlet(dbApi.getMetaRepo())), "/monitoring");
     handler.addServlet(new ServletHolder(new SQLServlet(dbApi)), "/sql");
-    handler.addServlet(new ServletHolder(new EntitySearchServlet(dbApi)), "/searchEntity");
     handler.addServlet(new ServletHolder(new EntityMetaServlet(dbApi)), "/entityMeta");
     handler.addServlet(new ServletHolder(new EntityLoadServlet(dbApi)), "/loadEntity");
 

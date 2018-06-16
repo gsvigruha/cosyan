@@ -4,7 +4,7 @@
     <span ng-click="searchEntity()" title="Search" class="button glyphicon glyphicon-search"></span>
     <span ng-repeat="field in meta.fields">
       <span ng-show="field.search">
-        {{ field.name }}<input ng-model="searchFields[field.name]" class="search"/>
+        {{ field.name }}<input ng-model="searchFields[field.name].value" class="search"/>
       </span>
     </span>
   </div>

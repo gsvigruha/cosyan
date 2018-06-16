@@ -16,29 +16,47 @@ angular.module('cosyan')
     });
   };
   
-  $scope.switchEntity = function(name) {
+  $scope.switchEntityType = function(name) {
     for (var i = 0; i < $scope.data.entities.length; i++) {
       if ($scope.data.entities[i].name == name) {
     	$scope.searchFields = {};
-        $scope.activeEntity = $scope.data.entities[i];
-        $scope.$error = undefined;
+    	var aet = $scope.data.entities[i];
+    	for (var i in aet.fields) {
+    	  var field = aet.fields[i];
+    	  if (field.search) {
+    	    $scope.searchFields[field.name] = { value: undefined, type: field.type };
+    	  }
+    	}
+    	$scope.activeEntityType = aet;
+    	$scope.$error = undefined;
         $scope.loadedEntity = undefined;
         $scope.entityList = undefined;
       }
     }
   };
   
+  $scope.unsetSearchField = function(field) {
+	$scope.searchFields[field.name].value = undefined;
+  };
+  
   $scope.searchFields = {};
   $scope.searchEntity = function() {
-    if (!$scope.activeEntity) {
+    if (!$scope.activeEntityType) {
       return;
     }
-    var params = { table: $scope.activeEntity.name };
+    var query = 'select * from ' + $scope.activeEntityType.name;
+    var where = [];
     for (var field in $scope.searchFields) {
-      params['filter_' + field] = $scope.searchFields[field];
+      if ($scope.searchFields[field].value) {
+        where.push(field + '=' + util.format($scope.searchFields[field]));
+      }
     }
-    $http.get("/cosyan/searchEntity", {
-      params: params
+    if (where.length > 0) {
+      query = query + ' where ' + where.join(' and ');
+    }
+    query = query + ';';
+    $http.get("/cosyan/sql", {
+      params: { sql: query }
     }).then(function success(response) {
       $scope.entityList = response.data.result[0];
       $scope.$error = undefined;
@@ -55,7 +73,7 @@ angular.module('cosyan')
   };
   
   $scope.openEntity = function(id) {
-    var table = $scope.activeEntity.name;
+    var table = $scope.activeEntityType.name;
     $http.get("/cosyan/loadEntity", {
       params: { table: table, id: id }
     }).then(function success(response) {
@@ -68,13 +86,13 @@ angular.module('cosyan')
   };
   
   $scope.newEntity = function() {
-    $scope.loadedEntity = util.createNewEntity($scope.activeEntity);
+    $scope.loadedEntity = util.createNewEntity($scope.activeEntityType);
     $scope.$error = undefined;
   };
   
   $scope.deleteEntity = function(id) {
-    var table = $scope.activeEntity.name;
-    var idName = $scope.activeEntity.fields[0].name;
+    var table = $scope.activeEntityType.name;
+    var idName = $scope.activeEntityType.fields[0].name;
     var query = 'delete from ' + table + ' where ' + idName + ' = ' + id + ';';
     $http.get("/cosyan/sql", {
       params: { sql: query }

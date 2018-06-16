@@ -1,19 +1,23 @@
 <div class="toolbar">
   <span ng-repeat="entity in data.entities">
-    <button ng-click="switchEntity(entity.name);" class="tab" ng-class="{selected: activeEntity.name == entity.name}">{{ entity.name }}</button>
+    <button ng-click="switchEntityType(entity.name);" class="tab" ng-class="{selected: activeEntityType.name == entity.name}">{{ entity.name }}</button>
   </span>
 </div>
 
 <hr/>
 
-<div ng-if="activeEntity">
-  <span class="entity-title">{{ activeEntity.name }}</span>
+<div ng-if="activeEntityType">
+  <span class="entity-title">{{ activeEntityType.name }}</span>
   <span ng-click="newEntity()" title="New" class="button glyphicon glyphicon-new-window"></span>
   <span ng-click="searchEntity()" title="Search" class="button glyphicon glyphicon-search"></span>
   <span ng-click="collapse()" title="Collapse" class="button glyphicon glyphicon-collapse-up"></span>
-  <span ng-repeat="field in activeEntity.fields">
+  <span ng-repeat="field in activeEntityType.fields">
     <span ng-show="field.search">
-      {{ field.name }}<input ng-model="searchFields[field.name]" class="search"/>
+      {{ field.name }}<input ng-model="searchFields[field.name].value" class="search"/>
+    </span>
+    <span ng-click="unsetSearchField(field);" title="Unset"
+          ng-class="{enabled: searchFields[field.name].value != undefined}"
+          class="button disabled glyphicon glyphicon-remove">
     </span>
   </span>
 </div>
@@ -22,6 +26,6 @@
 
 <entity-list entities="entityList" open="openEntity(id)" delete="deleteEntity(id)" ng-if="entityList"></entity-list>
 
-<hr class="entity"/>
+<hr class="entity-main"/>
 
 <entity-editor entity="loadedEntity" reload="searchEntity()" ng-if="loadedEntity"></entity-editor>

@@ -23,7 +23,7 @@ angular.module('cosyan', [
         controller: 'MonitoringCtrl',
       })
       .when('/entity', {
-        templateUrl: 'entity/entity.html',
+        templateUrl: 'entity/entity-main.html',
         controller: 'EntityCtrl',
       });
 });

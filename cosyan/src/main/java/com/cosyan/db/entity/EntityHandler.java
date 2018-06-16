@@ -1,6 +1,5 @@
 package com.cosyan.db.entity;
 
-import com.cosyan.db.entity.EntityFields.ValueField;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.session.Session;
@@ -33,12 +32,6 @@ public class EntityHandler {
 
   public Result loadEntityList(String table, String column, String id, Session session) {
     val stmt = new LoadEntityListStatement(table, column, id);
-    val transaction = transactionHandler.begin(ImmutableList.of(stmt));
-    return transaction.execute(metaRepo, session);
-  }
-
-  public Result searchEntity(String table, ImmutableList<ValueField> searchFields, Session session) {
-    val stmt = new EntitySearchStatement(table, searchFields);
     val transaction = transactionHandler.begin(ImmutableList.of(stmt));
     return transaction.execute(metaRepo, session);
   }

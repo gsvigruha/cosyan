@@ -22,4 +22,15 @@ angular.module('cosyan')
     }
     return entity;
   };
+  
+  this.format = function(field) {
+	if (field.value === undefined) {
+      return 'null';
+    }
+    if (field.type.type === 'varchar' || field.type.type === 'enum') {
+      return '\'' + field.value + '\'';
+    } else {
+      return field.value;
+    }
+  };
 });

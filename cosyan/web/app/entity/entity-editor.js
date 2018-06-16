@@ -12,18 +12,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
     link: function(scope, element) {
       scope.dirty = false;
       scope.entityList = {};
-      scope.entityPick = {};
-      
-      scope.format = function(field) {
-        if (field.value === undefined) {
-          return 'null';
-        }
-        if (field.type.type === 'varchar' || field.type.type === 'enum') {
-          return '\'' + field.value + '\'';
-        } else {
-          return field.value;
-        }
-      }
+      scope.entityPick = undefined;
       
       scope.saveEntity = function() {
     	if (!scope.dirty) {
@@ -37,11 +26,11 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
           var values = [];
           for (var i = 1; i < scope.entity.fields.length; i++) { 
             var field = scope.entity.fields[i];
-            values.push(field.name + ' = ' + scope.format(field)); 
+            values.push(field.name + ' = ' + util.format(field)); 
           }
           for (var i = 0; i < scope.entity.foreignKeys.length; i++) { 
             var fk = scope.entity.foreignKeys[i];
-            values.push(fk.columnName + ' = ' + scope.format(fk)); 
+            values.push(fk.columnName + ' = ' + util.format(fk)); 
           }
           query = query + values.join(', ');
           var idField = scope.entity.fields[0];
@@ -54,12 +43,12 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
           for (var i = 1; i < scope.entity.fields.length; i++) { 
             var field = scope.entity.fields[i];
             names.push(field.name);
-            values.push(scope.format(field));
+            values.push(util.format(field));
           }
           for (var i = 0; i < scope.entity.foreignKeys.length; i++) { 
             var fk = scope.entity.foreignKeys[i];
             names.push(fk.columnName);
-            values.push(scope.format(fk)); 
+            values.push(util.format(fk)); 
           }
           query = query + names.join(', ') + ') values (' + values.join(', ') + ');';
         }
@@ -117,10 +106,10 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
       };
       
       scope.pickEntity = function(fk) {
-        if(!scope.entityPick[fk.name]) {
-          scope.entityPick[fk.name] = 1;
+        if(!scope.entityPick) {
+          scope.entityPick = fk.name;
         } else {
-          scope.entityPick[fk.name] = undefined;
+          scope.entityPick = undefined;
         }
       };
       
@@ -136,7 +125,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
       };
       
       scope.pick = function(fk, id) {
-        scope.entityPick[fk.name] = undefined;
+        scope.entityPick = undefined;
         scope.entityList[fk.name] = undefined;
         fk.value = id;
         scope.expandEntity(fk);
@@ -144,7 +133,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
       };
       
       scope.cancelPick = function(fk) {
-        scope.entityPick[fk.name] = undefined;
+        scope.entityPick = undefined;
       };
       
       scope.setNewFK = function(fk, newID) {
@@ -158,9 +147,10 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
     	  entityType = response.data.entities.find(function(entity) {
     	    return entity.name === fk.refTable;
     	  });
-    	  
     	  scope.entityList[fk.name] = util.createNewEntity(entityType);
-    	});
+    	}, function error(response) {
+          $scope.$error = response.data.error;
+        });
       };
     },
   };
