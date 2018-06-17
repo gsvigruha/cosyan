@@ -27,7 +27,7 @@ angular.module('cosyan')
 	if (field.value === undefined) {
       return 'null';
     }
-    if (field.type.type === 'varchar' || field.type.type === 'enum') {
+    if (field.type.type === 'varchar' || field.type.type === 'enum' || isNaN(field.value)) {
       return '\'' + field.value + '\'';
     } else {
       return field.value;

@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.DateFunctions;
 import com.google.common.collect.ImmutableList;
 
@@ -182,7 +183,15 @@ public abstract class Result {
     @Override
     public JSONObject toJSON() {
       JSONObject obj = new JSONObject();
-      obj.put("error", error.getMessage());
+      JSONObject e = new JSONObject();
+      if (error instanceof ModelException) {
+        ModelException me = (ModelException) error;
+        e.put("msg", me.getSimpleMessage());
+        e.put("loc", me.getLoc().toString());
+      } else {
+        e.put("msg", error.getMessage());
+      }
+      obj.put("error", e);
       return obj;
     }
   }

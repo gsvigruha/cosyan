@@ -344,15 +344,15 @@ public class UpdateTest extends UnitTestBase {
     execute("create table t28 (a varchar, b integer, c float, d timestamp, e boolean);");
     execute("insert into t28 values('x', 1, 1.0, dt '2017-01-01', true);");
     ErrorResult e1 = error("update t28 set a = 1;");
-    assertError(ModelException.class, "[15, 16]: Expected 'varchar' but got 'integer'.", e1);
+    assertError(ModelException.class, "[15, 16]: Expected 'varchar' but got 'integer' for 'a'.", e1);
     ErrorResult e2 = error("update t28 set b = 1.0;");
-    assertError(ModelException.class, "[15, 16]: Expected 'integer' but got 'float'.", e2);
+    assertError(ModelException.class, "[15, 16]: Expected 'integer' but got 'float' for 'b'.", e2);
     ErrorResult e3 = error("update t28 set c = 'x';");
-    assertError(ModelException.class, "[15, 16]: Expected 'float' but got 'varchar'.", e3);
+    assertError(ModelException.class, "[15, 16]: Expected 'float' but got 'varchar' for 'c'.", e3);
     ErrorResult e4 = error("update t28 set d = 1;");
-    assertError(ModelException.class, "[15, 16]: Expected 'timestamp' but got 'integer'.", e4);
+    assertError(ModelException.class, "[15, 16]: Expected 'timestamp' but got 'integer' for 'd'.", e4);
     ErrorResult e5 = error("update t28 set e = 'x';");
-    assertError(ModelException.class, "[15, 16]: Expected 'boolean' but got 'varchar'.", e5);
+    assertError(ModelException.class, "[15, 16]: Expected 'boolean' but got 'varchar' for 'e'.", e5);
   }
 
   @Test

@@ -457,6 +457,14 @@ public class MetaRepo implements TableProvider, MetaRepoExecutor {
     public String getMessage() {
       return loc.toString() + ": " + super.getMessage();
     }
+
+    public Loc getLoc() {
+      return loc;
+    }
+
+    public String getSimpleMessage() {
+      return super.getMessage();
+    }
   }
 
   public static class RuleException extends Exception {

@@ -1,7 +1,7 @@
 <div class="editor">
   <span ng-click="saveEntity();" title="Save" ng-class="{enabled: dirty}" class="button disabled glyphicon glyphicon-floppy-disk"></span>
   <span ng-click="discardEntity();" title="Discard" class="button enabled glyphicon glyphicon-ban-circle"></span>
-  <span class="message" ng-class="{error: $error}">{{ $error }}</span>
+  <span class="message" ng-class="{error: $error}">{{ $error.msg }}</span>
   <table>
     <th>Name</th>
     <th>Type</th>

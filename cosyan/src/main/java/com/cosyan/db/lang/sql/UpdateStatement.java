@@ -30,9 +30,11 @@ import lombok.EqualsAndHashCode;
 
 public class UpdateStatement {
 
-  public static void check(DataType<?> columnType, DataType<?> exprType, Ident ident) throws ModelException {
+  private static void check(BasicColumn column, DataType<?> exprType, Ident ident) throws ModelException {
+    DataType<?> columnType = column.getType();
     if (!exprType.isNull() && !columnType.javaClass().equals(exprType.javaClass())) {
-      throw new ModelException(String.format("Expected '%s' but got '%s'.", columnType, exprType), ident);
+      throw new ModelException(String.format("Expected '%s' but got '%s' for '%s'.",
+          columnType, exprType, column.getName()), ident);
     }
   }
 
@@ -67,7 +69,7 @@ public class UpdateStatement {
               "Column '%s.%s' is immutable.", materializedTableMeta.tableName(), column.getName()), update.getIdent());
         }
         ColumnMeta columnExpr = update.getValue().compileColumn(tableMeta);
-        check(column.getType(), columnExpr.getType(), update.getIdent());
+        check(column, columnExpr.getType(), update.getIdent());
         columnExprsBuilder.put(tableMeta.column(update.getIdent()).index(), columnExpr);
       }
       columnExprs = columnExprsBuilder.build();

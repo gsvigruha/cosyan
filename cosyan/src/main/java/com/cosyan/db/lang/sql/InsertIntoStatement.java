@@ -30,10 +30,12 @@ import lombok.EqualsAndHashCode;
 
 public class InsertIntoStatement {
 
-  public static Object check(DataType<?> dataType, Literal literal) throws RuleException {
+  private static Object check(BasicColumn column, Literal literal) throws RuleException {
+    DataType<?> dataType = column.getType();
     try {
       if (literal.getValue() != null && !literal.getType().javaClass().equals(dataType.javaClass())) {
-        throw new RuleException(String.format("Expected '%s' but got '%s'.", dataType, literal.getType()));
+        throw new RuleException(String.format("Expected '%s' but got '%s' for '%s' (%s).",
+            dataType, literal.getType(), column.getName(), literal.getValue()));
       }
       dataType.check(literal.getValue());
     } catch (ModelException e) {
@@ -89,7 +91,7 @@ public class InsertIntoStatement {
           }
           for (int i = 0; i < columns.get().size(); i++) {
             int idx = indexes.get(columns.get().get(i));
-            fullValues[idx] = check(cols.get(idx).getType(), values.get(i));
+            fullValues[idx] = check(cols.get(idx), values.get(i));
           }
         } else {
           int offset = 0;
@@ -103,7 +105,7 @@ public class InsertIntoStatement {
                 String.format("Expected '%s' values but got '%s'.", fullValues.length - offset, values.size()));
           }
           for (int i = offset; i < fullValues.length; i++) {
-            fullValues[i] = check(cols.get(i).getType(), values.get(i - offset));
+            fullValues[i] = check(cols.get(i), values.get(i - offset));
           }
         }
         writer.insert(resources, fullValues, /* checkReferencingRules= */true);

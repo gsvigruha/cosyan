@@ -307,15 +307,15 @@ public class InsertIntoTest extends UnitTestBase {
   public void testInsertWrongType() {
     execute("create table t31 (a varchar, b integer, c float, d timestamp, e boolean);");
     ErrorResult e1 = error("insert into t31 values (1, null, null, null, null);");
-    assertError(RuleException.class, "Expected 'varchar' but got 'integer'.", e1);
+    assertError(RuleException.class, "Expected 'varchar' but got 'integer' for 'a' (1).", e1);
     ErrorResult e2 = error("insert into t31 values (null, 'x', null, null, null);");
-    assertError(RuleException.class, "Expected 'integer' but got 'varchar'.", e2);
+    assertError(RuleException.class, "Expected 'integer' but got 'varchar' for 'b' (x).", e2);
     ErrorResult e3 = error("insert into t31 values (null, null, 1, null, null);");
-    assertError(RuleException.class, "Expected 'float' but got 'integer'.", e3);
+    assertError(RuleException.class, "Expected 'float' but got 'integer' for 'c' (1).", e3);
     ErrorResult e4 = error("insert into t31 values (null, null,  null, 1, null);");
-    assertError(RuleException.class, "Expected 'timestamp' but got 'integer'.", e4);
+    assertError(RuleException.class, "Expected 'timestamp' but got 'integer' for 'd' (1).", e4);
     ErrorResult e5 = error("insert into t31 values (null, null, null, null, 'x');");
-    assertError(RuleException.class, "Expected 'boolean' but got 'varchar'.", e5);
+    assertError(RuleException.class, "Expected 'boolean' but got 'varchar' for 'e' (x).", e5);
   }
 
   @Test
