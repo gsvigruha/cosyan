@@ -22,6 +22,10 @@ angular.module('cosyan', [
         templateUrl: 'admin/monitoring.html',
         controller: 'MonitoringCtrl',
       })
+      .when('/login', {
+        templateUrl: 'admin/login.html',
+        controller: 'LoginCtrl',
+      })
       .when('/entity', {
         templateUrl: 'entity/entity-main.html',
         controller: 'EntityCtrl',

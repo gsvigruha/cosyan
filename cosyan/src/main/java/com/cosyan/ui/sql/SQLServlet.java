@@ -10,27 +10,34 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 
-import com.cosyan.db.DBApi;
+import com.cosyan.db.session.Session;
+import com.cosyan.ui.SessionHandler;
+import com.cosyan.ui.SessionHandler.NoSessionExpression;
 
 public class SQLServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
 
-  private final SQLConnector sqlConnector;
+  private final SessionHandler sessionHandler;
 
-  public SQLServlet(DBApi dbApi) {
-    this.sqlConnector = new SQLConnector(dbApi);
+  public SQLServlet(SessionHandler sessionHandler) {
+    this.sessionHandler = sessionHandler;
   }
 
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
-    String sql = req.getParameter("sql");
-    JSONObject result = sqlConnector.run(sql);
-    if (result.has("error")) {
-      resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);  
-    } else {
-      resp.setStatus(HttpStatus.OK_200);  
+    try {
+      Session session = sessionHandler.session(req.getParameter("user"));
+      String sql = req.getParameter("sql");
+      JSONObject result = session.execute(sql).toJSON();
+      if (result.has("error")) {
+        resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+      } else {
+        resp.setStatus(HttpStatus.OK_200);
+      }
+      resp.getWriter().println(result);
+    } catch (NoSessionExpression e) {
+      resp.setStatus(HttpStatus.UNAUTHORIZED_401);
     }
-    resp.getWriter().println(result);
   }
 }

@@ -1,15 +1,20 @@
 package com.cosyan.ui;
 
+import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.eclipse.jetty.util.thread.ThreadPool;
 
 import com.cosyan.db.DBApi;
 import com.cosyan.db.conf.Config;
 import com.cosyan.ui.admin.AdminServlet;
+import com.cosyan.ui.admin.LoginServlet;
 import com.cosyan.ui.admin.MonitoringServlet;
 import com.cosyan.ui.entity.EntityLoadServlet;
 import com.cosyan.ui.entity.EntityMetaServlet;
@@ -17,14 +22,21 @@ import com.cosyan.ui.sql.SQLServlet;
 
 public class WebServer {
   public static void main(String[] args) throws Exception {
-    Server server = new Server(7070);
+    ThreadPool threadPool = new QueuedThreadPool(20, 4);
+    Server server = new Server(threadPool);
+    ServerConnector connector = new ServerConnector(server);
+    connector.setPort(7070);
+    server.setConnectors(new Connector[] { connector });
+
     ServletContextHandler handler = new ServletContextHandler(server, "/cosyan");
     Config config = new Config("/home/gsvigruha/cosyan_test");
     DBApi dbApi = new DBApi(config);
+    SessionHandler sessionHandler = new SessionHandler(dbApi);
 
     handler.addServlet(new ServletHolder(new AdminServlet(dbApi)), "/admin");
+    handler.addServlet(new ServletHolder(new LoginServlet(sessionHandler)), "/login");
     handler.addServlet(new ServletHolder(new MonitoringServlet(dbApi.getMetaRepo())), "/monitoring");
-    handler.addServlet(new ServletHolder(new SQLServlet(dbApi)), "/sql");
+    handler.addServlet(new ServletHolder(new SQLServlet(sessionHandler)), "/sql");
     handler.addServlet(new ServletHolder(new EntityMetaServlet(dbApi)), "/entityMeta");
     handler.addServlet(new ServletHolder(new EntityLoadServlet(dbApi)), "/loadEntity");
 
