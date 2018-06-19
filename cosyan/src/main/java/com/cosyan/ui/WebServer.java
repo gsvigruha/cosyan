@@ -15,6 +15,7 @@ import com.cosyan.db.DBApi;
 import com.cosyan.db.conf.Config;
 import com.cosyan.ui.admin.AdminServlet;
 import com.cosyan.ui.admin.LoginServlet;
+import com.cosyan.ui.admin.LogoutServlet;
 import com.cosyan.ui.admin.MonitoringServlet;
 import com.cosyan.ui.entity.EntityLoadServlet;
 import com.cosyan.ui.entity.EntityMetaServlet;
@@ -35,10 +36,11 @@ public class WebServer {
 
     handler.addServlet(new ServletHolder(new AdminServlet(dbApi)), "/admin");
     handler.addServlet(new ServletHolder(new LoginServlet(sessionHandler)), "/login");
+    handler.addServlet(new ServletHolder(new LogoutServlet(sessionHandler)), "/logout");
     handler.addServlet(new ServletHolder(new MonitoringServlet(dbApi.getMetaRepo())), "/monitoring");
     handler.addServlet(new ServletHolder(new SQLServlet(sessionHandler)), "/sql");
-    handler.addServlet(new ServletHolder(new EntityMetaServlet(dbApi)), "/entityMeta");
-    handler.addServlet(new ServletHolder(new EntityLoadServlet(dbApi)), "/loadEntity");
+    handler.addServlet(new ServletHolder(new EntityMetaServlet(dbApi, sessionHandler)), "/entityMeta");
+    handler.addServlet(new ServletHolder(new EntityLoadServlet(dbApi, sessionHandler)), "/loadEntity");
 
     ResourceHandler resourceHandler = new ResourceHandler();
     resourceHandler.setDirectoriesListed(false);

@@ -82,7 +82,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
           return;
         }
         $http.get("/cosyan/loadEntity", {
-          params: { table: fk.refTable, id: fk.value }
+          params: { table: fk.refTable, id: fk.value, user: sessionStorage.getItem('user') }
         }).then(function success(response) {
           scope.entityList[fk.name] = response.data.result[0];
         }, function error(response) {
@@ -143,7 +143,9 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
       
       scope.newEntity = function(fk) {
     	var entityType;
-    	$http.get("/cosyan/entityMeta").then(function success(response) {
+    	$http.get("/cosyan/entityMeta", {
+          params: { user: sessionStorage.getItem('user') }
+        }).then(function success(response) {
     	  entityType = response.data.entities.find(function(entity) {
     	    return entity.name === fk.refTable;
     	  });

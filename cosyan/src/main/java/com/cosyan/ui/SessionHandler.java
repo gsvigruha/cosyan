@@ -34,8 +34,12 @@ public class SessionHandler {
     return token;
   }
 
-  public void logout(String token) {
-    sessions.remove(token);
+  public void logout(String userToken) throws NoSessionExpression {
+    if (sessions.containsKey(userToken)) {
+      sessions.remove(userToken);
+    } else {
+      throw new NoSessionExpression();
+    }
   }
 
   public static class NoSessionExpression extends Exception {

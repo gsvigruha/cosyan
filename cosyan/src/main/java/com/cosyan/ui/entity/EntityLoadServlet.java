@@ -13,31 +13,39 @@ import org.json.JSONObject;
 import com.cosyan.db.DBApi;
 import com.cosyan.db.entity.EntityHandler;
 import com.cosyan.db.session.Session;
+import com.cosyan.ui.SessionHandler;
+import com.cosyan.ui.SessionHandler.NoSessionExpression;
+import com.google.common.collect.ImmutableMap;
 
 public class EntityLoadServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
 
-  private final DBApi dbApi;
-  private Session session;
-  private EntityHandler entityHandler;
+  private final SessionHandler sessionHandler;
+  private final EntityHandler entityHandler;
 
-  public EntityLoadServlet(DBApi dbApi) {
-    this.dbApi = dbApi;
-    session = dbApi.adminSession();
-    entityHandler = dbApi.entityHandler();
+  public EntityLoadServlet(DBApi dbApi, SessionHandler sessionHandler) {
+    this.sessionHandler = sessionHandler;
+    this.entityHandler = dbApi.entityHandler();
   }
 
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
-    String table = req.getParameter("table");
-    String id = req.getParameter("id");
-    JSONObject result = entityHandler.loadEntity(table, id, session).toJSON();
-    if (result.has("error")) {
-      resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);  
-    } else {
-      resp.setStatus(HttpStatus.OK_200);  
+    try {
+      Session session = sessionHandler.session(req.getParameter("user"));
+      String table = req.getParameter("table");
+      String id = req.getParameter("id");
+      JSONObject result = entityHandler.loadEntity(table, id, session).toJSON();
+      if (result.has("error")) {
+        resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+      } else {
+        resp.setStatus(HttpStatus.OK_200);
+      }
+      resp.getWriter().println(result);
+    } catch (NoSessionExpression e) {
+      resp.setStatus(HttpStatus.UNAUTHORIZED_401);
+      resp.getWriter().println(new JSONObject(ImmutableMap.of("error",
+          new JSONObject(ImmutableMap.of("msg", "Need to login.")))));
     }
-    resp.getWriter().println(result);
   }
 }

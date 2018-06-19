@@ -11,7 +11,9 @@ angular.module('cosyan').directive('entityPick', ['$http', 'util', function($htt
     templateUrl: 'entity/entity-pick.html',
     link: function(scope, element) {
       scope.loadMeta = function() {
-        $http.get("/cosyan/entityMeta").then(function success(response) {
+        $http.get("/cosyan/entityMeta", {
+            params: { user: sessionStorage.getItem('user') }
+        }).then(function success(response) {
           scope.meta = response.data.entities.find(function(entity) {
             return entity.name === scope.type;
           });

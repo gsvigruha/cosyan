@@ -3,7 +3,9 @@
 angular.module('cosyan')
 .controller('EntityCtrl', function($scope, $http, util) {
   $scope.load = function() {
-    $http.get("/cosyan/entityMeta").then(function success(response) {
+    $http.get("/cosyan/entityMeta", {
+      params: { user: sessionStorage.getItem('user') }
+    }).then(function success(response) {
       $scope.data = response.data;
       $scope.$error = undefined;
       $scope.loadedEntity = undefined;
@@ -76,7 +78,7 @@ angular.module('cosyan')
   $scope.openEntity = function(id) {
     var table = $scope.activeEntityType.name;
     $http.get("/cosyan/loadEntity", {
-      params: { table: table, id: id }
+      params: { table: table, id: id, user: sessionStorage.getItem('user') }
     }).then(function success(response) {
       $scope.loadedEntity = response.data.result[0];
       $scope.$error = undefined;

@@ -10,16 +10,16 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 
-import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.ui.SessionHandler;
+import com.cosyan.ui.SessionHandler.NoSessionExpression;
 import com.google.common.collect.ImmutableMap;
 
-public class LoginServlet extends HttpServlet {
+public class LogoutServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
 
   private final SessionHandler sessionHandler;
 
-  public LoginServlet(SessionHandler sessionHandler) {
+  public LogoutServlet(SessionHandler sessionHandler) {
     this.sessionHandler = sessionHandler;
   }
 
@@ -28,13 +28,12 @@ public class LoginServlet extends HttpServlet {
       throws ServletException, IOException {
     try {
       JSONObject obj = new JSONObject();
-      String token = sessionHandler.login(req.getParameter("username"), req.getParameter("password"), req.getParameter("method"));
-      obj.put("token", token);
+      sessionHandler.logout(req.getParameter("user"));
       resp.setStatus(HttpStatus.OK_200);
       resp.getWriter().println(obj);
-    } catch (AuthException e) {
+    } catch (NoSessionExpression e) {
       JSONObject error = new JSONObject();
-      error.put("error", new JSONObject(ImmutableMap.of("msg", e.getMessage())));
+      error.put("error", new JSONObject(ImmutableMap.of("msg", "Invalid user token.")));
       resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
       resp.getWriter().println(error);
     }

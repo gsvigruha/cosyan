@@ -16,4 +16,15 @@ angular.module('cosyan').controller('LoginCtrl', function($scope, $http) {
 			$scope.$error = response.data.error;
 		});
 	};
+	
+	$scope.logout = function() {
+		$http.get("/cosyan/logout", {
+		    params : { user: sessionStorage.getItem('user') }
+		}).then(function success(response) {
+			sessionStorage.removeItem('user');
+			$scope.$error = undefined;
+		}, function error(response) {
+			$scope.$error = response.data.error;
+		});
+	};
 });
