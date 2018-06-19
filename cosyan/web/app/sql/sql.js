@@ -3,9 +3,8 @@
 angular.module('cosyan')
 .controller('SQLCtrl', function($scope, $http) {
   $scope.run = function() {
-    var user = sessionStorage.getItem('user');
     $http.get("/cosyan/sql", {
-      params: { sql: $scope.query, user: user }
+      params: { sql: $scope.query, user: sessionStorage.getItem('user') }
     }).then(function success(response) {
       $scope.data = response.data;
       $scope.$error = undefined;

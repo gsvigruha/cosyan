@@ -57,7 +57,7 @@ angular.module('cosyan')
     }
     query = query + ';';
     $http.get("/cosyan/sql", {
-      params: { sql: query }
+      params: { sql: query, user: sessionStorage.getItem('user') }
     }).then(function success(response) {
       $scope.entityList = response.data.result[0];
       $scope.$error = undefined;
@@ -96,7 +96,7 @@ angular.module('cosyan')
     var idName = $scope.activeEntityType.fields[0].name;
     var query = 'delete from ' + table + ' where ' + idName + ' = ' + id + ';';
     $http.get("/cosyan/sql", {
-      params: { sql: query }
+      params: { sql: query, user: sessionStorage.getItem('user') }
     }).then(function success(response) {
       $scope.searchEntity();
     }, function error(response) {

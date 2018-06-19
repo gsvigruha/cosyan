@@ -54,7 +54,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
         }
         
         $http.get("/cosyan/sql", {
-          params: { sql: query }
+          params: { sql: query, user: sessionStorage.getItem('user') }
         }).then(function success(response) {
           scope.dirty = false;
           var newIDs = response.data.result[0].newIDs;
@@ -97,7 +97,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
         }
         var query = 'select * from ' + rfk.refTable + ' where ' + rfk.refColumn + ' = ' + scope.entity.fields[0].value + ';';
         $http.get("/cosyan/sql", {
-          params: { sql: query }
+          params: { sql: query, user: sessionStorage.getItem('user') }
         }).then(function success(response) {
           scope.entityList[rfk.name] = response.data.result[0];
         }, function error(response) {

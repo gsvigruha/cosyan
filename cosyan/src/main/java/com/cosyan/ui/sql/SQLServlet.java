@@ -13,6 +13,7 @@ import org.json.JSONObject;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.SessionHandler;
 import com.cosyan.ui.SessionHandler.NoSessionExpression;
+import com.google.common.collect.ImmutableMap;
 
 public class SQLServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
@@ -38,6 +39,8 @@ public class SQLServlet extends HttpServlet {
       resp.getWriter().println(result);
     } catch (NoSessionExpression e) {
       resp.setStatus(HttpStatus.UNAUTHORIZED_401);
+      resp.getWriter().println(new JSONObject(ImmutableMap.of("error",
+          new JSONObject(ImmutableMap.of("msg", "Need to login.")))));
     }
   }
 }
