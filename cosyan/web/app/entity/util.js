@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('cosyan')
-.service('util', function() {
+.service('util', function($http) {
   this.createNewEntity = function(entityType) { 
     if (!entityType) {
       return;
@@ -32,5 +32,18 @@ angular.module('cosyan')
     } else {
       return field.value;
     }
+  };
+  
+  this.meta = function(s, e, type) {
+	$http.get("/cosyan/entityMeta", {
+	  params: { user: sessionStorage.getItem('user') }
+	}).then(function success(response) {
+      var meta = response.data.entities.find(function(entity) {
+        return entity.name === type;
+      });
+	  s(meta);
+	}, function error(response) {
+	  e(response.data.error);
+	});  
   };
 });

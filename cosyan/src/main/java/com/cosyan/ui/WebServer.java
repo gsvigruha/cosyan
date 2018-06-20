@@ -34,10 +34,10 @@ public class WebServer {
     DBApi dbApi = new DBApi(config);
     SessionHandler sessionHandler = new SessionHandler(dbApi);
 
-    handler.addServlet(new ServletHolder(new AdminServlet(dbApi)), "/admin");
+    handler.addServlet(new ServletHolder(new AdminServlet(sessionHandler)), "/admin");
     handler.addServlet(new ServletHolder(new LoginServlet(sessionHandler)), "/login");
     handler.addServlet(new ServletHolder(new LogoutServlet(sessionHandler)), "/logout");
-    handler.addServlet(new ServletHolder(new MonitoringServlet(dbApi.getMetaRepo())), "/monitoring");
+    handler.addServlet(new ServletHolder(new MonitoringServlet(sessionHandler)), "/monitoring");
     handler.addServlet(new ServletHolder(new SQLServlet(sessionHandler)), "/sql");
     handler.addServlet(new ServletHolder(new EntityMetaServlet(dbApi, sessionHandler)), "/entityMeta");
     handler.addServlet(new ServletHolder(new EntityLoadServlet(dbApi, sessionHandler)), "/loadEntity");

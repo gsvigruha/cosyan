@@ -10,15 +10,15 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.ui.SessionHandler;
 
 public class MonitoringServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
 
   private final SystemMonitoring systemMonitoring;
 
-  public MonitoringServlet(MetaRepo metaRepo) {
-    this.systemMonitoring = new SystemMonitoring(metaRepo);
+  public MonitoringServlet(SessionHandler sessionHandler) {
+    this.systemMonitoring = new SystemMonitoring(sessionHandler);
   }
 
   @Override
@@ -26,8 +26,8 @@ public class MonitoringServlet extends HttpServlet {
       throws ServletException, IOException {
     try {
       resp.setStatus(HttpStatus.OK_200);
-      resp.getWriter().println(systemMonitoring.usage());
-    } catch (IOException e) {
+      resp.getWriter().println(systemMonitoring.usage(req.getParameter("user")));
+    } catch (Exception e) {
       e.printStackTrace();
       JSONObject error = new JSONObject();
       error.put("error", e.getMessage());

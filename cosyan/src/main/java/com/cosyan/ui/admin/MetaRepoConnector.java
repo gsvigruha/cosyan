@@ -5,7 +5,7 @@ import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.cosyan.db.DBApi;
+import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -13,18 +13,20 @@ import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.session.Session;
+import com.cosyan.ui.SessionHandler;
+import com.cosyan.ui.SessionHandler.NoSessionExpression;
 
 public class MetaRepoConnector {
 
-  private final MetaRepo metaRepo;
-  private Session session;
+  private final SessionHandler sessionHandler;
 
-  public MetaRepoConnector(DBApi dbApi) {
-    this.metaRepo = dbApi.getMetaRepo();
-    this.session = dbApi.adminSession();
+  public MetaRepoConnector(SessionHandler sessionHandler) {
+    this.sessionHandler = sessionHandler;
   }
 
-  public JSONArray tables() throws ModelException {
+  public JSONArray tables(String userToken) throws ModelException, NoSessionExpression, AuthException {
+    Session session = sessionHandler.session(userToken);
+    MetaRepo metaRepo = session.metaRepo();
     JSONArray list = new JSONArray();
     for (Map.Entry<String, MaterializedTable> table : metaRepo.getTables(session.authToken()).entrySet()) {
       JSONObject tableObj = new JSONObject();

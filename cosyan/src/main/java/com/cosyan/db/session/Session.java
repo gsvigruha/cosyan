@@ -3,6 +3,7 @@ package com.cosyan.db.session;
 import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
+import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.transaction.Result;
@@ -90,5 +91,13 @@ public class Session {
 
   public TransactionJournal transactionJournal() {
     return transactionJournal;
+  }
+
+  public MetaRepo metaRepo() throws AuthException {
+    if (authToken.isAdmin()) {
+      return metaRepo;
+    } else {
+      throw new AuthException("Only admins can access metaRepo.");
+    }
   }
 }

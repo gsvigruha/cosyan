@@ -13,6 +13,16 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
       scope.dirty = false;
       scope.entityList = {};
       scope.entityPick = undefined;
+      scope.meta = undefined;
+      util.meta(function success(meta) {
+    	scope.meta = meta;
+      }, function error(error) {
+        scope.$error = error;
+      }, scope.entity.type);
+      
+      scope.isNew = function() {
+    	return scope.entity.fields[0].value != undefined;
+      };
       
       scope.saveEntity = function() {
     	if (!scope.dirty) {
@@ -20,7 +30,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
     	}
         var table = scope.entity.type;
         var query;
-        if (scope.entity.fields[0].value) {
+        if (scope.isNew()) {
           // Has primary key ID, update statement.
           query = 'update ' + table + ' set ';
           var values = [];
@@ -142,17 +152,11 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
       };
       
       scope.newEntity = function(fk) {
-    	var entityType;
-    	$http.get("/cosyan/entityMeta", {
-          params: { user: sessionStorage.getItem('user') }
-        }).then(function success(response) {
-    	  entityType = response.data.entities.find(function(entity) {
-    	    return entity.name === fk.refTable;
-    	  });
-    	  scope.entityList[fk.name] = util.createNewEntity(entityType);
-    	}, function error(response) {
-          scope.$error = response.data.error;
-        });
+    	util.meta(function success(meta) {
+    	  scope.entityList[fk.name] = util.createNewEntity(meta);
+    	}, function error(error) {
+          scope.$error = error;
+        }, fk.refTable);
       };
     },
   };

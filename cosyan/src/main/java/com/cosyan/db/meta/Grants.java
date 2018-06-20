@@ -303,6 +303,15 @@ public class Grants {
     return hasAccess(grants, tableMeta, Method.SELECT, table, authToken);
   }
 
+  public boolean hasAccess(MaterializedTable tableMeta, AuthToken authToken, Method method) {
+    String table = tableMeta.tableName();
+    if (authToken.isAdmin() || authToken.username().equals(tableMeta.owner())) {
+      return true;
+    }
+    Collection<GrantToken> grants = userGrants.get(authToken.username());
+    return hasAccess(grants, tableMeta, method, table, authToken);
+  }
+
   public void checkOwner(MaterializedTable tableMeta, AuthToken authToken) throws GrantException {
     if (authToken.isAdmin() || authToken.username().equals(tableMeta.owner())) {
       return;

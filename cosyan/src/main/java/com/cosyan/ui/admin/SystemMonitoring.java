@@ -8,26 +8,31 @@ import java.util.Map.Entry;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.session.Session;
+import com.cosyan.ui.SessionHandler;
+import com.cosyan.ui.SessionHandler.NoSessionExpression;
 
 public class SystemMonitoring {
 
-  private final MetaRepo metaRepo;
+  private final SessionHandler sessionHandler;
 
-  public SystemMonitoring(MetaRepo metaRepo) {
-    this.metaRepo = metaRepo;
+  public SystemMonitoring(SessionHandler sessionHandler) {
+    this.sessionHandler = sessionHandler;
   }
 
-  public JSONObject usage() throws IOException {
+  public JSONObject usage(String userToken) throws IOException, NoSessionExpression, AuthException {
+    Session session = sessionHandler.session(userToken);
+    MetaRepo metaRepo = session.metaRepo();
     JSONObject obj = new JSONObject();
     OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
     obj.put("load", operatingSystemMXBean.getSystemLoadAverage());
     obj.put("freeMemory", Runtime.getRuntime().freeMemory());
     obj.put("totalMemory", Runtime.getRuntime().totalMemory());
     obj.put("maxMemory", Runtime.getRuntime().maxMemory());
-    
     JSONArray uniqueIndexes = new JSONArray();
     for (Entry<String, ByteTrieStat> entry : metaRepo.uniqueIndexStats().entrySet()) {
       JSONObject index = new JSONObject();

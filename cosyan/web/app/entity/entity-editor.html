@@ -1,5 +1,7 @@
 <div class="editor">
-  <span ng-click="saveEntity();" title="Save" ng-class="{enabled: dirty}" class="button disabled glyphicon glyphicon-floppy-disk"></span>
+  <span ng-click="saveEntity();" title="Save" ng-class="{enabled: dirty}"
+        class="button disabled glyphicon glyphicon-floppy-disk"
+        ng-if="(isNew() && meta.insert) || (!isNew() && meta.update)"></span>
   <span ng-click="discardEntity();" title="Discard" class="button enabled glyphicon glyphicon-ban-circle"></span>
   <span class="message" ng-class="{error: $error}">{{ $error.msg }}</span>
   <table>
@@ -43,6 +45,6 @@
       <span class="entity-menu-label">{{ rfk.name }}</span>
       <span ng-click="expandEntityList(rfk);" title="Expand" class="button glyphicon glyphicon-collapse-down"></span>
     </div>
-    <entity-list entities="entityList[rfk.name]" ng-if="entityList[rfk.name]"></entity-list>
+    <entity-list entities="entityList[rfk.name]" type="rfk.refTable" ng-if="entityList[rfk.name]"></entity-list>
   </div>
 </div>

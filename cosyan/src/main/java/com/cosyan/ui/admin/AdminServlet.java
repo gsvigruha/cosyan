@@ -10,15 +10,15 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 
-import com.cosyan.db.DBApi;
+import com.cosyan.ui.SessionHandler;
 
 public class AdminServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
 
   private final MetaRepoConnector metaRepoConnector;
 
-  public AdminServlet(DBApi dbApi) {
-    this.metaRepoConnector = new MetaRepoConnector(dbApi);
+  public AdminServlet(SessionHandler sessionHandler) {
+    this.metaRepoConnector = new MetaRepoConnector(sessionHandler);
   }
 
   @Override
@@ -26,7 +26,7 @@ public class AdminServlet extends HttpServlet {
       throws ServletException, IOException {
     try {
       JSONObject obj = new JSONObject();
-      obj.put("tables", metaRepoConnector.tables());
+      obj.put("tables", metaRepoConnector.tables(req.getParameter("user")));
       resp.setStatus(HttpStatus.OK_200);
       resp.getWriter().println(obj);
     } catch (Exception e) {

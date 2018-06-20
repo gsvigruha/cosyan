@@ -87,3 +87,20 @@ h3.menu {
     margin: 4px;
     border-bottom: 1px solid #DDD;
 }
+
+div.login {
+    padding: 8px;
+    
+}
+
+.login div {
+    padding: 4px;
+}
+
+.login input {
+    padding: 4px;
+}
+
+.login button {
+    padding: 4px;
+}

@@ -5,9 +5,13 @@ import java.util.stream.Collectors;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.transaction.Result;
+import com.cosyan.db.meta.Grants.Method;
 import com.cosyan.db.meta.MaterializedTable;
+import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.model.BasicColumn;
+import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.google.common.collect.ImmutableList;
 
@@ -21,10 +25,16 @@ public class EntityMeta extends Result {
     private final ImmutableList<Field> fields;
     private final ImmutableList<ForeignKey> foreignKeys;
     private final ImmutableList<ReverseForeignKey> reverseForeignKeys;
+    private final boolean insert;
+    private final boolean delete;
+    private final boolean update;
 
     public JSONObject toJSON() {
       JSONObject obj = new JSONObject();
       obj.put("name", name);
+      obj.put("insert", insert);
+      obj.put("delete", delete);
+      obj.put("update", update);
       obj.put("fields", fields.stream().map(f -> f.toJSON()).collect(Collectors.toList()));
       obj.put("foreignKeys", foreignKeys.stream().map(f -> f.toJSON()).collect(Collectors.toList()));
       obj.put("reverseForeignKeys", reverseForeignKeys.stream().map(f -> f.toJSON()).collect(Collectors.toList()));
@@ -83,8 +93,13 @@ public class EntityMeta extends Result {
 
   private final ImmutableList<Entity> entities;
 
-  public EntityMeta(ImmutableList<MaterializedTable> tables) {
+  public EntityMeta(MetaRepo metaRepo, AuthToken authToken) {
     super(true);
+    ImmutableList<MaterializedTable> tables = metaRepo.getTables(authToken)
+        .values()
+        .stream()
+        .filter(t -> t.pkColumn().map(c -> c.getType() == DataTypes.IDType).orElse(false))
+        .collect(ImmutableList.toImmutableList());
     ImmutableList.Builder<Entity> entities = ImmutableList.builder();
     for (MaterializedTable table : tables) {
       ImmutableList.Builder<Field> fields = ImmutableList.builder();
@@ -110,7 +125,14 @@ public class EntityMeta extends Result {
             reverseForeignKey.getRefColumn().getName(),
             reverseForeignKey.getRefTable().tableName()));
       }
-      entities.add(new Entity(table.tableName(), fields.build(), foreignKeys.build(), reverseForeignKeys.build()));
+      entities.add(new Entity(
+          table.tableName(),
+          fields.build(),
+          foreignKeys.build(),
+          reverseForeignKeys.build(),
+          metaRepo.hasAccess(table, authToken, Method.INSERT),
+          metaRepo.hasAccess(table, authToken, Method.DELETE),
+          metaRepo.hasAccess(table, authToken, Method.UPDATE)));
     }
     this.entities = entities.build();
   }

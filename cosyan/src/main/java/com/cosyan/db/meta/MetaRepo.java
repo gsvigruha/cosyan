@@ -41,6 +41,7 @@ import com.cosyan.db.lock.LockManager;
 import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.Grants.GrantToken;
+import com.cosyan.db.meta.Grants.Method;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
@@ -376,6 +377,10 @@ public class MetaRepo implements TableProvider, MetaRepoExecutor {
 
   public void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
     grants.checkAccess(resource, authToken);
+  }
+
+  public boolean hasAccess(MaterializedTable tableMeta, AuthToken authToken, Method method) {
+    return grants.hasAccess(tableMeta, authToken, method);
   }
 
   public OutputStream openForWrite(

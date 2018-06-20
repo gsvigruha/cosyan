@@ -11,22 +11,18 @@ angular.module('cosyan').directive('entityPick', ['$http', 'util', function($htt
     templateUrl: 'entity/entity-pick.html',
     link: function(scope, element) {
       scope.loadMeta = function() {
-        $http.get("/cosyan/entityMeta", {
-            params: { user: sessionStorage.getItem('user') }
-        }).then(function success(response) {
-          scope.meta = response.data.entities.find(function(entity) {
-            return entity.name === scope.type;
-          });
+        util.meta(function success(meta) {
+          scope.meta = meta;
           for (var i in scope.meta.fields) {
         	var field = scope.meta.fields[i];
         	if (field.search) {
         	  scope.searchFields[field.name] = { value: undefined, type: field.type };
             }
           }
-        }, function error(response) {
-          $scope.$error = response.data.error;
+        }, function error(error) {
+          $scope.$error = error;
           scope.meta = undefined;
-        });
+        }, scope.type);
       };
       
       scope.searchFields = {};

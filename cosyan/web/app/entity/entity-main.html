@@ -8,7 +8,7 @@
 
 <div ng-if="activeEntityType">
   <span class="entity-title">{{ activeEntityType.name }}</span>
-  <span ng-click="newEntity()" title="New" class="button glyphicon glyphicon-new-window"></span>
+  <span ng-click="newEntity()" title="New" class="button glyphicon glyphicon-new-window" ng-if="activeEntityType.insert"></span>
   <span ng-click="searchEntity()" title="Search" class="button glyphicon glyphicon-search"></span>
   <span ng-click="collapse()" title="Collapse" class="button glyphicon glyphicon-collapse-up"></span>
   <span ng-repeat="field in activeEntityType.fields">
@@ -24,7 +24,7 @@
 
 <div class="message" ng-class="{error: $error}">{{ $error.msg }}</div>
 
-<entity-list entities="entityList" open="openEntity(id)" delete="deleteEntity(id)" ng-if="entityList" class="entity-main"></entity-list>
+<entity-list entities="entityList" open="openEntity(id)" delete="deleteEntity(id)" type="activeEntityType.name" ng-if="entityList" class="entity-main"></entity-list>
 
 <hr class="entity-main"/>
 
