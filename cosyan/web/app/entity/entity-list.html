@@ -4,16 +4,16 @@
       <th ng-repeat="header in entities.header track by $index">
         {{ header.name ? header.name : header }}
       </th>
-      <th ng-if="pick">Pick</th>
-      <th ng-if="open">Open</th>
-      <th ng-if="delete && meta.delete">Delete</th>
+      <th ng-if="pick" class="icon"></th>
+      <th ng-if="open" class="icon"></th>
+      <th ng-if="delete && meta.delete" class="icon"></th>
     </thead>
     <tbody>
       <tr ng-repeat="row in entities.values track by $index">
         <td ng-repeat="element in row track by $index">{{ element }}</td>
-        <td ng-if="pick"><span ng-click="pick({id: row[0]});" title="Pick" class="button glyphicon glyphicon-ok"></span></td>
-        <td ng-if="open"><span ng-click="open({id: row[0]});" title="Open" class="button glyphicon glyphicon-folder-open"></span></td>
-        <td ng-if="delete && meta.delete"><span ng-click="delete({id: row[0]});" title="Delete" class="button glyphicon glyphicon-trash"></span></td>
+        <td ng-if="pick" class="icon"><span ng-click="pick({id: row[0]});" title="Pick" class="button glyphicon glyphicon-ok"></span></td>
+        <td ng-if="open" class="icon"><span ng-click="open({id: row[0]});" title="Open" class="button glyphicon glyphicon-folder-open"></span></td>
+        <td ng-if="delete && meta.delete" class="icon"><span ng-click="delete({id: row[0]});" title="Delete" class="button glyphicon glyphicon-trash"></span></td>
       </tr>
     </tbody>
   </table>

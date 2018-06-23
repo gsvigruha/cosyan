@@ -1,12 +1,11 @@
 <div class="admin">
 <div>
-  <button ng-click="loadTables()">Reload</button>
+  <button ng-click="loadTables()" class="tab">Reload</button>
 </div>
 
-Tables
 <div ng-repeat="table in data.tables track by $index" class="admin-table" id="table-{{ table.name }}"
      ng-style="tableStyle(table, $index);">
-  {{ table.name }}
+  <div class="admin-table-name">{{ table.name }}</div>
   <table class="admin">
   <thead>
   <tr>

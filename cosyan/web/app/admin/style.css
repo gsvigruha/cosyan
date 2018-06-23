@@ -27,6 +27,10 @@ body {
     color: white;
 }
 
+h4.sql {
+    padding: 8px;
+}
+
 textarea.sql {
     width: 500px;
     background-color: #F8FBFF;
@@ -187,4 +191,11 @@ div.admin-table {
     position: absolute;
     top: 100px;
     left: 100px;
+    border: 1px;
+    border-style: solid;
+    border-color: #E0E8F0;
+}
+
+div.admin-table-name {
+    text-align: center;
 }
