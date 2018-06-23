@@ -190,7 +190,7 @@ public class InsertIntoTest extends UnitTestBase {
   public void testRuleReferencingOtherMultiTable() throws Exception {
     execute("create table t19 (a varchar, constraint pk_a primary key (a));");
     execute("create table t20 (a varchar, constraint fk_a foreign key (a) references t19(a));");
-    execute("alter table t19 add ref s (select count(a) as c from rev_fk_a);");
+    execute("alter table t19 add aggref s (select count(a) as c from rev_fk_a);");
     execute("alter table t19 add constraint c_1 check (s.c <= 2);");
 
     execute("insert into t19 values ('x');");
@@ -214,8 +214,8 @@ public class InsertIntoTest extends UnitTestBase {
         + "constraint pk_b primary key (b), "
         + "constraint fk_c foreign key (c) references t21(a));");
     execute("create table t23 (d varchar, e integer, constraint fk_d foreign key (d) references t22(b));");
-    execute("alter table t22 add ref s (select sum(e) as se from rev_fk_d);");
-    execute("alter table t21 add ref s (select sum(s.se) as sse from rev_fk_c);");
+    execute("alter table t22 add aggref s (select sum(e) as se from rev_fk_d);");
+    execute("alter table t21 add aggref s (select sum(s.se) as sse from rev_fk_c);");
     execute("alter table t21 add constraint c_c check (s.sse <= 1);");
 
     execute("insert into t21 values ('x');");
@@ -236,7 +236,7 @@ public class InsertIntoTest extends UnitTestBase {
     execute("create table t24 (a varchar, constraint pk_a primary key (a));");
     execute("create table t25 (a varchar, constraint fk_a foreign key (a) references t24(a));");
     // The rule does not reference any columns.
-    execute("alter table t24 add ref s (select count(1) as c from rev_fk_a);");
+    execute("alter table t24 add aggref s (select count(1) as c from rev_fk_a);");
     execute("alter table t24 add constraint c_1 check (s.c <= 2);");
 
     execute("insert into t24 values ('x');");
@@ -258,7 +258,7 @@ public class InsertIntoTest extends UnitTestBase {
     execute("create table t26 (a varchar, constraint pk_a primary key (a));");
     execute("create table t27 (a varchar, b integer, c integer, "
         + "constraint fk_a foreign key (a) references t26(a));");
-    execute("alter table t26 add ref s (select sum(b) as sb from rev_fk_a where c = 2);");
+    execute("alter table t26 add aggref s (select sum(b) as sb from rev_fk_a where c = 2);");
     execute("alter table t26 add constraint c_1 check (s.sb <= 2);");
 
     execute("insert into t26 values ('x');");

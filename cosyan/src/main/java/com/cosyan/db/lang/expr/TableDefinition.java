@@ -68,7 +68,7 @@ public class TableDefinition {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class RefDefinition extends Node {
+  public static class AggRefDefinition extends Node {
     private final Ident name;
     private final Select select;
   }

@@ -21,7 +21,7 @@ create table relationship (
 
 <!-- RUN -->
 ```
-alter table people add ref neighbors (
+alter table people add aggref neighbors (
   select
     max(dst.age) as max_age,
     sum(dst.age * weight) / sum(weight) as avg_age
@@ -30,7 +30,7 @@ alter table people add ref neighbors (
 ```
 <!-- RUN -->
 ```
-alter table people add ref neighbors_2 (
+alter table people add aggref neighbors_2 (
   select
     max(dst.neighbors.max_age) as max_age
   from og

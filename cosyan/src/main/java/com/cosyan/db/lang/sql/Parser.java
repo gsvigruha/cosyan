@@ -19,18 +19,18 @@ import com.cosyan.db.lang.expr.Literals.NullLiteral;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
 import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ConstraintDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.PrimaryKeyDefinition;
-import com.cosyan.db.lang.expr.TableDefinition.RefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAddColumn;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAlterColumn;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableDropColumn;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddForeignKey;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddRule;
-import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableAddRef;
+import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableAddAggRef;
 import com.cosyan.db.lang.sql.CSVStatements.CSVExport;
 import com.cosyan.db.lang.sql.CSVStatements.CSVImport;
 import com.cosyan.db.lang.sql.CreateStatement.CreateIndex;
@@ -300,13 +300,13 @@ public class Parser implements IParser {
     }
   }
 
-  private RefDefinition parseRef(PeekingIterator<Token> tokens) throws ParserException {
-    assertNext(tokens, Tokens.REF);
+  private AggRefDefinition parseAggRef(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.AGGREF);
     Ident ident = parseIdent(tokens);
     assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
     Select select = parseSelect(tokens);
     assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-    return new RefDefinition(ident, select);
+    return new AggRefDefinition(ident, select);
   }
 
   private MetaStatement parseDrop(PeekingIterator<Token> tokens) throws ParserException {
@@ -331,8 +331,8 @@ public class Parser implements IParser {
     Ident ident = parseIdent(tokens);
     if (tokens.peek().is(Tokens.ADD)) {
       tokens.next();
-      if (tokens.peek().is(Tokens.REF)) {
-        return new AlterTableAddRef(ident, parseRef(tokens));
+      if (tokens.peek().is(Tokens.AGGREF)) {
+        return new AlterTableAddAggRef(ident, parseAggRef(tokens));
       } else if (tokens.peek().is(Tokens.CONSTRAINT)) {
         ConstraintDefinition constraint = parseConstraint(tokens);
         if (constraint instanceof ForeignKeyDefinition) {

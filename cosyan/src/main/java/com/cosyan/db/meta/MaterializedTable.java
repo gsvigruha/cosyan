@@ -15,9 +15,9 @@ import com.cosyan.db.io.RAFBufferedInputStream;
 import com.cosyan.db.io.SeekableInputStream;
 import com.cosyan.db.io.SeekableOutputStream;
 import com.cosyan.db.io.SeekableOutputStream.RAFSeekableOutputStream;
+import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
-import com.cosyan.db.lang.expr.TableDefinition.RefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.sql.SelectStatement;
 import com.cosyan.db.lang.sql.SelectStatement.Select.TableColumns;
@@ -27,25 +27,25 @@ import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.Dependencies.TableDependency;
 import com.cosyan.db.meta.Dependencies.TransitiveTableDependency;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
+import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
-import com.cosyan.db.model.References.RefTableMeta;
+import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
-import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta;
+import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableRef;
-import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
-import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
-import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.stat.TableStats;
 import com.cosyan.db.transaction.MetaResources;
 import com.google.common.collect.ImmutableList;
@@ -315,7 +315,7 @@ public class MaterializedTable {
     columns.add(column);
   }
 
-  public RefTableMeta createRef(RefDefinition ref) throws ModelException {
+  public AggRefTableMeta createAggRef(AggRefDefinition ref) throws ModelException {
     checkName(ref.getName());
     ReferencedMultiTableMeta srcTableMeta = (ReferencedMultiTableMeta) ref.getSelect().getTable()
         .compile(reader());
@@ -332,7 +332,7 @@ public class MaterializedTable {
             TableMeta.wholeTableKeys));
     // Columns have aggregations, recompile with an AggrTable.
     TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
-    return new RefTableMeta(
+    return new AggRefTableMeta(
         aggrTable, tableColumns.getColumns(), srcTableMeta.getReverseForeignKey());
   }
 

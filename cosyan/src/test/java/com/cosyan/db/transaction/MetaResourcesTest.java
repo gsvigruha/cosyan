@@ -74,7 +74,7 @@ public class MetaResourcesTest extends UnitTestBase {
   public void testSelectFromRef() throws Exception {
     execute("create table t6 (a varchar, constraint pk_a primary key (a));");
     execute("create table t7 (a varchar, b integer, constraint fk_a foreign key (a) references t6);");
-    execute("alter table t6 add ref s (select sum(b) as b from rev_fk_a);");
+    execute("alter table t6 add aggref s (select sum(b) as b from rev_fk_a);");
     Map<String, Resource> res1 = resources("select a from t6;");
     assertEquals(1, res1.size());
     assertFalse(res1.get("t6").isWrite());

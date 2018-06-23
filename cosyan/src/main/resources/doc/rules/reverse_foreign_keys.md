@@ -39,7 +39,7 @@ We can use the `ref` keyword to define an aggregated view of a one to many conne
 subtable and its columns can be referred similarly to foreign keys via its name.
 <!-- RUN -->
 ```
-alter table product add ref stats (
+alter table product add aggref stats (
   select count(1) as cnt, sum(price) as sum_price from transactions);
 ```
 
@@ -48,7 +48,7 @@ E.g. `sum_price` here refers to the total price of all transactions of all produ
 product_type.
 <!-- RUN -->
 ```
-alter table product_type add ref stats (
+alter table product_type add aggref stats (
   select sum(stats.cnt) as cnt, sum(stats.sum_price) as sum_price from products);
 ```
 

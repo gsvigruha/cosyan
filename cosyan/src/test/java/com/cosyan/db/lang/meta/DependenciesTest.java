@@ -41,7 +41,7 @@ public class DependenciesTest extends UnitTestBase {
     execute("create table t3 (a varchar, constraint pk_a primary key (a));");
     execute("create table t4 (a varchar, constraint fk_a foreign key (a) references t3(a));");
     // The rule does not reference any columns.
-    execute("alter table t3 add ref s (select count(1) as c from rev_fk_a);");
+    execute("alter table t3 add aggref s (select count(1) as c from rev_fk_a);");
     execute("alter table t3 add constraint c_1 check (s.c <= 2);");
 
     MaterializedTable t3 = metaRepo.table(new Ident("t3"));
@@ -94,8 +94,8 @@ public class DependenciesTest extends UnitTestBase {
         + "constraint pk_a primary key (a2),"
         + "constraint fk_b2 foreign key (b2) references t7(a1));");
     execute("create table t9 (b3 varchar, constraint fk_b3 foreign key (b3) references t8(a2));");
-    execute("alter table t8 add ref s (select count(b3) as s from rev_fk_b3));");
-    execute("alter table t7 add ref s (select sum(s.s) as s from rev_fk_b2));");
+    execute("alter table t8 add aggref s (select count(b3) as s from rev_fk_b3));");
+    execute("alter table t7 add aggref s (select sum(s.s) as s from rev_fk_b2));");
     execute("alter table t7 add constraint c check (s.s <= 10);");
 
     MaterializedTable t7 = metaRepo.table(new Ident("t7"));

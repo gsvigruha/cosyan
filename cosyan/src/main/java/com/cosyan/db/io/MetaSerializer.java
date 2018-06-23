@@ -13,8 +13,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
-import com.cosyan.db.lang.expr.TableDefinition.RefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -23,7 +23,7 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
-import com.cosyan.db.model.References.RefTableMeta;
+import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.TableRef;
@@ -147,10 +147,10 @@ public class MetaSerializer {
     JSONArray arr = obj.getJSONArray("refs");
     for (int i = 0; i < arr.length(); i++) {
       JSONObject refObj = arr.getJSONObject(i);
-      RefDefinition ref = new RefDefinition(
+      AggRefDefinition ref = new AggRefDefinition(
           new Ident(refObj.getString("name")),
           parser.parseSelect(lexer.tokenizeExpression(refObj.getString("expr"))));
-      RefTableMeta refTableMeta = table.createRef(ref);
+      AggRefTableMeta refTableMeta = table.createAggRef(ref);
       table.addRef(new TableRef(ref.getName().getString(), ref.getSelect().print(), refTableMeta));
     }
   }

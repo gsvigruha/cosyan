@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
-import com.cosyan.db.model.References.RefTableMeta;
+import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.References.ReferencedRefTableMeta;
 import com.cosyan.db.model.References.ReferencedSimpleTableMeta;
@@ -79,7 +79,7 @@ public class Dependencies {
       deps = new HashMap<>();
     }
 
-    public TableDependencies(RefTableMeta tableMeta,
+    public TableDependencies(AggRefTableMeta tableMeta,
         TableDependencies tableDependencies) {
       deps = new HashMap<>();
       ReverseForeignKey reverseForeignKey = tableMeta.getReverseForeignKey();

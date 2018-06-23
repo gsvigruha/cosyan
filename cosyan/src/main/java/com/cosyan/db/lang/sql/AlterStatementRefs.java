@@ -2,7 +2,7 @@ package com.cosyan.db.lang.sql;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
-import com.cosyan.db.lang.expr.TableDefinition.RefDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MaterializedTable;
@@ -10,7 +10,7 @@ import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepoExecutor;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.References.RefTableMeta;
+import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.TableRef;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -22,16 +22,16 @@ public class AlterStatementRefs {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class AlterTableAddRef extends AlterStatement {
+  public static class AlterTableAddAggRef extends AlterStatement {
     private final Ident table;
-    private final RefDefinition ref;
+    private final AggRefDefinition ref;
 
-    private RefTableMeta refTableMeta;
+    private AggRefTableMeta refTableMeta;
 
     @Override
     public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException {
       MaterializedTable tableMeta = metaRepo.table(table);
-      refTableMeta = tableMeta.createRef(ref);
+      refTableMeta = tableMeta.createAggRef(ref);
       return MetaResources.tableMeta(tableMeta);
     }
 

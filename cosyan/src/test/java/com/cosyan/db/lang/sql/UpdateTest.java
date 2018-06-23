@@ -276,7 +276,7 @@ public class UpdateTest extends UnitTestBase {
   public void testUpdateReferencedByRules_MultiTable() throws Exception {
     execute("create table t23 (a varchar, constraint pk_a primary key (a));");
     execute("create table t24 (b varchar, c integer, constraint fk_a foreign key (b) references t23(a));");
-    execute("alter table t23 add ref s (select sum(c) as sc from rev_fk_a);");
+    execute("alter table t23 add aggref s (select sum(c) as sc from rev_fk_a);");
     execute("alter table t23 add constraint c_c check (s.sc <= 4);");
 
     execute("insert into t23 values ('x');");

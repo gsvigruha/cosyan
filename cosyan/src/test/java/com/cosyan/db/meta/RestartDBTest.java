@@ -140,7 +140,7 @@ public class RestartDBTest {
     dbApi.adminSession().execute("create table t8("
         + "a integer,"
         + "constraint fk_a1 foreign key (a) references t7(a));");
-    dbApi.adminSession().execute("alter table t7 add ref s (select sum(a) as sa from rev_fk_a1);");
+    dbApi.adminSession().execute("alter table t7 add aggref s (select sum(a) as sa from rev_fk_a1);");
     dbApi.adminSession().execute("alter table t7 add constraint c_1 check(s.sa < 10);");
 
     MaterializedTable t7 = dbApi.getMetaRepo().table("t7");

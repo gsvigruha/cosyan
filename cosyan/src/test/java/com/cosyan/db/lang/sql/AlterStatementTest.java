@@ -229,7 +229,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t15 (a integer, constraint fk_a foreign key (a) references t14);");
     execute("insert into t14 values ('x');");
     execute("insert into t15 values (0);");
-    execute("alter table t14 add ref s (select count(1) as c from rev_fk_a);");
+    execute("alter table t14 add aggref s (select count(1) as c from rev_fk_a);");
     QueryResult result = query("select a, b, s.c from t14;");
     assertHeader(new String[] { "a", "b", "c" }, result);
     assertValues(new Object[][] { { 0L, "x", 1L } }, result);
@@ -311,7 +311,7 @@ public class AlterStatementTest extends UnitTestBase {
   public void testAlterTableAddConstraintRefRuleWithData() throws Exception {
     execute("create table t22 (a integer, constraint pk_a primary key (a));");
     execute("create table t23 (a integer, b integer, constraint fk_a foreign key (a) references t22);");
-    execute("alter table t22 add ref s (select sum(b) as b from rev_fk_a);");
+    execute("alter table t22 add aggref s (select sum(b) as b from rev_fk_a);");
 
     execute("insert into t22 values (1);");
     execute("insert into t23 values (1, 2), (1, 2);");
@@ -333,7 +333,7 @@ public class AlterStatementTest extends UnitTestBase {
   public void testAlterTableAddConstraintRefRuleWithBadData() throws Exception {
     execute("create table t24 (a integer, constraint pk_a primary key (a));");
     execute("create table t25 (a integer, b integer, constraint fk_a foreign key (a) references t24);");
-    execute("alter table t24 add ref s (select sum(b) as b from rev_fk_a);");
+    execute("alter table t24 add aggref s (select sum(b) as b from rev_fk_a);");
 
     execute("insert into t24 values (1);");
     execute("insert into t25 values (1, 2), (1, 2), (1, 2);");

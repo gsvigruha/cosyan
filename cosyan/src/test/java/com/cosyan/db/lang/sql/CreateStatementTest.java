@@ -154,7 +154,7 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateRefTableTableDeps() throws Exception {
     execute("create table t15 (a varchar, constraint pk_a primary key (a));");
     execute("create table t16 (b varchar, c integer, constraint fk_a foreign key (b) references t15(a));");
-    execute("alter table t15 add ref s (select sum(c) as sb from rev_fk_a);");
+    execute("alter table t15 add aggref s (select sum(c) as sb from rev_fk_a);");
 
     MaterializedTable t15 = metaRepo.table(new Ident("t15"));
     TableDependencies deps = t15.reader().table(new Ident("s")).column(new Ident("sb")).tableDependencies();
@@ -168,8 +168,8 @@ public class CreateStatementTest extends UnitTestBase {
     execute(
         "create table t18 (b varchar, constraint pk_a primary key (b), constraint fk_a foreign key (b) references t17(a));");
     execute("create table t19 (c varchar, d integer, constraint fk_b foreign key (c) references t18(b));");
-    execute("alter table t18 add ref s (select sum(d) as sd from rev_fk_b);");
-    execute("alter table t17 add ref s (select sum(s.sd) as ssd from rev_fk_a);");
+    execute("alter table t18 add aggref s (select sum(d) as sd from rev_fk_b);");
+    execute("alter table t17 add aggref s (select sum(s.sd) as ssd from rev_fk_a);");
 
     MaterializedTable t17 = metaRepo.table(new Ident("t17"));
     TableDependencies deps = t17.reader().table(new Ident("s")).column(new Ident("ssd")).tableDependencies();

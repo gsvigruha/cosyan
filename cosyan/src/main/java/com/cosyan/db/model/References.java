@@ -8,8 +8,8 @@ import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
-import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
@@ -74,7 +74,7 @@ public class References {
   public static class ReferencedRefTableMeta extends TableMeta implements ReferencedTable {
 
     private final ReferencedTable parent;
-    private final RefTableMeta refTable;
+    private final AggRefTableMeta refTable;
 
     @Override
     public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
@@ -230,7 +230,7 @@ public class References {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class RefTableMeta extends TableMeta {
+  public static class AggRefTableMeta extends TableMeta {
     private final GlobalAggrTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
     private final ReverseForeignKey reverseForeignKey;
