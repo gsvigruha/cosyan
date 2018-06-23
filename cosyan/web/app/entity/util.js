@@ -27,7 +27,9 @@ angular.module('cosyan')
 	if (field.value === undefined) {
       return 'null';
     }
-    if (field.type.type === 'varchar' || field.type.type === 'enum' || isNaN(field.value)) {
+	if (field.type.type === 'timestamp') {
+	  return 'dt \'' + field.value + '\'';
+	} else if (field.type.type === 'varchar' || field.type.type === 'enum' || isNaN(field.value)) {
       return '\'' + field.value + '\'';
     } else {
       return field.value;
