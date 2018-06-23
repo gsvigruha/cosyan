@@ -25,14 +25,17 @@ public class Config {
 
   public Config(String confDir) throws ConfigException {
     this.confDir = confDir;
-    String file = confDir() + File.separator + "cosyan.db.properties";
+    if (confDir == null) {
+      throw new ConfigException("Config dir must be specified.");
+    }
+    String confFile = confDir + File.separator + "cosyan.db.properties";
     try {
       props = new Properties();
-      props.load(new FileInputStream(new File(file)));
+      props.load(new FileInputStream(new File(confFile)));
     } catch (FileNotFoundException e) {
-      throw new ConfigException("Config file not found: " + file + ".");
+      throw new ConfigException("Config file not found: " + confFile + ".");
     } catch (IOException e) {
-      throw new ConfigException("Error loading config file: " + file + ".");
+      throw new ConfigException("Error loading config file: " + confFile + ".");
     }
   }
 
@@ -60,12 +63,12 @@ public class Config {
     return props.getProperty(DATA_DIR) + File.separator + "backup";
   }
 
-  public String confDir() {
-    return confDir;
+  public String dataDir() {
+    return props.getProperty(DATA_DIR);
   }
 
   public String usersFile() {
-    return confDir() + File.separator + "users";
+    return confDir + File.separator + "users";
   }
 
   public String get(String key) {

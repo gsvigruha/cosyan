@@ -30,7 +30,7 @@ public class WebServer {
     server.setConnectors(new Connector[] { connector });
 
     ServletContextHandler handler = new ServletContextHandler(server, "/cosyan");
-    Config config = new Config("/home/gsvigruha/cosyan_test");
+    Config config = new Config(System.getenv("COSYAN_CONF"));
     DBApi dbApi = new DBApi(config);
     SessionHandler sessionHandler = new SessionHandler(dbApi);
 

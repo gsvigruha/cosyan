@@ -75,7 +75,7 @@ public class BackupManager {
       try {
         ZipEntry entry;
         while ((entry = stream.getNextEntry()) != null) {
-          FileUtils.copyToFile(stream, new File(config.confDir() + File.separator + entry.getName()));
+          FileUtils.copyToFile(stream, new File(config.dataDir() + File.separator + entry.getName()));
         }
       } finally {
         stream.close();

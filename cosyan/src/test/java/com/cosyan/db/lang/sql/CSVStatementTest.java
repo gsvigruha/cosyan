@@ -24,7 +24,7 @@ public class CSVStatementTest extends UnitTestBase {
 
   @Test
   public void testCSVExport() throws IOException {
-    String output = config.confDir() + File.separator + "output_1.csv";
+    String output = config.dataDir() + File.separator + "output_1.csv";
     execute("create table t1(a varchar, b integer, c float, d boolean, e timestamp, f enum('x', 'y'));");
     execute("insert into t1 values ('abc', 1, 2.3, true, dt '2018-01-01', 'x');");
     execute("export into csv '" + output + "' (select * from t1);");
@@ -42,7 +42,7 @@ public class CSVStatementTest extends UnitTestBase {
 
   @Test
   public void testCSVExportWithNull() throws IOException {
-    String output = config.confDir() + File.separator + "output_3.csv";
+    String output = config.dataDir() + File.separator + "output_3.csv";
     execute("create table t3(a varchar, b integer);");
     execute("insert into t3 (b) values (1);");
     execute("export into csv '" + output + "' (select * from t3);");
