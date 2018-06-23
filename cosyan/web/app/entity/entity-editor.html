@@ -1,4 +1,5 @@
 <div class="editor">
+  <span>{{ entity.type }}</span>
   <span ng-click="saveEntity();" title="Save" ng-class="{enabled: dirty}"
         class="button disabled glyphicon glyphicon-floppy-disk"
         ng-if="(isNew() && meta.insert) || (!isNew() && meta.update)"></span>
@@ -31,7 +32,7 @@
     <div class="entity-menu">
       <span title="Reference"><object data="icons/fk.svg" type="image/svg+xml" class="icons"></object></span>
       <span class="entity-menu-label">{{ fk.name }}</span>
-      <span ng-click="expandEntity(fk);" title="Expand" class="button glyphicon glyphicon-collapse-down" ng-if="fk.value"></span>
+      <span ng-click="expandEntity(fk);" title="Expand" class="button glyphicon glyphicon-collapse-down" ng-if="fk.value != undefined"></span>
       <span ng-click="pickEntity(fk);" title="Pick" class="button glyphicon glyphicon-list-alt"></span>
       <span ng-click="newEntity(fk);" title="New" class="button glyphicon glyphicon-new-window"></span>
       <span ng-click="unsetEntity(fk);" title="Unset" class="button glyphicon glyphicon-remove"></span>
