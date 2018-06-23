@@ -18,6 +18,8 @@ public class Config {
 
   public static final String LDAP_PORT = "LDAP_PORT";
 
+  public static final String AUTH = "AUTH";
+
   private final String confDir;
   private final Properties props;
 
@@ -70,11 +72,24 @@ public class Config {
     return props.getProperty(key);
   }
 
+  public boolean auth() {
+    return bool(props.getProperty(AUTH));
+  }
+
   public static class ConfigException extends Exception {
     private static final long serialVersionUID = 1L;
 
     public ConfigException(String msg) {
       super(msg);
     }
+  }
+
+  private boolean bool(String value) {
+    if (value == null) {
+      return false;
+    } else if (value.toLowerCase().equals("true") || value.toLowerCase().equals("yes") || value.equals("1")) {
+      return true;
+    }
+    return false;
   }
 }

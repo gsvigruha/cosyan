@@ -14,15 +14,21 @@ public class SessionHandler {
   private final Map<String, Session> sessions = new HashMap<>();
   private final DBApi dbApi;
   private final Random random;
+  private final Session adminSession;
 
   public SessionHandler(DBApi dbApi) {
     this.dbApi = dbApi;
     this.random = new Random(System.currentTimeMillis());
+    this.adminSession = dbApi.adminSession();
   }
 
   public Session session(String userToken) throws NoSessionExpression {
-    if (sessions.containsKey(userToken)) {
-      return sessions.get(userToken);
+    if (dbApi.config().auth()) {
+      if (sessions.containsKey(userToken)) {
+        return sessions.get(userToken);
+      }
+    } else {
+      return adminSession;
     }
     throw new NoSessionExpression();
   }
@@ -35,11 +41,12 @@ public class SessionHandler {
   }
 
   public void logout(String userToken) throws NoSessionExpression {
-    if (sessions.containsKey(userToken)) {
-      sessions.remove(userToken);
-    } else {
-      throw new NoSessionExpression();
+    if (dbApi.config().auth()) {
+      if (sessions.containsKey(userToken)) {
+        sessions.remove(userToken);
+      }
     }
+    throw new NoSessionExpression();
   }
 
   public static class NoSessionExpression extends Exception {

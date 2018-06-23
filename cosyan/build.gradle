@@ -64,3 +64,14 @@ task doc(type:JavaExec) {
    classpath = sourceSets.main.runtimeClasspath
    args = [ project.projectDir.toString() + '/src/main' ]
 }
+
+task fatJar(type: Jar) {
+	manifest {
+        attributes 'Implementation-Title': 'Cosyan web',  
+        	'Implementation-Version': '1.0.0',
+        	'Main-Class': 'com.cosyan.ui.WebServer'
+    }
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}

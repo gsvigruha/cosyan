@@ -104,3 +104,87 @@ div.login {
 .login button {
     padding: 4px;
 }
+
+div.monitoring {
+    padding: 8px;
+}
+
+.monitoring table {
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    border-collapse: collapse;
+    width: 800px;
+    margin: 8px;
+}
+
+.monitoring td, .monitoring th {
+    border: 1px solid #ddd;
+    padding: 2px;
+    font-size: 12px;
+}
+
+.monitoring tr:nth-child(even){background-color: #F2F2F2;}
+.monitoring tr:nth-child(odd){background-color: #FFFFFF;}
+
+.monitoring tr:hover {background-color: #DDD;}
+
+.monitoring th {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    text-align: left;
+    background-color: #602040;
+    color: white;
+}
+
+.admin table {
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    font-size: 12px;
+    border-collapse: collapse;
+    width: auto;
+    margin: 8px;
+}
+
+.admin td, .admin th {
+    border: 1px solid #ddd;
+    padding: 2px;
+    font-size: 12px;
+}
+
+.admin tr {
+    width: 100%;
+    table-layout: fixed;
+    display: table;
+}
+
+.admin tbody {
+    overflow-y: scroll;
+    overflow-x: none;
+    display: block;
+    max-height: 160px;
+    width: 275px;
+}
+
+.admin thead {
+    display: table;
+    width: 260px;
+    table-layout: fixed;
+}
+
+.admin tr:nth-child(even){background-color: #F2F2F2;}
+.admin tr:nth-child(odd){background-color: #FFFFFF;}
+
+.admin tr:hover {background-color: #DDD;}
+
+.admin th {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    text-align: left;
+    background-color: #602040;
+    color: white;
+}
+
+div.admin-table {
+    position: absolute;
+    top: 100px;
+    left: 100px;
+}

@@ -1,11 +1,12 @@
+<div class="admin">
 <div>
   <button ng-click="loadTables()">Reload</button>
 </div>
 
-<h2>Tables:<h2/>
-<div ng-repeat="table in data.tables">
-  {{ table.name }}<br/>
-  Columns:<br/>
+Tables
+<div ng-repeat="table in data.tables track by $index" class="admin-table" id="table-{{ table.name }}"
+     ng-style="tableStyle(table, $index);">
+  {{ table.name }}
   <table class="admin">
   <thead>
   <tr>
@@ -26,46 +27,5 @@
   </tr>
   </tbody>
   </table>
-
-  Foreign keys:<br/>
-  <table class="admin">
-  <thead>
-  <tr>
-    <th>Name</th>
-    <th>Column</th>
-    <th>Referenced table</th>
-    <th>Referenced column</th>
-  </tr>
-  </thead>
-  <tbody>
-  <tbody>
-  <tr ng-repeat="fk in table.foreignKeys">
-    <td>{{ fk.name }}</td>
-    <td>{{ fk.column }}</td>
-    <td>{{ fk.refTable }}</td>
-    <td>{{ fk.refColumn }}</td>
-  </tr>
-  </tbody>
-  </table>
-  
-  Reverse foreign keys:<br/>
-  <table class="admin">
-  <thead>
-  <tr>
-    <th>Name</th>
-    <th>Column</th>
-    <th>Referenced table</th>
-    <th>Referenced column</th>
-  </tr>
-  </thead>
-  <tbody>
-  <tbody>
-  <tr ng-repeat="fk in table.reverseForeignKeys">
-    <td>{{ fk.name }}</td>
-    <td>{{ fk.column }}</td>
-    <td>{{ fk.refTable }}</td>
-    <td>{{ fk.refColumn }}</td>
-  </tr>
-  </tbody>
-  </table>
+</div>
 </div>

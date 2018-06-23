@@ -1,5 +1,6 @@
+<div class="monitoring">
 <div>
-  <button ng-click="loadMonitoring()">Reload</button>
+  <button ng-click="loadMonitoring()" class="tab">Reload</button>
 </div>
 
 <table>
@@ -10,24 +11,47 @@
 </table>
 
 Unique indexes:
-<div ng-repeat="index in data.uniqueIndexes">
+<div>
   <table>
-    <tr><td>Name:</td><td>{{ index.name }}</td></tr>
-    <tr><td>File size:</td><td>{{ index.indexFileSize | number : fractionSize }}</td></tr>
-    <tr><td>Nodes in memory:</td><td>{{ index.inMemNodes | number : fractionSize }}</td></tr>
-    <tr><td>Pending nodes:</td><td>{{ index.pendingNodes | number : fractionSize }}</td></tr>
+    <thead>
+      <th>Name</th>
+      <th>File size</th>
+      <th>Nodes in memory</th>
+      <th>Pending nodes</th>
+    </thead>
+    <tbody>
+      <tr ng-repeat="index in data.uniqueIndexes">
+        <td>{{ index.name }}</td>
+        <td>{{ index.indexFileSize | number : fractionSize }}</td>
+        <td>{{ index.inMemNodes | number : fractionSize }}</td>
+        <td>{{ index.pendingNodes | number : fractionSize }}</td>
+      </tr>
+    </tbody>
   </table>
 </div>
 
 
 Multi indexes:
-<div ng-repeat="index in data.multiIndexes">
+<div>
   <table>
-    <tr><td>Name:</td><td>{{ index.name }}</td></tr>
-    <tr><td>Trie file size:</td><td>{{ index.trieFileSize | number : fractionSize }}</td></tr>
-    <tr><td>Index file size:</td><td>{{ index.indexFileSize | number : fractionSize }}</td></tr>
-    <tr><td>Nodes in memory:</td><td>{{ index.trieInMemNodes | number : fractionSize }}</td></tr>
-    <tr><td>Trie pending nodes:</td><td>{{ index.triePendingNodes | number : fractionSize }}</td></tr>
-    <tr><td>Pending nodes:</td><td>{{ index.pendingNodes | number : fractionSize }}</td></tr>
+    <thead>
+      <th>Name</th>
+      <th>Trie file size</th>
+      <th>Index file size</th>
+      <th>Nodes in memory</th>
+      <th>Trie pending nodes</th>
+      <th>Pending nodes</th>
+    </thead>
+    <tbody>
+      <tr ng-repeat="index in data.multiIndexes">
+        <td>{{ index.name }}</td>
+        <td>{{ index.trieFileSize | number : fractionSize }}</td>
+        <td>{{ index.indexFileSize | number : fractionSize }}</td>
+        <td>{{ index.trieInMemNodes | number : fractionSize }}</td>
+        <td>{{ index.triePendingNodes | number : fractionSize }}</td>
+        <td>{{ index.pendingNodes | number : fractionSize }}</td>
+      </tr>
+    </tbody>
   </table>
+</div>
 </div>

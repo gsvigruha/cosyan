@@ -21,6 +21,7 @@ import com.cosyan.db.transaction.TransactionHandler;
 
 public class DBApi {
 
+  private final Config config;
   private final MetaRepo metaRepo;
   private final TransactionHandler transactionHandler;
   private final TransactionJournal transactionJournal;
@@ -31,6 +32,7 @@ public class DBApi {
 
   public DBApi(Config config) throws IOException, DBException {
     // System.out.println("Server starting in root directory " + config.confDir());
+    this.config = config;
     LockManager lockManager = new LockManager();
     authenticator = new Authenticator(config);
     metaRepo = new MetaRepo(config, lockManager, authenticator.localUsers(), new Lexer(), new Parser());
@@ -53,6 +55,10 @@ public class DBApi {
 
   public Authenticator authenticator() {
     return authenticator;
+  }
+
+  public Config config() {
+    return config;
   }
 
   public Session adminSession() {
