@@ -37,8 +37,11 @@ public abstract class Result {
       this.values = ImmutableList.copyOf(values);
     }
 
-    public List<List<Object>> listValues() {
-      return values.stream().map(v -> Arrays.asList(v)).collect(Collectors.toList());
+    private List<List<String>> listValues() {
+      return values
+          .stream()
+          .map(l -> Arrays.stream(l).map(v -> prettyPrint(v)).collect(Collectors.toList()))
+          .collect(Collectors.toList());
     }
 
     public static String prettyPrint(Object obj) {
