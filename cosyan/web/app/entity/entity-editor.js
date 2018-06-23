@@ -87,7 +87,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
       };
       
       scope.expandEntity = function(fk) {
-        if (scope.entityList[fk.name] || !fk.value) {
+        if (scope.entityList[fk.name] || fk.value == undefined) {
           scope.entityList[fk.name] = undefined;
           return;
         }
