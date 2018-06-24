@@ -18,6 +18,7 @@ Unique indexes:
       <th>File size</th>
       <th>Nodes in memory</th>
       <th>Pending nodes</th>
+      <th>Test</th>
     </thead>
     <tbody>
       <tr ng-repeat="index in data.uniqueIndexes">
@@ -25,6 +26,11 @@ Unique indexes:
         <td>{{ index.indexFileSize | number : fractionSize }}</td>
         <td>{{ index.inMemNodes | number : fractionSize }}</td>
         <td>{{ index.pendingNodes | number : fractionSize }}</td>
+        <td>
+          <input ng-model=testKeys[index.name]></input>
+          <span ng-click="loadIndexValues(index.name);" title="Load" class="button glyphicon glyphicon-refresh"></span>
+          <label>{{ testValues[index.name] }}</label>
+        </td>
       </tr>
     </tbody>
   </table>

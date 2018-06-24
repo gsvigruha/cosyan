@@ -14,6 +14,7 @@ import org.eclipse.jetty.util.thread.ThreadPool;
 import com.cosyan.db.DBApi;
 import com.cosyan.db.conf.Config;
 import com.cosyan.ui.admin.AdminServlet;
+import com.cosyan.ui.admin.IndexServlet;
 import com.cosyan.ui.admin.LoginServlet;
 import com.cosyan.ui.admin.LogoutServlet;
 import com.cosyan.ui.admin.MonitoringServlet;
@@ -38,6 +39,7 @@ public class WebServer {
     handler.addServlet(new ServletHolder(new LoginServlet(sessionHandler)), "/login");
     handler.addServlet(new ServletHolder(new LogoutServlet(sessionHandler)), "/logout");
     handler.addServlet(new ServletHolder(new MonitoringServlet(sessionHandler)), "/monitoring");
+    handler.addServlet(new ServletHolder(new IndexServlet(sessionHandler)), "/index");
     handler.addServlet(new ServletHolder(new SQLServlet(sessionHandler)), "/sql");
     handler.addServlet(new ServletHolder(new EntityMetaServlet(dbApi, sessionHandler)), "/entityMeta");
     handler.addServlet(new ServletHolder(new EntityLoadServlet(dbApi, sessionHandler)), "/loadEntity");

@@ -8,6 +8,7 @@ import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.Indexes.IndexWriter;
+import com.cosyan.db.model.DataTypes.DataType;
 
 public abstract class TableMultiIndex implements IndexReader, IndexWriter {
   public abstract void put(Object key, long fileIndex) throws IOException, IndexException;
@@ -90,6 +91,11 @@ public abstract class TableMultiIndex implements IndexReader, IndexWriter {
     public void drop() throws IOException {
       index.drop();
     }
+
+    @Override
+    public DataType<?> keyDataType() {
+      return DataTypes.LongType;
+    }
   }
 
   public static class StringTableMultiIndex extends TableMultiIndex {
@@ -143,6 +149,11 @@ public abstract class TableMultiIndex implements IndexReader, IndexWriter {
     @Override
     public void drop() throws IOException {
       index.drop();
+    }
+    
+    @Override
+    public DataType<?> keyDataType() {
+      return DataTypes.StringType;
     }
   }
 }

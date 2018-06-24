@@ -515,4 +515,14 @@ public class MetaRepo implements TableProvider, MetaRepoExecutor {
   public ImmutableMap<String, ByteMultiTrieStat> multiIndexStats() throws IOException {
     return Util.<String, TableMultiIndex, ByteMultiTrieStat>mapValuesIOException(multiIndexes, TableMultiIndex::stats);
   }
+
+  public IndexReader getIndex(String name) throws RuleException {
+    if (uniqueIndexes.containsKey(name)) {
+      return uniqueIndexes.get(name);
+    } else if (multiIndexes.containsKey(name)) {
+      return multiIndexes.get(name);
+    } else {
+      throw new RuleException(String.format("Invalid index '%s'.", name));
+    }
+  }
 }

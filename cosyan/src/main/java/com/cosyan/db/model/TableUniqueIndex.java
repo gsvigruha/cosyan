@@ -9,6 +9,7 @@ import com.cosyan.db.index.IDIndex;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.Indexes.IndexWriter;
+import com.cosyan.db.model.DataTypes.DataType;
 
 public abstract class TableUniqueIndex implements IndexReader, IndexWriter {
 
@@ -98,6 +99,11 @@ public abstract class TableUniqueIndex implements IndexReader, IndexWriter {
     public void drop() throws IOException {
       index.drop();
     }
+
+    @Override
+    public DataType<?> keyDataType() {
+      return DataTypes.LongType;
+    }
   }
 
   public static class StringTableIndex extends TableUniqueIndex {
@@ -161,6 +167,11 @@ public abstract class TableUniqueIndex implements IndexReader, IndexWriter {
     @Override
     public void drop() throws IOException {
       index.drop();
+    }
+
+    @Override
+    public DataType<?> keyDataType() {
+      return DataTypes.StringType;
     }
   }
 
@@ -229,6 +240,11 @@ public abstract class TableUniqueIndex implements IndexReader, IndexWriter {
 
     public long getLastID() {
       return index.getLastID();
+    }
+
+    @Override
+    public DataType<?> keyDataType() {
+      return DataTypes.IDType;
     }
   }
 }
