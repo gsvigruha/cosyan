@@ -8,6 +8,7 @@ import java.util.List;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
+import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.DerivedTables.ShiftedTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -80,6 +81,14 @@ public class JoinTables {
       return ImmutableList.<String>builder()
           .addAll(leftTable.columnNames())
           .addAll(rightTable.columnNames())
+          .build();
+    }
+
+    @Override
+    public ImmutableList<DataType<?>> columnTypes() {
+      return ImmutableList.<DataType<?>>builder()
+          .addAll(leftTable.columnTypes())
+          .addAll(rightTable.columnTypes())
           .build();
     }
 

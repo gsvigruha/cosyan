@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.cosyan.db.auth.Authenticator.AuthException;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.meta.MetaRepo;
@@ -24,7 +25,7 @@ public class SystemMonitoring {
     this.sessionHandler = sessionHandler;
   }
 
-  public JSONObject usage(String userToken) throws IOException, NoSessionExpression, AuthException {
+  public JSONObject usage(String userToken) throws IOException, NoSessionExpression, AuthException, ConfigException {
     Session session = sessionHandler.session(userToken);
     MetaRepo metaRepo = session.metaRepo();
     JSONObject obj = new JSONObject();

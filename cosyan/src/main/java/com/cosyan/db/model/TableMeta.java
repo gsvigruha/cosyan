@@ -8,6 +8,7 @@ import javax.annotation.Nullable;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
+import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -81,6 +82,8 @@ public abstract class TableMeta implements CompiledObject {
 
   public static abstract class ExposedTableMeta extends IterableTableMeta {
     public abstract ImmutableList<String> columnNames();
+
+    public abstract ImmutableList<DataType<?>> columnTypes();
   }
 
   protected AtomicBoolean cancelled = new AtomicBoolean(false);

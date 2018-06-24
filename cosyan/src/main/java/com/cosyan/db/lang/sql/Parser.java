@@ -471,7 +471,24 @@ public class Parser implements IParser {
     } else if (token.is(Tokens.FLOAT)) {
       return DataTypes.DoubleType;
     } else if (token.is(Tokens.TIMESTAMP)) {
-      return DataTypes.DateType;
+      String format = null;
+      if (tokens.peek().is(Tokens.PARENT_OPEN)) {
+        tokens.next();
+        Literal literal = parseLiteral(tokens);
+        if (literal instanceof StringLiteral) {
+          format = (String) literal.getValue();
+        } else {
+          throw new ParserException(
+              String.format("Expected string literal but got '%s'.", literal),
+              literal.getLoc());
+        }
+        assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+      }
+      if (format == null) {
+        return DataTypes.dateType();
+      } else {
+        return DataTypes.dateType(format);
+      }
     } else if (token.is(Tokens.BOOLEAN)) {
       return DataTypes.BoolType;
     } else if (token.is(Tokens.ID)) {

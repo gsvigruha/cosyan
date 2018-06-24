@@ -29,6 +29,8 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
+import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Rule.BooleanRule;
@@ -46,7 +48,8 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   private final SeekableOutputStream writer;
   private final MaterializedTable tableMeta;
   private final SeekableRecordReader reader;
-  private final ImmutableList<BasicColumn> columns;
+  private final ImmutableList<BasicColumn> allColumns;
+  private final ImmutableList<BasicColumn> activeColumns;
   private final ImmutableMap<String, TableUniqueIndex> uniqueIndexes;
   private final ImmutableMap<String, TableMultiIndex> multiIndexes;
   private final ImmutableMultimap<String, IndexReader> foreignIndexes;
@@ -67,7 +70,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       String fileName,
       SeekableOutputStream fileWriter,
       SeekableInputStream fileReader,
-      ImmutableList<BasicColumn> columns,
+      ImmutableList<BasicColumn> allColumns,
       ImmutableMap<String, TableUniqueIndex> uniqueIndexes,
       ImmutableMap<String, TableMultiIndex> multiIndexes,
       ImmutableMultimap<String, IndexReader> foreignIndexes,
@@ -79,11 +82,12 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     this.tableMeta = tableMeta;
     this.fileName = fileName;
     this.writer = fileWriter;
-    this.reader = new SeekableRecordReader(columns, new SeekableSequenceInputStream(
+    this.reader = new SeekableRecordReader(allColumns, new SeekableSequenceInputStream(
         fileReader,
         new TreeMapInputStream(recordsToInsert)),
         recordsToDelete);
-    this.columns = columns;
+    this.allColumns = allColumns;
+    this.activeColumns = allColumns.stream().filter(c -> !c.isDeleted()).collect(ImmutableList.toImmutableList());
     this.uniqueIndexes = uniqueIndexes;
     this.multiIndexes = multiIndexes;
     this.foreignIndexes = foreignIndexes;
@@ -95,12 +99,27 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     this.actFileIndex = fileIndex0;
   }
 
-  public void insert(Resources resources, Object[] values, boolean checkReferencingRules)
+  private static Object check(BasicColumn column, Object value) throws RuleException {
+    DataType<?> dataType = column.getType();
+    if (value instanceof String) {
+      return dataType.fromString((String) value);
+    }
+    if (value != null && !value.getClass().equals(dataType.javaClass())) {
+      throw new RuleException(String.format("Expected '%s' but got '%s' for '%s' (%s).",
+          dataType, DataTypes.nameFromJavaClass(value.getClass()), column.getName(), value));
+    }
+    dataType.check(value);
+    return value;
+  }
+
+  public void insert(Resources resources, Object[] rawValues, boolean checkReferencingRules)
       throws IOException, RuleException {
     long fileIndex = actFileIndex;
-    for (int i = 0; i < values.length; i++) {
+    Object[] values = new Object[rawValues.length];
+    for (int i = 0; i < rawValues.length; i++) {
+      BasicColumn column = activeColumns.get(i);
+      values[i] = check(column, rawValues[i]);
       Object value = values[i];
-      BasicColumn column = columns.get(i);
       column.getType().check(value);
       if (!column.isNullable() && value == null) {
         throw new RuleException("Column is not nullable (mandatory).");
@@ -130,7 +149,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
         }
       }
     }
-    byte[] data = Serializer.serialize(values, columns);
+    byte[] data = Serializer.serialize(values, allColumns);
     recordsToInsert.put(fileIndex, data);
     actFileIndex += data.length;
     for (Map.Entry<String, BooleanRule> rule : rules.entrySet()) {
@@ -205,7 +224,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       boolean checkReverseRuleDependencies)
       throws IOException, RuleException {
     recordsToDelete.add(record.getFilePointer());
-    for (BasicColumn column : columns) {
+    for (BasicColumn column : activeColumns) {
       Object value = record.getValues()[column.getIndex()];
       if (value != null) {
         if (uniqueIndexes.containsKey(column.getName())) {
@@ -365,7 +384,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     InputStream rafReader = new SequenceInputStream(
         new BufferedInputStream(new FileInputStream(fileName)),
         new TreeMapInputStream(recordsToInsert));
-    return new RecordReader(columns, rafReader, recordsToDelete);
+    return new RecordReader(allColumns, rafReader, recordsToDelete);
   }
 
   private MultiFilteredTableReader indexFilteredReader(Resources resources, ColumnMeta whereColumn,

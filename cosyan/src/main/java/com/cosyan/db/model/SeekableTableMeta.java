@@ -10,6 +10,7 @@ import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
+import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.References.ReferencedTable;
@@ -33,6 +34,11 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
   @Override
   public ImmutableList<String> columnNames() {
     return tableMeta.columnNames();
+  }
+
+  @Override
+  public ImmutableList<DataType<?>> columnTypes() {
+    return tableMeta.columnTypes();
   }
 
   @Override

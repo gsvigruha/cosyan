@@ -31,8 +31,6 @@ public class CreateStatementTest extends UnitTestBase {
         tableMeta.column(new Ident("c")));
     assertEquals(new BasicColumn(3, new Ident("d"), DataTypes.BoolType, true, false, false),
         tableMeta.column(new Ident("d")));
-    assertEquals(new BasicColumn(4, new Ident("e"), DataTypes.DateType, true, false, false),
-        tableMeta.column(new Ident("e")));
   }
 
   @Test

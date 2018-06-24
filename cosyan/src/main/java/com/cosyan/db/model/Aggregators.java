@@ -208,7 +208,7 @@ public class Aggregators {
           }
         };
       } else if (argType.isDate()) {
-        return new TypedAggrFunction<Date>(name, DataTypes.DateType) {
+        return new TypedAggrFunction<Date>(name, DataTypes.dateType()) {
 
           @Override
           public Aggregator<Date, Date> create() {
@@ -342,7 +342,7 @@ public class Aggregators {
           }
         };
       } else if (argType.isDate()) {
-        return new TypedAggrFunction<Date>(name, DataTypes.DateType) {
+        return new TypedAggrFunction<Date>(name, DataTypes.dateType()) {
 
           @Override
           public Aggregator<Date, Date> create() {

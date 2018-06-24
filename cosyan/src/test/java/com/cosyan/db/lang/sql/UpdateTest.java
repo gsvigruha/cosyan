@@ -2,6 +2,9 @@ package com.cosyan.db.lang.sql;
 
 import static org.junit.Assert.assertEquals;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
@@ -348,11 +351,11 @@ public class UpdateTest extends UnitTestBase {
     ErrorResult e2 = error("update t28 set b = 1.0;");
     assertError(ModelException.class, "[15, 16]: Expected 'integer' but got 'float' for 'b'.", e2);
     ErrorResult e3 = error("update t28 set c = 'x';");
-    assertError(ModelException.class, "[15, 16]: Expected 'float' but got 'varchar' for 'c'.", e3);
+    assertError(RuleException.class, "Invalid float 'x'.", e3);
     ErrorResult e4 = error("update t28 set d = 1;");
     assertError(ModelException.class, "[15, 16]: Expected 'timestamp' but got 'integer' for 'd'.", e4);
     ErrorResult e5 = error("update t28 set e = 'x';");
-    assertError(ModelException.class, "[15, 16]: Expected 'boolean' but got 'varchar' for 'e'.", e5);
+    assertError(RuleException.class, "Invalid boolean 'x'.", e5);
   }
 
   @Test
@@ -413,5 +416,21 @@ public class UpdateTest extends UnitTestBase {
     QueryResult r2 = query("select a2, b2, fk_a.b1 from t26;");
     assertHeader(new String[] { "a2", "b2", "b1" }, r2);
     assertValues(new Object[][] { { "x", "a", 1L } }, r2);
+  }
+
+  @Test
+  public void testDateType() throws ParseException {
+    SimpleDateFormat sdf = TableReaderTest.sdf;
+    execute("create table t34 (a timestamp('yyyy/MM'));");
+    execute("insert into t34 values ('2018/01');");
+
+    execute("update t34 set a = dt '2018-01-01';");
+    assertValues(new Object[][] { { sdf.parse("20180101") } }, query("select a from t34;"));
+
+    execute("update t34 set a = '2018/02';");
+    assertValues(new Object[][] { { sdf.parse("20180201") } }, query("select a from t34;"));
+
+    ErrorResult e1 = error("update t34 set a = '201803';");
+    assertError(RuleException.class, "Invalid timestamp '201803'.", e1);
   }
 }

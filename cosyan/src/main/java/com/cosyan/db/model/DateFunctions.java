@@ -36,7 +36,7 @@ public class DateFunctions {
   public static class Date extends SimpleFunction<java.util.Date> {
 
     public Date() {
-      super("date", DataTypes.DateType, ImmutableMap.of("self", DataTypes.StringType));
+      super("date", DataTypes.dateType(), ImmutableMap.of("self", DataTypes.StringType));
     }
 
     @Override
@@ -63,7 +63,7 @@ public class DateFunctions {
   public static class AddYears extends SimpleFunction<java.util.Date> {
 
     public AddYears() {
-      super("add_years", DataTypes.DateType, ImmutableMap.of("self", DataTypes.DateType, "n", DataTypes.LongType));
+      super("add_years", DataTypes.dateType(), ImmutableMap.of("self", DataTypes.dateType(), "n", DataTypes.LongType));
     }
 
     @Override
@@ -76,7 +76,7 @@ public class DateFunctions {
   public static class AddMonths extends SimpleFunction<java.util.Date> {
 
     public AddMonths() {
-      super("add_months", DataTypes.DateType, ImmutableMap.of("self", DataTypes.DateType, "n", DataTypes.LongType));
+      super("add_months", DataTypes.dateType(), ImmutableMap.of("self", DataTypes.dateType(), "n", DataTypes.LongType));
     }
 
     @Override
@@ -89,7 +89,7 @@ public class DateFunctions {
   public static class AddDays extends SimpleFunction<java.util.Date> {
 
     public AddDays() {
-      super("add_days", DataTypes.DateType, ImmutableMap.of("self", DataTypes.DateType, "n", DataTypes.LongType));
+      super("add_days", DataTypes.dateType(), ImmutableMap.of("self", DataTypes.dateType(), "n", DataTypes.LongType));
     }
 
     @Override
@@ -102,7 +102,7 @@ public class DateFunctions {
   public static class AddWeeks extends SimpleFunction<java.util.Date> {
 
     public AddWeeks() {
-      super("add_weeks", DataTypes.DateType, ImmutableMap.of("self", DataTypes.DateType, "n", DataTypes.LongType));
+      super("add_weeks", DataTypes.dateType(), ImmutableMap.of("self", DataTypes.dateType(), "n", DataTypes.LongType));
     }
 
     @Override
@@ -115,7 +115,7 @@ public class DateFunctions {
   public static class AddHours extends SimpleFunction<java.util.Date> {
 
     public AddHours() {
-      super("add_hours", DataTypes.DateType, ImmutableMap.of("self", DataTypes.DateType, "n", DataTypes.LongType));
+      super("add_hours", DataTypes.dateType(), ImmutableMap.of("self", DataTypes.dateType(), "n", DataTypes.LongType));
     }
 
     @Override
@@ -128,7 +128,7 @@ public class DateFunctions {
   public static class AddMinutes extends SimpleFunction<java.util.Date> {
 
     public AddMinutes() {
-      super("add_minutes", DataTypes.DateType, ImmutableMap.of("self", DataTypes.DateType, "n", DataTypes.LongType));
+      super("add_minutes", DataTypes.dateType(), ImmutableMap.of("self", DataTypes.dateType(), "n", DataTypes.LongType));
     }
 
     @Override
@@ -141,7 +141,7 @@ public class DateFunctions {
   public static class AddSeconds extends SimpleFunction<java.util.Date> {
 
     public AddSeconds() {
-      super("add_seconds", DataTypes.DateType, ImmutableMap.of("self", DataTypes.DateType, "n", DataTypes.LongType));
+      super("add_seconds", DataTypes.dateType(), ImmutableMap.of("self", DataTypes.dateType(), "n", DataTypes.LongType));
     }
 
     @Override
@@ -154,7 +154,7 @@ public class DateFunctions {
   public static class GetYear extends SimpleFunction<Long> {
 
     public GetYear() {
-      super("get_year", DataTypes.LongType, ImmutableMap.of("self", DataTypes.DateType));
+      super("get_year", DataTypes.LongType, ImmutableMap.of("self", DataTypes.dateType()));
     }
 
     @Override
@@ -167,7 +167,7 @@ public class DateFunctions {
   public static class GetMonth extends SimpleFunction<Long> {
 
     public GetMonth() {
-      super("get_month", DataTypes.LongType, ImmutableMap.of("self", DataTypes.DateType));
+      super("get_month", DataTypes.LongType, ImmutableMap.of("self", DataTypes.dateType()));
     }
 
     @Override
@@ -180,7 +180,7 @@ public class DateFunctions {
   public static class GetWeekOfYear extends SimpleFunction<Long> {
 
     public GetWeekOfYear() {
-      super("get_week_of_year", DataTypes.LongType, ImmutableMap.of("self", DataTypes.DateType));
+      super("get_week_of_year", DataTypes.LongType, ImmutableMap.of("self", DataTypes.dateType()));
     }
 
     @Override
@@ -193,7 +193,7 @@ public class DateFunctions {
   public static class GetWeekOfMonth extends SimpleFunction<Long> {
 
     public GetWeekOfMonth() {
-      super("get_week_of_month", DataTypes.LongType, ImmutableMap.of("self", DataTypes.DateType));
+      super("get_week_of_month", DataTypes.LongType, ImmutableMap.of("self", DataTypes.dateType()));
     }
 
     @Override
@@ -206,7 +206,7 @@ public class DateFunctions {
   public static class GetDay extends SimpleFunction<Long> {
 
     public GetDay() {
-      super("get_day", DataTypes.LongType, ImmutableMap.of("self", DataTypes.DateType));
+      super("get_day", DataTypes.LongType, ImmutableMap.of("self", DataTypes.dateType()));
     }
 
     @Override
@@ -219,7 +219,7 @@ public class DateFunctions {
   public static class GetDayOfYear extends SimpleFunction<Long> {
 
     public GetDayOfYear() {
-      super("get_day_of_year", DataTypes.LongType, ImmutableMap.of("self", DataTypes.DateType));
+      super("get_day_of_year", DataTypes.LongType, ImmutableMap.of("self", DataTypes.dateType()));
     }
 
     @Override
@@ -232,7 +232,7 @@ public class DateFunctions {
   public static class GetDayOfMonth extends SimpleFunction<Long> {
 
     public GetDayOfMonth() {
-      super("get_day_of_month", DataTypes.LongType, ImmutableMap.of("self", DataTypes.DateType));
+      super("get_day_of_month", DataTypes.LongType, ImmutableMap.of("self", DataTypes.dateType()));
     }
 
     @Override
@@ -245,7 +245,7 @@ public class DateFunctions {
   public static class GetDayOfWeek extends SimpleFunction<Long> {
 
     public GetDayOfWeek() {
-      super("get_day_of_week", DataTypes.LongType, ImmutableMap.of("self", DataTypes.DateType));
+      super("get_day_of_week", DataTypes.LongType, ImmutableMap.of("self", DataTypes.dateType()));
     }
 
     @Override
@@ -258,7 +258,7 @@ public class DateFunctions {
   public static class GetHour extends SimpleFunction<Long> {
 
     public GetHour() {
-      super("get_hour", DataTypes.LongType, ImmutableMap.of("self", DataTypes.DateType));
+      super("get_hour", DataTypes.LongType, ImmutableMap.of("self", DataTypes.dateType()));
     }
 
     @Override
@@ -271,7 +271,7 @@ public class DateFunctions {
   public static class GetMinute extends SimpleFunction<Long> {
 
     public GetMinute() {
-      super("get_minute", DataTypes.LongType, ImmutableMap.of("self", DataTypes.DateType));
+      super("get_minute", DataTypes.LongType, ImmutableMap.of("self", DataTypes.dateType()));
     }
 
     @Override
@@ -284,7 +284,7 @@ public class DateFunctions {
   public static class GetSecond extends SimpleFunction<Long> {
 
     public GetSecond() {
-      super("get_second", DataTypes.LongType, ImmutableMap.of("self", DataTypes.DateType));
+      super("get_second", DataTypes.LongType, ImmutableMap.of("self", DataTypes.dateType()));
     }
 
     @Override

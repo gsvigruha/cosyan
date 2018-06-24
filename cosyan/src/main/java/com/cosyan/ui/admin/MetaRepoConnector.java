@@ -6,6 +6,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.cosyan.db.auth.Authenticator.AuthException;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -24,7 +25,7 @@ public class MetaRepoConnector {
     this.sessionHandler = sessionHandler;
   }
 
-  public JSONArray tables(String userToken) throws ModelException, NoSessionExpression, AuthException {
+  public JSONArray tables(String userToken) throws ModelException, NoSessionExpression, AuthException, ConfigException {
     Session session = sessionHandler.session(userToken);
     MetaRepo metaRepo = session.metaRepo();
     JSONArray list = new JSONArray();

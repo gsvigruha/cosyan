@@ -1,8 +1,6 @@
 package com.cosyan.db.lang.transaction;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
@@ -11,7 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.model.DateFunctions;
+import com.cosyan.db.model.DataTypes.DataType;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
@@ -29,43 +27,43 @@ public abstract class Result {
   public static class QueryResult extends Result {
 
     private final ImmutableList<String> header;
+    private final ImmutableList<DataType<?>> types;
     private final ImmutableList<Object[]> values;
 
-    public QueryResult(Iterable<String> header, Iterable<Object[]> values) {
+    public QueryResult(ImmutableList<String> header, ImmutableList<DataType<?>> types, Iterable<Object[]> values) {
       super(true);
-      this.header = ImmutableList.copyOf(header);
+      this.header = header;
+      this.types = types;
       this.values = ImmutableList.copyOf(values);
     }
 
     private List<List<String>> listValues() {
       return values
           .stream()
-          .map(l -> Arrays.stream(l).map(v -> prettyPrint(v)).collect(Collectors.toList()))
+          .map(l -> prettyPrintToList(l, types))
           .collect(Collectors.toList());
     }
 
-    public static String prettyPrint(Object obj) {
+    public static String prettyPrint(Object obj, DataType<?> type) {
       if (obj == null) {
         return "null";
-      } else if (obj instanceof Date) {
-        return DateFunctions.sdf1.format((Date) obj);
       } else {
-        return obj.toString();
+        return type.toString(obj);
       }
     }
 
-    public static String prettyPrint(Object[] values) {
+    public static String prettyPrint(Object[] values, ImmutableList<DataType<?>> types) {
       StringJoiner vsj = new StringJoiner(",");
-      for (Object obj : values) {
-        vsj.add(prettyPrint(obj));
+      for (int i = 0; i < values.length; i++) {
+        vsj.add(prettyPrint(values[i], types.get(i)));
       }
       return vsj.toString() + "\n";
     }
 
-    public static List<String> prettyPrintToList(Object[] values) {
+    public static List<String> prettyPrintToList(Object[] values, ImmutableList<DataType<?>> types) {
       ArrayList<String> result = new ArrayList<>();
       for (int i = 0; i < values.length; i++) {
-        result.add(prettyPrint(values[i]));
+        result.add(prettyPrint(values[i], types.get(i)));
       }
       return result;
     }
@@ -82,7 +80,7 @@ public abstract class Result {
       StringBuilder sb = new StringBuilder();
       sb.append(prettyPrintHeader(header));
       for (Object[] row : values) {
-        sb.append(prettyPrint(row));
+        sb.append(prettyPrint(row, types));
       }
       return sb.toString();
     }

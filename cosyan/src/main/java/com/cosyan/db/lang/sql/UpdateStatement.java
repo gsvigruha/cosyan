@@ -32,7 +32,7 @@ public class UpdateStatement {
 
   private static void check(BasicColumn column, DataType<?> exprType, Ident ident) throws ModelException {
     DataType<?> columnType = column.getType();
-    if (!exprType.isNull() && !columnType.javaClass().equals(exprType.javaClass())) {
+    if (!exprType.isString() && !exprType.isNull() && !columnType.javaClass().equals(exprType.javaClass())) {
       throw new ModelException(String.format("Expected '%s' but got '%s' for '%s'.",
           columnType, exprType, column.getName()), ident);
     }

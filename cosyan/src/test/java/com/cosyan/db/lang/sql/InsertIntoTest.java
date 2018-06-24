@@ -2,6 +2,9 @@ package com.cosyan.db.lang.sql;
 
 import static org.junit.Assert.assertEquals;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
@@ -309,13 +312,13 @@ public class InsertIntoTest extends UnitTestBase {
     ErrorResult e1 = error("insert into t31 values (1, null, null, null, null);");
     assertError(RuleException.class, "Expected 'varchar' but got 'integer' for 'a' (1).", e1);
     ErrorResult e2 = error("insert into t31 values (null, 'x', null, null, null);");
-    assertError(RuleException.class, "Expected 'integer' but got 'varchar' for 'b' (x).", e2);
+    assertError(RuleException.class, "Invalid integer 'x'.", e2);
     ErrorResult e3 = error("insert into t31 values (null, null, 1, null, null);");
     assertError(RuleException.class, "Expected 'float' but got 'integer' for 'c' (1).", e3);
     ErrorResult e4 = error("insert into t31 values (null, null,  null, 1, null);");
     assertError(RuleException.class, "Expected 'timestamp' but got 'integer' for 'd' (1).", e4);
     ErrorResult e5 = error("insert into t31 values (null, null, null, null, 'x');");
-    assertError(RuleException.class, "Expected 'boolean' but got 'varchar' for 'e' (x).", e5);
+    assertError(RuleException.class, "Invalid boolean 'x'.", e5);
   }
 
   @Test
@@ -351,5 +354,21 @@ public class InsertIntoTest extends UnitTestBase {
 
     ErrorResult e1 = error("insert into t34 values ('z');");
     assertError(RuleException.class, "Invalid enum value 'z'.", e1);
+  }
+
+  @Test
+  public void testDateType() throws ParseException {
+    SimpleDateFormat sdf = TableReaderTest.sdf;
+    execute("create table t35 (a timestamp('yyyy/MM'));");
+    execute("insert into t35 values ('2018/01');");
+    execute("insert into t35 values (dt '2018-01-01');");
+    execute("insert into t35 values (null);");
+
+    QueryResult r1 = query("select a from t35;");
+    assertHeader(new String[] { "a" }, r1);
+    assertValues(new Object[][] { { sdf.parse("20180101") }, { sdf.parse("20180101") }, { null } }, r1);
+
+    ErrorResult e1 = error("insert into t35 values ('201801');");
+    assertError(RuleException.class, "Invalid timestamp '201801'.", e1);
   }
 }

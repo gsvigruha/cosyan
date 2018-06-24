@@ -6,6 +6,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
 
+import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.model.DataTypes;
+
 public class Config {
 
   public static final String CONF_DIR = "CONF_DIR";
@@ -75,7 +78,7 @@ public class Config {
     return props.getProperty(key);
   }
 
-  public boolean auth() {
+  public boolean auth() throws ConfigException {
     return bool(props.getProperty(AUTH));
   }
 
@@ -87,12 +90,11 @@ public class Config {
     }
   }
 
-  private boolean bool(String value) {
-    if (value == null) {
-      return false;
-    } else if (value.toLowerCase().equals("true") || value.toLowerCase().equals("yes") || value.equals("1")) {
-      return true;
+  private boolean bool(String value) throws ConfigException {
+    try {
+      return DataTypes.boolFromString(value);
+    } catch (RuleException e) {
+      throw new ConfigException(e.getMessage());
     }
-    return false;
   }
 }

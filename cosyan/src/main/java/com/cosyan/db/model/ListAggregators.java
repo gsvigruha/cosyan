@@ -106,7 +106,7 @@ public class ListAggregators {
           }
         };
       } else if (argType.isDate()) {
-        return new TypedAggrFunction<Date[]>(name, DataTypes.DateType.toListType()) {
+        return new TypedAggrFunction<Date[]>(name, DataTypes.dateType().toListType()) {
 
           @Override
           public Aggregator<Date[], Object> create() {
@@ -255,7 +255,7 @@ public class ListAggregators {
           }
         };
       } else if (argType.isDate()) {
-        return new TypedAggrFunction<Date[]>(name, DataTypes.DateType.toListType()) {
+        return new TypedAggrFunction<Date[]>(name, DataTypes.dateType().toListType()) {
 
           @Override
           public Aggregator<Date[], Object> create() {

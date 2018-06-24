@@ -17,7 +17,6 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.TableUniqueIndex.IDTableIndex;
 import com.cosyan.db.transaction.MetaResources;
@@ -29,20 +28,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 public class InsertIntoStatement {
-
-  private static Object check(BasicColumn column, Literal literal) throws RuleException {
-    DataType<?> dataType = column.getType();
-    try {
-      if (literal.getValue() != null && !literal.getType().javaClass().equals(dataType.javaClass())) {
-        throw new RuleException(String.format("Expected '%s' but got '%s' for '%s' (%s).",
-            dataType, literal.getType(), column.getName(), literal.getValue()));
-      }
-      dataType.check(literal.getValue());
-    } catch (ModelException e) {
-      throw new RuleException(e.getMessage());
-    }
-    return literal.getValue();
-  }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
@@ -91,7 +76,7 @@ public class InsertIntoStatement {
           }
           for (int i = 0; i < columns.get().size(); i++) {
             int idx = indexes.get(columns.get().get(i));
-            fullValues[idx] = check(cols.get(idx), values.get(i));
+            fullValues[idx] = values.get(i).getValue();
           }
         } else {
           int offset = 0;
@@ -105,7 +90,7 @@ public class InsertIntoStatement {
                 String.format("Expected '%s' values but got '%s'.", fullValues.length - offset, values.size()));
           }
           for (int i = offset; i < fullValues.length; i++) {
-            fullValues[i] = check(cols.get(i), values.get(i - offset));
+            fullValues[i] = values.get(i - offset).getValue();
           }
         }
         writer.insert(resources, fullValues, /* checkReferencingRules= */true);

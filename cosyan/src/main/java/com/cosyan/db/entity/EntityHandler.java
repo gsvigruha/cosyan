@@ -29,10 +29,4 @@ public class EntityHandler {
     val transaction = transactionHandler.begin(ImmutableList.of(stmt));
     return transaction.execute(metaRepo, session);
   }
-
-  public Result loadEntityList(String table, String column, String id, Session session) {
-    val stmt = new LoadEntityListStatement(table, column, id);
-    val transaction = transactionHandler.begin(ImmutableList.of(stmt));
-    return transaction.execute(metaRepo, session);
-  }
 }

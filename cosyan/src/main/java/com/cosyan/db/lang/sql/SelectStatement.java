@@ -85,7 +85,7 @@ public class SelectStatement extends Statement {
     } finally {
       reader.close();
     }
-    return new QueryResult(tableMeta.columnNames(), valuess);
+    return new QueryResult(tableMeta.columnNames(), tableMeta.columnTypes(), valuess);
   }
 
   @Override

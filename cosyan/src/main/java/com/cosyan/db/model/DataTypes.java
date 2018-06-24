@@ -4,6 +4,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -114,6 +116,10 @@ public class DataTypes {
     }
 
     public abstract Object fromString(String string) throws RuleException;
+
+    public String toString(Object obj) {
+      return obj.toString();
+    }
   }
 
   public static final DataType<String> StringType = new DataType<String>("varchar") {
@@ -239,41 +245,61 @@ public class DataTypes {
 
     @Override
     public Object fromString(String string) throws RuleException {
-      return Boolean.valueOf(string);
+      return boolFromString(string);
     }
   };
 
-  public static final DataType<Date> DateType = new DataType<Date>("timestamp") {
+  private static DataType<Date> DEFAULT_DATE = dateType("yyyy-MM-dd HH:mm:ss");
 
-    @Override
-    public Class<Date> javaClass() {
-      return Date.class;
-    }
+  public static DataType<Date> dateType() {
+    return DEFAULT_DATE;
+  }
 
-    @Override
-    public void write(Object value, DataOutput stream) throws IOException {
-      stream.writeLong(((Date) value).getTime());
-    }
-
-    @Override
-    public Date read(DataInput stream) throws IOException {
-      return new Date(stream.readLong());
-    }
-
-    @Override
-    public int size(Object value) {
-      return 8;
-    }
-
-    @Override
-    public Object fromString(String string) throws RuleException {
-      Date date = DateFunctions.convert(string);
-      if (date == null) {
-        throw new RuleException(String.format("Invalid timestamp '%s'.", string));
+  public static DataType<Date> dateType(String format) {
+    SimpleDateFormat sdf = new SimpleDateFormat(format);
+    return new DataType<Date>("timestamp") {
+      @Override
+      public Class<Date> javaClass() {
+        return Date.class;
       }
-      return date;
-    }
-  };
+
+      @Override
+      public void write(Object value, DataOutput stream) throws IOException {
+        stream.writeLong(((Date) value).getTime());
+      }
+
+      @Override
+      public Date read(DataInput stream) throws IOException {
+        return new Date(stream.readLong());
+      }
+
+      @Override
+      public int size(Object value) {
+        return 8;
+      }
+
+      @Override
+      public Object fromString(String string) throws RuleException {
+        try {
+          return sdf.parse(string);
+        } catch (ParseException e) {
+          throw new RuleException(String.format("Invalid timestamp '%s'.", string));
+        }
+      }
+
+      @Override
+      public JSONObject toJSON() {
+        JSONObject obj = super.toJSON();
+        obj.put("format", format);
+        return obj;
+      }
+
+      @Override
+      public String toString(Object obj) {
+        return sdf.format((Date) obj);
+      }
+    };
+  }
 
   public static final DataType<Object> NullType = new DataType<Object>("null") {
 
@@ -409,13 +435,45 @@ public class DataTypes {
       return LongType;
     } else if (name.equals(IDType.getName())) {
       return IDType;
-    } else if (name.equals(DateType.getName())) {
-      return DateType;
+    } else if (name.equals("timestamp")) {
+      if (obj.has("format")) {
+        return dateType(obj.getString("format"));
+      } else {
+        return dateType();
+      }
     } else if (name.equals(BoolType.getName())) {
       return BoolType;
     } else if (name.equals("enum")) {
       return enumType(obj.getJSONArray("values"));
     }
     throw new IllegalArgumentException(String.format("Invalid data type '%s'.", name));
+  }
+
+  public static String nameFromJavaClass(Class<?> clss) {
+    if (clss.equals(String.class)) {
+      return "varchar";
+    } else if (clss.equals(Double.class)) {
+      return "float";
+    } else if (clss.equals(Long.class)) {
+      return "integer";
+    } else if (clss.equals(Date.class)) {
+      return "timestamp";
+    } else if (clss.equals(Boolean.class)) {
+      return "boolean";
+    } else {
+      throw new IllegalArgumentException();
+    }
+  }
+
+  public static boolean boolFromString(String value) throws RuleException {
+    if (value == null) {
+      throw new RuleException("Missing boolean.");
+    } else if (value.toLowerCase().equals("true") || value.toLowerCase().equals("yes") || value.equals("1")) {
+      return true;
+    } else if (value.toLowerCase().equals("false") || value.toLowerCase().equals("no") || value.equals("0")) {
+      return false;
+    } else {
+      throw new RuleException(String.format("Invalid boolean '%s'.", value));
+    }
   }
 }

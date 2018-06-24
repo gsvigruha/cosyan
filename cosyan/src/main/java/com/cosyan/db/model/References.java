@@ -13,6 +13,7 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
+import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
@@ -225,6 +226,11 @@ public class References {
     @Override
     public ImmutableList<String> columnNames() {
       return sourceTable.columnNames();
+    }
+
+    @Override
+    public ImmutableList<DataType<?>> columnTypes() {
+      return sourceTable.columnTypes();
     }
   }
 

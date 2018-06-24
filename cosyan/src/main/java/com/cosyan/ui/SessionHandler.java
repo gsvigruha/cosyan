@@ -7,6 +7,7 @@ import java.util.Random;
 import com.cosyan.db.DBApi;
 import com.cosyan.db.auth.Authenticator;
 import com.cosyan.db.auth.Authenticator.AuthException;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.session.Session;
 
 public class SessionHandler {
@@ -22,7 +23,7 @@ public class SessionHandler {
     this.adminSession = dbApi.adminSession();
   }
 
-  public Session session(String userToken) throws NoSessionExpression {
+  public Session session(String userToken) throws NoSessionExpression, ConfigException {
     if (dbApi.config().auth()) {
       if (sessions.containsKey(userToken)) {
         return sessions.get(userToken);
@@ -40,7 +41,7 @@ public class SessionHandler {
     return token;
   }
 
-  public void logout(String userToken) throws NoSessionExpression {
+  public void logout(String userToken) throws NoSessionExpression, ConfigException {
     if (dbApi.config().auth()) {
       if (sessions.containsKey(userToken)) {
         sessions.remove(userToken);

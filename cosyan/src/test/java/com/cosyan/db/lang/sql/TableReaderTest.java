@@ -15,8 +15,8 @@ import com.cosyan.db.model.AggrTables.NotAggrTableException;
 
 public class TableReaderTest extends UnitTestBase {
 
-  private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-  private static final SimpleDateFormat sdf2 = new SimpleDateFormat("yyyyMMdd hhmmss");
+  public static final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+  public static final SimpleDateFormat sdf2 = new SimpleDateFormat("yyyyMMdd hhmmss");
 
   @BeforeClass
   public static void setUp() throws Exception {

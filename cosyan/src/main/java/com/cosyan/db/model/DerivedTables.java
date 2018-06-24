@@ -17,6 +17,7 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
+import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMeta.IterableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -50,6 +51,11 @@ public class DerivedTables {
     @Override
     public ImmutableList<String> columnNames() {
       return columns.keySet().asList();
+    }
+
+    @Override
+    public ImmutableList<DataType<?>> columnTypes() {
+      return columns.values().stream().map(c -> c.getType()).collect(ImmutableList.toImmutableList());
     }
 
     @Override
@@ -102,6 +108,11 @@ public class DerivedTables {
     @Override
     public ImmutableList<String> columnNames() {
       return sourceTable.columnNames();
+    }
+
+    @Override
+    public ImmutableList<DataType<?>> columnTypes() {
+      return sourceTable.columnTypes();
     }
 
     @Override
@@ -161,6 +172,11 @@ public class DerivedTables {
     @Override
     public ImmutableList<String> columnNames() {
       return sourceTable.columnNames();
+    }
+
+    @Override
+    public ImmutableList<DataType<?>> columnTypes() {
+      return sourceTable.columnTypes();
     }
 
     @Override
@@ -235,6 +251,11 @@ public class DerivedTables {
     @Override
     public ImmutableList<String> columnNames() {
       return sourceTable.columnNames();
+    }
+
+    @Override
+    public ImmutableList<DataType<?>> columnTypes() {
+      return sourceTable.columnTypes();
     }
 
     @Override
@@ -322,6 +343,11 @@ public class DerivedTables {
     }
 
     @Override
+    public ImmutableList<DataType<?>> columnTypes() {
+      return sourceTable.columnTypes();
+    }
+
+    @Override
     public IndexColumn getColumn(Ident ident) throws ModelException {
       return sourceTable.getColumn(ident);
     }
@@ -381,6 +407,11 @@ public class DerivedTables {
     @Override
     public ImmutableList<String> columnNames() {
       return sourceTable.columnNames();
+    }
+
+    @Override
+    public ImmutableList<DataType<?>> columnTypes() {
+      return sourceTable.columnTypes();
     }
 
     @Override

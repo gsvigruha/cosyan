@@ -24,7 +24,7 @@ public class Literals {
 
     public String print();
 
-    public DataType<?> getType() throws ModelException;
+    public DataType<?> getType();
 
     public Loc getLoc();
   }
@@ -185,7 +185,7 @@ public class Literals {
 
     @Override
     public DataType<?> getType() {
-      return DataTypes.DateType;
+      return DataTypes.dateType();
     }
 
     @Override
@@ -215,7 +215,7 @@ public class Literals {
     }
 
     @Override
-    public DataType<?> getType() throws ModelException {
+    public DataType<?> getType() {
       return DataTypes.NullType;
     }
 

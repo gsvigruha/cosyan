@@ -11,6 +11,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 
 import com.cosyan.db.DBApi;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.entity.EntityHandler;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.SessionHandler;
@@ -42,7 +43,7 @@ public class EntityLoadServlet extends HttpServlet {
         resp.setStatus(HttpStatus.OK_200);
       }
       resp.getWriter().println(result);
-    } catch (NoSessionExpression e) {
+    } catch (NoSessionExpression | ConfigException e) {
       resp.setStatus(HttpStatus.UNAUTHORIZED_401);
       resp.getWriter().println(new JSONObject(ImmutableMap.of("error",
           new JSONObject(ImmutableMap.of("msg", "Need to login.")))));

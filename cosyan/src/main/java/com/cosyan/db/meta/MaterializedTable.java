@@ -31,6 +31,7 @@ import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Ident;
@@ -144,6 +145,10 @@ public class MaterializedTable {
 
   public ImmutableList<String> columnNames() {
     return columnsMap(columns).keySet().asList();
+  }
+
+  public ImmutableList<DataType<?>> columnTypes() {
+    return columnsMap(columns).values().stream().map(c -> c.getType()).collect(ImmutableList.toImmutableList());
   }
 
   public ImmutableMap<String, BasicColumn> columns() {

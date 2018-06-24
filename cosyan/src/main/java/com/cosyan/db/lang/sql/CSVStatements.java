@@ -120,7 +120,7 @@ public class CSVStatements {
         try {
           Object[] values = null;
           while ((values = reader.next()) != null && !cancelled.get()) {
-            csvPrinter.printRecord(QueryResult.prettyPrintToList(values));
+            csvPrinter.printRecord(QueryResult.prettyPrintToList(values, tableMeta.columnTypes()));
             lines++;
           }
         } finally {
