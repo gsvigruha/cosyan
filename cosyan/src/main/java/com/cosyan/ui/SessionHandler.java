@@ -1,17 +1,30 @@
 package com.cosyan.ui;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.http.HttpStatus;
+import org.json.JSONObject;
 
 import com.cosyan.db.DBApi;
 import com.cosyan.db.auth.Authenticator;
 import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.session.Session;
+import com.google.common.collect.ImmutableMap;
 
 public class SessionHandler {
 
+  @FunctionalInterface
+  public interface CheckedFunction {
+     void apply(Session session) throws IOException;
+  }
+  
   private final Map<String, Session> sessions = new HashMap<>();
   private final DBApi dbApi;
   private final Random random;
@@ -32,6 +45,22 @@ public class SessionHandler {
       return adminSession;
     }
     throw new NoSessionExpression();
+  }
+
+  public void execute(HttpServletRequest req, HttpServletResponse resp, CheckedFunction func)
+      throws IOException {
+    try {
+      Session session = session(req.getParameter("user"));
+      func.apply(session);
+    } catch (NoSessionExpression e) {
+      resp.setStatus(HttpStatus.UNAUTHORIZED_401);
+      resp.getWriter().println(new JSONObject(ImmutableMap.of("error",
+          new JSONObject(ImmutableMap.of("msg", "Need to login.")))));
+    } catch (ConfigException e) {
+      resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+      resp.getWriter().println(new JSONObject(ImmutableMap.of("error",
+          new JSONObject(ImmutableMap.of("msg", e.getMessage())))));
+    }
   }
 
   public String login(String username, String password, String method) throws AuthException {

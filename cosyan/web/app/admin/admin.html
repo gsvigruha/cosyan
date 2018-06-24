@@ -3,10 +3,23 @@
   <button ng-click="loadTables()" class="tab">Reload</button>
 </div>
 
+<!--
+<svg height="600" width="1000">
+  <svg ng-repeat="table in data.tables track by $index">
+    <line ng:attr:x1="{{x(table.name)}}" ng:attr:y1="{{y(table.name)}}"
+          ng:attr:x2="{{x(fk.refTable)}}" ng:attr:y2="{{y(fk.refTable)}}"
+          style="stroke:rgb(255,0,0);stroke-width:2"
+          ng-repeat="fk in table.foreignKeys"></line>
+  </svg>
+</svg>
+-->
 <div ng-repeat="table in data.tables track by $index" class="admin-table" id="table-{{ table.name }}"
      ng-style="tableStyle(table, $index);">
-  <div class="admin-table-name">{{ table.name }}</div>
-  <table class="admin">
+  <div class="admin-table-name">
+    <span>{{ table.name }}</span>
+    <span ng-click="expandTable(table);" title="Expand" class="button glyphicon glyphicon-collapse-down"></span>
+  </div>
+  <table class="admin" ng-if="tableOpened[table.name]">
   <thead>
   <tr>
     <th>Name</th>

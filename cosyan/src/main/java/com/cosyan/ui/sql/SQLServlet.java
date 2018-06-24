@@ -10,11 +10,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 
-import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.SessionHandler;
-import com.cosyan.ui.SessionHandler.NoSessionExpression;
-import com.google.common.collect.ImmutableMap;
 
 public class SQLServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
@@ -28,8 +25,7 @@ public class SQLServlet extends HttpServlet {
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
-    try {
-      Session session = sessionHandler.session(req.getParameter("user"));
+    sessionHandler.execute(req, resp, (Session session) -> {
       String sql = req.getParameter("sql");
       JSONObject result = session.execute(sql).toJSON();
       if (result.has("error")) {
@@ -38,10 +34,6 @@ public class SQLServlet extends HttpServlet {
         resp.setStatus(HttpStatus.OK_200);
       }
       resp.getWriter().println(result);
-    } catch (NoSessionExpression | ConfigException e) {
-      resp.setStatus(HttpStatus.UNAUTHORIZED_401);
-      resp.getWriter().println(new JSONObject(ImmutableMap.of("error",
-          new JSONObject(ImmutableMap.of("msg", "Need to login.")))));
-    }
+    });
   }
 }

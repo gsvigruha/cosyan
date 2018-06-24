@@ -1,15 +1,18 @@
 <div class="editor">
+  <div class="entity-editor-tab">
+  <div class="entity-editor-menu">
   <span>{{ entity.type }}</span>
   <span ng-click="saveEntity();" title="Save" ng-class="{enabled: dirty}"
         class="button disabled glyphicon glyphicon-floppy-disk"
         ng-if="(isNew() && meta.insert) || (!isNew() && meta.update)"></span>
   <span ng-click="discardEntity();" title="Discard" class="button enabled glyphicon glyphicon-ban-circle"></span>
   <span class="message" ng-class="{error: $error}">{{ $error.msg }}</span>
+  </div>
   <table>
     <th>Name</th>
     <th>Type</th>
     <th>Value</th>
-    <th>Unset</th>
+    <th class="icon"></th>
     <tr ng-repeat="field in entity.fields track by $index">
       <td>{{ field.name }}</td>
       <td>{{ field.type.type }}</td>
@@ -22,13 +25,14 @@
         </select>
         <input ng-model="field.value" ng-change="valueChange()" ng-switch-default></input>
       </td>
-      <td>
+      <td class="icon">
         <span ng-click="unsetValue(field);" title="Unset" ng-class="{enabled: field.value != undefined}"
               class="button disabled glyphicon glyphicon-remove" ng-if="field.type.type != 'id'"></span>
       </td>
     </tr>
   </table>
-  <div ng-repeat="fk in entity.foreignKeys track by $index" class="subentity">
+  </div>
+  <div ng-repeat="fk in entity.foreignKeys track by $index" class="subentity entity-editor-tab">
     <div class="entity-menu">
       <span title="Reference"><object data="icons/fk.svg" type="image/svg+xml" class="icons"></object></span>
       <span class="entity-menu-label">{{ fk.name }}</span>
@@ -41,7 +45,7 @@
     <entity-pick type="fk.refTable" pick="pick(fk, id)" cancel="cancelPick(fk)" ng-if="entityPick == fk.name"></entity-pick>
   </div>
   <div ng-repeat="rfk in entity.reverseForeignKeys track by $index" class="subentity">
-    <div class="entity-menu">
+    <div class="entity-list-menu">
       <span title="Multi reference"><object data="icons/rfk.svg" type="image/svg+xml" class="icons"></object></span>
       <span class="entity-menu-label">{{ rfk.name }}</span>
       <span ng-click="expandEntityList(rfk);" title="Expand" class="button glyphicon glyphicon-collapse-down"></span>

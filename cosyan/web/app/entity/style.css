@@ -74,6 +74,11 @@ td.empty {
     color: white;
 }
 
+div.entity-editor-tab {
+    float: left;
+    padding: 4px;
+}
+
 div.entity {
     padding-left: 4px;
 }
@@ -112,8 +117,6 @@ th.icon {
 }
 
 div.editor {
-    padding-left: 4px;
-    padding-bottom: 4px;
     border-width: 1px;
     border-style: solid;
     border-color: #F0F0F0;
@@ -122,7 +125,18 @@ div.editor {
 }
 
 div.entity-menu {
-    margin: 4px;
+    
+}
+
+div.entity-list-menu {
+    float: none;    
+}
+
+.subentity div.entity-editor-menu {
+  top: -28px;
+  left: 200px;
+  height: 0px;
+  position: relative;
 }
 
 span.entity-menu-label {
