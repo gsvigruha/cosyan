@@ -347,4 +347,36 @@ public class AlterStatementTest extends UnitTestBase {
 
     statement("insert into t25 values (1, 1);");
   }
+
+  @Test
+  public void testAlterTableAddForeignKeyWithNullData() throws Exception {
+    execute("create table t26 (a id, b varchar);");
+    execute("create table t27 (a integer, b varchar);");
+    execute("insert into t26 values ('x'), ('y');");
+    execute("insert into t27 values (1, 'a'), (0, 'b'), (null, 'c');");
+    execute("alter table t27 add constraint fk_a foreign key (a) references t26;");
+
+    MaterializedTable t26 = metaRepo.table(new Ident("t26"));
+    MaterializedTable t27 = metaRepo.table(new Ident("t27"));
+
+    ForeignKey fk = t27.foreignKey(new Ident("fk_a"));
+    assertEquals("fk_a", fk.getName());
+    assertEquals("rev_fk_a", fk.getRevName());
+    assertSame(t27, fk.getTable());
+    assertSame(t26, fk.getRefTable());
+    assertEquals("a", fk.getColumn().getName());
+    assertEquals("a", fk.getRefColumn().getName());
+
+    ReverseForeignKey rfk = t26.reverseForeignKey(new Ident("rev_fk_a"));
+    assertEquals("rev_fk_a", rfk.getName());
+    assertSame(t26, rfk.getTable());
+    assertSame(t27, rfk.getRefTable());
+    assertEquals("a", rfk.getColumn().getName());
+    assertEquals("a", rfk.getRefColumn().getName());
+
+    assertTrue(t27.column(new Ident("a")).isIndexed());
+    TableMultiIndex index = metaRepo.collectMultiIndexes(t27).get("a");
+    assertArrayEquals(new long[] { 25L }, index.get(0L));
+    assertArrayEquals(new long[] { 0L }, index.get(1L));
+  }
 }

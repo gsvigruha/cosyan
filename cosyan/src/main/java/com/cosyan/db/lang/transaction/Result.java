@@ -213,7 +213,9 @@ public abstract class Result {
     @Override
     public JSONObject toJSON() {
       JSONObject obj = new JSONObject();
-      obj.put("error", error.getMessage());
+      JSONObject e = new JSONObject();
+      e.put("msg", error.getMessage());
+      obj.put("error", e);
       return obj;
     }
   }

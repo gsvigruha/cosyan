@@ -82,6 +82,10 @@ div.entity-list {
     padding-left: 4px;
 }
 
+.entity-list table {
+    width: 600px;
+}
+
 .entity-list tbody {
     overflow-y: scroll;
     display: block;

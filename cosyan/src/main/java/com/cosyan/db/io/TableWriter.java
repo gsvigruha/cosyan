@@ -402,10 +402,13 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     Record record;
     try {
       while ((record = reader.read()) != RecordReader.EMPTY && !cancelled) {
-        try {
-          indexWriter.put(record.getValues()[columnIndex], record.getFilePointer());
-        } catch (IndexException e) {
-          throw new RuleException(e);
+        Object key = record.getValues()[columnIndex];
+        if (key != null) {
+          try {
+            indexWriter.put(key, record.getFilePointer());
+          } catch (IndexException e) {
+            throw new RuleException(e);
+          }
         }
       }
     } finally {
@@ -421,7 +424,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     try {
       while ((record = reader.read()) != RecordReader.EMPTY && !cancelled) {
         Object key = record.getValues()[columnIndex];
-        if (!index.contains(key)) {
+        if (key != null && !index.contains(key)) {
           throw new RuleException(
               String.format("Invalid key '%s' (value of '%s.%s'), not found in referenced table '%s.%s'.",
                   key,
