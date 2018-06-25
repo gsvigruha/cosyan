@@ -144,11 +144,11 @@ public class MaterializedTable {
   }
 
   public ImmutableList<String> columnNames() {
-    return columnsMap(columns).keySet().asList();
+    return columns.stream().map(c -> c.getName()).collect(ImmutableList.toImmutableList());
   }
 
   public ImmutableList<DataType<?>> columnTypes() {
-    return columnsMap(columns).values().stream().map(c -> c.getType()).collect(ImmutableList.toImmutableList());
+    return columns.stream().map(c -> c.getType()).collect(ImmutableList.toImmutableList());
   }
 
   public ImmutableMap<String, BasicColumn> columns() {

@@ -90,6 +90,7 @@ public abstract class Result {
       JSONObject obj = new JSONObject();
       obj.put("type", "query");
       obj.put("header", getHeader());
+      obj.put("types", types.stream().map(t -> t.toJSON()).collect(Collectors.toList()));
       obj.put("values", listValues());
       return obj;
     }

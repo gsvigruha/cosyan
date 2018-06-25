@@ -49,6 +49,7 @@ span.button:active {background: radial-gradient(rgba(32, 128, 255, 1), rgba(32, 
     font-size: 12px;
     border-collapse: collapse;
     width: 300px;
+    margin: 2px;
 }
 
 .editor td, .entity th {
@@ -75,7 +76,7 @@ td.empty {
 }
 
 div.entity-editor-tab {
-    float: left;
+    display: flex;
     padding: 4px;
 }
 
@@ -117,11 +118,7 @@ th.icon {
 }
 
 div.editor {
-    border-width: 1px;
-    border-style: solid;
-    border-color: #F0F0F0;
-    background-color: #FFFFFF;
-    border-radius: 8px;
+    
 }
 
 div.entity-menu {
@@ -150,13 +147,24 @@ span.entity-title {
     margin-right: 8px;
 }
 
-div.subentity {
-    padding-bottom: 4px;
+span.subentity {
+    padding: 4px;
     border-style: solid;
     border-width: 1px;
     border-color: #F0F0F0;
     background-color: #FDFDFD;
     border-radius: 8px;
+}
+
+span.entity-name {
+    background-color: #F0F8FF;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #E0F0FF;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 4px;
+    padding-right: 4px;
 }
 
 input.search {

@@ -7,6 +7,7 @@ import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.TableRef;
 import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
@@ -16,7 +17,7 @@ public class Entity extends Result {
   @Data
   public static class Field {
     private final String name;
-    private final DataType<?>  type;
+    private final DataType<?> type;
     private final Object value;
   }
 
@@ -41,6 +42,7 @@ public class Entity extends Result {
   private final ImmutableList<Field> fields;
   private ImmutableList<ForeignKey> foreignKeys;
   private ImmutableList<ReverseForeignKey> reverseForeignKeys;
+  private ImmutableList<TableRef> aggrefs;
 
   public Entity(MaterializedTable tableMeta, ImmutableList<BasicColumn> header, Object[] values) {
     super(true);
@@ -67,9 +69,14 @@ public class Entity extends Result {
       reverseForeignKeys.add(new ReverseForeignKey(
           rfk.getName(), rfk.getRefTable().tableName(), rfk.getRefColumn().getName()));
     }
+    ImmutableList.Builder<TableRef> tableRefs = ImmutableList.builder();
+    for (TableRef tableRef : tableMeta.refs().values()) {
+      tableRefs.add(tableRef);
+    }
     this.fields = fields.build();
     this.foreignKeys = foreignKeys.build();
     this.reverseForeignKeys = reverseForeignKeys.build();
+    this.aggrefs = tableRefs.build();
   }
 
   @Override
@@ -108,6 +115,14 @@ public class Entity extends Result {
       rfkList.put(rfkObj);
     }
     obj.put("reverseForeignKeys", rfkList);
+    JSONArray aggRefList = new JSONArray();
+    for (TableRef tableRef : aggrefs) {
+      JSONObject aggRefObj = new JSONObject();
+      aggRefObj.put("name", tableRef.getName());
+      aggRefObj.put("columns", tableRef.getTableMeta().columnNames());
+      aggRefList.put(aggRefObj);
+    }
+    obj.put("aggRefs", aggRefList);
     return obj;
   }
 }

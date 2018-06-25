@@ -115,6 +115,31 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
         });
       };
       
+      scope.expandAggref = function(aggref) {
+    	if (scope.entityList[aggref.name]) {
+          scope.entityList[aggref.name] = undefined;
+          return;
+        }
+    	var cols = aggref.columns.map(c => aggref.name + '.' + c).join(', ');
+        var query = 'select ' + cols + ' from ' + scope.entity.type + ' where ' + scope.entity.fields[0].name + ' = ' + scope.entity.fields[0].value + ';';
+        $http.get("/cosyan/sql", {
+          params: { sql: query, user: sessionStorage.getItem('user') }
+        }).then(function success(response) {
+          var entity = { type: aggref.name, fields: [] };
+          var r = response.data.result[0];
+          for (var i in r.header) {
+            entity.fields.push({
+              name: r.header[i],
+              type: r.types[i],
+              value: r.values[0][i]
+            });
+          }
+          scope.entityList[aggref.name] = entity;
+        }, function error(response) {
+          scope.$error = response.data.error;
+        });
+      };
+      
       scope.pickEntity = function(fk) {
         if(!scope.entityPick) {
           scope.entityPick = fk.name;
