@@ -13,6 +13,8 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
+import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.TableRef;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.SessionHandler;
 import com.cosyan.ui.SessionHandler.NoSessionExpression;
@@ -25,10 +27,10 @@ public class MetaRepoConnector {
     this.sessionHandler = sessionHandler;
   }
 
-  public JSONArray tables(String userToken) throws ModelException, NoSessionExpression, AuthException, ConfigException {
+  public JSONObject tables(String userToken) throws ModelException, NoSessionExpression, AuthException, ConfigException {
     Session session = sessionHandler.session(userToken);
     MetaRepo metaRepo = session.metaRepo();
-    JSONArray list = new JSONArray();
+    JSONObject list = new JSONObject();
     for (Map.Entry<String, MaterializedTable> table : metaRepo.getTables(session.authToken()).entrySet()) {
       JSONObject tableObj = new JSONObject();
       tableObj.put("name", table.getKey());
@@ -41,6 +43,7 @@ public class MetaRepoConnector {
         columnObj.put("nullable", column.isNullable());
         columnObj.put("unique", column.isUnique());
         columnObj.put("indexed", column.isIndexed());
+        columnObj.put("immutable", column.isImmutable());
         columns.put(columnObj);
       }
       tableObj.put("columns", columns);
@@ -54,6 +57,7 @@ public class MetaRepoConnector {
         JSONObject fkObj = new JSONObject();
         fkObj.put("name", foreignKey.getName());
         fkObj.put("column", foreignKey.getColumn().getName());
+        fkObj.put("revName", foreignKey.getRevName());
         fkObj.put("refTable", foreignKey.getRefTable().tableName());
         fkObj.put("refColumn", foreignKey.getRefColumn().getName());
         foreignKeys.put(fkObj);
@@ -71,7 +75,25 @@ public class MetaRepoConnector {
       }
       tableObj.put("reverseForeignKeys", reverseForeignKeys);
 
-      list.put(tableObj);
+      JSONArray aggrefs = new JSONArray();
+      for (TableRef aggref : tableMeta.refs().values()) {
+        JSONObject aggrefsObj = new JSONObject();
+        aggrefsObj.put("name", aggref.getName());
+        aggrefsObj.put("expr", aggref.getExpr());
+        aggrefs.put(aggrefsObj);
+      }
+      tableObj.put("aggRefs", aggrefs);
+      
+      JSONArray rules = new JSONArray();
+      for (BooleanRule rule : tableMeta.rules().values()) {
+        JSONObject ruleObj = new JSONObject();
+        ruleObj.put("name", rule.getName());
+        ruleObj.put("expr", rule.getExpr().print());
+        rules.put(ruleObj);
+      }
+      tableObj.put("rules", rules);
+      
+      list.put(tableMeta.tableName(), tableObj);
     }
     return list;
   }

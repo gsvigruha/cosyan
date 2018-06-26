@@ -6,7 +6,7 @@ div.toolbar {
     font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
     font-size: 12px;
     border-collapse: collapse;
-    width: 600px;
+    width: 900px;
 }
 
 .entity td, .entity th {
@@ -127,7 +127,7 @@ div.entity-menu {
 }
 
 div.entity-list-menu {
-    float: none;    
+    display: inline-flex;    
 }
 
 .subentity div.entity-editor-menu {

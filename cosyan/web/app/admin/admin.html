@@ -1,43 +1,87 @@
 <div class="admin">
-<div>
-  <button ng-click="loadTables()" class="tab">Reload</button>
-</div>
-
-<!--
-<svg height="600" width="1000">
-  <svg ng-repeat="table in data.tables track by $index">
-    <line ng:attr:x1="{{x(table.name)}}" ng:attr:y1="{{y(table.name)}}"
-          ng:attr:x2="{{x(fk.refTable)}}" ng:attr:y2="{{y(fk.refTable)}}"
-          style="stroke:rgb(255,0,0);stroke-width:2"
-          ng-repeat="fk in table.foreignKeys"></line>
-  </svg>
-</svg>
--->
-<div ng-repeat="table in data.tables track by $index" class="admin-table" id="table-{{ table.name }}"
-     ng-style="tableStyle(table, $index);">
-  <div class="admin-table-name">
-    <span>{{ table.name }}</span>
-    <span ng-click="expandTable(table);" title="Expand" class="button glyphicon glyphicon-collapse-down"></span>
+  <div class="admin-tab">
+    <button ng-click="loadTables()" class="tab">Reload</button>
+    <button ng-repeat="table in data.tables track by $index" ng-click="pickTable(table.name);"
+            class="tab">{{ table.name }}</button>
   </div>
-  <table class="admin" ng-if="tableOpened[table.name]">
-  <thead>
-  <tr>
-    <th>Name</th>
-    <th>Type</th>
-    <th>Nullable</th>
-    <th>Unique</th>
-    <th>Indexed</th>
-  </tr>
-  </thead>
-  <tbody>
-  <tr ng-repeat="column in table.columns">
-    <td>{{ column.name }}</td>
-    <td>{{ column.type }}</td>
-    <td>{{ column.nullable ? '' : 'not null' }}</td>
-    <td>{{ column.unique ? 'unique' : '' }}</td>
-    <td>{{ column.indexed ? 'indexed' : '' }}</td>
-  </tr>
-  </tbody>
-  </table>
-</div>
+  <div ng-if="activeTable">
+    <span class="admin-label">Columns</span>
+    <table class="admin">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Nullable</th>
+          <th>Unique</th>
+          <th>Indexed</th>
+          <th>Immutable</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="column in activeTable.columns">
+          <td>{{ column.name }}</td>
+          <td>{{ column.type }}</td>
+          <td>{{ column.nullable ? '' : 'not null' }}</td>
+          <td>{{ column.unique ? 'unique' : '' }}</td>
+          <td>{{ column.indexed ? 'indexed' : '' }}</td>
+          <td>{{ column.immutable ? 'immutable' : '' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div ng-if="activeTable">
+    <span class="admin-label">Foreign keys</span>
+    <table class="admin">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Reverse name</th>
+          <th>Column name</th>
+          <th>Reference table</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="fk in activeTable.foreignKeys">
+          <td>{{ fk.name }}</td>
+          <td>{{ fk.revName }}</td>
+          <td>{{ fk.column }}</td>
+          <td>{{ fk.refTable }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div ng-if="activeTable">
+    <span class="admin-label">Aggregated fields</span>
+    <table class="admin">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Expression</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="ref in activeTable.aggRefs">
+          <td>{{ ref.name }}</td>
+          <td>{{ ref.expr }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div ng-if="activeTable">
+    <span class="admin-label">Rules</span>
+    <table class="admin">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Expression</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="rule in activeTable.rules">
+          <td>{{ rule.name }}</td>
+          <td>{{ rule.expr }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>

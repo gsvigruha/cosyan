@@ -37,33 +37,33 @@
     </span>
     <span ng-repeat="fk in entity.foreignKeys track by $index" class="subentity">
       <div class="entity-menu">
-      <span title="Reference"><object data="icons/fk.svg" type="image/svg+xml" class="icons"></object></span>
-      <span class="entity-menu-label">{{ fk.name }}</span>
-      <span ng-click="expandEntity(fk);" title="Expand" class="button glyphicon glyphicon-collapse-down" ng-if="fk.value != undefined"></span>
-      <span ng-click="pickEntity(fk);" title="Pick" class="button glyphicon glyphicon-list-alt"></span>
-      <span ng-click="newEntity(fk);" title="New" class="button glyphicon glyphicon-new-window"></span>
-      <span ng-click="unsetEntity(fk);" title="Unset" class="button glyphicon glyphicon-remove"></span>
+        <span title="Reference"><object data="icons/fk.svg" type="image/svg+xml" class="icons"></object></span>
+        <span class="entity-menu-label">{{ fk.name }}</span>
+        <span ng-click="expandEntity(fk);" title="Expand" class="button glyphicon glyphicon-collapse-down" ng-if="fk.value != undefined"></span>
+        <span ng-click="pickEntity(fk);" title="Pick" class="button glyphicon glyphicon-list-alt"></span>
+        <span ng-click="newEntity(fk);" title="New" class="button glyphicon glyphicon-new-window"></span>
+        <span ng-click="unsetEntity(fk);" title="Unset" class="button glyphicon glyphicon-remove"></span>
       </div>
       <entity-editor entity="entityList[fk.name]" setparent="setNewFK(fk, newID)" ng-if="entityList[fk.name]"></entity-editor>
       <entity-pick type="fk.refTable" pick="pick(fk, id)" cancel="cancelPick(fk)" ng-if="entityPick == fk.name"></entity-pick>
     </span>
     <span ng-repeat="aggref in entity.aggRefs track by $index" class="subentity">
       <div class="entity-menu">
-      <span title="Aggregated fields" class="glyphicon glyphicon-stats"></span>
-      <span class="entity-menu-label">{{ aggref.name }}</span>
-      <span ng-click="expandAggref(aggref);" title="Expand" class="button glyphicon glyphicon-collapse-down"></span>
+        <span title="Aggregated fields" class="glyphicon glyphicon-stats"></span>
+        <span class="entity-menu-label">{{ aggref.name }}</span>
+        <span ng-click="expandAggref(aggref);" title="Expand" class="button glyphicon glyphicon-collapse-down"></span>
       </div>
       <entity-editor entity="entityList[aggref.name]" ng-if="entityList[aggref.name]"></entity-editor>
     </span>
   </div>
   <div class="entity-editor-tab">
     <span ng-repeat="rfk in entity.reverseForeignKeys track by $index" class="subentity">
-    <div class="entity-list-menu">
-      <span title="Multi reference"><object data="icons/rfk.svg" type="image/svg+xml" class="icons"></object></span>
-      <span class="entity-menu-label">{{ rfk.name }}</span>
-      <span ng-click="expandEntityList(rfk);" title="Expand" class="button glyphicon glyphicon-collapse-down"></span>
-    </div>
-    <entity-list entities="entityList[rfk.name]" type="rfk.refTable" ng-if="entityList[rfk.name]"></entity-list>
+      <div class="entity-list-menu">
+        <span title="Multi reference"><object data="icons/rfk.svg" type="image/svg+xml" class="icons"></object></span>
+        <span class="entity-menu-label">{{ rfk.name }}</span>
+        <span ng-click="expandEntityList(rfk);" title="Expand" class="button glyphicon glyphicon-collapse-down"></span>
+      </div>
+      <entity-list entities="entityList[rfk.name]" type="rfk.refTable" ng-if="entityList[rfk.name]"></entity-list>
     </span>
   </div>
 </div>
