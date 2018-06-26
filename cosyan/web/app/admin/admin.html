@@ -4,6 +4,7 @@
     <button ng-repeat="table in data.tables track by $index" ng-click="pickTable(table.name);"
             class="tab">{{ table.name }}</button>
   </div>
+  <div ng-if="$error">{{ $error.msg }}</div>
   <div ng-if="activeTable">
     <span class="admin-label">Columns</span>
     <table class="admin">
@@ -15,6 +16,7 @@
           <th>Unique</th>
           <th>Indexed</th>
           <th>Immutable</th>
+          <th>Drop</th>
         </tr>
       </thead>
       <tbody>
@@ -25,6 +27,10 @@
           <td>{{ column.unique ? 'unique' : '' }}</td>
           <td>{{ column.indexed ? 'indexed' : '' }}</td>
           <td>{{ column.immutable ? 'immutable' : '' }}</td>
+          <td>
+            <span ng-click="dropColumn(column.name);" title="Discard"
+                  class="button enabled glyphicon glyphicon-trash"></span>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -38,6 +44,7 @@
           <th>Reverse name</th>
           <th>Column name</th>
           <th>Reference table</th>
+          <th>Drop</th>
         </tr>
       </thead>
       <tbody>
@@ -46,6 +53,10 @@
           <td>{{ fk.revName }}</td>
           <td>{{ fk.column }}</td>
           <td>{{ fk.refTable }}</td>
+          <td>
+            <span ng-click="dropConstraint(fk.name);" title="Discard"
+                  class="button enabled glyphicon glyphicon-trash"></span>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -74,12 +85,17 @@
         <tr>
           <th>Name</th>
           <th>Expression</th>
+          <th>Drop</th>
         </tr>
       </thead>
       <tbody>
         <tr ng-repeat="rule in activeTable.rules">
           <td>{{ rule.name }}</td>
           <td>{{ rule.expr }}</td>
+          <td>
+            <span ng-click="dropConstraint(rule.name);" title="Discard"
+                  class="button enabled glyphicon glyphicon-trash"></span>
+          </td>
         </tr>
       </tbody>
     </table>
