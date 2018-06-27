@@ -2,9 +2,9 @@
   <div class="admin-tab">
     <button ng-click="loadTables()" class="tab">Reload</button>
     <button ng-repeat="table in data.tables track by $index" ng-click="pickTable(table.name);"
-            class="tab">{{ table.name }}</button>
+            class="tab" ng-class="{selected: activeTable.name == table.name}">{{ table.name }}</button>
   </div>
-  <div ng-if="$error">{{ $error.msg }}</div>
+  <div class="message" ng-class="{error: $error}">{{ $error.msg }}</div>
   <div ng-if="activeTable">
     <span class="admin-label">Columns</span>
     <table class="admin">
@@ -12,11 +12,11 @@
         <tr>
           <th>Name</th>
           <th>Type</th>
-          <th>Nullable</th>
+          <th>Not null</th>
           <th>Unique</th>
           <th>Indexed</th>
           <th>Immutable</th>
-          <th>Drop</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -32,6 +32,26 @@
                   class="button enabled glyphicon glyphicon-trash"></span>
           </td>
         </tr>
+        <tr>
+          <td><input ng-model="newColumn.name" class="admin-input"></input></td>
+          <td>
+            <select ng-model="newColumn.type" class="admin-input">
+              <option value="varchar">varchar</option>
+              <option value="integer">integer</option>
+              <option value="float">float</option>
+              <option value="timestamp">timestamp</option>
+              <option value="boolean">boolean</option>
+            </select>
+          </td>
+          <td><input type="checkbox" ng-model="newColumn.notnull"></input></td>
+          <td><input type="checkbox" ng-model="newColumn.unique"></input></td>
+          <td><input type="checkbox" ng-model="newColumn.indexed"></input></td>
+          <td><input type="checkbox" ng-model="newColumn.immutable"></input></td>
+          <td>
+            <span ng-click="addColumn();" title="Add"
+                  class="button enabled glyphicon glyphicon-plus"></span>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -44,7 +64,7 @@
           <th>Reverse name</th>
           <th>Column name</th>
           <th>Reference table</th>
-          <th>Drop</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -58,6 +78,24 @@
                   class="button enabled glyphicon glyphicon-trash"></span>
           </td>
         </tr>
+        <tr>
+          <td><input ng-model="newFK.name" class="admin-input"></input></td>
+          <td><input ng-model="newFK.revName" class="admin-input"></input></td>
+          <td>
+            <select ng-model="newFK.column" class="admin-input">
+              <option ng-value="column.name" ng-repeat="column in activeTable.columns track by $index">{{ column.name }}</option>
+            </select>
+          </td>
+          <td>
+            <select ng-model="newFK.refTable" class="admin-input">
+              <option ng-value="table.name" ng-repeat="table in data.tables track by $index">{{ table.name }}</option>
+            </select>
+          </td>
+          <td>
+            <span ng-click="addFK();" title="Add"
+                  class="button enabled glyphicon glyphicon-plus"></span>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -68,12 +106,21 @@
         <tr>
           <th>Name</th>
           <th>Expression</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
         <tr ng-repeat="ref in activeTable.aggRefs">
           <td>{{ ref.name }}</td>
           <td>{{ ref.expr }}</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td><input ng-model="newAggRef.name" class="admin-input"></input></td>
+          <td><input ng-model="newAggRef.expr" class="admin-input-wide" placeholder="select sum(x) as s_x from rev_fk"></input></td>
+          <td>
+            <span ng-click="addAggRef();" title="Add" class="button enabled glyphicon glyphicon-plus"></span>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -85,7 +132,7 @@
         <tr>
           <th>Name</th>
           <th>Expression</th>
-          <th>Drop</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -95,6 +142,13 @@
           <td>
             <span ng-click="dropConstraint(rule.name);" title="Discard"
                   class="button enabled glyphicon glyphicon-trash"></span>
+          </td>
+        </tr>
+        <tr>
+          <td><input ng-model="newRule.name" class="admin-input"></input></td>
+          <td><input ng-model="newRule.expr" class="admin-input-wide" placeholder="x + fk.y > 0"></input></td>
+          <td>
+            <span ng-click="addRule();" title="Add" class="button enabled glyphicon glyphicon-plus"></span>
           </td>
         </tr>
       </tbody>

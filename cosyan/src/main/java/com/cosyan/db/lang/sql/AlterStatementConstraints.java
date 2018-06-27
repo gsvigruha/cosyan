@@ -115,10 +115,8 @@ public class AlterStatementConstraints {
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
       MaterializedTable tableMeta = metaRepo.table(table);
-      if (tableMeta.hasForeignKey(constraint.getString())) {
-
-      } else if (tableMeta.hasRule(constraint.getString())) {
-        tableMeta.dropRule(constraint);
+      if (tableMeta.hasRule(constraint.getString())) {
+        tableMeta.dropRule(constraint.getString());
       } else {
         throw new ModelException(String.format("Constraint '%s' not found in table '%s'.",
             constraint, table), constraint);

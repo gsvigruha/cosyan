@@ -369,14 +369,11 @@ public class MaterializedTable {
   void removeReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, BooleanRule rule) {
     reverseRuleDependencies.removeReverseRuleDependency(reverseForeignKeyChain, rule);
   }
-
-  public void dropRule(Ident name) throws ModelException {
-    if (rules.containsKey(name.getString())) {
-      BooleanRule rule = rules.remove(name.getString());
-      rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */false);
-    } else {
-      throw new ModelException("", name);
-    }
+  
+  public void dropRule(String name) throws ModelException {
+    assert rules.containsKey(name);
+    BooleanRule rule = rules.remove(name);
+    rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */false);
   }
 
   public Optional<ColumnMeta> getPartitioning() {

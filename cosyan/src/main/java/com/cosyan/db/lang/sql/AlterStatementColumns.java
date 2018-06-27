@@ -45,6 +45,7 @@ public class AlterStatementColumns {
     public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
       tableMeta.addColumn(basicColumn);
+      metaRepo.syncMeta(tableMeta);
       return Result.META_OK;
     }
 

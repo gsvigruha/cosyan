@@ -165,12 +165,12 @@ div.monitoring {
     overflow-x: none;
     display: block;
     max-height: 300px;
-    width: 515px;
+    width: 655px;
 }
 
 .admin thead {
     display: table;
-    width: 500px;
+    width: 640px;
     table-layout: fixed;
 }
 
@@ -206,4 +206,12 @@ span.admin-label {
     margin: 4px;
     margin-left: 8px;
     background-color: #E0F0FF;
+}
+
+input.admin-input {
+    width: 80px;
+}
+
+input.admin-input-wide {
+    width: 200px;
 }
