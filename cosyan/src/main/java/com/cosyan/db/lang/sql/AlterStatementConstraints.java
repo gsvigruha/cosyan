@@ -6,9 +6,11 @@ import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
+import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.transaction.Result;
+import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -101,6 +103,32 @@ public class AlterStatementConstraints {
     @Override
     public void cancel() {
       writer.cancel();
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class AlterTableDropConstraint extends GlobalStatement {
+    private final Ident table;
+    private final Ident constraint;
+
+    @Override
+    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
+      MaterializedTable tableMeta = metaRepo.table(table);
+      if (tableMeta.hasForeignKey(constraint.getString())) {
+
+      } else if (tableMeta.hasRule(constraint.getString())) {
+        tableMeta.dropRule(constraint);
+      } else {
+        throw new ModelException(String.format("Constraint '%s' not found in table '%s'.",
+            constraint, table), constraint);
+      }
+      return Result.META_OK;
+    }
+
+    @Override
+    public boolean log() {
+      return true;
     }
   }
 }

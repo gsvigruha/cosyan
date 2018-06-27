@@ -30,6 +30,7 @@ import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAlterColumn;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableDropColumn;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddForeignKey;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddRule;
+import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableDropConstraint;
 import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableAddAggRef;
 import com.cosyan.db.lang.sql.CSVStatements.CSVExport;
 import com.cosyan.db.lang.sql.CSVStatements.CSVImport;
@@ -350,8 +351,14 @@ public class Parser implements IParser {
       }
     } else if (tokens.peek().is(Tokens.DROP)) {
       tokens.next();
-      Ident columnName = parseIdent(tokens);
-      return new AlterTableDropColumn(ident, columnName);
+      if (tokens.peek().is(Tokens.CONSTRAINT)) {
+        tokens.next();
+        Ident constraint = parseIdent(tokens);
+        return new AlterTableDropConstraint(ident, constraint);
+      } else {
+        Ident columnName = parseIdent(tokens);
+        return new AlterTableDropColumn(ident, columnName);
+      }
     } else if (tokens.peek().is(Tokens.ALTER) || tokens.peek().is(Tokens.MODIFY)) {
       tokens.next();
       ColumnDefinition column = parseColumnDefinition(tokens);

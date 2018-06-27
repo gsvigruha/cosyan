@@ -137,29 +137,48 @@ public class Dependencies {
       return this;
     }
 
-    public void addAllReverseRuleDependencies(BooleanRule rule) {
+    public void forAllReverseRuleDependencies(BooleanRule rule, boolean add) {
       for (TableDependency tableDependency : deps.values()) {
         LinkedList<Ref> reverseForeignKeyChain = new LinkedList<>();
-        addAllReverseRuleDependencies(tableDependency, reverseForeignKeyChain, rule);
+        forAllReverseRuleDependencies(tableDependency, reverseForeignKeyChain, rule, add);
       }
     }
 
-    private void addAllReverseRuleDependencies(
+    private void forAllReverseRuleDependencies(
         TableDependency tableDependency,
         LinkedList<Ref> reverseForeignKeyChain,
-        BooleanRule rule) {
+        BooleanRule rule,
+        boolean add) {
       Ref reverseRef = tableDependency.ref().getReverse();
       reverseForeignKeyChain.addFirst(reverseRef);
-      reverseRef.getTable().addReverseRuleDependency(reverseForeignKeyChain, rule);
+      if (add) {
+        reverseRef.getTable().addReverseRuleDependency(reverseForeignKeyChain, rule);
+      } else {
+        reverseRef.getTable().removeReverseRuleDependency(reverseForeignKeyChain, rule);
+      }
       for (TableDependency childDep : tableDependency.deps.values()) {
         LinkedList<Ref> newReverseForeignKeyChain = new LinkedList<>(reverseForeignKeyChain);
-        addAllReverseRuleDependencies(childDep, newReverseForeignKeyChain, rule);
+        forAllReverseRuleDependencies(childDep, newReverseForeignKeyChain, rule, add);
       }
     }
 
     public ImmutableMap<String, TableDependency> getDeps() {
       return ImmutableMap.copyOf(deps);
     }
+
+    public Iterable<MaterializedTable> allTables() {
+      ArrayList<MaterializedTable> tables = new ArrayList<>();
+      allTables(tables, deps);
+      return tables;
+    }
+
+    private void allTables(ArrayList<MaterializedTable> tables, Map<String, TableDependency> deps) {
+      for (TableDependency dep : deps.values()) {
+        tables.addAll(dep.deps.values().stream().map(d -> d.ref.getTable()).collect(Collectors.toList()));
+        allTables(tables, dep.deps);
+      }
+    }
+
   }
 
   public static class ReverseRuleDependency implements TransitiveTableDependency {
@@ -209,6 +228,13 @@ public class Dependencies {
         assert existingRule == rule;
       }
     }
+
+    public void removeRule(BooleanRule rule) {
+      assert rule.getTable().tableName().equals(key.getRefTable().tableName());
+      BooleanRule existingRule = rules.get(rule.getName());
+      assert existingRule == rule;
+      rules.remove(rule.getName());
+    }
   }
 
   public static class ReverseRuleDependencies {
@@ -225,6 +251,16 @@ public class Dependencies {
         actDeps = reverseDep.getDeps();
       }
       reverseDep.addRule(rule);
+    }
+
+    void removeReverseRuleDependency(Iterable<Ref> foreignKeyChain, BooleanRule rule) {
+      Map<String, ReverseRuleDependency> actDeps = deps;
+      ReverseRuleDependency reverseDep = null;
+      for (Ref foreignKey : foreignKeyChain) {
+        reverseDep = actDeps.get(foreignKey.getName());
+        actDeps = reverseDep.getDeps();
+      }
+      reverseDep.removeRule(rule);
     }
 
     public ImmutableMap<String, ReverseRuleDependency> getDeps() {

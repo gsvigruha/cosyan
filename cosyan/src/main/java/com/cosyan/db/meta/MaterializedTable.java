@@ -144,11 +144,11 @@ public class MaterializedTable {
   }
 
   public ImmutableList<String> columnNames() {
-    return columns.stream().map(c -> c.getName()).collect(ImmutableList.toImmutableList());
+    return columns.stream().filter(c -> !c.isDeleted()).map(c -> c.getName()).collect(ImmutableList.toImmutableList());
   }
 
   public ImmutableList<DataType<?>> columnTypes() {
-    return columns.stream().map(c -> c.getType()).collect(ImmutableList.toImmutableList());
+    return columns.stream().filter(c -> !c.isDeleted()).map(c -> c.getType()).collect(ImmutableList.toImmutableList());
   }
 
   public ImmutableMap<String, BasicColumn> columns() {
@@ -366,6 +366,19 @@ public class MaterializedTable {
     reverseRuleDependencies.addReverseRuleDependency(reverseForeignKeyChain, rule);
   }
 
+  void removeReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, BooleanRule rule) {
+    reverseRuleDependencies.removeReverseRuleDependency(reverseForeignKeyChain, rule);
+  }
+
+  public void dropRule(Ident name) throws ModelException {
+    if (rules.containsKey(name.getString())) {
+      BooleanRule rule = rules.remove(name.getString());
+      rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */false);
+    } else {
+      throw new ModelException("", name);
+    }
+  }
+
   public Optional<ColumnMeta> getPartitioning() {
     return partitioning;
   }
@@ -385,6 +398,10 @@ public class MaterializedTable {
 
   public boolean hasForeignKey(String fkName) {
     return foreignKeys.containsKey(fkName);
+  }
+
+  public boolean hasRule(String ruleName) {
+    return rules.containsKey(ruleName);
   }
 
   public boolean isColumnForeignKey(String columnName) {

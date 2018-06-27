@@ -265,7 +265,7 @@ public class MetaRepo implements TableProvider, MetaRepoExecutor {
       foreignKey.getRefTable().addReverseForeignKey(foreignKey.createReverse());
     }
     for (BooleanRule rule : tableMeta.rules().values()) {
-      rule.getDeps().addAllReverseRuleDependencies(rule);
+      rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */true);
     }
   }
 

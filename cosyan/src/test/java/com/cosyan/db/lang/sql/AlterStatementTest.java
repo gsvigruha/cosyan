@@ -4,6 +4,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -378,5 +379,23 @@ public class AlterStatementTest extends UnitTestBase {
     TableMultiIndex index = metaRepo.collectMultiIndexes(t27).get("a");
     assertArrayEquals(new long[] { 25L }, index.get(0L));
     assertArrayEquals(new long[] { 0L }, index.get(1L));
+  }
+
+  @Test
+  public void testAlterTableDropRule() throws Exception {
+    execute("create table t28 (a id, b varchar);");
+    execute("create table t29 (a integer, constraint fk_a foreign key (a) references t28);");
+    execute("alter table t29 add constraint c_1 check (fk_a.b = 'x');");
+
+    MaterializedTable t28 = metaRepo.table(new Ident("t28"));
+    MaterializedTable t29 = metaRepo.table(new Ident("t29"));
+
+    Rule rule = t29.rules().get("c_1");
+    assertEquals("c_1", rule.getName());
+    assertSame(rule, t28.reverseRuleDependencies().getDeps().get("rev_fk_a").rule("c_1"));
+
+    execute("alter table t29 drop constraint c_1;");
+    assertFalse(t29.hasRule("c_1"));
+    assertNull(t28.reverseRuleDependencies().getDeps().get("rev_fk_a").rule("c_1"));
   }
 }

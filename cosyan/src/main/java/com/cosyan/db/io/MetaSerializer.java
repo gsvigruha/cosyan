@@ -119,7 +119,7 @@ public class MetaSerializer {
     }
     for (MaterializedTable table : tables.values()) {
       for (BooleanRule rule : table.rules().values()) {
-        rule.getDeps().addAllReverseRuleDependencies(rule);
+        rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */true);
       }
     }
     return tables;
