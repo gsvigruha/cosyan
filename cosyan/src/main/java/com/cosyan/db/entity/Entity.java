@@ -19,6 +19,7 @@ public class Entity extends Result {
     private final String name;
     private final DataType<?> type;
     private final Object value;
+    private final boolean immutable;
   }
 
   @Data
@@ -28,6 +29,7 @@ public class Entity extends Result {
     private final String fkName;
     private final String refTable;
     private final Object value;
+    private final boolean immutable;
   }
 
   @Data
@@ -53,7 +55,7 @@ public class Entity extends Result {
     for (int i = 0; i < header.size(); i++) {
       BasicColumn column = header.get(i);
       if (!tableMeta.isColumnForeignKey(column.getName())) {
-        fields.add(new Field(column.getName(), column.getType(), values[i]));
+        fields.add(new Field(column.getName(), column.getType(), values[i], column.isImmutable()));
       } else {
         com.cosyan.db.model.Keys.ForeignKey foreignKey = tableMeta.getColumnForeignKey(column.getName());
         foreignKeys.add(new ForeignKey(
@@ -61,7 +63,8 @@ public class Entity extends Result {
             column.getType(),
             foreignKey.getName(),
             foreignKey.getRefTable().tableName(),
-            values[i]));
+            values[i],
+            foreignKey.getColumn().isImmutable()));
       }
     }
     ImmutableList.Builder<ReverseForeignKey> reverseForeignKeys = ImmutableList.builder();
@@ -92,6 +95,7 @@ public class Entity extends Result {
       if (field.getValue() != null) {
         fieldObj.put("value", QueryResult.prettyPrint(field.getValue(), field.getType()));
       }
+      fieldObj.put("immutable", field.isImmutable());
       fieldList.put(fieldObj);
     }
     obj.put("fields", fieldList);
@@ -103,6 +107,7 @@ public class Entity extends Result {
       fkObj.put("name", foreignKey.getFkName());
       fkObj.put("refTable", foreignKey.getRefTable());
       fkObj.put("value", foreignKey.getValue());
+      fkObj.put("immutable", foreignKey.isImmutable());
       fkList.put(fkObj);
     }
     obj.put("foreignKeys", fkList);

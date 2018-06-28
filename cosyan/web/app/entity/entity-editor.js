@@ -35,12 +35,16 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
           query = 'update ' + table + ' set ';
           var values = [];
           for (var i = 1; i < scope.entity.fields.length; i++) { 
-            var field = scope.entity.fields[i];
-            values.push(field.name + ' = ' + util.format(field)); 
+        	var field = scope.entity.fields[i];
+            if (!field.immutable) {
+        	  values.push(field.name + ' = ' + util.format(field));
+            }
           }
           for (var i = 0; i < scope.entity.foreignKeys.length; i++) { 
             var fk = scope.entity.foreignKeys[i];
-            values.push(fk.columnName + ' = ' + util.format(fk)); 
+            if (!fk.immutable) {
+              values.push(fk.columnName + ' = ' + util.format(fk));
+            }
           }
           query = query + values.join(', ');
           var idField = scope.entity.fields[0];
@@ -141,7 +145,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
       };
       
       scope.pickEntity = function(fk) {
-        if(!scope.entityPick) {
+        if(!scope.entityPick && !fk.immutable) {
           scope.entityPick = fk.name;
         } else {
           scope.entityPick = undefined;
@@ -177,11 +181,13 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
       };
       
       scope.newEntity = function(fk) {
-    	util.meta(function success(meta) {
-    	  scope.entityList[fk.name] = util.createNewEntity(meta);
-    	}, function error(error) {
-          scope.$error = error;
-        }, fk.refTable);
+    	if (!fk.immutable) {
+    	  util.meta(function success(meta) {
+    	    scope.entityList[fk.name] = util.createNewEntity(meta);
+    	  }, function error(error) {
+            scope.$error = error;
+          }, fk.refTable);
+    	}
       };
     },
   };
