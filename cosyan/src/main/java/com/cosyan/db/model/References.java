@@ -43,6 +43,8 @@ public class References {
      */
     public Iterable<Ref> foreignKeyChain();
 
+    public ImmutableList<String> columnNames();
+
     /**
      * Returns all transitive read resources needed to for this table.
      */
@@ -76,6 +78,11 @@ public class References {
 
     private final ReferencedTable parent;
     private final AggRefTableMeta refTable;
+
+    @Override
+    public ImmutableList<String> columnNames() {
+      return refTable.columnNames();
+    }
 
     @Override
     public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
@@ -115,6 +122,11 @@ public class References {
     public ReferencedSimpleTableMeta(ReferencedTable parent, ForeignKey foreignKey) {
       this.parent = parent;
       this.foreignKey = foreignKey;
+    }
+
+    @Override
+    public ImmutableList<String> columnNames() {
+      return foreignKey.getRefTable().columnNames();
     }
 
     @Override

@@ -176,4 +176,17 @@ public class SelectStatementTest extends UnitTestBase {
     assertHeader(new String[] { "l" }, r1);
     assertValues(new Object[][] { { 3L } }, r1);
   }
+
+  @Test
+  public void testForeignKeyAsterisk() {
+    execute("create table t23 (a varchar, b varchar, constraint pk_a primary key (a));");
+    execute("create table t24 (a varchar, constraint fk_a foreign key (a) references t23);");
+
+    execute("insert into t23 values ('x', 'y');");
+    execute("insert into t24 values ('x');");
+
+    QueryResult r1 = query("select fk_a.* from t24;");
+    assertHeader(new String[] { "a", "b" }, r1);
+    assertValues(new Object[][] { { "x", "y" } }, r1);
+  }
 }

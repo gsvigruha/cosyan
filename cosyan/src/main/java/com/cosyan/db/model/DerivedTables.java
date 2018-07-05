@@ -236,6 +236,11 @@ public class DerivedTables {
     public IterableTableReader reader(Object key, Resources resources) throws IOException {
       return sourceTable.reader(key, resources);
     }
+
+    @Override
+    public ImmutableList<String> columnNames() {
+      return keyColumns.keySet().asList();
+    }
   }
 
   @Data
@@ -463,6 +468,11 @@ public class DerivedTables {
     @Override
     public IterableTableReader reader(Object key, Resources resources) throws IOException {
       return sourceTable.reader(key, resources);
+    }
+
+    @Override
+    public ImmutableList<String> columnNames() {
+      return childTable.columnNames();
     }
   }
 }

@@ -35,6 +35,8 @@ public abstract class TableMeta implements CompiledObject {
       return false;
     }
   }
+  
+  public abstract ImmutableList<String> columnNames();
 
   public abstract Object[] values(Object[] sourceValues, Resources resources) throws IOException;
 
