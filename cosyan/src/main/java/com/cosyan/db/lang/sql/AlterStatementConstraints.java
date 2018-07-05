@@ -117,6 +117,8 @@ public class AlterStatementConstraints {
       MaterializedTable tableMeta = metaRepo.table(table);
       if (tableMeta.hasRule(constraint.getString())) {
         tableMeta.dropRule(constraint.getString());
+      } else if (tableMeta.hasForeignKey(constraint.getString())) {
+        tableMeta.dropForeignKey(constraint);
       } else {
         throw new ModelException(String.format("Constraint '%s' not found in table '%s'.",
             constraint, table), constraint);

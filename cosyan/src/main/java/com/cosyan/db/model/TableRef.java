@@ -11,4 +11,8 @@ public class TableRef {
   private final String expr;
   protected final transient AggRefTableMeta tableMeta;
 
+  @Override
+  public String toString() {
+    return name + " [" + expr + "]";
+  }
 }

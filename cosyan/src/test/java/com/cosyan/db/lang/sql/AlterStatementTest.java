@@ -398,4 +398,74 @@ public class AlterStatementTest extends UnitTestBase {
     assertFalse(t29.hasRule("c_1"));
     assertNull(t28.reverseRuleDependencies().getDeps().get("rev_fk_a").rule("c_1"));
   }
+
+  @Test
+  public void testAlterTableDropForeignKey() throws Exception {
+    execute("create table t30 (a id, b varchar);");
+    execute("create table t31 (a integer, constraint fk_a foreign key (a) references t30);");
+
+    MaterializedTable t30 = metaRepo.table(new Ident("t30"));
+    MaterializedTable t31 = metaRepo.table(new Ident("t31"));
+
+    assertEquals("fk_a", t31.foreignKeys().get("fk_a").getName());
+    assertEquals("rev_fk_a", t30.reverseForeignKeys().get("rev_fk_a").getName());
+
+    execute("alter table t31 drop constraint fk_a;");
+    assertNull(t31.foreignKeys().get("fk_a"));
+    assertNull(t30.reverseForeignKeys().get("rev_fk_a"));
+  }
+
+  @Test
+  public void testAlterTableDropForeignKeyErrors() throws Exception {
+    execute("create table t32 (a id, b varchar);");
+    execute("create table t33 (a integer, constraint fk_a foreign key (a) references t32);");
+    execute("alter table t33 add constraint c check(length(fk_a.b) < 5);");
+
+    MaterializedTable t32 = metaRepo.table(new Ident("t32"));
+    MaterializedTable t33 = metaRepo.table(new Ident("t33"));
+
+    assertEquals("fk_a", t33.foreignKeys().get("fk_a").getName());
+    assertEquals("rev_fk_a", t32.reverseForeignKeys().get("rev_fk_a").getName());
+
+    {
+      ErrorResult result = error("alter table t33 drop constraint fk_a;");
+      assertEquals(
+          "[32, 36]: Cannot drop foreign key 'fk_a', check 'c [(length(fk_a.b) < 5)]' fails.\n[8, 12]: Column 'fk_a' not found in table 't33'.",
+          result.getError().getMessage());
+      assertNotNull(metaRepo.table(new Ident("t32")).reverseForeignKeys().get("rev_fk_a"));
+      assertNotNull(metaRepo.table(new Ident("t33")).foreignKeys().get("fk_a"));
+    }
+
+    execute("alter table t32 add aggref s (select count(1) as cnt from rev_fk_a);");
+    {
+      ErrorResult result = error("alter table t33 drop constraint fk_a;");
+      assertEquals(
+          "[32, 36]: Cannot drop foreign key 'fk_a', it is used by aggref 's [select count(1) as cnt from rev_fk_a ]'.",
+          result.getError().getMessage());
+      assertNotNull(metaRepo.table(new Ident("t32")).reverseForeignKeys().get("rev_fk_a"));
+      assertNotNull(metaRepo.table(new Ident("t33")).foreignKeys().get("fk_a"));
+    }
+  }
+
+  @Test
+  public void testAlterTableDropAggRef() throws Exception {
+    execute("create table t34 (a id, b varchar);");
+    execute("create table t35 (a integer, constraint fk_a foreign key (a) references t34);");
+    execute("alter table t34 add aggref s (select count(1) as cnt from rev_fk_a);");
+    execute("alter table t34 add constraint c check(s.cnt < 5);");
+
+    MaterializedTable t34 = metaRepo.table(new Ident("t34"));
+
+    assertEquals("s", t34.refs().get("s").getName());
+
+    ErrorResult result = error("alter table t34 drop aggref s;");
+    assertEquals(
+        "[28, 29]: Cannot drop aggref 's', check 'c [(s.cnt < 5)]' fails.\n[1, 2]: Column 's' not found in table 't34'.",
+        result.getError().getMessage());
+    assertNotNull(metaRepo.table(new Ident("t34")).refs().get("s"));
+
+    execute("alter table t34 drop constraint c;");
+    execute("alter table t34 drop aggref s;");
+    assertNull(metaRepo.table(new Ident("t34")).refs().get("s"));
+  }
 }

@@ -113,7 +113,8 @@
         <tr ng-repeat="ref in activeTable.aggRefs">
           <td>{{ ref.name }}</td>
           <td>{{ ref.expr }}</td>
-          <td></td>
+          <td><span ng-click="dropAggRef(ref.name);" title="Discard"
+                  class="button enabled glyphicon glyphicon-trash"></span></td>
         </tr>
         <tr>
           <td><input ng-model="newAggRef.name" class="admin-input"></input></td>

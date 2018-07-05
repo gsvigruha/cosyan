@@ -32,6 +32,7 @@ import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddForeignKey;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddRule;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableDropConstraint;
 import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableAddAggRef;
+import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableDropAggRef;
 import com.cosyan.db.lang.sql.CSVStatements.CSVExport;
 import com.cosyan.db.lang.sql.CSVStatements.CSVImport;
 import com.cosyan.db.lang.sql.CreateStatement.CreateIndex;
@@ -355,6 +356,10 @@ public class Parser implements IParser {
         tokens.next();
         Ident constraint = parseIdent(tokens);
         return new AlterTableDropConstraint(ident, constraint);
+      } else if (tokens.peek().is(Tokens.AGGREF)) {
+        tokens.next();
+        Ident constraint = parseIdent(tokens);
+        return new AlterTableDropAggRef(ident, constraint);
       } else {
         Ident columnName = parseIdent(tokens);
         return new AlterTableDropColumn(ident, columnName);

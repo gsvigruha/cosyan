@@ -369,11 +369,61 @@ public class MaterializedTable {
   void removeReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, BooleanRule rule) {
     reverseRuleDependencies.removeReverseRuleDependency(reverseForeignKeyChain, rule);
   }
-  
+
   public void dropRule(String name) throws ModelException {
     assert rules.containsKey(name);
     BooleanRule rule = rules.remove(name);
     rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */false);
+  }
+
+  public void dropForeignKey(Ident ident) throws ModelException {
+    assert foreignKeys.containsKey(ident.getString());
+    ForeignKey fk = foreignKeys.remove(ident.getString());
+    fk.getRefTable().reverseForeignKeys.remove(fk.getRevName());
+    for (TableRef ref : fk.getRefTable().refs().values()) {
+      ReverseForeignKey revFK = ref.getTableMeta().getReverseForeignKey();
+      if (revFK.getRefTable() == this) {
+        throw new ModelException(String.format(
+            "Cannot drop foreign key '%s', it is used by aggref '%s'.", ident, ref), ident);
+      }
+    }
+    for (Rule rule : rules().values()) {
+      try {
+        rule.reCompile(this);
+      } catch (ModelException e) {
+        throw new ModelException(String.format(
+            "Cannot drop foreign key '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
+      }
+    }
+    for (Rule rule : reverseRuleDependencies().allRules()) {
+      try {
+        rule.reCompile(this);
+      } catch (ModelException e) {
+        throw new ModelException(String.format(
+            "Cannot drop foreign '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
+      }
+    }
+  }
+
+  public void dropAggRef(Ident ident) throws ModelException {
+    assert refs.containsKey(ident.getString());
+    refs.remove(ident.getString());
+    for (Rule rule : rules().values()) {
+      try {
+        rule.reCompile(this);
+      } catch (ModelException e) {
+        throw new ModelException(String.format(
+            "Cannot drop aggref '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
+      }
+    }
+    for (Rule rule : reverseRuleDependencies().allRules()) {
+      try {
+        rule.reCompile(this);
+      } catch (ModelException e) {
+        throw new ModelException(String.format(
+            "Cannot drop aggref '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
+      }
+    }
   }
 
   public Optional<ColumnMeta> getPartitioning() {
@@ -399,6 +449,10 @@ public class MaterializedTable {
 
   public boolean hasRule(String ruleName) {
     return rules.containsKey(ruleName);
+  }
+
+  public boolean hasAggRef(String aggRefName) {
+    return refs.containsKey(aggRefName);
   }
 
   public boolean isColumnForeignKey(String columnName) {

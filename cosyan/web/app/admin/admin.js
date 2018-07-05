@@ -42,6 +42,11 @@ angular.module('cosyan')
     $scope.runQuery(query);
   };
   
+  $scope.dropAggRef = function(name) {
+    var query = 'alter table ' + $scope.activeTable.name + ' drop aggref ' + name + ';';
+    $scope.runQuery(query);
+  };
+  
   $scope.newColumn = { name: '', type: '', notnull: false, unique: false, indexed: false, immutable: false };
   $scope.addColumn = function() {
     var query = 'alter table ' + $scope.activeTable.name + ' add ' + $scope.newColumn.name + ' ' + $scope.newColumn.type;
