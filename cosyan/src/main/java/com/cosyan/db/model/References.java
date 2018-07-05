@@ -43,8 +43,6 @@ public class References {
      */
     public Iterable<Ref> foreignKeyChain();
 
-    public ImmutableList<String> columnNames();
-
     /**
      * Returns all transitive read resources needed to for this table.
      */

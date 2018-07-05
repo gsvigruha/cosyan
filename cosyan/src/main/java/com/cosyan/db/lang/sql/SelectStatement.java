@@ -195,7 +195,7 @@ public class SelectStatement extends Statement {
               addColumn(columnMeta.getKey(), columnMeta.getValue(), expr, tableColumns);
             }
           } else {
-            throw new ModelException(String.format("Expected column or table, but got '%s'.", obj), expr);
+            throw new ModelException("Expected column or column list.", expr);
           }
         }
       }
