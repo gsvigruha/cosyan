@@ -7,8 +7,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.lang.expr.BinaryExpression;
@@ -34,6 +37,7 @@ import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.CompiledObject;
+import com.cosyan.db.model.CompiledObject.ColumnList;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DerivedTables.AliasedTableMeta;
 import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
@@ -54,6 +58,7 @@ import com.cosyan.db.transaction.Resources;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -171,19 +176,26 @@ public class SelectStatement extends Statement {
       int i = 0;
       for (Expression expr : columns) {
         if (expr instanceof AsteriskExpression) {
+          AsteriskExpression asteriskExpression = (AsteriskExpression) expr;
           if (!(sourceTable instanceof ExposedTableMeta)) {
             throw new ModelException("Asterisk expression is not allowed here.", expr);
           }
           for (String columnName : ((ExposedTableMeta) sourceTable).columnNames()) {
             Expression columnExpr = FuncCallExpression.of(new Ident(columnName, expr.loc()));
-            addColumn(columnName, columnExpr.compileColumn(sourceTable), columnExpr, tableColumns);
+            if (!asteriskExpression.excludes(columnExpr.getName(null))) {
+              addColumn(columnName, columnExpr.compileColumn(sourceTable), columnExpr, tableColumns);
+            }
           }
         } else {
           CompiledObject obj = expr.compile(sourceTable);
           if (obj instanceof ColumnMeta) {
             addColumn(expr.getName("_c" + (i++)), (ColumnMeta) obj, expr, tableColumns);
+          } else if (obj instanceof ColumnList) {
+            for (Map.Entry<String, ColumnMeta > columnMeta : ((ColumnList) obj).getColumns().entrySet()) {
+              addColumn(columnMeta.getKey(), columnMeta.getValue(), expr, tableColumns);
+            }
           } else {
-            throw new ModelException("Expected column.", expr);
+            throw new ModelException("Expected column or column list.", expr);
           }
         }
       }
@@ -431,10 +443,24 @@ public class SelectStatement extends Statement {
   @EqualsAndHashCode(callSuper = true)
   public static class AsteriskExpression extends Expression {
     private final Loc loc;
+    private final Optional<ImmutableList<Ident>> exclude;
+    private final Set<String> excludeSet;
+
+    public AsteriskExpression(Loc loc, Optional<ImmutableList<Ident>> exclude) {
+      this.loc = loc;
+      this.exclude = exclude;
+      this.excludeSet = exclude
+          .map(l -> l.stream().map(i -> i.getString()).collect(Collectors.toSet()))
+          .orElse(ImmutableSet.of());
+    }
 
     @Override
     public DerivedColumn compile(TableMeta sourceTable) {
       throw new UnsupportedOperationException();
+    }
+
+    public boolean excludes(String name) {
+      return excludeSet.contains(name);
     }
 
     @Override
@@ -444,7 +470,11 @@ public class SelectStatement extends Statement {
 
     @Override
     public String print() {
-      return "*";
+      if (exclude.isPresent()) {
+        return "* - (" + Joiner.on(", ").join(excludeSet) + ")";
+      } else {
+        return "*";
+      }
     }
 
     @Override

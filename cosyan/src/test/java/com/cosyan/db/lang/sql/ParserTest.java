@@ -37,7 +37,7 @@ public class ParserTest {
   public void testSelect() throws ParserException {
     ImmutableList<Statement> tree = parse("select * from table;");
     assertEquals(((SelectStatement) tree.get(0)).getSelect(), new Select(
-        ImmutableList.of(new AsteriskExpression(new Loc(6, 7))),
+        ImmutableList.of(new AsteriskExpression(new Loc(6, 7), Optional.empty())),
         new TableRef(new Ident("table")),
         Optional.empty(),
         Optional.empty(),
@@ -79,7 +79,7 @@ public class ParserTest {
   public void testSelectWhere() throws ParserException {
     ImmutableList<Statement> tree = parse("select * from table where a = 1;");
     assertEquals(((SelectStatement) tree.get(0)).getSelect(), new Select(
-        ImmutableList.of(new AsteriskExpression(new Loc(6, 7))),
+        ImmutableList.of(new AsteriskExpression(new Loc(6, 7), Optional.empty())),
         new TableRef(new Ident("table")),
         Optional.of(new BinaryExpression(
             new Token("=", null),
@@ -303,6 +303,14 @@ public class ParserTest {
         new LongLiteral(0L, new Loc(24, 25)),
         new Loc(0, 4)));
     assertEquals("case when a then 1 else 0 end", expr.print());
+  }
+
+  @Test
+  public void testAsteriskExpr() throws ParserException {
+    Expression expr = parseExpression("* - (a, b, c);");
+    assertEquals(expr, new AsteriskExpression(new Loc(0, 0), Optional.of(ImmutableList.of(
+        new Ident("a"), new Ident("b"), new Ident("c")))));
+    assertEquals("* - (a, b, c)", expr.print());
   }
 
   @Test

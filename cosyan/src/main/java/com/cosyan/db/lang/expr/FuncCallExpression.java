@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import com.cosyan.db.lang.sql.Tokens;
 import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -18,6 +19,7 @@ import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
 import com.cosyan.db.model.ColumnMeta.DerivedColumnWithDeps;
 import com.cosyan.db.model.CompiledObject;
+import com.cosyan.db.model.CompiledObject.ColumnList;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
@@ -26,6 +28,7 @@ import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 
 import lombok.Data;
@@ -172,6 +175,12 @@ public class FuncCallExpression extends Expression {
           if (args.isEmpty()) {
             if (tableMeta.hasTable(ident)) {
               return tableMeta.table(ident);
+            } else if (ident.is(Tokens.ASTERISK)) {
+              ImmutableMap.Builder<String, ColumnMeta> columns = ImmutableMap.builder();
+              for (String name : tableMeta.columnNames()) {
+                columns.put(name, tableMeta.column(new Ident(name)));
+              }
+              return new ColumnList(columns.build());
             } else {
               return tableMeta.column(ident);
             }

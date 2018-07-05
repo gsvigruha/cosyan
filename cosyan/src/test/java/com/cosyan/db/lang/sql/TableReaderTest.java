@@ -1,6 +1,7 @@
 package com.cosyan.db.lang.sql;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.text.SimpleDateFormat;
 
@@ -12,6 +13,7 @@ import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.AggrTables.NotAggrTableException;
+import com.google.common.collect.ImmutableList;
 
 public class TableReaderTest extends UnitTestBase {
 
@@ -325,6 +327,14 @@ public class TableReaderTest extends UnitTestBase {
   }
 
   @Test
+  public void testLeftJoinTableAliasAsterisk() throws Exception {
+    QueryResult result = query("select l.* from left as l left join right on a = x;");
+    assertArrayEquals(new Object[] { "a", 1L }, result.getValues().get(0));
+    assertArrayEquals(new Object[] { "b", 1L }, result.getValues().get(1));
+    assertArrayEquals(new Object[] { "c", 5L }, result.getValues().get(2));
+  }
+
+  @Test
   public void testReadLinesWithNull() throws Exception {
     QueryResult result = query("select * from null;");
     assertArrayEquals(new Object[] { null, 1L, 2.0 }, result.getValues().get(0));
@@ -510,6 +520,13 @@ public class TableReaderTest extends UnitTestBase {
   public void testEnumInAggr() throws Exception {
     QueryResult result = query("select max(a) as a from enums;");
     assertArrayEquals(new Object[] { "y" }, result.getValues().get(0));
+  }
+
+  @Test
+  public void testAsteriskExclude() throws Exception {
+    QueryResult result = query("select * - (a) from table;");
+    assertEquals(ImmutableList.of("b", "c"), result.getHeader());
+    assertArrayEquals(new Object[] { 1L, 1.0 }, result.getValues().get(0));
   }
 
   @Test

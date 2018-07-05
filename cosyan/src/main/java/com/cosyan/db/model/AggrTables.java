@@ -85,6 +85,11 @@ public abstract class AggrTables extends IterableTableMeta {
     return sourceTable().column(ident).shift(this, 0);
   }
 
+  @Override
+  public ImmutableList<String> columnNames() {
+    return sourceTable().columnNames();
+  }
+
   public static class KeyValueAggrTableMeta extends AggrTables {
     private final KeyValueTableMeta sourceTable;
 

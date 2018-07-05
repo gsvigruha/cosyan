@@ -587,7 +587,23 @@ public class Parser implements IParser {
       return expr;
     } else if (token.is(Tokens.ASTERISK)) {
       tokens.next();
-      expr = new AsteriskExpression(token.getLoc());
+      Optional<ImmutableList<Ident>> exclude = Optional.empty();
+      if (tokens.peek().is(Tokens.MINUS)) {
+        tokens.next();
+        assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+        ImmutableList.Builder<Ident> idents = ImmutableList.builder();
+        while(true) {
+          idents.add(parseIdent(tokens));
+          if (tokens.peek().is(Tokens.COMMA)) {
+            tokens.next();
+          } else {
+            assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+            break;
+          }
+        }
+        exclude = Optional.of(idents.build());
+      }
+      expr = new AsteriskExpression(token.getLoc(), exclude);
     } else if (token.is(Tokens.NULL)) {
       tokens.next();
       expr = new NullLiteral(token.getLoc());
