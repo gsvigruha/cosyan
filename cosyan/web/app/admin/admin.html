@@ -100,6 +100,27 @@
     </table>
   </div>
   <div ng-if="activeTable">
+    <span class="admin-label">Reverse foreign keys</span>
+    <table class="admin">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Reverse name</th>
+          <th>Reference table</th>
+          <th>Reference column</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="rfk in activeTable.reverseForeignKeys">
+          <td>{{ rfk.name }}</td>
+          <td>{{ rfk.revName }}</td>
+          <td>{{ rfk.refTable }}</td>
+          <td>{{ rfk.refColumn }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div ng-if="activeTable">
     <span class="admin-label">Aggregated fields</span>
     <table class="admin">
       <thead>

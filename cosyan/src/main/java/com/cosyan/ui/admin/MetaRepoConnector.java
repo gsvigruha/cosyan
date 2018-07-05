@@ -65,12 +65,12 @@ public class MetaRepoConnector {
       tableObj.put("foreignKeys", foreignKeys);
 
       JSONArray reverseForeignKeys = new JSONArray();
-      for (ReverseForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
+      for (ReverseForeignKey reverseForeignKey : tableMeta.reverseForeignKeys().values()) {
         JSONObject fkObj = new JSONObject();
-        fkObj.put("name", foreignKey.getName());
-        fkObj.put("column", foreignKey.getColumn().getName());
-        fkObj.put("refTable", foreignKey.getRefTable().tableName());
-        fkObj.put("refColumn", foreignKey.getRefColumn().getName());
+        fkObj.put("name", reverseForeignKey.getName());
+        fkObj.put("revName", reverseForeignKey.getRevName());
+        fkObj.put("refTable", reverseForeignKey.getRefTable().tableName());
+        fkObj.put("refColumn", reverseForeignKey.getRefColumn().getName());
         reverseForeignKeys.put(fkObj);
       }
       tableObj.put("reverseForeignKeys", reverseForeignKeys);
