@@ -1,4 +1,4 @@
-# Use foreign keys to reference lookup tables
+### Use foreign keys to reference lookup tables
 
 First let's create a membership table.
 <!-- RUN -->

@@ -1,4 +1,4 @@
-# Date and time functions
+### Date and time functions
 
 Let's create a table with dates.
 <!-- RUN -->
