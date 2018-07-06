@@ -1,0 +1,92 @@
+<h1>Use foreign keys to reference lookup tables</h1>
+<p>First let's create a membership table.</p>
+<!-- RUN -->
+<pre><code>create table membership (
+  id integer,
+  type varchar,
+  constraint pk_id primary key (id));
+</code></pre>
+<p>Then a customer table referencing the accounts. In this scenario the customer does not
+need to have an account.</p>
+<!-- RUN -->
+<pre><code>create table customer (
+  id integer,
+  name varchar,
+  age integer,
+  membership_id integer,
+  constraint pk_id primary key (id),
+  constraint membership foreign key (membership_id) references membership(id));
+</code></pre>
+<p>Finally let's create a transaction table with a foreign key to the customer table and two
+rules testing that</p>
+<ol>
+<li>only adults buy alcohol,</li>
+<li>expensive purchases are only allowed with a gold membership.</li>
+</ol>
+<!-- RUN -->
+<pre><code>create table transaction (
+  category varchar,
+  amount float,
+  customer_id integer not null,
+  constraint customer foreign key (customer_id) references customer(id),
+  constraint c_adult check (category = 'alcohol' impl customer.age &gt;= 21),
+  constraint c_has_membership check (amount &gt;= 100 impl customer.membership.type is not null),
+  constraint c_gold_membership check (amount &gt;= 100 impl customer.membership.type = 'gold'));
+</code></pre>
+<p>For the second rule we add two constraints, one checking that the customer <em>has</em> an account
+and one to check the account type. This is needed because of the way SQL handles expressions
+with <code>null</code>s in them. Another way to handle this with one constraint would be
+<code>amount &gt;= 100 impl case when customer.membership.type is null then false else customer.membership.type = 'gold' end</code>.</p>
+<p>Let's add two customers with some transactions, one adult and one under age. Neither of them
+has a membership. In this case the <code>c_gold_membership</code> rule evaluates as <code>null</code> which does
+not trigger an error by default.</p>
+<!-- RUN -->
+<pre><code>insert into customer values (1, 'Adam', 25, null), (2, 'Bob', 16, null);
+insert into transaction values ('food', 1.0, 2), ('alcohol', 1.0, 1);
+</code></pre>
+<p>Querying the table shows that both transactions are added. Corresponding data from the
+customer table can be referred directly using the <code>customer</code> foreign key.</p>
+<!-- TEST -->
+<pre><code>select category, amount, customer.age from transaction;
+</code></pre>
+<pre><code>category,amount,age
+food,1.0,16
+alcohol,1.0,25
+</code></pre>
+<p>Adding a transaction with under age Bob buying alcohol should fail.</p>
+<!-- ERROR -->
+<pre><code>insert into transaction values ('alcohol', 1.0, 2);
+</code></pre>
+<pre><code>Constraint check c_adult failed.
+</code></pre>
+<p>We should now create a customers with memberships.</p>
+<!-- RUN -->
+<pre><code>insert into membership values (1, 'gold'), (2, 'silver');
+insert into customer values (3, 'Cecil', 30, 1), (4, 'Dave', 50, 2);
+</code></pre>
+<p>Add a transaction for gold member Cecil with a high amount:</p>
+<!-- RUN -->
+<pre><code>insert into transaction values ('toy', 100.0, 3);
+</code></pre>
+<p>We can query again the transactions with their respective customers and accounts:</p>
+<!-- TEST -->
+<pre><code>select category, amount, customer.name, customer.membership.type as membership_type from transaction;
+</code></pre>
+<pre><code>category,amount,name,membership_type
+food,1.0,Bob,null
+alcohol,1.0,Adam,null
+toy,100.0,Cecil,gold
+</code></pre>
+<p>However, the following transaction should trigger the <code>c_gold_membership</code> constraint, since
+Dave does not have a gold membership.</p>
+<!-- ERROR -->
+<pre><code>insert into transaction values ('toy', 100.0, 4);
+</code></pre>
+<pre><code>Constraint check c_gold_membership failed.
+</code></pre>
+<p>Finally, this fails since Adam does not have a membership at all.</p>
+<!-- ERROR -->
+<pre><code>insert into transaction values ('toy', 100.0, 1);
+</code></pre>
+<pre><code>Constraint check c_has_membership failed.
+</code></pre>

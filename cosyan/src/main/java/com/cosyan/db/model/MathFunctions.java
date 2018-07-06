@@ -6,7 +6,7 @@ import com.cosyan.db.model.BuiltinFunctions.SimpleFunction;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-@FuncCat(name = "math", doc = "Arithmetical functions")
+@FuncCat(name = "math", doc = "Arithmetic functions")
 public class MathFunctions {
 
   @Func(doc = "Returns self raised to the power of x.")

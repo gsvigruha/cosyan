@@ -29,5 +29,9 @@ angular.module('cosyan', [
       .when('/entity', {
         templateUrl: 'entity/entity-main.html',
         controller: 'EntityCtrl',
+      })
+      .when('/help', {
+        templateUrl: 'help/help.html',
+        controller: 'HelpCtrl',
       });
 });

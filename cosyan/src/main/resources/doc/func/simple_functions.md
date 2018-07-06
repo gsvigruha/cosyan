@@ -33,7 +33,7 @@
  * `upper(self: varchar): varchar`<br/>
    Converts all characters of `self` to uppercase.
 
-## Arithmetical functions
+## Arithmetic functions
 
  * `abs(self: float): float`<br/>
    The absolute value of `self`.

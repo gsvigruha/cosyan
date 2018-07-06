@@ -3,11 +3,22 @@ package com.cosyan.db.doc;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringJoiner;
 import java.util.TreeMap;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.commonmark.node.Node;
+import org.commonmark.node.Text;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.cosyan.db.doc.FunctionDocumentation.Func;
 import com.cosyan.db.doc.FunctionDocumentation.FuncCat;
@@ -27,8 +38,8 @@ import com.google.common.collect.ImmutableMap;
 public class DocPrinter {
 
   public static void main(String[] args) throws IOException {
-    String funcDocRootDir = args[0] + File.separator +
-        "resources" + File.separator +
+    String resDir = args[0] + File.separator + "resources";
+    String funcDocRootDir = resDir + File.separator +
         "doc" + File.separator +
         "func" + File.separator;
     PrintWriter pw1 = new PrintWriter(funcDocRootDir + "simple_functions.md");
@@ -80,6 +91,27 @@ public class DocPrinter {
     } finally {
       pw2.close();
     }
+
+    File docRoot = new File(resDir + File.separator + "doc");
+    Collection<File> files = FileUtils.listFiles(docRoot, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+    JSONArray items = new JSONArray();
+    String webRoot = "web" + File.separator + "app" + File.separator + "help";
+
+    for (File markdown : files) {
+      Parser parser = Parser.builder().build();
+      Node document = parser.parse(FileUtils.readFileToString(markdown, Charset.defaultCharset()));
+      HtmlRenderer renderer = HtmlRenderer.builder().build();
+      String suffix = markdown.getAbsolutePath().substring(docRoot.getAbsolutePath().length() + 1,
+          markdown.getAbsolutePath().length() - 3);
+      File html = new File(webRoot + File.separator + suffix + ".html");
+      FileUtils.writeStringToFile(html, renderer.render(document), Charset.defaultCharset());
+      JSONObject object = new JSONObject();
+      object.put("url", suffix);
+      object.put("title", ((Text) document.getFirstChild().getFirstChild()).getLiteral());
+      items.put(object);
+    }
+    FileUtils.writeStringToFile(new File(webRoot + File.separator + "list"), items.toString(),
+        Charset.defaultCharset());
   }
 
   private static void printFunc(SimpleFunction<?> function, Map<String, String> funcMap) {

@@ -1,0 +1,7 @@
+<div class="help-left">
+  <h2>Help</h2>
+  <div ng-click="loadHelp(page.url);" title="{{ page.title }}" class="help-button"
+        ng-repeat="page in pages track by $index">{{ page.title }}</div>
+</div>
+
+<div ng-include="activePage" class="help-right"></div>
