@@ -31,6 +31,8 @@ public class SystemMonitoring {
     JSONObject obj = new JSONObject();
     OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
     obj.put("load", operatingSystemMXBean.getSystemLoadAverage());
+    obj.put("nproc", operatingSystemMXBean.getAvailableProcessors());
+    obj.put("threads", ManagementFactory.getThreadMXBean().getThreadCount());
     obj.put("freeMemory", Runtime.getRuntime().freeMemory());
     obj.put("totalMemory", Runtime.getRuntime().totalMemory());
     obj.put("maxMemory", Runtime.getRuntime().maxMemory());

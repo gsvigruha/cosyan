@@ -35,7 +35,7 @@ create table transaction (
   constraint product foreign key (product_id) references product(id) reverse transactions);
 ```
 
-We can use the `ref` keyword to define an aggregated view of a one to many connection. This
+We can use the `aggref` keyword to define an aggregated view of a one to many connection. This
 subtable and its columns can be referred similarly to foreign keys via its name.
 <!-- RUN -->
 ```
@@ -76,7 +76,7 @@ insert into transaction values (1, 300.0), (1, 300.0), (2, 300.0);
 ```
 
 We can query the aggregated view of one to many connections simply by using the name of the
-`ref` table.
+`aggref` table.
 <!-- TEST -->
 ```
 select name, stats.cnt, stats.sum_price from product_type;

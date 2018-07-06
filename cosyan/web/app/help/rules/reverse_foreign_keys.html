@@ -27,7 +27,7 @@ one product can have multiple corresponding transactions.</p>
   price float,
   constraint product foreign key (product_id) references product(id) reverse transactions);
 </code></pre>
-<p>We can use the <code>ref</code> keyword to define an aggregated view of a one to many connection. This
+<p>We can use the <code>aggref</code> keyword to define an aggregated view of a one to many connection. This
 subtable and its columns can be referred similarly to foreign keys via its name.</p>
 <!-- RUN -->
 <pre><code>alter table product add aggref stats (
@@ -58,7 +58,7 @@ insert into product values (1, 1, 'doll'), (2, 1, 'truck');
 insert into transaction values (1, 300.0), (1, 300.0), (2, 300.0);
 </code></pre>
 <p>We can query the aggregated view of one to many connections simply by using the name of the
-<code>ref</code> table.</p>
+<code>aggref</code> table.</p>
 <!-- TEST -->
 <pre><code>select name, stats.cnt, stats.sum_price from product_type;
 </code></pre>

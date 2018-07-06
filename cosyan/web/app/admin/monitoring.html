@@ -5,6 +5,8 @@
 
 <table>
   <tr><td>Load:</td><td>{{ data.load }}</td></tr>
+  <tr><td>Cores:</td><td>{{ data.nproc }}</td></tr>
+  <tr><td>Threads:</td><td>{{ data.threads }}</td></tr>
   <tr><td>Free memory:</td><td>{{ data.freeMemory | number : fractionSize }}</td></tr>
   <tr><td>Total memory:</td><td>{{ data.totalMemory | number : fractionSize }}</td></tr>
   <tr><td>Max memory:</td><td>{{ data.maxMemory | number : fractionSize }}</td></tr>

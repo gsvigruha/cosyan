@@ -1,6 +1,7 @@
 package com.cosyan.db.doc;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
@@ -38,36 +39,43 @@ import com.google.common.collect.ImmutableMap;
 public class DocPrinter {
 
   public static void main(String[] args) throws IOException {
-    String resDir = args[0] + File.separator + "resources";
-    String funcDocRootDir = resDir + File.separator +
+    String resourcesDir = args[0] + File.separator + "resources";
+    String funcDocRootDir = resourcesDir + File.separator +
         "doc" + File.separator +
         "func" + File.separator;
-    PrintWriter pw1 = new PrintWriter(funcDocRootDir + "simple_functions.md");
-    try {
-      ImmutableList<Class<?>> categories = ImmutableList.of(
-          StringFunctions.class,
-          MathFunctions.class,
-          DateFunctions.class);
-      Map<Class<?>, Map<String, String>> docss = new LinkedHashMap<>();
-      for (Class<?> clss : categories) {
-        docss.put(clss, new TreeMap<>());
-      }
-      for (SimpleFunction<?> function : BuiltinFunctions.SIMPLE) {
-        Map<String, String> docs = docss.get(function.getClass().getEnclosingClass());
-        printFunc(function, docs);
-      }
-      for (Class<?> clss : categories) {
-        FuncCat funcCat = clss.getAnnotation(FuncCat.class);
-        pw1.print("## " + funcCat.doc() + "\n\n");
-        for (String doc : docss.get(clss).values()) {
-          pw1.print(doc);
-        }
-      }
-    } finally {
-      pw1.close();
-    }
+    printSimpleFunctions(funcDocRootDir);
 
-    PrintWriter pw2 = new PrintWriter(funcDocRootDir + "aggregator_functions.md");
+    printAggrFunctions(funcDocRootDir);
+
+    markdownToHtml(resourcesDir);
+  }
+
+  private static void markdownToHtml(String resourcesDir) throws IOException {
+    File docRoot = new File(resourcesDir + File.separator + "doc");
+    Collection<File> files = FileUtils.listFiles(docRoot, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+    JSONArray items = new JSONArray();
+    String webRoot = "web" + File.separator + "app" + File.separator + "help";
+
+    for (File markdown : files) {
+      Parser parser = Parser.builder().build();
+      Node document = parser.parse(FileUtils.readFileToString(markdown, Charset.defaultCharset()));
+      HtmlRenderer renderer = HtmlRenderer.builder().build();
+      String suffix = markdown.getAbsolutePath().substring(
+          docRoot.getAbsolutePath().length() + 1,
+          markdown.getAbsolutePath().length() - 3);
+      File html = new File(webRoot + File.separator + suffix + ".html");
+      FileUtils.writeStringToFile(html, renderer.render(document), Charset.defaultCharset());
+      JSONObject object = new JSONObject();
+      object.put("url", suffix);
+      object.put("title", ((Text) document.getFirstChild().getFirstChild()).getLiteral());
+      items.put(object);
+    }
+    FileUtils.writeStringToFile(new File(webRoot + File.separator + "list"), items.toString(),
+        Charset.defaultCharset());
+  }
+
+  private static void printAggrFunctions(String funcDocRootDir) throws FileNotFoundException {
+    PrintWriter aggrFunctionsPrinter = new PrintWriter(funcDocRootDir + "aggregator_functions.md");
     try {
       ImmutableList<Class<?>> categories = ImmutableList.of(
           Aggregators.class,
@@ -83,35 +91,41 @@ public class DocPrinter {
       }
       for (Class<?> clss : categories) {
         FuncCat funcCat = clss.getAnnotation(FuncCat.class);
-        pw2.print("## " + funcCat.doc() + "\n\n");
+        aggrFunctionsPrinter.print("### " + funcCat.doc() + "\n\n");
         for (String doc : docss.get(clss).values()) {
-          pw2.print(doc);
+          aggrFunctionsPrinter.print(doc);
         }
       }
     } finally {
-      pw2.close();
+      aggrFunctionsPrinter.close();
     }
+  }
 
-    File docRoot = new File(resDir + File.separator + "doc");
-    Collection<File> files = FileUtils.listFiles(docRoot, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
-    JSONArray items = new JSONArray();
-    String webRoot = "web" + File.separator + "app" + File.separator + "help";
-
-    for (File markdown : files) {
-      Parser parser = Parser.builder().build();
-      Node document = parser.parse(FileUtils.readFileToString(markdown, Charset.defaultCharset()));
-      HtmlRenderer renderer = HtmlRenderer.builder().build();
-      String suffix = markdown.getAbsolutePath().substring(docRoot.getAbsolutePath().length() + 1,
-          markdown.getAbsolutePath().length() - 3);
-      File html = new File(webRoot + File.separator + suffix + ".html");
-      FileUtils.writeStringToFile(html, renderer.render(document), Charset.defaultCharset());
-      JSONObject object = new JSONObject();
-      object.put("url", suffix);
-      object.put("title", ((Text) document.getFirstChild().getFirstChild()).getLiteral());
-      items.put(object);
+  private static void printSimpleFunctions(String funcDocRootDir) throws FileNotFoundException {
+    PrintWriter simpleFunctionsPrinter = new PrintWriter(funcDocRootDir + "simple_functions.md");
+    try {
+      ImmutableList<Class<?>> categories = ImmutableList.of(
+          StringFunctions.class,
+          MathFunctions.class,
+          DateFunctions.class);
+      Map<Class<?>, Map<String, String>> docss = new LinkedHashMap<>();
+      for (Class<?> clss : categories) {
+        docss.put(clss, new TreeMap<>());
+      }
+      for (SimpleFunction<?> function : BuiltinFunctions.SIMPLE) {
+        Map<String, String> docs = docss.get(function.getClass().getEnclosingClass());
+        printFunc(function, docs);
+      }
+      for (Class<?> clss : categories) {
+        FuncCat funcCat = clss.getAnnotation(FuncCat.class);
+        simpleFunctionsPrinter.print("### " + funcCat.doc() + "\n\n");
+        for (String doc : docss.get(clss).values()) {
+          simpleFunctionsPrinter.print(doc);
+        }
+      }
+    } finally {
+      simpleFunctionsPrinter.close();
     }
-    FileUtils.writeStringToFile(new File(webRoot + File.separator + "list"), items.toString(),
-        Charset.defaultCharset());
   }
 
   private static void printFunc(SimpleFunction<?> function, Map<String, String> funcMap) {
