@@ -168,6 +168,11 @@ public class MetaRepo implements TableProvider, MetaRepoExecutor {
     return table(ident).reader();
   }
 
+  @Override
+  public TableProvider tableProvider(Ident ident) throws ModelException {
+    return table(ident).reader();
+  }
+
   public MaterializedTable table(String name) throws ModelException {
     assert tables.containsKey(name) : String.format("Table '%s' does not exist.", name);
     return tables.get(name);

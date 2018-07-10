@@ -191,7 +191,7 @@ public class SelectStatement extends Statement {
           if (obj instanceof ColumnMeta) {
             addColumn(expr.getName("_c" + (i++)), (ColumnMeta) obj, expr, tableColumns);
           } else if (obj instanceof ColumnList) {
-            for (Map.Entry<String, ColumnMeta > columnMeta : ((ColumnList) obj).getColumns().entrySet()) {
+            for (Map.Entry<String, ColumnMeta> columnMeta : ((ColumnList) obj).getColumns().entrySet()) {
               addColumn(columnMeta.getKey(), columnMeta.getValue(), expr, tableColumns);
             }
           } else {
@@ -320,12 +320,29 @@ public class SelectStatement extends Statement {
 
     @Override
     public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
-      return tableProvider.tableMeta(ident);
+      return (ExposedTableMeta) tableProvider.tableMeta(ident);
     }
 
     @Override
     public String print() {
       return ident.getString();
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class TableRefChain extends Table {
+    private final Ident ident;
+    private final Table table;
+
+    @Override
+    public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
+      return table.compile(tableProvider.tableProvider(ident));
+    }
+
+    @Override
+    public String print() {
+      return ident.getString() + "." + table.print();
     }
   }
 

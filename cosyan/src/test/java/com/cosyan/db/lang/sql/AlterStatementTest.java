@@ -468,4 +468,20 @@ public class AlterStatementTest extends UnitTestBase {
     execute("alter table t34 drop aggref s;");
     assertNull(metaRepo.table(new Ident("t34")).refs().get("s"));
   }
+
+  @Test
+  public void testAlterTableAddConstraintRefThroughFK() throws Exception {
+    execute("create table t36 (a integer, constraint pk_a primary key (a));");
+    execute("create table t37 (a integer, b integer, constraint fk1 foreign key (a) references t36);");
+    execute("create table t38 (a integer, constraint fk2 foreign key (a) references t36);");
+    execute("alter table t38 add aggref s (select sum(b) as s from fk2.rev_fk1);");
+
+    execute("insert into t36 values (1), (2), (3);");
+    execute("insert into t37 values (1, 2), (1, 2), (2, 5);");
+    execute("insert into t38 values (1), (2), (3);");
+
+    QueryResult result = query("select a, s.s from t38;");
+    assertHeader(new String[] { "a", "s" }, result);
+    assertValues(new Object[][] { { 1L, 4L }, { 2L, 5L }, { 3L, null } }, result);
+  }
 }

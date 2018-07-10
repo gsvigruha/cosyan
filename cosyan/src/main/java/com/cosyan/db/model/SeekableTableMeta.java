@@ -5,14 +5,15 @@ import java.io.IOException;
 import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
-import com.cosyan.db.meta.MaterializedTable;
-import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
+import com.cosyan.db.model.References.ReferencedSimpleTableMeta;
 import com.cosyan.db.model.References.ReferencedTable;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -81,7 +82,7 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
   }
 
   @Override
-  public ExposedTableMeta tableMeta(Ident ident) throws ModelException {
+  public TableMeta tableMeta(Ident ident) throws ModelException {
     if (tableMeta.hasReverseForeignKey(ident.getString())) {
       return new ReferencedMultiTableMeta(this, tableMeta.reverseForeignKey(ident));
     } else {
@@ -89,6 +90,15 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
     }
   }
 
+  @Override
+  public TableProvider tableProvider(Ident ident) throws ModelException {
+    if (tableMeta.hasForeignKey(ident.getString())) {
+      return new ReferencedSimpleTableMeta(this, tableMeta.foreignKey(ident));
+    } else {
+      throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
+    }
+  }
+  
   @Override
   public IterableTableReader reader(Object key, Resources resources) throws IOException {
     return new DerivedIterableTableReader(resources.createIterableReader(tableName())) {

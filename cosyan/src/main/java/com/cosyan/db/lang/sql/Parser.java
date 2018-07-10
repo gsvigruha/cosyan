@@ -50,6 +50,7 @@ import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.sql.SelectStatement.Table;
 import com.cosyan.db.lang.sql.SelectStatement.TableExpr;
 import com.cosyan.db.lang.sql.SelectStatement.TableRef;
+import com.cosyan.db.lang.sql.SelectStatement.TableRefChain;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.sql.UpdateStatement.SetExpression;
 import com.cosyan.db.lang.sql.UpdateStatement.Update;
@@ -597,7 +598,7 @@ public class Parser implements IParser {
         tokens.next();
         assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
         ImmutableList.Builder<Ident> idents = ImmutableList.builder();
-        while(true) {
+        while (true) {
           idents.add(parseIdent(tokens));
           if (tokens.peek().is(Tokens.COMMA)) {
             tokens.next();
@@ -739,7 +740,13 @@ public class Parser implements IParser {
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
       table = new TableExpr(select);
     } else {
-      table = new TableRef(parseIdent(tokens));
+      Ident ident = parseIdent(tokens);
+      if (tokens.peek().is(Tokens.DOT)) {
+        tokens.next();
+        table = new TableRefChain(ident, parseTable(tokens));
+      } else {
+        table = new TableRef(ident);
+      }
     }
     if (tokens.peek().is(Tokens.AS)) {
       tokens.next();

@@ -11,6 +11,7 @@ import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.DataTypes.DataType;
@@ -112,7 +113,7 @@ public class References {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class ReferencedSimpleTableMeta extends TableMeta implements ReferencedTable {
+  public static class ReferencedSimpleTableMeta extends TableMeta implements ReferencedTable, TableProvider {
 
     private final ReferencedTable parent;
     private final ForeignKey foreignKey;
@@ -147,7 +148,7 @@ public class References {
     protected TableMeta getRefTable(Ident ident) throws ModelException {
       return References.getRefTable(
           this,
-          foreignKey.getTable().tableName(),
+          foreignKey.getRefTable().tableName(),
           ident,
           foreignKey.getRefTable().foreignKeys(),
           foreignKey.getRefTable().reverseForeignKeys(),
@@ -170,6 +171,24 @@ public class References {
       } else {
         SeekableTableReader reader = resources.reader(foreignKey.getRefTable().tableName());
         return reader.get(key, resources).getValues();
+      }
+    }
+
+    @Override
+    public TableMeta tableMeta(Ident ident) throws ModelException {
+      if (foreignKey.getRefTable().reverseForeignKeys().containsKey(ident.getString())) {
+        return new ReferencedMultiTableMeta(this, foreignKey.getRefTable().reverseForeignKey(ident));
+      } else {
+        throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
+      }
+    }
+
+    @Override
+    public TableProvider tableProvider(Ident ident) throws ModelException {
+      if (foreignKey.getRefTable().foreignKeys().containsKey(ident.getString())) {
+        return new ReferencedSimpleTableMeta(this, foreignKey.getRefTable().foreignKey(ident));
+      } else {
+        throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
       }
     }
   }
