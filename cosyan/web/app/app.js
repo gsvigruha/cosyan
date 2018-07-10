@@ -14,9 +14,9 @@ angular.module('cosyan', [
         templateUrl: 'sql/sql.html',
         controller: 'SQLCtrl',
       })
-      .when('/admin', {
-        templateUrl: 'admin/admin.html',
-        controller: 'AdminCtrl',
+      .when('/meta', {
+        templateUrl: 'admin/meta.html',
+        controller: 'MetaCtrl',
       })
       .when('/monitoring', {
         templateUrl: 'admin/monitoring.html',

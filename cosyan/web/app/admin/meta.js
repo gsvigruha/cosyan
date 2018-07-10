@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('cosyan')
-.controller('AdminCtrl', function($scope, $http, $document) {
+.controller('MetaCtrl', function($scope, $http, $document) {
   $scope.tableOpened = {};
   
   $scope.pickTable = function(tableName) {
