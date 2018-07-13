@@ -295,4 +295,25 @@ public class RestartDBTest {
       assertArrayEquals(new long[] { 25L }, index.get(1L));
     }
   }
+
+  @Test
+  public void testAggrefInAggrefAfterRestart() throws Exception {
+    DBApi dbApi = new DBApi(config);
+    dbApi.adminSession().execute("create table t18(a id);");
+    dbApi.adminSession().execute("create table t17 (a id, b integer, constraint fk1 foreign key (b) references t18);");
+    dbApi.adminSession().execute("create table t16 (a integer, constraint fk2 foreign key (a) references t17);");
+    dbApi.adminSession().execute("alter table t17 add aggref s (select count(1) as c from rev_fk2);");
+    dbApi.adminSession().execute("alter table t18 add aggref s (select sum(s.c) as s from rev_fk1);");
+
+    {
+      MaterializedTable t18 = dbApi.getMetaRepo().table("t18");
+      assertEquals("select sum(s.c) as s from rev_fk1 ", t18.refs().get("s").getExpr());
+    }
+
+    dbApi = new DBApi(config);
+    {
+      MaterializedTable t18 = dbApi.getMetaRepo().table("t18");
+      assertEquals("select sum(s.c) as s from rev_fk1 ", t18.refs().get("s").getExpr());
+    }
+  }
 }

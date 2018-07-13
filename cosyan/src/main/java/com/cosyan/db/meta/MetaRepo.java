@@ -530,4 +530,9 @@ public class MetaRepo implements TableProvider, MetaRepoExecutor {
       throw new RuleException(String.format("Invalid index '%s'.", name));
     }
   }
+
+  @Override
+  public int numRefs() {
+    return tables.values().stream().mapToInt(t -> t.refs().size()).sum();
+  }
 }

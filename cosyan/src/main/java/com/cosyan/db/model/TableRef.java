@@ -9,6 +9,7 @@ public class TableRef {
   
   private final String name;
   private final String expr;
+  private final int index;
   protected final transient AggRefTableMeta tableMeta;
 
   @Override

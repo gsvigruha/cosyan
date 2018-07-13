@@ -470,7 +470,7 @@ public class AlterStatementTest extends UnitTestBase {
   }
 
   @Test
-  public void testAlterTableAddConstraintRefThroughFK() throws Exception {
+  public void testAlterTableAggRefThroughFK() throws Exception {
     execute("create table t36 (a integer, constraint pk_a primary key (a));");
     execute("create table t37 (a integer, b integer, constraint fk1 foreign key (a) references t36);");
     execute("create table t38 (a integer, constraint fk2 foreign key (a) references t36);");
@@ -480,8 +480,45 @@ public class AlterStatementTest extends UnitTestBase {
     execute("insert into t37 values (1, 2), (1, 2), (2, 5);");
     execute("insert into t38 values (1), (2), (3);");
 
-    QueryResult result = query("select a, s.s from t38;");
-    assertHeader(new String[] { "a", "s" }, result);
-    assertValues(new Object[][] { { 1L, 4L }, { 2L, 5L }, { 3L, null } }, result);
+    {
+      QueryResult result = query("select a, s.s from t38;");
+      assertHeader(new String[] { "a", "s" }, result);
+      assertValues(new Object[][] { { 1L, 4L }, { 2L, 5L }, { 3L, null } }, result);
+    }
+  }
+
+  @Test
+  public void testAlterTableAggRefBackRef() throws Exception {
+    execute("create table t39 (a integer, b integer, constraint pk_a primary key (a));");
+    execute("create table t40 (a integer, b integer, constraint fk_a foreign key (a) references t39);");
+    execute("alter table t39 add aggref s (select sum(b) as s from rev_fk_a where fk_a.b = b);");
+
+    execute("insert into t39 values (1, 1), (2, 2);");
+    execute("insert into t40 values (1, 1), (1, 2), (2, 1), (2, 3);");
+
+    {
+      QueryResult result = query("select a, s.s from t39;");
+      assertHeader(new String[] { "a", "s" }, result);
+      assertValues(new Object[][] { { 1L, 1L }, { 2L, null } }, result);
+    }
+  }
+
+  @Test
+  public void testAlterTableAggRefInAggRef() throws Exception {
+    execute("create table t41 (a integer, constraint pk_a primary key (a));");
+    execute("create table t42 (a integer, b integer, constraint fk1 foreign key (a) references t41);");
+    execute("create table t43 (a integer, constraint fk2 foreign key (a) references t41);");
+    execute("alter table t41 add aggref s (select sum(b) as s from rev_fk1);");
+    execute("alter table t43 add aggref s (select sum(fk1.s.s) as s from fk2.rev_fk1);");
+
+    execute("insert into t41 values (1), (2), (3);");
+    execute("insert into t42 values (1, 2), (1, 2), (2, 5);");
+    execute("insert into t43 values (1), (2), (3);");
+
+    {
+      QueryResult result = query("select a, s.s, fk2.s.s as s2 from t43;");
+      assertHeader(new String[] { "a", "s", "s2" }, result);
+      assertValues(new Object[][] { { 1L, 8L, 4L }, { 2L, 5L, 5L }, { 3L, null, null } }, result);
+    }
   }
 }

@@ -109,4 +109,9 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
       }
     };
   }
+
+  @Override
+  public TableMeta parent() {
+    return this;
+  }
 }

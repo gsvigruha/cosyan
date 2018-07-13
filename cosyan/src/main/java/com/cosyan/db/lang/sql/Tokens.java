@@ -73,6 +73,8 @@ public class Tokens {
 
   public static String AGGREF = "aggref";
 
+  public static String PARENT = "parent";
+
   public static String REFERENCES = "references";
 
   public static String REVERSE = "reverse";

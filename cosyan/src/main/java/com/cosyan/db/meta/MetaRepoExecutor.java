@@ -11,4 +11,6 @@ public interface MetaRepoExecutor {
 
   void syncMeta(MaterializedTable tableMeta);
 
+  int numRefs();
+
 }

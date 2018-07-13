@@ -17,7 +17,7 @@ dependencies {
   compile "com.google.guava:guava:23.0"
   compile "com.google.code.findbugs:jsr305:3.0.2"
   compile "org.apache.commons:commons-csv:1.4"
-  compile "commons-lang:commons-lang:2.6"
+  compile "org.apache.commons:commons-lang3:3.7"
   compile "commons-io:commons-io:2.5"
   compile "log4j:log4j:1.2.17"
   compile "org.eclipse.jetty:jetty-servlet:9.4.9.v20180320"

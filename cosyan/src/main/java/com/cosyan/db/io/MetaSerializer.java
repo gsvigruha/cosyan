@@ -6,8 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -83,6 +86,7 @@ public class MetaSerializer {
     JSONObject obj = new JSONObject();
     obj.put("name", ref.getName());
     obj.put("expr", ref.getExpr() + ";");
+    obj.put("index", ref.getIndex());
     return obj;
   }
 
@@ -111,8 +115,12 @@ public class MetaSerializer {
         foreignKey.getRefTable().addReverseForeignKey(foreignKey.createReverse());
       }
     }
+    TreeMap<Integer, Pair<MaterializedTable, JSONObject>> refObjects = new TreeMap<>();
     for (Map.Entry<String, JSONObject> entry : jsons.entrySet()) {
-      loadRefs(tables.get(entry.getKey()), entry.getValue());
+      collectRefs(tables.get(entry.getKey()), entry.getValue(), refObjects);
+    }
+    for (Pair<MaterializedTable, JSONObject> pair : refObjects.values()) {
+      loadRef(pair.getLeft(), pair.getRight());
     }
     for (Map.Entry<String, JSONObject> entry : jsons.entrySet()) {
       loadRules(tables.get(entry.getKey()), entry.getValue());
@@ -142,17 +150,24 @@ public class MetaSerializer {
     }
   }
 
-  public void loadRefs(MaterializedTable table, JSONObject obj)
+  private void collectRefs(MaterializedTable table, JSONObject obj,
+      TreeMap<Integer, Pair<MaterializedTable, JSONObject>> refObjects)
       throws JSONException, IOException, ModelException, ParserException {
     JSONArray arr = obj.getJSONArray("refs");
     for (int i = 0; i < arr.length(); i++) {
       JSONObject refObj = arr.getJSONObject(i);
-      AggRefDefinition ref = new AggRefDefinition(
-          new Ident(refObj.getString("name")),
-          parser.parseSelect(lexer.tokenizeExpression(refObj.getString("expr"))));
-      AggRefTableMeta refTableMeta = table.createAggRef(ref);
-      table.addRef(new TableRef(ref.getName().getString(), ref.getSelect().print(), refTableMeta));
+      refObjects.put(refObj.getInt("index"), ImmutablePair.of(table, refObj));
     }
+  }
+
+  public void loadRef(MaterializedTable table, JSONObject refObj)
+      throws JSONException, IOException, ModelException, ParserException {
+    AggRefDefinition ref = new AggRefDefinition(
+        new Ident(refObj.getString("name")),
+        parser.parseSelect(lexer.tokenizeExpression(refObj.getString("expr"))));
+    AggRefTableMeta refTableMeta = table.createAggRef(ref);
+    table.addRef(new TableRef(
+        ref.getName().getString(), ref.getSelect().print(), refObj.getInt("index"), refTableMeta));
   }
 
   public void loadRules(MaterializedTable table, JSONObject obj)

@@ -53,6 +53,8 @@ public class References {
      * Returns the referenced values based on sourceValues.
      */
     public Object[] values(Object[] sourceValues, Resources resources) throws IOException;
+
+    public TableMeta parent();
   }
 
   public static TableMeta getRefTable(
@@ -109,6 +111,11 @@ public class References {
     public Iterable<Ref> foreignKeyChain() {
       return parent.foreignKeyChain();
     }
+
+    @Override
+    public TableMeta parent() {
+      return parent.parent();
+    }
   }
 
   @Data
@@ -117,10 +124,13 @@ public class References {
 
     private final ReferencedTable parent;
     private final ForeignKey foreignKey;
+    private final Object[] nulls;
 
     public ReferencedSimpleTableMeta(ReferencedTable parent, ForeignKey foreignKey) {
       this.parent = parent;
       this.foreignKey = foreignKey;
+      nulls = new Object[foreignKey.getRefTable().columns().size()];
+      Arrays.fill(nulls, null);
     }
 
     @Override
@@ -165,9 +175,7 @@ public class References {
       Object[] parentValues = parent.values(sourceValues, resources);
       Object key = parentValues[foreignKey.getColumn().getIndex()];
       if (key == null) {
-        Object[] values = new Object[foreignKey.getRefTable().columns().size()];
-        Arrays.fill(values, null);
-        return values;
+        return nulls;
       } else {
         SeekableTableReader reader = resources.reader(foreignKey.getRefTable().tableName());
         return reader.get(key, resources).getValues();
@@ -190,6 +198,11 @@ public class References {
       } else {
         throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
       }
+    }
+
+    @Override
+    public TableMeta parent() {
+      return parent.parent();
     }
   }
 
@@ -260,6 +273,11 @@ public class References {
     @Override
     public ImmutableList<DataType<?>> columnTypes() {
       return sourceTable.columnTypes();
+    }
+
+    @Override
+    public TableMeta parent() {
+      return parent.parent();
     }
   }
 
