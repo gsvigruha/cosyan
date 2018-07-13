@@ -77,8 +77,8 @@ public class DerivedTables {
     }
 
     @Override
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
+    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
+      return new DerivedIterableTableReader(sourceTable.reader(key, resources, context)) {
 
         @Override
         public Object[] next() throws IOException {
@@ -89,7 +89,7 @@ public class DerivedTables {
           Object[] values = new Object[columns.size()];
           int i = 0;
           for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-            values[i++] = entry.getValue().value(sourceValues, resources);
+            values[i++] = entry.getValue().value(sourceValues, resources, context);
           }
           return values;
         }
@@ -130,8 +130,8 @@ public class DerivedTables {
       return sourceTable.readResources().merge(resourcesFromColumn(whereColumn));
     }
 
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
+    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
+      return new DerivedIterableTableReader(sourceTable.reader(key, resources, context)) {
 
         @Override
         public Object[] next() throws IOException {
@@ -141,7 +141,7 @@ public class DerivedTables {
             if (values == null) {
               return null;
             }
-            if ((boolean) whereColumn.value(values, resources)) {
+            if ((boolean) whereColumn.value(values, resources, context)) {
               return values;
             } else {
               values = null;
@@ -195,7 +195,7 @@ public class DerivedTables {
     }
 
     @Override
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
+    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
       return new MultiFilteredTableReader(resources.reader(sourceTable.tableName()), whereColumn, resources) {
         @Override
         protected void readPositions() throws IOException {
@@ -233,8 +233,8 @@ public class DerivedTables {
     }
 
     @Override
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      return sourceTable.reader(key, resources);
+    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
+      return sourceTable.reader(key, resources, context);
     }
 
     @Override
@@ -278,8 +278,8 @@ public class DerivedTables {
       return sourceTable.readResources();
     }
 
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
+    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
+      return new DerivedIterableTableReader(sourceTable.reader(key, resources, context)) {
 
         private void sort() throws IOException {
           TreeMap<ArrayList<Object>, Object[]> values = new TreeMap<>(new Comparator<ArrayList<Object>>() {
@@ -310,7 +310,7 @@ public class DerivedTables {
             }
             ArrayList<Object> list = new ArrayList<>();
             for (OrderColumn column : orderColumns) {
-              Object key = column.value(sourceValues, resources);
+              Object key = column.value(sourceValues, resources, context);
               list.add(key);
             }
             values.put(list, sourceValues);
@@ -368,8 +368,8 @@ public class DerivedTables {
     }
 
     @Override
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      return new DerivedIterableTableReader(sourceTable.reader(key, resources)) {
+    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
+      return new DerivedIterableTableReader(sourceTable.reader(key, resources, context)) {
 
         private void distinct() throws IOException {
           LinkedHashSet<ImmutableList<Object>> values = new LinkedHashSet<>();
@@ -438,8 +438,8 @@ public class DerivedTables {
     }
 
     @Override
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      return sourceTable.reader(key, resources);
+    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
+      return sourceTable.reader(key, resources, context);
     }
   }
 
@@ -466,8 +466,8 @@ public class DerivedTables {
     }
 
     @Override
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      return sourceTable.reader(key, resources);
+    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
+      return sourceTable.reader(key, resources, context);
     }
 
     @Override

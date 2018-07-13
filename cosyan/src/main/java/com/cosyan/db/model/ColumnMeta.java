@@ -15,9 +15,9 @@ public abstract class ColumnMeta implements CompiledObject {
 
   protected final DataType<?> type;
 
-  public abstract Object value(Object[] values, Resources resources) throws IOException;
+  public abstract Object value(Object[] values, Resources resources, TableContext context) throws IOException;
 
-  public abstract String print(Object[] values, Resources resources) throws IOException;
+  public abstract String print(Object[] values, Resources resources, TableContext context) throws IOException;
 
   public abstract TableDependencies tableDependencies();
 
@@ -40,13 +40,13 @@ public abstract class ColumnMeta implements CompiledObject {
     }
 
     @Override
-    public Object value(Object[] values, Resources resources) throws IOException {
-      return sourceTable.values(values, resources)[index];
+    public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
+      return sourceTable.values(values, resources, context)[index];
     }
 
     @Override
-    public String print(Object[] values, Resources resources) throws IOException {
-      return String.valueOf(sourceTable.values(values, resources)[index]);
+    public String print(Object[] values, Resources resources, TableContext context) throws IOException {
+      return String.valueOf(sourceTable.values(values, resources, context)[index]);
     }
 
     @Override
@@ -113,17 +113,17 @@ public abstract class ColumnMeta implements CompiledObject {
     }
 
     @Override
-    public Object value(Object[] values, Resources resources) throws IOException {
-      return sourceTable.values(values, resources)[index];
+    public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
+      return sourceTable.values(values, resources, context)[index];
     }
 
     @Override
-    public String print(Object[] values, Resources resources) throws IOException {
-      return String.valueOf(sourceTable.values(values, resources)[index]);
+    public String print(Object[] values, Resources resources, TableContext context) throws IOException {
+      return String.valueOf(sourceTable.values(values, resources, context)[index]);
     }
 
-    public Object getInnerValue(Object[] values, Resources resources) throws IOException {
-      return baseColumn.value(values, resources);
+    public Object getInnerValue(Object[] values, Resources resources, TableContext context) throws IOException {
+      return baseColumn.value(values, resources, context);
     }
 
     public TypedAggrFunction<?> getFunction() {
@@ -153,13 +153,13 @@ public abstract class ColumnMeta implements CompiledObject {
     }
 
     @Override
-    public Object value(Object[] values, Resources resources) throws IOException {
-      return baseColumn.value(values, resources);
+    public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
+      return baseColumn.value(values, resources, context);
     }
 
     @Override
-    public String print(Object[] values, Resources resources) throws IOException {
-      return "order by " + baseColumn.print(values, resources) + (asc ? " asc" : " desc");
+    public String print(Object[] values, Resources resources, TableContext context) throws IOException {
+      return "order by " + baseColumn.print(values, resources, context) + (asc ? " asc" : " desc");
     }
 
     @Override
@@ -181,12 +181,12 @@ public abstract class ColumnMeta implements CompiledObject {
   public static final DerivedColumn TRUE_COLUMN = new DerivedColumn(DataTypes.BoolType) {
 
     @Override
-    public Object value(Object[] values, Resources resources) {
+    public Object value(Object[] values, Resources resources, TableContext context) {
       return true;
     }
 
     @Override
-    public String print(Object[] values, Resources resources) throws IOException {
+    public String print(Object[] values, Resources resources, TableContext context) throws IOException {
       return "true";
     }
 

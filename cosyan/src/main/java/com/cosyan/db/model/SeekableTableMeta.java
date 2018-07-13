@@ -100,7 +100,7 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
   }
   
   @Override
-  public IterableTableReader reader(Object key, Resources resources) throws IOException {
+  public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
     return new DerivedIterableTableReader(resources.createIterableReader(tableName())) {
 
       @Override

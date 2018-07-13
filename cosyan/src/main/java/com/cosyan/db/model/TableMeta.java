@@ -38,7 +38,7 @@ public abstract class TableMeta implements CompiledObject {
 
   public abstract ImmutableList<String> columnNames();
 
-  public abstract Object[] values(Object[] sourceValues, Resources resources) throws IOException;
+  public abstract Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException;
 
   public TableMeta table(Ident ident) throws ModelException {
     TableMeta table = getRefTable(ident);
@@ -70,14 +70,14 @@ public abstract class TableMeta implements CompiledObject {
 
   public static abstract class IterableTableMeta extends TableMeta {
 
-    public IterableTableReader reader(Resources resources) throws IOException {
-      return reader(null, resources);
+    public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
+      return reader(null, resources, context);
     }
 
-    public abstract IterableTableReader reader(Object key, Resources resources) throws IOException;
+    public abstract IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException;
 
     // Iterable tables cannot override this function.
-    public final Object[] values(Object[] sourceValues, Resources resources) throws IOException {
+    public final Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException {
       return sourceValues;
     }
   }

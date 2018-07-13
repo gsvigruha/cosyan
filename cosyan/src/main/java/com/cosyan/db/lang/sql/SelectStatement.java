@@ -50,6 +50,7 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.JoinTables.JoinTableMeta;
 import com.cosyan.db.model.JoinTables.JoinType;
 import com.cosyan.db.model.SeekableTableMeta;
+import com.cosyan.db.model.TableContext;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMeta.IterableTableMeta;
@@ -81,7 +82,7 @@ public class SelectStatement extends Statement {
   @Override
   public Result execute(Resources resources) throws RuleException, IOException {
     List<Object[]> valuess = new ArrayList<>();
-    IterableTableReader reader = tableMeta.reader(resources);
+    IterableTableReader reader = tableMeta.reader(resources, TableContext.EMPTY);
     try {
       Object[] values = null;
       while ((values = reader.next()) != null && !cancelled.get()) {

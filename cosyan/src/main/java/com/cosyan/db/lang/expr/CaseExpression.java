@@ -9,6 +9,7 @@ import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.TableContext;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -65,18 +66,18 @@ public class CaseExpression extends Expression {
     return new DerivedColumn(type) {
 
       @Override
-      public Object value(Object[] values, Resources resources) throws IOException {
+      public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
         for (int i = 0; i < conditionCols.size(); i++) {
-          Object condition = conditionCols.get(i).value(values, resources);
+          Object condition = conditionCols.get(i).value(values, resources, context);
           if (condition != null && ((boolean) condition)) {
-            return valueCols.get(i).value(values, resources);
+            return valueCols.get(i).value(values, resources, context);
           }
         }
-        return elseCol.value(values, resources);
+        return elseCol.value(values, resources, context);
       }
 
       @Override
-      public String print(Object[] values, Resources resources) throws IOException {
+      public String print(Object[] values, Resources resources, TableContext context) throws IOException {
         // TODO Auto-generated method stub
         return null;
       }

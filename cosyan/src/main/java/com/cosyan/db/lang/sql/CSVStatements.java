@@ -26,6 +26,7 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Ident;
+import com.cosyan.db.model.TableContext;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -116,7 +117,7 @@ public class CSVStatements {
           .withHeader(tableMeta.columnNames().toArray(new String[] {}));
       CSVPrinter csvPrinter = new CSVPrinter(writer, format);
       try {
-        IterableTableReader reader = tableMeta.reader(resources);
+        IterableTableReader reader = tableMeta.reader(resources, TableContext.EMPTY);
         try {
           Object[] values = null;
           while ((values = reader.next()) != null && !cancelled.get()) {

@@ -30,6 +30,7 @@ import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.TableContext;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
@@ -261,7 +262,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
         return deletedLines;
       }
       if (!recordsToDelete.contains(record.getFilePointer())
-          && (boolean) whereColumn.value(record.getValues(), resources)) {
+          && (boolean) whereColumn.value(record.getValues(), resources, TableContext.EMPTY)) {
         delete(record, resources, Predicates.alwaysTrue(), /* checkReverseRuleDependencies= */true);
         deletedLines++;
       }
@@ -296,7 +297,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
         return updatedRecords.build();
       }
       Object[] values = record.getValues();
-      if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.value(values, resources)) {
+      if (!recordsToDelete.contains(record.getFilePointer()) && (boolean) whereColumn.value(values, resources, TableContext.EMPTY)) {
         delete(
             record,
             resources,
@@ -305,7 +306,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
         Object[] newValues = new Object[values.length];
         System.arraycopy(values, 0, newValues, 0, values.length);
         for (Map.Entry<Integer, ColumnMeta> updateExpr : updateExprs.entrySet()) {
-          newValues[updateExpr.getKey()] = updateExpr.getValue().value(values, resources);
+          newValues[updateExpr.getKey()] = updateExpr.getValue().value(values, resources, TableContext.EMPTY);
         }
         updatedRecords.add(newValues);
       }

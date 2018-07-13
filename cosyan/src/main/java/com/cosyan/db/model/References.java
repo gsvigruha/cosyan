@@ -52,7 +52,7 @@ public class References {
     /**
      * Returns the referenced values based on sourceValues.
      */
-    public Object[] values(Object[] sourceValues, Resources resources) throws IOException;
+    public Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException;
 
     public TableMeta parent();
   }
@@ -86,8 +86,8 @@ public class References {
     }
 
     @Override
-    public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
-      return refTable.values(parent.values(sourceValues, resources), resources);
+    public Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException {
+      return refTable.values(parent.values(sourceValues, resources, context), resources, context);
     }
 
     @Override
@@ -171,8 +171,8 @@ public class References {
     }
 
     @Override
-    public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
-      Object[] parentValues = parent.values(sourceValues, resources);
+    public Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException {
+      Object[] parentValues = parent.values(sourceValues, resources, context);
       Object key = parentValues[foreignKey.getColumn().getIndex()];
       if (key == null) {
         return nulls;
@@ -253,7 +253,7 @@ public class References {
     }
 
     @Override
-    public IterableTableReader reader(final Object key, Resources resources) throws IOException {
+    public IterableTableReader reader(final Object key, Resources resources, TableContext context) throws IOException {
       String table = reverseForeignKey.getRefTable().tableName();
       final IndexReader index = resources.getIndex(reverseForeignKey);
       return new MultiFilteredTableReader(resources.reader(table), ColumnMeta.TRUE_COLUMN, resources) {
@@ -311,15 +311,15 @@ public class References {
     }
 
     @Override
-    public Object[] values(Object[] sourceValues, Resources resources) throws IOException {
+    public Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException {
       Object key = sourceValues[reverseForeignKey.getColumn().getIndex()];
-      IterableTableReader reader = sourceTable.reader(key, resources);
+      IterableTableReader reader = sourceTable.reader(key, resources, context);
       Object[] aggrValues = reader.next();
       reader.close();
       Object[] values = new Object[columns.size()];
       int i = 0;
       for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-        values[i++] = entry.getValue().value(aggrValues, resources);
+        values[i++] = entry.getValue().value(aggrValues, resources, context);
       }
       return values;
     }

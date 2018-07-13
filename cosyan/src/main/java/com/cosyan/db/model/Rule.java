@@ -82,7 +82,7 @@ public class Rule {
 
     public boolean check(Resources resources, long fileIndex) throws IOException {
       Object[] values = table.get(resources, fileIndex).getValues();
-      Object check = column.value(values, resources);
+      Object check = column.value(values, resources, TableContext.EMPTY);
       if (check == null) {
         return nullIsTrue;
       }

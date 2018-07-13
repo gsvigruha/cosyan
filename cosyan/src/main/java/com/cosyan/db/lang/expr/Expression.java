@@ -11,6 +11,7 @@ import com.cosyan.db.model.ColumnMeta.DerivedColumnWithDeps;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.CompiledObject;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.TableContext;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.Resources;
 
@@ -59,13 +60,13 @@ public abstract class Expression extends Node {
             exprColumn.readResources()) {
 
           @Override
-          public Object value(Object[] values, Resources resources) throws IOException {
-            return !((Boolean) exprColumn.value(values, resources));
+          public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
+            return !((Boolean) exprColumn.value(values, resources, context));
           }
 
           @Override
-          public String print(Object[] values, Resources resources) throws IOException {
-            return "not " + exprColumn.print(values, resources);
+          public String print(Object[] values, Resources resources, TableContext context) throws IOException {
+            return "not " + exprColumn.print(values, resources, context);
           }
         };
       } else if (type == Type.ASC) {
@@ -82,13 +83,13 @@ public abstract class Expression extends Node {
             exprColumn.readResources()) {
 
           @Override
-          public Object value(Object[] values, Resources resources) throws IOException {
-            return exprColumn.value(values, resources) != null;
+          public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
+            return exprColumn.value(values, resources, context) != null;
           }
 
           @Override
-          public String print(Object[] values, Resources resources) throws IOException {
-            return exprColumn.print(values, resources) + " is not null";
+          public String print(Object[] values, Resources resources, TableContext context) throws IOException {
+            return exprColumn.print(values, resources, context) + " is not null";
           }
         };
       } else if (type == Type.IS_NULL) {
@@ -99,13 +100,13 @@ public abstract class Expression extends Node {
             exprColumn.readResources()) {
 
           @Override
-          public Object value(Object[] values, Resources resources) throws IOException {
-            return exprColumn.value(values, resources) == null;
+          public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
+            return exprColumn.value(values, resources, context) == null;
           }
 
           @Override
-          public String print(Object[] values, Resources resources) throws IOException {
-            return exprColumn.print(values, resources) + " is null";
+          public String print(Object[] values, Resources resources, TableContext context) throws IOException {
+            return exprColumn.print(values, resources, context) + " is null";
           }
         };
       } else {

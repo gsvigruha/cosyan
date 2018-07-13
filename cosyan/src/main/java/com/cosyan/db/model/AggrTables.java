@@ -103,12 +103,12 @@ public abstract class AggrTables extends IterableTableMeta {
       return sourceTable;
     }
 
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      return new AggrTableReader(sourceTable.reader(key, resources)) {
+    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
+      return new AggrTableReader(sourceTable.reader(key, resources, context)) {
         @Override
         public Object[] next() throws IOException {
           if (!aggregated) {
-            aggregate(resources);
+            aggregate(resources, context);
           }
           Object[] values = null;
           do {
@@ -116,26 +116,26 @@ public abstract class AggrTables extends IterableTableMeta {
               return null;
             }
             values = iterator.next();
-          } while (!(boolean) havingColumn.value(values, resources) && !cancelled.get());
+          } while (!(boolean) havingColumn.value(values, resources, context) && !cancelled.get());
           return values;
         }
 
-        private ArrayList<Object> getKeyValues(Object[] sourceValues, Resources resources) throws IOException {
+        private ArrayList<Object> getKeyValues(Object[] sourceValues, Resources resources, TableContext context) throws IOException {
           ArrayList<Object> keys = new ArrayList<>(sourceTable.getKeyColumns().size());
           for (Map.Entry<String, ? extends ColumnMeta> entry : sourceTable.getKeyColumns().entrySet()) {
-            keys.add(entry.getValue().value(sourceValues, resources));
+            keys.add(entry.getValue().value(sourceValues, resources, context));
           }
           return keys;
         }
 
-        private void aggregate(Resources resources) throws IOException {
+        private void aggregate(Resources resources, TableContext context) throws IOException {
           HashMap<ArrayList<Object>, Aggregator<?, ?>[]> aggregatedValues = new HashMap<>();
           while (!cancelled.get()) {
             Object[] sourceValues = sourceReader.next();
             if (sourceValues == null) {
               break;
             }
-            ArrayList<Object> keyValues = getKeyValues(sourceValues, resources);
+            ArrayList<Object> keyValues = getKeyValues(sourceValues, resources, context);
             if (!aggregatedValues.containsKey(keyValues)) {
               Aggregator<?, ?>[] aggrValues = new Aggregator[aggrColumns.size()];
               int i = 0;
@@ -147,7 +147,7 @@ public abstract class AggrTables extends IterableTableMeta {
             Aggregator<?, ?>[] aggrValues = aggregatedValues.get(keyValues);
             int i = 0;
             for (AggrColumn column : aggrColumns) {
-              aggrValues[i++].add(column.getInnerValue(sourceValues, resources));
+              aggrValues[i++].add(column.getInnerValue(sourceValues, resources, context));
             }
           }
           final Iterator<Entry<ArrayList<Object>, Aggregator<?, ?>[]>> innerIterator = aggregatedValues.entrySet()
@@ -190,8 +190,8 @@ public abstract class AggrTables extends IterableTableMeta {
       return sourceTable;
     }
 
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      return new AggrTableReader(sourceTable.reader(key, resources)) {
+    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
+      return new AggrTableReader(sourceTable.reader(key, resources, context)) {
 
         @Override
         public Object[] next() throws IOException {
@@ -204,7 +204,7 @@ public abstract class AggrTables extends IterableTableMeta {
               return null;
             }
             values = iterator.next();
-          } while (!(boolean) havingColumn.value(values, resources) && !cancelled.get());
+          } while (!(boolean) havingColumn.value(values, resources, context) && !cancelled.get());
           return values;
         }
 
@@ -221,7 +221,7 @@ public abstract class AggrTables extends IterableTableMeta {
             }
             i = 1;
             for (AggrColumn column : aggrColumns) {
-              aggrValues[i++].add(column.getInnerValue(sourceValues, resources));
+              aggrValues[i++].add(column.getInnerValue(sourceValues, resources, context));
             }
           }
           Object[] result = new Object[size()];

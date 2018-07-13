@@ -8,8 +8,9 @@ import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.DateFunctions;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.DateFunctions;
+import com.cosyan.db.model.TableContext;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -39,12 +40,12 @@ public class Literals {
     }
 
     @Override
-    public Object value(Object[] values, Resources resources) {
+    public Object value(Object[] values, Resources resources, TableContext context) {
       return literal.getValue();
     }
 
     @Override
-    public String print(Object[] values, Resources resources) throws IOException {
+    public String print(Object[] values, Resources resources, TableContext context) throws IOException {
       return literal.print();
     }
 

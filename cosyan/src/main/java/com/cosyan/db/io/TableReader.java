@@ -11,6 +11,7 @@ import com.cosyan.db.io.RecordProvider.SeekableRecordReader;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
+import com.cosyan.db.model.TableContext;
 import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.Resources;
@@ -191,7 +192,7 @@ public abstract class TableReader implements TableIO {
           if (record == RecordReader.EMPTY) {
             return record;
           } else {
-            if (!(boolean) whereColumn.value(record.getValues(), resources)) {
+            if (!(boolean) whereColumn.value(record.getValues(), resources, TableContext.EMPTY)) {
               keepGoing = true;
             }
           }

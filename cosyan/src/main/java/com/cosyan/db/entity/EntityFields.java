@@ -14,6 +14,7 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.Ident;
+import com.cosyan.db.model.TableContext;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -38,12 +39,12 @@ public class EntityFields {
         return new ColumnMeta(column.getType()) {
 
           @Override
-          public Object value(Object[] values, Resources resources) throws IOException {
+          public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
             return value;
           }
 
           @Override
-          public String print(Object[] values, Resources resources) throws IOException {
+          public String print(Object[] values, Resources resources, TableContext context) throws IOException {
             return null;
           }
 

@@ -133,9 +133,9 @@ public class JoinTables {
     }
 
     @Override
-    public IterableTableReader reader(Object key, Resources resources) throws IOException {
-      final IterableTableReader mainReader = mainTable.reader(key, resources);
-      final IterableTableReader joinReader = joinTable.reader(key, resources);
+    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
+      final IterableTableReader mainReader = mainTable.reader(key, resources, context);
+      final IterableTableReader joinReader = joinTable.reader(key, resources, context);
       return new IterableTableReader() {
 
         private boolean joined;
@@ -164,7 +164,7 @@ public class JoinTables {
               }
               ImmutableList.Builder<Object> builder = ImmutableList.builder();
               for (ColumnMeta column : mainTableJoinColumns) {
-                Object key = column.value(mainTableValues, resources);
+                Object key = column.value(mainTableValues, resources, context);
                 builder.add(key);
               }
               values = joinValues.get(builder.build());
@@ -207,7 +207,7 @@ public class JoinTables {
             }
             ImmutableList.Builder<Object> builder = ImmutableList.builder();
             for (ColumnMeta column : joinTableJoinColumns) {
-              Object key = column.value(joinSourceValues, resources);
+              Object key = column.value(joinSourceValues, resources, context);
               builder.add(key);
             }
             joinValues.put(builder.build(), joinSourceValues);

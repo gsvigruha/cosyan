@@ -14,6 +14,7 @@ import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.ColumnMeta.DerivedColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.TableContext;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -49,9 +50,9 @@ public class BinaryExpression extends Expression {
     }
 
     @Override
-    public Object value(Object[] values, Resources resources) throws IOException {
-      Object l = leftColumn.value(values, resources);
-      Object r = rightColumn.value(values, resources);
+    public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
+      Object l = leftColumn.value(values, resources, context);
+      Object r = rightColumn.value(values, resources, context);
       if (l == null || r == null) {
         return null;
       } else {
@@ -60,9 +61,9 @@ public class BinaryExpression extends Expression {
     }
 
     @Override
-    public String print(Object[] values, Resources resources) throws IOException {
-      String l = leftColumn.print(values, resources);
-      String r = rightColumn.print(values, resources);
+    public String print(Object[] values, Resources resources, TableContext context) throws IOException {
+      String l = leftColumn.print(values, resources, context);
+      String r = rightColumn.print(values, resources, context);
       return "(" + l + " " + token + " " + r + ")";
     }
 

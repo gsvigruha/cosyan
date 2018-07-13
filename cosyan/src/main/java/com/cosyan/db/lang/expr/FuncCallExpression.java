@@ -24,6 +24,7 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Ident;
+import com.cosyan.db.model.TableContext;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -94,10 +95,10 @@ public class FuncCallExpression extends Expression {
     return new DerivedColumnWithDeps(function.getReturnType(), tableDependencies, resources) {
 
       @Override
-      public Object value(Object[] values, Resources resources) throws IOException {
+      public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
         ImmutableList.Builder<Object> paramsBuilder = ImmutableList.builder();
         for (int i = 0; i < function.getArgTypes().size(); i++) {
-          Object value = argColumns.get(i).value(values, resources);
+          Object value = argColumns.get(i).value(values, resources, context);
           if (value == null) {
             return null;
           }
@@ -112,10 +113,10 @@ public class FuncCallExpression extends Expression {
       }
 
       @Override
-      public String print(Object[] values, Resources resources) throws IOException {
+      public String print(Object[] values, Resources resources, TableContext context) throws IOException {
         StringJoiner sj = new StringJoiner(", ");
         for (ColumnMeta column : argColumns) {
-          sj.add(column.print(values, resources));
+          sj.add(column.print(values, resources, context));
         }
         return function.getName() + "(" + sj.toString() + ")";
       }
