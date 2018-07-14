@@ -139,7 +139,7 @@
         </tr>
         <tr>
           <td><input ng-model="newAggRef.name" class="admin-input"></input></td>
-          <td><input ng-model="newAggRef.expr" class="admin-input-wide" placeholder="select sum(x) as s_x from rev_fk"></input></td>
+          <td><textarea ng-model="newAggRef.expr" class="admin-input-wide" placeholder="select sum(x) as s_x from rev_fk"></textarea></td>
           <td>
             <span ng-click="addAggRef();" title="Add" class="button enabled glyphicon glyphicon-plus"></span>
           </td>
@@ -168,7 +168,7 @@
         </tr>
         <tr>
           <td><input ng-model="newRule.name" class="admin-input"></input></td>
-          <td><input ng-model="newRule.expr" class="admin-input-wide" placeholder="x + fk.y > 0"></input></td>
+          <td><textarea ng-model="newRule.expr" class="admin-input-wide" placeholder="x + fk.y > 0"></textarea></td>
           <td>
             <span ng-click="addRule();" title="Add" class="button enabled glyphicon glyphicon-plus"></span>
           </td>

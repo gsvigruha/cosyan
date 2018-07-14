@@ -215,3 +215,8 @@ input.admin-input {
 input.admin-input-wide {
     width: 200px;
 }
+
+textarea.admin-input-wide {
+    width: 200px;
+    height: 40px;
+}
