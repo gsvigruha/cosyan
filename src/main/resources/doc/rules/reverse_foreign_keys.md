@@ -111,3 +111,22 @@ insert into transaction values (2, 50.0);
 ```
 Referencing constraint check product_type.c_cnt failed.
 ```
+
+The `parent` keyword can be used to refer to the source table in an `aggref`. 
+<!-- RUN -->
+```
+alter table product add aggref truck_stats (
+  select count(1) as cnt, sum(price) as sum_price from transactions where parent.name = 'truck');
+```
+
+Now the aggregated table is only computed for "trucks".
+<!-- TEST -->
+```
+select name, truck_stats.cnt, truck_stats.sum_price from product;
+```
+```
+name,cnt,sum_price
+doll,0,null
+truck,1,300.0
+```
+

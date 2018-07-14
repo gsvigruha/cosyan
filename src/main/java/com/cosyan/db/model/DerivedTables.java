@@ -61,6 +61,9 @@ public class DerivedTables {
     @Override
     public IndexColumn getColumn(Ident ident) throws ModelException {
       ColumnMeta column = columns.get(ident.getString());
+      if (column == null) {
+        return null;
+      }
       return IndexColumn.of(this, column, indexOf(columns.keySet(), ident));
     }
 

@@ -14,6 +14,7 @@ import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.meta.MaterializedTable;
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
@@ -524,17 +525,35 @@ public class AlterStatementTest extends UnitTestBase {
 
   @Test
   public void testAlterTableAggRefParent() throws Exception {
-    execute("create table t44 (a integer, constraint pk_a primary key (a));");
+    execute("create table t44 (a integer, d integer, constraint pk_a primary key (a));");
     execute("create table t45 (a integer, b integer, constraint fk1 foreign key (a) references t44);");
     execute("create table t46 (a integer, c integer, constraint fk2 foreign key (a) references t44);");
     execute("alter table t46 add aggref s (select sum(b * parent.c) as s from fk2.rev_fk1);");
 
-    execute("insert into t44 values (1), (2), (3);");
+    execute("insert into t44 values (1, 100), (2, 200), (3, 300);");
     execute("insert into t45 values (1, 2), (1, 2), (2, 5);");
     execute("insert into t46 values (1, 10), (2, 20), (3, 30);");
 
-    QueryResult result = query("select a, s.s from t46;");
-    assertHeader(new String[] { "a", "s" }, result);
-    assertValues(new Object[][] { { 1L, 40L }, { 2L, 100L }, { 3L, null } }, result);
+    {
+      QueryResult result = query("select a, s.s from t46;");
+      assertHeader(new String[] { "a", "s" }, result);
+      assertValues(new Object[][] { { 1L, 40L }, { 2L, 100L }, { 3L, null } }, result);
+    }
+
+    execute("alter table t44 add aggref s (select sum(b) as s from rev_fk1 where parent.d = 100);");
+    {
+      QueryResult result = query("select a, s.s from t44;");
+      assertHeader(new String[] { "a", "s" }, result);
+      assertValues(new Object[][] { { 1L, 4L }, { 2L, null }, { 3L, null } }, result);
+    }
+  }
+
+  @Test
+  public void testAlterTableAggRefParentError() throws Exception {
+    execute("create table t47 (a integer, constraint pk_a primary key (a));");
+    execute("create table t48 (a integer, b integer, constraint fk1 foreign key (a) references t47);");
+
+    ErrorResult error = error("select a, parent.a from t48;");
+    assertError(ModelException.class, "[10, 16]: Column 'parent' not found in table 't48'.", error);
   }
 }

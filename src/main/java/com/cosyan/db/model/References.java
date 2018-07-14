@@ -43,7 +43,7 @@ public class References {
      * The chain of references (foreign keys or reverse foreign keys) leading to
      * this table.
      */
-    public Iterable<Ref> foreignKeyChain();
+    public ImmutableList<Ref> foreignKeyChain();
 
     /**
      * Returns all transitive read resources needed to for this table.
@@ -96,6 +96,9 @@ public class References {
     @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
       IndexColumn column = refTable.column(ident);
+      if (column == null) {
+        return null;
+      }
       TableDependencies deps = new TableDependencies(this, column.tableDependencies());
       return new IndexColumn(this, column.index(), column.getType(), deps);
     }
@@ -111,7 +114,7 @@ public class References {
     }
 
     @Override
-    public Iterable<Ref> foreignKeyChain() {
+    public ImmutableList<Ref> foreignKeyChain() {
       return parent.foreignKeyChain();
     }
 
@@ -143,7 +146,7 @@ public class References {
     }
 
     @Override
-    public Iterable<Ref> foreignKeyChain() {
+    public ImmutableList<Ref> foreignKeyChain() {
       return ImmutableList.<Ref>builder().addAll(parent.foreignKeyChain()).add(foreignKey).build();
     }
 
@@ -223,7 +226,7 @@ public class References {
     }
 
     @Override
-    public Iterable<Ref> foreignKeyChain() {
+    public ImmutableList<Ref> foreignKeyChain() {
       return ImmutableList.<Ref>builder().addAll(parent.foreignKeyChain()).add(reverseForeignKey)
           .build();
     }
@@ -242,7 +245,11 @@ public class References {
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
       if (ident.is(Tokens.PARENT)) {
-        return new ParentTableMeta(foreignKeyChain().iterator().next().getTable().reader());
+        if (parent.foreignKeyChain().isEmpty()) {
+          return new ParentTableMeta(reverseForeignKey.getTable().reader()); 
+        } else {
+          return new ParentTableMeta(parent.foreignKeyChain().get(0).getTable().reader());
+        }
       }
       return References.getRefTable(this, reverseForeignKey.getTable().tableName(), ident,
           reverseForeignKey.getRefTable().foreignKeys(),
@@ -296,6 +303,9 @@ public class References {
     @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
       ColumnMeta column = columns.get(ident.getString());
+      if (column == null) {
+        return null;
+      }
       TableDependencies deps = new TableDependencies(this, column.tableDependencies());
       return new IndexColumn(sourceTable, indexOf(columns.keySet(), ident), column.getType(), deps);
     }
@@ -320,7 +330,8 @@ public class References {
     public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
         throws IOException {
       Object key = sourceValues[reverseForeignKey.getColumn().getIndex()];
-      IterableTableReader reader = sourceTable.reader(key, resources, TableContext.withParent(sourceValues));
+      IterableTableReader reader = sourceTable.reader(key, resources,
+          TableContext.withParent(sourceValues));
       Object[] aggrValues = reader.next();
       reader.close();
       Object[] values = new Object[columns.size()];
@@ -352,6 +363,9 @@ public class References {
     @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
       IndexColumn column = sourceTable.column(ident);
+      if (column == null) {
+        return null;
+      }
       return IndexColumn.of(this, column, column.index());
     }
 

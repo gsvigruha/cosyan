@@ -77,7 +77,7 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
   }
 
   @Override
-  public Iterable<Ref> foreignKeyChain() {
+  public ImmutableList<Ref> foreignKeyChain() {
     return ImmutableList.of();
   }
 
