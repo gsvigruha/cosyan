@@ -521,4 +521,20 @@ public class AlterStatementTest extends UnitTestBase {
       assertValues(new Object[][] { { 1L, 8L, 4L }, { 2L, 5L, 5L }, { 3L, null, null } }, result);
     }
   }
+
+  @Test
+  public void testAlterTableAggRefParent() throws Exception {
+    execute("create table t44 (a integer, constraint pk_a primary key (a));");
+    execute("create table t45 (a integer, b integer, constraint fk1 foreign key (a) references t44);");
+    execute("create table t46 (a integer, c integer, constraint fk2 foreign key (a) references t44);");
+    execute("alter table t46 add aggref s (select sum(b * parent.c) as s from fk2.rev_fk1);");
+
+    execute("insert into t44 values (1), (2), (3);");
+    execute("insert into t45 values (1, 2), (1, 2), (2, 5);");
+    execute("insert into t46 values (1, 10), (2, 20), (3, 30);");
+
+    QueryResult result = query("select a, s.s from t46;");
+    assertHeader(new String[] { "a", "s" }, result);
+    assertValues(new Object[][] { { 1L, 40L }, { 2L, 100L }, { 3L, null } }, result);
+  }
 }

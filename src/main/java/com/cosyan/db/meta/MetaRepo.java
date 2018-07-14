@@ -532,7 +532,7 @@ public class MetaRepo implements TableProvider, MetaRepoExecutor {
   }
 
   @Override
-  public int numRefs() {
-    return tables.values().stream().mapToInt(t -> t.refs().size()).sum();
+  public int maxRefIndex() {
+    return tables.values().stream().mapToInt(t -> t.refs().values().stream().mapToInt(r -> r.getIndex()).max().orElse(0)).max().orElse(0);
   }
 }

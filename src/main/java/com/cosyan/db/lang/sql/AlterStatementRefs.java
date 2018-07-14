@@ -46,7 +46,8 @@ public class AlterStatementRefs {
     @Override
     public Result executeData(MetaRepoExecutor metaRepo, Resources resources) {
       MaterializedTable tableMeta = resources.meta(table.getString());
-      tableMeta.addRef(new TableRef(ref.getName().getString(), ref.getSelect().print(), metaRepo.numRefs() + 1, refTableMeta));
+      tableMeta.addRef(new TableRef(
+    		  ref.getName().getString(), ref.getSelect().print(), metaRepo.maxRefIndex() + 1, refTableMeta));
       return Result.META_OK;
     }
 

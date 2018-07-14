@@ -8,6 +8,7 @@ import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
+import com.cosyan.db.lang.sql.Tokens;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -52,17 +53,17 @@ public class References {
     /**
      * Returns the referenced values based on sourceValues.
      */
-    public Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException;
+    public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
+        throws IOException;
 
+    /**
+     * Returns the immediate parent table referencing this table.
+     */
     public TableMeta parent();
   }
 
-  public static TableMeta getRefTable(
-      ReferencedTable parent,
-      String tableName,
-      Ident key,
-      Map<String, ForeignKey> foreignKeys,
-      Map<String, ReverseForeignKey> reverseForeignKeys,
+  public static TableMeta getRefTable(ReferencedTable parent, String tableName, Ident key,
+      Map<String, ForeignKey> foreignKeys, Map<String, ReverseForeignKey> reverseForeignKeys,
       Map<String, TableRef> refs) throws ModelException {
     String name = key.getString();
     if (foreignKeys.containsKey(name)) {
@@ -70,7 +71,8 @@ public class References {
     } else if (refs.containsKey(name)) {
       return new ReferencedRefTableMeta(parent, refs.get(name).getTableMeta());
     }
-    throw new ModelException(String.format("Reference '%s' not found in table '%s'.", key, tableName), key);
+    throw new ModelException(
+        String.format("Reference '%s' not found in table '%s'.", key, tableName), key);
   }
 
   @Data
@@ -86,7 +88,8 @@ public class References {
     }
 
     @Override
-    public Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException {
+    public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
+        throws IOException {
       return refTable.values(parent.values(sourceValues, resources, context), resources, context);
     }
 
@@ -120,7 +123,8 @@ public class References {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class ReferencedSimpleTableMeta extends TableMeta implements ReferencedTable, TableProvider {
+  public static class ReferencedSimpleTableMeta extends TableMeta
+      implements ReferencedTable, TableProvider {
 
     private final ReferencedTable parent;
     private final ForeignKey foreignKey;
@@ -156,12 +160,8 @@ public class References {
 
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
-      return References.getRefTable(
-          this,
-          foreignKey.getRefTable().tableName(),
-          ident,
-          foreignKey.getRefTable().foreignKeys(),
-          foreignKey.getRefTable().reverseForeignKeys(),
+      return References.getRefTable(this, foreignKey.getRefTable().tableName(), ident,
+          foreignKey.getRefTable().foreignKeys(), foreignKey.getRefTable().reverseForeignKeys(),
           foreignKey.getRefTable().refs());
     }
 
@@ -171,7 +171,8 @@ public class References {
     }
 
     @Override
-    public Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException {
+    public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
+        throws IOException {
       Object[] parentValues = parent.values(sourceValues, resources, context);
       Object key = parentValues[foreignKey.getColumn().getIndex()];
       if (key == null) {
@@ -185,7 +186,8 @@ public class References {
     @Override
     public TableMeta tableMeta(Ident ident) throws ModelException {
       if (foreignKey.getRefTable().reverseForeignKeys().containsKey(ident.getString())) {
-        return new ReferencedMultiTableMeta(this, foreignKey.getRefTable().reverseForeignKey(ident));
+        return new ReferencedMultiTableMeta(this,
+            foreignKey.getRefTable().reverseForeignKey(ident));
       } else {
         throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
       }
@@ -222,7 +224,8 @@ public class References {
 
     @Override
     public Iterable<Ref> foreignKeyChain() {
-      return ImmutableList.<Ref>builder().addAll(parent.foreignKeyChain()).add(reverseForeignKey).build();
+      return ImmutableList.<Ref>builder().addAll(parent.foreignKeyChain()).add(reverseForeignKey)
+          .build();
     }
 
     @Override
@@ -238,10 +241,10 @@ public class References {
 
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
-      return References.getRefTable(
-          this,
-          reverseForeignKey.getTable().tableName(),
-          ident,
+      if (ident.is(Tokens.PARENT)) {
+        return new ParentTableMeta(foreignKeyChain().iterator().next().getTable().reader());
+      }
+      return References.getRefTable(this, reverseForeignKey.getTable().tableName(), ident,
           reverseForeignKey.getRefTable().foreignKeys(),
           reverseForeignKey.getRefTable().reverseForeignKeys(),
           reverseForeignKey.getRefTable().refs());
@@ -253,10 +256,12 @@ public class References {
     }
 
     @Override
-    public IterableTableReader reader(final Object key, Resources resources, TableContext context) throws IOException {
+    public IterableTableReader reader(final Object key, Resources resources, TableContext context)
+        throws IOException {
       String table = reverseForeignKey.getRefTable().tableName();
       final IndexReader index = resources.getIndex(reverseForeignKey);
-      return new MultiFilteredTableReader(resources.reader(table), ColumnMeta.TRUE_COLUMN, resources) {
+      return new MultiFilteredTableReader(resources.reader(table), ColumnMeta.TRUE_COLUMN,
+          resources) {
 
         @Override
         protected void readPositions() throws IOException {
@@ -303,7 +308,8 @@ public class References {
 
     @Override
     public MetaResources readResources() {
-      return sourceTable.readResources().merge(MetaResources.readTable(reverseForeignKey.getRefTable()));
+      return sourceTable.readResources()
+          .merge(MetaResources.readTable(reverseForeignKey.getRefTable()));
     }
 
     public ImmutableList<String> columnNames() {
@@ -311,9 +317,10 @@ public class References {
     }
 
     @Override
-    public Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException {
+    public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
+        throws IOException {
       Object key = sourceValues[reverseForeignKey.getColumn().getIndex()];
-      IterableTableReader reader = sourceTable.reader(key, resources, context);
+      IterableTableReader reader = sourceTable.reader(key, resources, TableContext.withParent(sourceValues));
       Object[] aggrValues = reader.next();
       reader.close();
       Object[] values = new Object[columns.size()];
@@ -322,6 +329,40 @@ public class References {
         values[i++] = entry.getValue().value(aggrValues, resources, context);
       }
       return values;
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class ParentTableMeta extends TableMeta {
+
+    private final SeekableTableMeta sourceTable;
+
+    @Override
+    public ImmutableList<String> columnNames() {
+      return sourceTable.columnNames();
+    }
+
+    @Override
+    public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
+        throws IOException {
+      return context.values(TableContext.PARENT);
+    }
+
+    @Override
+    protected IndexColumn getColumn(Ident ident) throws ModelException {
+      IndexColumn column = sourceTable.column(ident);
+      return IndexColumn.of(this, column, column.index());
+    }
+
+    @Override
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      return sourceTable.getRefTable(ident);
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources();
     }
   }
 }
