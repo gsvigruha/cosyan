@@ -1,0 +1,47 @@
+<h3>Text functions</h3>
+<ul>
+<li>
+<p><code>concat(self: varchar, str: varchar): varchar</code><br/>
+Concatenates <code>self</code> with <code>str</code>.</p>
+</li>
+<li>
+<p><code>contains(self: varchar, str: varchar): boolean</code><br/>
+Returns true iff <code>self</code> contains <code>str</code>.</p>
+</li>
+<li>
+<p><code>index_of(self: varchar, str: varchar): integer</code><br/>
+Index of the first occurrence of <code>str</code> in <code>self</code>.</p>
+</li>
+<li>
+<p><code>last_index_of(self: varchar, str: varchar): integer</code><br/>
+Index of the last occurrence of <code>str</code> in <code>self</code>.</p>
+</li>
+<li>
+<p><code>length(self: varchar): integer</code><br/>
+Number of characters in <code>self</code>.</p>
+</li>
+<li>
+<p><code>lower(self: varchar): varchar</code><br/>
+Converts all characters of <code>self</code> to lowercase.</p>
+</li>
+<li>
+<p><code>matches(self: varchar, regex: varchar): boolean</code><br/>
+Returns true iff <code>self</code> matches the regular expression <code>regex</code>.</p>
+</li>
+<li>
+<p><code>replace(self: varchar, target: varchar, replacement: varchar): varchar</code><br/>
+Replaces every occurrences of <code>target</code> with <code>replacement</code> in <code>self</code>.</p>
+</li>
+<li>
+<p><code>substr(self: varchar, start: integer, end: integer): varchar</code><br/>
+Returns the substring of <code>self</code> between <code>start</code> and <code>end</code>.</p>
+</li>
+<li>
+<p><code>trim(self: varchar): varchar</code><br/>
+Removes all leading and trailing whitespaces from <code>self</code>.</p>
+</li>
+<li>
+<p><code>upper(self: varchar): varchar</code><br/>
+Converts all characters of <code>self</code> to uppercase.</p>
+</li>
+</ul>

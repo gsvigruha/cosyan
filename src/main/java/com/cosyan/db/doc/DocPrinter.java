@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringJoiner;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
@@ -40,9 +41,8 @@ public class DocPrinter {
 
   public static void main(String[] args) throws IOException {
     String resourcesDir = args[0] + File.separator + "resources";
-    String funcDocRootDir = resourcesDir + File.separator +
-        "doc" + File.separator +
-        "func" + File.separator;
+    String funcDocRootDir = resourcesDir + File.separator + "doc" + File.separator + "func"
+        + File.separator;
     printSimpleFunctions(funcDocRootDir);
 
     printAggrFunctions(funcDocRootDir);
@@ -52,7 +52,9 @@ public class DocPrinter {
 
   private static void markdownToHtml(String resourcesDir) throws IOException {
     File docRoot = new File(resourcesDir + File.separator + "doc");
-    Collection<File> files = FileUtils.listFiles(docRoot, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+    Collection<File> files = FileUtils
+        .listFiles(docRoot, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE).stream()
+        .sorted((f1, f2) -> f1.getName().compareTo(f2.getName())).collect(Collectors.toList());
     JSONArray items = new JSONArray();
     String webRoot = "web" + File.separator + "app" + File.separator + "help";
 
@@ -60,8 +62,7 @@ public class DocPrinter {
       Parser parser = Parser.builder().build();
       Node document = parser.parse(FileUtils.readFileToString(markdown, Charset.defaultCharset()));
       HtmlRenderer renderer = HtmlRenderer.builder().build();
-      String suffix = markdown.getAbsolutePath().substring(
-          docRoot.getAbsolutePath().length() + 1,
+      String suffix = markdown.getAbsolutePath().substring(docRoot.getAbsolutePath().length() + 1,
           markdown.getAbsolutePath().length() - 3);
       File html = new File(webRoot + File.separator + suffix + ".html");
       FileUtils.writeStringToFile(html, renderer.render(document), Charset.defaultCharset());
@@ -75,56 +76,58 @@ public class DocPrinter {
   }
 
   private static void printAggrFunctions(String funcDocRootDir) throws FileNotFoundException {
-    PrintWriter aggrFunctionsPrinter = new PrintWriter(funcDocRootDir + "aggregator_functions.md");
-    try {
-      ImmutableList<Class<?>> categories = ImmutableList.of(
-          Aggregators.class,
-          StatAggregators.class,
-          ListAggregators.class);
-      Map<Class<?>, Map<String, String>> docss = new LinkedHashMap<>();
-      for (Class<?> clss : categories) {
-        docss.put(clss, new TreeMap<>());
-      }
-      for (AggrFunction function : BuiltinFunctions.AGGREGATIONS) {
-        Map<String, String> docs = docss.get(function.getClass().getEnclosingClass());
-        printFunc(function, docs);
-      }
-      for (Class<?> clss : categories) {
-        FuncCat funcCat = clss.getAnnotation(FuncCat.class);
+    ImmutableList<Class<?>> categories = ImmutableList.of(Aggregators.class, StatAggregators.class,
+        ListAggregators.class);
+    Map<Class<?>, Map<String, String>> docss = new LinkedHashMap<>();
+    for (Class<?> clss : categories) {
+      docss.put(clss, new TreeMap<>());
+    }
+    for (AggrFunction function : BuiltinFunctions.AGGREGATIONS) {
+      Map<String, String> docs = docss.get(function.getClass().getEnclosingClass());
+      printFunc(function, docs);
+    }
+    int i = 1;
+    for (Class<?> clss : categories) {
+      FuncCat funcCat = clss.getAnnotation(FuncCat.class);
+      PrintWriter aggrFunctionsPrinter = new PrintWriter(
+          funcDocRootDir + "2" + i + "_" + funcCat.doc().toLowerCase().replace(" ", "_") + ".md");
+      try {
         aggrFunctionsPrinter.print("### " + funcCat.doc() + "\n\n");
         for (String doc : docss.get(clss).values()) {
           aggrFunctionsPrinter.print(doc);
         }
+      } finally {
+        aggrFunctionsPrinter.close();
       }
-    } finally {
-      aggrFunctionsPrinter.close();
+      i++;
     }
   }
 
   private static void printSimpleFunctions(String funcDocRootDir) throws FileNotFoundException {
-    PrintWriter simpleFunctionsPrinter = new PrintWriter(funcDocRootDir + "simple_functions.md");
-    try {
-      ImmutableList<Class<?>> categories = ImmutableList.of(
-          StringFunctions.class,
-          MathFunctions.class,
-          DateFunctions.class);
-      Map<Class<?>, Map<String, String>> docss = new LinkedHashMap<>();
-      for (Class<?> clss : categories) {
-        docss.put(clss, new TreeMap<>());
-      }
-      for (SimpleFunction<?> function : BuiltinFunctions.SIMPLE) {
-        Map<String, String> docs = docss.get(function.getClass().getEnclosingClass());
-        printFunc(function, docs);
-      }
-      for (Class<?> clss : categories) {
-        FuncCat funcCat = clss.getAnnotation(FuncCat.class);
+    ImmutableList<Class<?>> categories = ImmutableList.of(StringFunctions.class,
+        MathFunctions.class, DateFunctions.class);
+    Map<Class<?>, Map<String, String>> docss = new LinkedHashMap<>();
+    for (Class<?> clss : categories) {
+      docss.put(clss, new TreeMap<>());
+    }
+    for (SimpleFunction<?> function : BuiltinFunctions.SIMPLE) {
+      Map<String, String> docs = docss.get(function.getClass().getEnclosingClass());
+      printFunc(function, docs);
+    }
+    int i = 1;
+    for (Class<?> clss : categories) {
+      FuncCat funcCat = clss.getAnnotation(FuncCat.class);
+      PrintWriter simpleFunctionsPrinter = new PrintWriter(
+          funcDocRootDir + "1" + i + "_" + funcCat.doc().toLowerCase().replace(" ", "_") + ".md");
+      try {
         simpleFunctionsPrinter.print("### " + funcCat.doc() + "\n\n");
         for (String doc : docss.get(clss).values()) {
           simpleFunctionsPrinter.print(doc);
         }
+      } finally {
+        simpleFunctionsPrinter.close();
       }
-    } finally {
-      simpleFunctionsPrinter.close();
+      i++;
     }
   }
 
