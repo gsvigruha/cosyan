@@ -60,7 +60,7 @@ public class FuncCallExpression extends Expression {
   }
 
   private boolean isAggr() {
-    return BuiltinFunctions.AGGREGATION_NAMES.contains(ident.getString());
+    return object == null && args.size() > 0 && BuiltinFunctions.AGGREGATION_NAMES.contains(ident.getString());
   }
 
   private DerivedColumnWithDeps simpleFunction(TableMeta sourceTable, @Nullable ColumnMeta objColumn)

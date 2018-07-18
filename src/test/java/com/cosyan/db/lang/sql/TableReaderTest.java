@@ -158,12 +158,6 @@ public class TableReaderTest extends UnitTestBase {
   }
 
   @Test
-  public void testAggregatorsFuncallOnColumn() throws Exception {
-    QueryResult result = query("select a.max() as a, b.count() as b, c.sum() as c from large;");
-    assertArrayEquals(new Object[] { "b", 4L, 20.0 }, result.getValues().get(0));
-  }
-
-  @Test
   public void testGroupBy() throws Exception {
     QueryResult result = query("select a, sum(b) as b, sum(c) as c from large group by a;");
     assertArrayEquals(new Object[] { "a", 4L, 6.0 }, result.getValues().get(0));

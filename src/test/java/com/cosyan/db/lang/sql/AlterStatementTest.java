@@ -556,4 +556,30 @@ public class AlterStatementTest extends UnitTestBase {
     ErrorResult error = error("select a, parent.a from t48;");
     assertError(ModelException.class, "[10, 16]: Column 'parent' not found in table 't48'.", error);
   }
+
+  @Test
+  public void testAlterTableAggRefAggrColumnName() throws Exception {
+    execute("create table t49 (a integer, constraint pk_a primary key (a));");
+    execute("create table t50 (a integer, b integer, constraint fk1 foreign key (a) references t49);");
+    execute("alter table t49 add aggref s (select sum(b) as sum from rev_fk1);");
+
+    execute("insert into t49 values (1);");
+    execute("insert into t50 values (1, 2), (1, 2);");
+
+    {
+      QueryResult result = query("select a, s.sum from t49;");
+      assertHeader(new String[] { "a", "sum" }, result);
+      assertValues(new Object[][] { { 1L, 4L } }, result);
+    }
+    {
+      QueryResult result = query("select *, s.sum from t49;");
+      assertHeader(new String[] { "a", "sum" }, result);
+      assertValues(new Object[][] { { 1L, 4L } }, result);
+    }
+    {
+      QueryResult result = query("select a, s.* from t49;");
+      assertHeader(new String[] { "a", "sum" }, result);
+      assertValues(new Object[][] { { 1L, 4L } }, result);
+    }
+  }
 }

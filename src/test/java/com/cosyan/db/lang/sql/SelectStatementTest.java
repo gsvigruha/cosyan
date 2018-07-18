@@ -74,13 +74,9 @@ public class SelectStatementTest extends UnitTestBase {
     assertHeader(new String[] { "s" }, r3);
     assertValues(new Object[][] { { 5L } }, r3);
 
-    QueryResult r4 = query("select a2, fk_a.b1.sum() as s from t9 group by a2;");
-    assertHeader(new String[] { "a2", "s" }, r4);
-    assertValues(new Object[][] { { "x", 3L }, { "y", 2L } }, r4);
-
-    QueryResult r5 = query("select a1 from t9 group by fk_a.a1 as a1;");
-    assertHeader(new String[] { "a1" }, r5);
-    assertValues(new Object[][] { { "x" }, { "y" } }, r5);
+    QueryResult r4 = query("select a1 from t9 group by fk_a.a1 as a1;");
+    assertHeader(new String[] { "a1" }, r4);
+    assertValues(new Object[][] { { "x" }, { "y" } }, r4);
   }
 
   @Test
