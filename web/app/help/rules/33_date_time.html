@@ -1,0 +1,67 @@
+<h3>Date and time functions</h3>
+<p>Let's create a table with dates.</p>
+<!-- RUN -->
+<pre><code>create table dates (d timestamp);
+</code></pre>
+<p>Add some data.</p>
+<!-- RUN -->
+<pre><code>insert into dates values(dt '2017-01-01'), (dt '2017-01-01 10:30:00'), (dt '1960-01-01');
+</code></pre>
+<!-- TEST -->
+<pre><code>select * from dates;
+</code></pre>
+<pre><code>d
+2017-01-01 00:00:00
+2017-01-01 10:30:00
+1960-01-01 00:00:00
+</code></pre>
+<p>Add a specific time interval to dates.</p>
+<!-- TEST -->
+<pre><code>select
+  add_years(d, 1) as d1,
+  add_months(d, 1) as d2,
+  add_weeks(d, 1) as d3,
+  add_days(d, -1) as d4,
+  add_hours(d, 1) as d5,
+  add_minutes(d, 1) as d6,
+  add_seconds(d, 1) as d7
+from dates where d = date('2017-01-01');
+</code></pre>
+<pre><code>d1,d2,d3,d4,d5,d6,d7
+2018-01-01 00:00:00,2017-02-01 00:00:00,2017-01-08 00:00:00,2016-12-31 00:00:00,2017-01-01 01:00:00,2017-01-01 00:01:00,2017-01-01 00:00:01
+</code></pre>
+<!-- TEST -->
+<pre><code>select date('2017-01-02') - d as diff from dates where d &gt;= date('2017-01-01');
+</code></pre>
+<pre><code>diff
+86400
+48600
+</code></pre>
+<p>Malformatted dates result in <code>null</code>s.</p>
+<!-- TEST -->
+<pre><code>select date('20170102') - d as diff from dates where d &gt;= date('2017-01-01');
+</code></pre>
+<pre><code>diff
+null
+null
+</code></pre>
+<!-- TEST -->
+<pre><code>select
+  get_year(d) as d1,
+  get_month(d) as d2,
+  get_week_of_year(d) as d3,
+  get_week_of_month(d) as d4,
+  get_day(d) as d5,
+  get_day_of_year(d) as d6,
+  get_day_of_month(d) as d7,
+  get_day_of_week(d) as d8,
+  get_hour(d) as d9,
+  get_minute(d) as d10,
+  get_second(d) as d11
+from dates;
+</code></pre>
+<pre><code>d1,d2,d3,d4,d5,d6,d7,d8,d9,d10,d11
+2017,1,1,1,1,1,1,1,0,0,0
+2017,1,1,1,1,1,1,1,10,30,0
+1960,1,1,1,1,1,1,6,0,0,0
+</code></pre>
