@@ -245,11 +245,7 @@ public class References {
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
       if (ident.is(Tokens.PARENT)) {
-        if (parent.foreignKeyChain().isEmpty()) {
-          return new ParentTableMeta(reverseForeignKey.getTable().reader()); 
-        } else {
-          return new ParentTableMeta(parent.foreignKeyChain().get(0).getTable().reader());
-        }
+        return new ParentTableMeta(foreignKeyChain().get(0).getTable().reader());
       }
       return References.getRefTable(this, reverseForeignKey.getTable().tableName(), ident,
           reverseForeignKey.getRefTable().foreignKeys(),

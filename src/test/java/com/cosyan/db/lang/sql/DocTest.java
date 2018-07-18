@@ -50,24 +50,24 @@ public class DocTest extends UnitTestBase {
   @Test
   public void testForeignKeys() throws Exception {
     setUp();
-    runDocFile("doc/rules/foreign_keys.md");
+    runDocFile("doc/rules/31_foreign_keys.md");
   }
 
   @Test
   public void testReverseForeignKeys() throws Exception {
     setUp();
-    runDocFile("doc/rules/reverse_foreign_keys.md");
+    runDocFile("doc/rules/32_reverse_foreign_keys.md");
   }
 
   @Test
   public void testDateTimes() throws Exception {
     setUp();
-    runDocFile("doc/rules/date_time.md");
+    runDocFile("doc/rules/33_date_time.md");
   }
 
   @Test
   public void testNetworks() throws Exception {
     setUp();
-    runDocFile("doc/rules/networks.md");
+    runDocFile("doc/rules/34_networks.md");
   }
 }

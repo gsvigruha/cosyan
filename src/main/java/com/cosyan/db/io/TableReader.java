@@ -67,8 +67,7 @@ public abstract class TableReader implements TableIO {
 
     protected final MaterializedTable tableMeta;
 
-    public SeekableTableReader(
-        MaterializedTable tableMeta) {
+    public SeekableTableReader(MaterializedTable tableMeta) {
       this.tableMeta = tableMeta;
     }
 
@@ -95,11 +94,11 @@ public abstract class TableReader implements TableIO {
     private final String fileName;
     private final ImmutableList<BasicColumn> columns;
 
-    public MaterializedTableReader(
-        MaterializedTable tableMeta,
-        String fileName,
-        SeekableInputStream fileReader,
-        ImmutableList<BasicColumn> columns,
+    private Object cachedKey;
+    private Record cachedRecord;
+
+    public MaterializedTableReader(MaterializedTable tableMeta, String fileName,
+        SeekableInputStream fileReader, ImmutableList<BasicColumn> columns,
         ImmutableMap<String, IndexReader> indexes) throws IOException {
       super(tableMeta);
       this.indexes = indexes;
@@ -122,14 +121,21 @@ public abstract class TableReader implements TableIO {
 
     @Override
     public Record get(Object key, Resources resources) throws IOException {
+      if (cachedKey != null && cachedKey.equals(key)) {
+        return cachedRecord;
+      }
       TableUniqueIndex index = resources.getPrimaryKeyIndex(tableMeta.tableName());
       long filePointer = index.get0(key);
-      return get(filePointer);
+      Record record = get(filePointer);
+      cachedKey = key;
+      cachedRecord = record;
+      return record;
     }
 
     @Override
     public IterableTableReader iterableReader() throws IOException {
-      RecordReader reader = new RecordReader(columns, new BufferedInputStream(new FileInputStream(fileName)));
+      RecordReader reader = new RecordReader(columns,
+          new BufferedInputStream(new FileInputStream(fileName)));
       return new IterableTableReader() {
 
         @Override
@@ -150,7 +156,8 @@ public abstract class TableReader implements TableIO {
     }
   }
 
-  public static abstract class MultiFilteredTableReader extends IterableTableReader implements RecordProvider {
+  public static abstract class MultiFilteredTableReader extends IterableTableReader
+      implements RecordProvider {
 
     protected final SeekableTableReader sourceReader;
     protected final ColumnMeta whereColumn;
@@ -160,9 +167,7 @@ public abstract class TableReader implements TableIO {
     private int pointer;
     private boolean cancelled;
 
-    public MultiFilteredTableReader(
-        SeekableTableReader sourceReader,
-        ColumnMeta whereColumn,
+    public MultiFilteredTableReader(SeekableTableReader sourceReader, ColumnMeta whereColumn,
         Resources resources) {
       this.sourceReader = sourceReader;
       this.whereColumn = whereColumn;
