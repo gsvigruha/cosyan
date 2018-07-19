@@ -48,7 +48,7 @@ public class Session {
     this.lexer = lexer;
   }
 
-  public Result execute(String sql) {
+  public synchronized Result execute(String sql) {
     running = true;
     try {
       PeekingIterator<Token> tokens = lexer.tokenize(sql);
@@ -65,13 +65,14 @@ public class Session {
         }
         return result;
       } else {
-        Transaction transaction = transactionHandler.begin(parser.parseStatements(tokens));
-        return transaction.execute(metaRepo, this);
+        lastTransaction = transactionHandler.begin(parser.parseStatements(tokens));
+        return lastTransaction.execute(metaRepo, this);
       }
     } catch (ParserException e) {
       return new ErrorResult(e);
     } finally {
       running = false;
+      lastTransaction = null;
     }
   }
 

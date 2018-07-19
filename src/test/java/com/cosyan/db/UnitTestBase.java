@@ -37,7 +37,7 @@ public abstract class UnitTestBase {
     config = new Config("/tmp/data");
     dbApi = new DBApi(config);
     metaRepo = dbApi.getMetaRepo();
-    session = dbApi.adminSession();
+    session = dbApi.newAdminSession();
   }
 
   protected static void execute(String sql) {

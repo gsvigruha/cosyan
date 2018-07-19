@@ -36,4 +36,12 @@ public class SQLServlet extends HttpServlet {
       resp.getWriter().println(result);
     });
   }
+
+  @Override
+  protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+      throws ServletException, IOException {
+    sessionHandler.execute(req, resp, (Session session) -> {
+      session.cancel();
+    });
+  }
 }

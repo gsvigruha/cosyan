@@ -4,6 +4,7 @@
 
 <div class="sql-result">
   <button ng-click="run()" class="tab">Run query</button>
+  <button ng-click="cancel()" class="tab">Cancel</button>
 </div>
 
 <div class="sql-result">
@@ -19,7 +20,7 @@
     </tr>
   </table>
   <p ng-show="r.type == 'statement'">
-    Statement affected {{ r.lines }} lines.
+    {{ r.msg }}
   </p>
 </div>
 <div ng-show="$error">

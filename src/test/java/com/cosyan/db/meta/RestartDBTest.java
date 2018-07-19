@@ -55,7 +55,7 @@ public class RestartDBTest {
   @Test
   public void testTablesAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
-    dbApi.adminSession().execute("create table t1("
+    dbApi.newAdminSession().execute("create table t1("
         + "a integer,"
         + "constraint pk_a primary key (a),"
         + "constraint c_a check(a > 1));");
@@ -78,14 +78,14 @@ public class RestartDBTest {
   @Test
   public void testTableReferencesAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
-    dbApi.adminSession().execute("create table t2("
+    dbApi.newAdminSession().execute("create table t2("
         + "a integer,"
         + "constraint pk_a primary key (a));");
-    dbApi.adminSession().execute("create table t3("
+    dbApi.newAdminSession().execute("create table t3("
         + "a integer,"
         + "constraint pk_a primary key (a),"
         + "constraint fk_a1 foreign key (a) references t2(a));");
-    dbApi.adminSession().execute("create table t4("
+    dbApi.newAdminSession().execute("create table t4("
         + "a integer,"
         + "constraint fk_a2 foreign key (a) references t2(a));");
     MaterializedTable t2 = dbApi.getMetaRepo().table("t2");
@@ -107,10 +107,10 @@ public class RestartDBTest {
   @Test
   public void testRulesAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
-    dbApi.adminSession().execute("create table t5("
+    dbApi.newAdminSession().execute("create table t5("
         + "a integer,"
         + "constraint pk_a primary key (a));");
-    dbApi.adminSession().execute("create table t6("
+    dbApi.newAdminSession().execute("create table t6("
         + "a integer,"
         + "constraint fk_a1 foreign key (a) references t5(a),"
         + "constraint c_1 check(a = fk_a1.a));");
@@ -134,14 +134,14 @@ public class RestartDBTest {
   @Test
   public void testRefRulesAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
-    dbApi.adminSession().execute("create table t7("
+    dbApi.newAdminSession().execute("create table t7("
         + "a integer,"
         + "constraint pk_a primary key (a));");
-    dbApi.adminSession().execute("create table t8("
+    dbApi.newAdminSession().execute("create table t8("
         + "a integer,"
         + "constraint fk_a1 foreign key (a) references t7(a));");
-    dbApi.adminSession().execute("alter table t7 add aggref s (select sum(a) as sa from rev_fk_a1);");
-    dbApi.adminSession().execute("alter table t7 add constraint c_1 check(s.sa < 10);");
+    dbApi.newAdminSession().execute("alter table t7 add aggref s (select sum(a) as sa from rev_fk_a1);");
+    dbApi.newAdminSession().execute("alter table t7 add constraint c_1 check(s.sa < 10);");
 
     MaterializedTable t7 = dbApi.getMetaRepo().table("t7");
     assertEquals(1, t7.refs().size());
@@ -154,15 +154,15 @@ public class RestartDBTest {
     assertEquals("rev_fk_a1", newT7.refs().get("s").getTableMeta().getReverseForeignKey().getName());
     assertEquals(1, newT7.rules().size());
 
-    dbApi.adminSession().execute("insert into t7 values (11);");
-    ErrorResult e = (ErrorResult) dbApi.adminSession().execute("insert into t8 values (11);");
+    dbApi.newAdminSession().execute("insert into t7 values (11);");
+    ErrorResult e = (ErrorResult) dbApi.newAdminSession().execute("insert into t8 values (11);");
     assertEquals("Referencing constraint check t7.c_1 failed.", e.getError().getMessage());
   }
 
   @Test
   public void testDoubleRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
-    dbApi.adminSession().execute("create table t9(a integer, b varchar);");
+    dbApi.newAdminSession().execute("create table t9(a integer, b varchar);");
 
     MaterializedTable t9 = dbApi.getMetaRepo().table(new Ident("t9"));
     assertEquals(2, t9.columns().size());
@@ -179,11 +179,11 @@ public class RestartDBTest {
   @Test
   public void testTableDataAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
-    dbApi.adminSession().execute("create table t10(a integer, b varchar);");
-    dbApi.adminSession().execute("insert into t10 values(1, 'x');");
+    dbApi.newAdminSession().execute("create table t10(a integer, b varchar);");
+    dbApi.newAdminSession().execute("insert into t10 values(1, 'x');");
 
     dbApi = new DBApi(config);
-    QueryResult result = query("select * from t10;", dbApi.adminSession());
+    QueryResult result = query("select * from t10;", dbApi.newAdminSession());
     assertEquals(ImmutableList.of("a", "b"), result.getHeader());
     assertArrayEquals(new Object[] { 1L, "x" }, result.getValues().get(0));
   }
@@ -191,27 +191,27 @@ public class RestartDBTest {
   @Test
   public void testIndexesAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
-    dbApi.adminSession().execute("create table t11(a integer unique);");
-    dbApi.adminSession().execute("insert into t11 values(1);");
+    dbApi.newAdminSession().execute("create table t11(a integer unique);");
+    dbApi.newAdminSession().execute("insert into t11 values(1);");
 
     dbApi = new DBApi(config);
-    ErrorResult result = (ErrorResult) dbApi.adminSession().execute("insert into t11 values(1);");
+    ErrorResult result = (ErrorResult) dbApi.newAdminSession().execute("insert into t11 values(1);");
     assertEquals("Key '1' already present in index.", result.getError().getMessage());
   }
 
   @Test
   public void testGeneratedIDAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
-    dbApi.adminSession().execute("create table t12(a id, b varchar);");
-    dbApi.adminSession().execute("insert into t12 values('x'), ('y');");
-    QueryResult r1 = (QueryResult) ((TransactionResult) dbApi.adminSession().execute("select * from t12;"))
+    dbApi.newAdminSession().execute("create table t12(a id, b varchar);");
+    dbApi.newAdminSession().execute("insert into t12 values('x'), ('y');");
+    QueryResult r1 = (QueryResult) ((TransactionResult) dbApi.newAdminSession().execute("select * from t12;"))
         .getResults().get(0);
     assertArrayEquals(new Object[] { 0L, "x" }, r1.getValues().get(0));
     assertArrayEquals(new Object[] { 1L, "y" }, r1.getValues().get(1));
 
     dbApi = new DBApi(config);
-    dbApi.adminSession().execute("insert into t12 values('z');");
-    QueryResult r2 = query("select * from t12;", dbApi.adminSession());
+    dbApi.newAdminSession().execute("insert into t12 values('z');");
+    QueryResult r2 = query("select * from t12;", dbApi.newAdminSession());
 
     assertArrayEquals(new Object[] { 0L, "x" }, r2.getValues().get(0));
     assertArrayEquals(new Object[] { 1L, "y" }, r2.getValues().get(1));
@@ -221,16 +221,16 @@ public class RestartDBTest {
   @Test
   public void testUsersAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
-    dbApi.adminSession().execute("create table t13(a integer);");
-    dbApi.adminSession().execute("insert into t13 values(1);");
-    dbApi.adminSession().execute("create user u1 identified by 'abc';");
-    dbApi.adminSession().execute("create user u2 identified by 'abc';");
+    dbApi.newAdminSession().execute("create table t13(a integer);");
+    dbApi.newAdminSession().execute("insert into t13 values(1);");
+    dbApi.newAdminSession().execute("create user u1 identified by 'abc';");
+    dbApi.newAdminSession().execute("create user u2 identified by 'abc';");
 
     Session u1 = dbApi.authSession("u1", "abc", Method.LOCAL);
     ErrorResult e1 = (ErrorResult) u1.execute("select * from t13;");
     assertEquals("User 'u1' has no SELECT right on 't13'.", e1.getError().getMessage());
 
-    dbApi.adminSession().execute("grant select on t13 to u1;");
+    dbApi.newAdminSession().execute("grant select on t13 to u1;");
     QueryResult r1 = query("select * from t13;", u1);
     assertArrayEquals(new Object[] { 1L }, r1.getValues().get(0));
 
@@ -238,7 +238,7 @@ public class RestartDBTest {
     ErrorResult e2 = (ErrorResult) u2.execute("select * from t13;");
     assertEquals("User 'u2' has no SELECT right on 't13'.", e2.getError().getMessage());
 
-    dbApi.adminSession().execute("grant all on * to u2;");
+    dbApi.newAdminSession().execute("grant all on * to u2;");
     QueryResult r2 = query("select * from t13;", u2);
     assertArrayEquals(new Object[] { 1L }, r2.getValues().get(0));
 
@@ -255,9 +255,9 @@ public class RestartDBTest {
   @Test
   public void testIndexesCreatedWithDataAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
-    dbApi.adminSession().execute("create table t14(a integer);");
-    dbApi.adminSession().execute("insert into t14 values (1), (2);");
-    dbApi.adminSession().execute("create index t14.a;");
+    dbApi.newAdminSession().execute("create table t14(a integer);");
+    dbApi.newAdminSession().execute("insert into t14 values (1), (2);");
+    dbApi.newAdminSession().execute("create index t14.a;");
     {
       MaterializedTable t14 = dbApi.getMetaRepo().table("t14");
       IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t14).get("a");
@@ -277,9 +277,9 @@ public class RestartDBTest {
   @Test
   public void testIDIndexesAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
-    dbApi.adminSession().execute("create table t15(a id, b varchar);");
-    dbApi.adminSession().execute("insert into t15 values ('x');");
-    dbApi.adminSession().execute("insert into t15 values ('y');");
+    dbApi.newAdminSession().execute("create table t15(a id, b varchar);");
+    dbApi.newAdminSession().execute("insert into t15 values ('x');");
+    dbApi.newAdminSession().execute("insert into t15 values ('y');");
     {
       MaterializedTable t15 = dbApi.getMetaRepo().table("t15");
       IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t15).get("a");
@@ -299,11 +299,11 @@ public class RestartDBTest {
   @Test
   public void testAggrefInAggrefAfterRestart() throws Exception {
     DBApi dbApi = new DBApi(config);
-    dbApi.adminSession().execute("create table t18(a id);");
-    dbApi.adminSession().execute("create table t17 (a id, b integer, constraint fk1 foreign key (b) references t18);");
-    dbApi.adminSession().execute("create table t16 (a integer, constraint fk2 foreign key (a) references t17);");
-    dbApi.adminSession().execute("alter table t17 add aggref s (select count(1) as c from rev_fk2);");
-    dbApi.adminSession().execute("alter table t18 add aggref s (select sum(s.c) as s from rev_fk1);");
+    dbApi.newAdminSession().execute("create table t18(a id);");
+    dbApi.newAdminSession().execute("create table t17 (a id, b integer, constraint fk1 foreign key (b) references t18);");
+    dbApi.newAdminSession().execute("create table t16 (a integer, constraint fk2 foreign key (a) references t17);");
+    dbApi.newAdminSession().execute("alter table t17 add aggref s (select count(1) as c from rev_fk2);");
+    dbApi.newAdminSession().execute("alter table t18 add aggref s (select sum(s.c) as s from rev_fk1);");
 
     {
       MaterializedTable t18 = dbApi.getMetaRepo().table("t18");

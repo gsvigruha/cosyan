@@ -13,4 +13,9 @@ angular.module('cosyan')
       $scope.$error = response.data.error;
     });
   };
+  $scope.cancel = function() {
+    $http.post("/cosyan/cancel", {
+	  params: { sql: $scope.query, user: sessionStorage.getItem('user') }
+	});
+  };
 });

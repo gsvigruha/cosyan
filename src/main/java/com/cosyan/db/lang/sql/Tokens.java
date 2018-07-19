@@ -215,6 +215,8 @@ public class Tokens {
 
   public static String SUM = "sum";
 
+  public static String WAIT = "wait";
+
   public static boolean isDelimiter(char c) {
     return c == SPACE ||
         c == TAB ||

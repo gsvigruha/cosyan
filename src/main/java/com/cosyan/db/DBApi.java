@@ -61,7 +61,7 @@ public class DBApi {
     return config;
   }
 
-  public Session adminSession() {
+  public Session newAdminSession() {
     return new AdminSession(
         metaRepo,
         transactionHandler,

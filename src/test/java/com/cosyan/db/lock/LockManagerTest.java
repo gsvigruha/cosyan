@@ -12,7 +12,7 @@ public class LockManagerTest extends UnitTestBase {
   private Thread runXTimes(String sql, int x) {
     return new Thread() {
       public void run() {
-        Session s = dbApi.adminSession();
+        Session s = dbApi.newAdminSession();
         for (int i = 0; i < x; i++) {
           s.execute(sql.replace("$x", String.valueOf(i)));
           try {
@@ -27,7 +27,7 @@ public class LockManagerTest extends UnitTestBase {
 
   @Test
   public void testParallelUpdateOfOneTable() throws InterruptedException {
-    Session s = dbApi.adminSession();
+    Session s = dbApi.newAdminSession();
     s.execute("create table t1 (a integer);");
     s.execute("insert into t1 values (1);");
     {
@@ -54,7 +54,7 @@ public class LockManagerTest extends UnitTestBase {
 
   @Test
   public void testParallelDeletesOfOneTable() throws InterruptedException {
-    Session s = dbApi.adminSession();
+    Session s = dbApi.newAdminSession();
     s.execute("create table t2 (a integer, b float, c varchar);");
     for (int i = 0; i < 100; i++) {
       s.execute("insert into t2 values (" + i + ", " + i + ".0, '" + i + "');");
@@ -87,7 +87,7 @@ public class LockManagerTest extends UnitTestBase {
 
   @Test
   public void testParallelSelectAndInserts() throws InterruptedException {
-    Session s = dbApi.adminSession();
+    Session s = dbApi.newAdminSession();
     s.execute("create table t3 (a integer, b varchar);");
     s.execute("create table t4 (x integer);");
 
@@ -103,7 +103,7 @@ public class LockManagerTest extends UnitTestBase {
 
     Thread t3 = new Thread() {
       public void run() {
-        Session s = dbApi.adminSession();
+        Session s = dbApi.newAdminSession();
         for (int i = 0; i < 25; i++) {
           QueryResult result = query("select count(1) from t3;", s);
           long cnt = (Long) result.getValues().get(0)[0];
@@ -137,7 +137,7 @@ public class LockManagerTest extends UnitTestBase {
 
   @Test
   public void testParallelInsertWithIndex1() throws InterruptedException {
-    Session s = dbApi.adminSession();
+    Session s = dbApi.newAdminSession();
     s.execute("create table t5 (a integer, constraint pk_a primary key (a));");
     s.execute("create table t6 (a integer, constraint fk_a foreign key (a) references t5(a));");
 
@@ -165,7 +165,7 @@ public class LockManagerTest extends UnitTestBase {
 
   @Test
   public void testParallelInsertWithIndex2() throws InterruptedException {
-    Session s = dbApi.adminSession();
+    Session s = dbApi.newAdminSession();
     s.execute("create table t7 (a integer, constraint pk_a primary key (a));");
     s.execute("create table t8 (a integer, constraint fk_a foreign key (a) references t7(a));");
     s.execute("insert into t7 values(1000);");

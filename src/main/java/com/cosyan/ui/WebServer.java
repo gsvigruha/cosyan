@@ -41,6 +41,7 @@ public class WebServer {
     handler.addServlet(new ServletHolder(new MonitoringServlet(sessionHandler)), "/monitoring");
     handler.addServlet(new ServletHolder(new IndexServlet(sessionHandler)), "/index");
     handler.addServlet(new ServletHolder(new SQLServlet(sessionHandler)), "/sql");
+    handler.addServlet(new ServletHolder(new SQLServlet(sessionHandler)), "/cancel");
     handler.addServlet(new ServletHolder(new EntityMetaServlet(dbApi, sessionHandler)), "/entityMeta");
     handler.addServlet(new ServletHolder(new EntityLoadServlet(dbApi, sessionHandler)), "/loadEntity");
 

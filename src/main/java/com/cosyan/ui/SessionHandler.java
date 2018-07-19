@@ -34,7 +34,7 @@ public class SessionHandler {
   public SessionHandler(DBApi dbApi) {
     this.dbApi = dbApi;
     this.random = new Random(System.currentTimeMillis());
-    this.adminSession = dbApi.adminSession();
+    this.adminSession = dbApi.newAdminSession();
   }
 
   public Session session(String userToken) throws NoSessionExpression, ConfigException {
