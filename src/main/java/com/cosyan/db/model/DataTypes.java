@@ -7,8 +7,10 @@ import java.lang.reflect.Array;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -72,6 +74,13 @@ public class DataTypes {
         @Override
         public Object fromString(String string) throws RuleException {
           throw new RuleException("List types are not uspported here.");
+        }
+
+        @Override
+        public String toString(Object obj) {
+          Object[] values = (Object[]) obj;
+          String elements = Arrays.stream(values).map(v -> DataType.this.toString(v)).collect(Collectors.joining(", "));
+          return "[" + elements + "]";
         }
       };
     }
