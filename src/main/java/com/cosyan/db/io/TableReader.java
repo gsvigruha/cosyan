@@ -3,6 +3,7 @@ package com.cosyan.db.io;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordProvider.Record;
@@ -44,9 +45,16 @@ public abstract class TableReader implements TableIO {
   }
 
   public static abstract class IterableTableReader {
+
+    protected AtomicBoolean cancelled = new AtomicBoolean(false);
+
     public abstract Object[] next() throws IOException;
 
     public abstract void close() throws IOException;
+
+    public void cancel() {
+      cancelled.set(true);
+    }
   }
 
   public static abstract class DerivedIterableTableReader extends IterableTableReader {

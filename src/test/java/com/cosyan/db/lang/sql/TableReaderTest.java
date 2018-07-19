@@ -86,7 +86,8 @@ public class TableReaderTest extends UnitTestBase {
 
   @Test
   public void testReadLogicExpressions2() throws Exception {
-    QueryResult result = query("select a = 'abc', a > 'b', a < 'x', a >= 'ab', a <= 'x' from table;");
+    QueryResult result = query(
+        "select a = 'abc', a > 'b', a < 'x', a >= 'ab', a <= 'x' from table;");
     assertArrayEquals(new Object[] { true, false, true, true, true }, result.getValues().get(0));
   }
 
@@ -134,7 +135,8 @@ public class TableReaderTest extends UnitTestBase {
 
   @Test
   public void testAggregatorsSum() throws Exception {
-    QueryResult result = query("select sum(1) as s1, sum(2.0) as s2, sum(b) as sb, sum(c) as sc from large;");
+    QueryResult result = query(
+        "select sum(1) as s1, sum(2.0) as s2, sum(b) as sb, sum(c) as sc from large;");
     assertArrayEquals(new Object[] { 4L, 8.0, 16L, 20.0 }, result.getValues().get(0));
   }
 
@@ -166,7 +168,8 @@ public class TableReaderTest extends UnitTestBase {
 
   @Test
   public void testExpressionInGroupBy() throws Exception {
-    QueryResult result = query("select a, sum(b + 1) as b, sum(c * 2.0) as c from large group by a;");
+    QueryResult result = query(
+        "select a, sum(b + 1) as b, sum(c * 2.0) as c from large group by a;");
     assertArrayEquals(new Object[] { "a", 6L, 12.0 }, result.getValues().get(0));
     assertArrayEquals(new Object[] { "b", 14L, 28.0 }, result.getValues().get(1));
   }
@@ -255,15 +258,16 @@ public class TableReaderTest extends UnitTestBase {
 
   @Test
   public void testInnerJoinTableAlias() throws Exception {
-    QueryResult result = query("select l.a, l.b, r.x, r.y from left as l inner join right as r on l.a = r.x;");
+    QueryResult result = query(
+        "select l.a, l.b, r.x, r.y from left as l inner join right as r on l.a = r.x;");
     assertArrayEquals(new Object[] { "a", 1L, "a", 2L }, result.getValues().get(0));
     assertArrayEquals(new Object[] { "c", 5L, "c", 6L }, result.getValues().get(1));
   }
 
   @Test
   public void testInnerJoinSubSelectAlias() throws Exception {
-    QueryResult result = query("select l.a, r.x from left as l inner join "
-        + "(select x from right) as r on l.a = r.x;");
+    QueryResult result = query(
+        "select l.a, r.x from left as l inner join " + "(select x from right) as r on l.a = r.x;");
     assertArrayEquals(new Object[] { "a", "a" }, result.getValues().get(0));
     assertArrayEquals(new Object[] { "c", "c" }, result.getValues().get(1));
   }
@@ -278,7 +282,8 @@ public class TableReaderTest extends UnitTestBase {
 
   @Test
   public void testInnerJoinOnExpr() throws Exception {
-    QueryResult result = query("select count(1) as cnt from left inner join right on length(a) = length(x);");
+    QueryResult result = query(
+        "select count(1) as cnt from left inner join right on length(a) = length(x);");
     assertArrayEquals(new Object[] { 6L }, result.getValues().get(0));
   }
 
@@ -286,8 +291,7 @@ public class TableReaderTest extends UnitTestBase {
   public void testLeftJoin() throws Exception {
     QueryResult result = query("select * from left left join right on a = x;");
     assertArrayEquals(new Object[] { "a", 1L, "a", 2L }, result.getValues().get(0));
-    assertArrayEquals(new Object[] { "b", 1L, null, null },
-        result.getValues().get(1));
+    assertArrayEquals(new Object[] { "b", 1L, null, null }, result.getValues().get(1));
     assertArrayEquals(new Object[] { "c", 5L, "c", 6L }, result.getValues().get(2));
   }
 
@@ -296,18 +300,15 @@ public class TableReaderTest extends UnitTestBase {
     QueryResult result = query("select * from left left join dupl on a = x;");
     assertArrayEquals(new Object[] { "a", 1L, "a", 1L }, result.getValues().get(0));
     assertArrayEquals(new Object[] { "a", 1L, "a", 5L }, result.getValues().get(1));
-    assertArrayEquals(new Object[] { "b", 1L, null, null },
-        result.getValues().get(2));
-    assertArrayEquals(new Object[] { "c", 5L, null, null },
-        result.getValues().get(3));
+    assertArrayEquals(new Object[] { "b", 1L, null, null }, result.getValues().get(2));
+    assertArrayEquals(new Object[] { "c", 5L, null, null }, result.getValues().get(3));
   }
 
   @Test
   public void testRightJoin() throws Exception {
     QueryResult result = query("select * from right right join left on x = a;");
     assertArrayEquals(new Object[] { "a", 2L, "a", 1L }, result.getValues().get(0));
-    assertArrayEquals(new Object[] { null, null, "b", 1L },
-        result.getValues().get(1));
+    assertArrayEquals(new Object[] { null, null, "b", 1L }, result.getValues().get(1));
     assertArrayEquals(new Object[] { "c", 6L, "c", 5L }, result.getValues().get(2));
   }
 
@@ -368,17 +369,17 @@ public class TableReaderTest extends UnitTestBase {
 
   @Test
   public void testStdDev() throws Exception {
-    QueryResult result = query("select "
-        + "round_to(stddev(b), 3) as b1, round_to(stddev(c), 3) as c1,"
-        + "round_to(stddev_pop(b), 3) as b2, round_to(stddev_pop(c), 3) as c2 from large;");
+    QueryResult result = query(
+        "select " + "round_to(stddev(b), 3) as b1, round_to(stddev(c), 3) as c1,"
+            + "round_to(stddev_pop(b), 3) as b2, round_to(stddev_pop(c), 3) as c2 from large;");
     assertArrayEquals(new Object[] { 2.582, 2.582, 2.236, 2.236 }, result.getValues().get(0));
   }
 
   @Test
   public void testSkewnessAndKurtosis() throws Exception {
-    QueryResult result = query("select "
-        + "round_to(skewness(b), 3) as b1, round_to(skewness(c), 3) as c1,"
-        + "round_to(kurtosis(b), 3) as b2, round_to(kurtosis(c), 3) as c2 from stats;");
+    QueryResult result = query(
+        "select " + "round_to(skewness(b), 3) as b1, round_to(skewness(c), 3) as c1,"
+            + "round_to(kurtosis(b), 3) as b2, round_to(kurtosis(c), 3) as c2 from stats;");
     assertArrayEquals(new Object[] { -0.493, 0.967, 1.619, 2.122 }, result.getValues().get(0));
   }
 
@@ -393,7 +394,8 @@ public class TableReaderTest extends UnitTestBase {
   @Test
   public void testNullEquals() throws Exception {
     ErrorResult e = error("select * from null where b = null;");
-    assertError(ModelException.class, "[26, 27]: Unsupported binary expression '=' for types 'integer' and 'null'.", e);
+    assertError(ModelException.class,
+        "[26, 27]: Unsupported binary expression '=' for types 'integer' and 'null'.", e);
   }
 
   @Test
@@ -467,33 +469,20 @@ public class TableReaderTest extends UnitTestBase {
 
   @Test
   public void testDateFunctions1() throws Exception {
-    QueryResult result = query("select "
-        + "a > date('2017-01-15') as x, "
-        + "a > date('2017-01-15 00:00:00') as y, "
-        + "date('20170115') as z from dates;");
+    QueryResult result = query("select " + "a > date('2017-01-15') as x, "
+        + "a > date('2017-01-15 00:00:00') as y, " + "date('20170115') as z from dates;");
     assertArrayEquals(new Object[] { false, false, null }, result.getValues().get(0));
     assertArrayEquals(new Object[] { true, true, null }, result.getValues().get(1));
   }
 
   @Test
   public void testDateFunctions_Add() throws Exception {
-    QueryResult result = query("select "
-        + "add_years(a, 1) as a, "
-        + "add_months(a, 1) as b, "
-        + "add_weeks(a, 1) as c, "
-        + "add_days(a, 1) as d, "
-        + "add_hours(a, 1) as e, "
-        + "add_minutes(a, 1) as f, "
-        + "add_seconds(a, 1) as g "
-        + "from dates;");
-    assertArrayEquals(new Object[] {
-        sdf.parse("20180101"),
-        sdf.parse("20170201"),
-        sdf.parse("20170108"),
-        sdf.parse("20170102"),
-        sdf2.parse("20170101 010000"),
-        sdf2.parse("20170101 000100"),
-        sdf2.parse("20170101 000001") }, result.getValues().get(0));
+    QueryResult result = query("select " + "add_years(a, 1) as a, " + "add_months(a, 1) as b, "
+        + "add_weeks(a, 1) as c, " + "add_days(a, 1) as d, " + "add_hours(a, 1) as e, "
+        + "add_minutes(a, 1) as f, " + "add_seconds(a, 1) as g " + "from dates;");
+    assertArrayEquals(new Object[] { sdf.parse("20180101"), sdf.parse("20170201"),
+        sdf.parse("20170108"), sdf.parse("20170102"), sdf2.parse("20170101 010000"),
+        sdf2.parse("20170101 000100"), sdf2.parse("20170101 000001") }, result.getValues().get(0));
   }
 
   @Test
@@ -524,6 +513,22 @@ public class TableReaderTest extends UnitTestBase {
   }
 
   @Test
+  public void testLimit() throws Exception {
+    QueryResult result = query("select a from large limit 2;");
+    assertEquals(2, result.getValues().size());
+    assertArrayEquals(new Object[] { "a" }, result.getValues().get(0));
+    assertArrayEquals(new Object[] { "a" }, result.getValues().get(1));
+  }
+
+  @Test
+  public void testLimitInSubSelect() throws Exception {
+    QueryResult result = query("select a from (select * from large limit 2);");
+    assertEquals(2, result.getValues().size());
+    assertArrayEquals(new Object[] { "a" }, result.getValues().get(0));
+    assertArrayEquals(new Object[] { "a" }, result.getValues().get(1));
+  }
+
+  @Test
   public void testAggrInAggr() throws Exception {
     ErrorResult e = error("select sum(sum(b)) from large;");
     assertError(NotAggrTableException.class, "[11, 14]: Not an aggregation table 'sum'.", e);
@@ -550,20 +555,23 @@ public class TableReaderTest extends UnitTestBase {
   @Test
   public void testWrongArgNumber() throws Exception {
     ErrorResult e = error("select length(a, 1) from table;");
-    assertError(ModelException.class, "[7, 13]: Expected 1 columns for function 'length' but got 2.", e);
+    assertError(ModelException.class,
+        "[7, 13]: Expected 1 columns for function 'length' but got 2.", e);
   }
 
   @Test
   public void testInvalidAggrArg() throws Exception {
     ErrorResult e = error("select max(a = 'x') from table;");
-    assertError(ModelException.class, "[7, 10]: Invalid argument type 'boolean' for aggregator 'max'.", e);
+    assertError(ModelException.class,
+        "[7, 10]: Invalid argument type 'boolean' for aggregator 'max'.", e);
   }
 
   @Test
   public void testInvalidJoinOn() throws Exception {
     ErrorResult e = error("select * from left inner join right on a > x;");
     assertError(ModelException.class,
-        "[40, 41]: Only 'and' and '=' binary expressions are allowed in the 'on' expression of joins, not '>'.", e);
+        "[40, 41]: Only 'and' and '=' binary expressions are allowed in the 'on' expression of joins, not '>'.",
+        e);
   }
 
   @Test
@@ -575,6 +583,7 @@ public class TableReaderTest extends UnitTestBase {
   @Test
   public void testExpressionInGroupByNotNamed() throws Exception {
     ErrorResult e = error("select count(1) from table group by a + a;");
-    assertError(ModelException.class, "[37, 38]: Expression in group by must be named: '(a + a)'.", e);
+    assertError(ModelException.class, "[37, 38]: Expression in group by must be named: '(a + a)'.",
+        e);
   }
 }

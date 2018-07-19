@@ -478,4 +478,59 @@ public class DerivedTables {
       return childTable.columnNames();
     }
   }
+  
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class LimitedTableMeta extends ExposedTableMeta {
+    private final ExposedTableMeta sourceTable;
+    private final long limit;
+
+    @Override
+    public ImmutableList<String> columnNames() {
+      return sourceTable.columnNames();
+    }
+
+    @Override
+    public ImmutableList<DataType<?>> columnTypes() {
+      return sourceTable.columnTypes();
+    }
+
+    @Override
+    public IterableTableReader reader(Object key, Resources resources, TableContext context)
+        throws IOException {
+      final IterableTableReader reader = sourceTable.reader(key, resources, context);
+      return new IterableTableReader() {
+        private int i = 0;
+
+        @Override
+        public Object[] next() throws IOException {
+          if (i >= limit) {
+            return null;
+          }
+          i++;
+          return reader.next();
+        }
+
+        @Override
+        public void close() throws IOException {
+          reader.close();
+        }
+      };
+    }
+
+    @Override
+    protected IndexColumn getColumn(Ident ident) throws ModelException {
+      return sourceTable.getColumn(ident);
+    }
+
+    @Override
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      return sourceTable.getRefTable(ident);
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources();
+    }
+  }
 }

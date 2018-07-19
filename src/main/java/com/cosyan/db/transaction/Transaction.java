@@ -21,7 +21,7 @@ public abstract class Transaction {
     return trxNumber;
   }
 
-  public void lock(MetaResources metaResources, MetaRepo metaRepo) {
+  protected void lock(MetaResources metaResources, MetaRepo metaRepo) {
     boolean locked = false;
     Random random = new Random();
     while (!locked && !cancelled.get()) {

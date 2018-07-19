@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import com.cosyan.db.io.TableReader.IterableTableReader;
@@ -45,6 +44,7 @@ import com.cosyan.db.model.DerivedTables.DistinctTableMeta;
 import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.IndexFilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
+import com.cosyan.db.model.DerivedTables.LimitedTableMeta;
 import com.cosyan.db.model.DerivedTables.SortedTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.JoinTables.JoinTableMeta;
@@ -69,9 +69,9 @@ import lombok.EqualsAndHashCode;
 public class SelectStatement extends Statement {
 
   private final Select select;
-  private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
   private ExposedTableMeta tableMeta;
+  private IterableTableReader reader;
 
   @Override
   public MetaResources compile(MetaRepo metaRepo) throws ModelException {
@@ -82,10 +82,10 @@ public class SelectStatement extends Statement {
   @Override
   public Result execute(Resources resources) throws RuleException, IOException {
     List<Object[]> valuess = new ArrayList<>();
-    IterableTableReader reader = tableMeta.reader(resources, TableContext.EMPTY);
+    reader = tableMeta.reader(resources, TableContext.EMPTY);
     try {
       Object[] values = null;
-      while ((values = reader.next()) != null && !cancelled.get()) {
+      while ((values = reader.next()) != null) {
         valuess.add(values);
       }
     } finally {
@@ -96,7 +96,7 @@ public class SelectStatement extends Statement {
 
   @Override
   public void cancel() {
-    cancelled.set(true);
+    reader.cancel();
   }
 
   @Data
@@ -108,6 +108,7 @@ public class SelectStatement extends Statement {
     private final Optional<Expression> having;
     private final Optional<ImmutableList<Expression>> orderBy;
     private final boolean distinct;
+    private final Optional<Long> limit;
 
     public ExposedTableMeta compileTable(TableProvider tableProvider) throws ModelException {
       ExposedTableMeta sourceTable = table.compile(tableProvider);
@@ -136,14 +137,21 @@ public class SelectStatement extends Statement {
         distinctTable = fullTable;
       }
 
-      ExposedTableMeta finalTable;
+      ExposedTableMeta orderedTable;
       if (orderBy.isPresent()) {
         ImmutableList<OrderColumn> orderColumns = orderColumns(distinctTable, orderBy.get());
-        finalTable = new SortedTableMeta(distinctTable, orderColumns);
+        orderedTable = new SortedTableMeta(distinctTable, orderColumns);
       } else {
-        finalTable = distinctTable;
+        orderedTable = distinctTable;
       }
-      return finalTable;
+
+      ExposedTableMeta limitedTable;
+      if (limit.isPresent()) {
+        limitedTable = new LimitedTableMeta(orderedTable, limit.get());
+      } else {
+        limitedTable = orderedTable;
+      }
+      return limitedTable;
     }
 
     public static DerivedTableMeta selectTable(

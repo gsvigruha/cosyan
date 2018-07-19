@@ -88,6 +88,5 @@ public class AlterTransaction extends Transaction {
   @Override
   public void cancel() {
     cancelled.set(true);
-    alterStatement.cancel();
   }
 }

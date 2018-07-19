@@ -325,7 +325,7 @@ public class Parser implements IParser {
       Ident username = parseIdent(tokens);
       assertNext(tokens, Tokens.IDENTIFIED);
       assertNext(tokens, Tokens.BY);
-      StringLiteral password = (StringLiteral) parseLiteral(tokens);
+      StringLiteral password = parseStringLiteral(tokens);
       return new CreateUser(username, password);
     }
   }
@@ -517,13 +517,7 @@ public class Parser implements IParser {
       String format = null;
       if (tokens.peek().is(Tokens.PARENT_OPEN)) {
         tokens.next();
-        Literal literal = parseLiteral(tokens);
-        if (literal instanceof StringLiteral) {
-          format = (String) literal.getValue();
-        } else {
-          throw new ParserException(String.format("Expected string literal but got '%s'.", literal),
-              literal.getLoc());
-        }
+        format = parseStringLiteral(tokens).getValue();
         assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
       }
       if (format == null) {
@@ -539,13 +533,7 @@ public class Parser implements IParser {
       assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
       ArrayList<String> list = new ArrayList<>();
       while (!tokens.peek().is(Tokens.PARENT_CLOSED)) {
-        Literal literal = parseLiteral(tokens);
-        if (literal instanceof StringLiteral) {
-          list.add((String) literal.getValue());
-        } else {
-          throw new ParserException(String.format("Expected string literal but got '%s'.", literal),
-              literal.getLoc());
-        }
+        list.add(parseStringLiteral(tokens).getValue());
         if (tokens.peek().is(Tokens.COMMA)) {
           tokens.next();
         }
@@ -608,8 +596,15 @@ public class Parser implements IParser {
     } else {
       orderBy = Optional.empty();
     }
+    Optional<Long> limit;
+    if (tokens.peek().is(Tokens.LIMIT)) {
+      tokens.next();
+      limit = Optional.of(parseLongLiteral(tokens).getValue());
+    } else {
+      limit = Optional.empty();
+    }
     assertPeek(tokens, String.valueOf(Tokens.COMMA_COLON), String.valueOf(Tokens.PARENT_CLOSED));
-    return new Select(columns, table, where, groupBy, having, orderBy, distinct);
+    return new Select(columns, table, where, groupBy, having, orderBy, distinct, limit);
   }
 
   private Expression parsePrimary(PeekingIterator<Token> tokens) throws ParserException {

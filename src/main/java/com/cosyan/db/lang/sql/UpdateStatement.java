@@ -97,7 +97,6 @@ public class UpdateStatement {
 
     @Override
     public void cancel() {
-
     }
   }
 }

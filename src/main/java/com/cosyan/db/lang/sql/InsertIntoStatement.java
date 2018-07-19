@@ -101,7 +101,6 @@ public class InsertIntoStatement {
 
     @Override
     public void cancel() {
-
     }
   }
 }

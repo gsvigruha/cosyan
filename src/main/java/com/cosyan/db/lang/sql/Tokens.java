@@ -217,6 +217,8 @@ public class Tokens {
 
   public static String WAIT = "wait";
 
+  public static String LIMIT = "limit";
+
   public static boolean isDelimiter(char c) {
     return c == SPACE ||
         c == TAB ||

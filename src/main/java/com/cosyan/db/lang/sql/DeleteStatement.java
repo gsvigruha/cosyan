@@ -49,7 +49,6 @@ public class DeleteStatement {
 
     @Override
     public void cancel() {
-
     }
 
     @Override
