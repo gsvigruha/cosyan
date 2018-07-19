@@ -133,9 +133,9 @@ public class JoinTables {
     }
 
     @Override
-    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
-      final IterableTableReader mainReader = mainTable.reader(key, resources, context);
-      final IterableTableReader joinReader = joinTable.reader(key, resources, context);
+    public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
+      final IterableTableReader mainReader = mainTable.reader(resources, context);
+      final IterableTableReader joinReader = joinTable.reader(resources, context);
       return new IterableTableReader() {
 
         private boolean joined;

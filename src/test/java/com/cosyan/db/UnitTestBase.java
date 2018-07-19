@@ -151,7 +151,7 @@ public abstract class UnitTestBase {
     assertEquals("Wrong row number:", expected.length, result.getValues().size());
     for (int i = 0; i < expected.length; i++) {
       for (int j = 0; j < expected[i].length; j++) {
-        assertEquals(expected[i][j], result.getValues().get(i)[j]);
+        assertEquals(String.format("%s:%s", i, j), expected[i][j], result.getValues().get(i)[j]);
       }
     }
   }

@@ -98,9 +98,9 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
       throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
     }
   }
-  
+
   @Override
-  public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
+  public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
     return new DerivedIterableTableReader(resources.createIterableReader(tableName())) {
 
       @Override

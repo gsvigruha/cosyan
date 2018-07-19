@@ -472,13 +472,13 @@ public class AlterStatementTest extends UnitTestBase {
 
   @Test
   public void testAlterTableAggRefThroughFK() throws Exception {
-    execute("create table t36 (a integer, constraint pk_a primary key (a));");
-    execute("create table t37 (a integer, b integer, constraint fk1 foreign key (a) references t36);");
+    execute("create table t36 (c integer, a integer, constraint pk_a primary key (a));");
+    execute("create table t37 (b integer, a integer, constraint fk1 foreign key (a) references t36);");
     execute("create table t38 (a integer, constraint fk2 foreign key (a) references t36);");
     execute("alter table t38 add aggref s (select sum(b) as s from fk2.rev_fk1);");
 
-    execute("insert into t36 values (1), (2), (3);");
-    execute("insert into t37 values (1, 2), (1, 2), (2, 5);");
+    execute("insert into t36 values (null, 1), (null, 2), (null, 3);");
+    execute("insert into t37 values (2, 1), (2, 1), (5, 2);");
     execute("insert into t38 values (1), (2), (3);");
 
     {
@@ -525,26 +525,26 @@ public class AlterStatementTest extends UnitTestBase {
 
   @Test
   public void testAlterTableAggRefParent() throws Exception {
-    execute("create table t44 (a integer, d integer, constraint pk_a primary key (a));");
-    execute("create table t45 (a integer, b integer, constraint fk1 foreign key (a) references t44);");
-    execute("create table t46 (a integer, c integer, constraint fk2 foreign key (a) references t44);");
+    execute("create table t44 (a varchar, d integer, constraint pk_a primary key (a));");
+    execute("create table t45 (a varchar, b integer, constraint fk1 foreign key (a) references t44);");
+    execute("create table t46 (a varchar, c integer, constraint fk2 foreign key (a) references t44);");
     execute("alter table t46 add aggref s (select sum(b * parent.c) as s from fk2.rev_fk1);");
 
-    execute("insert into t44 values (1, 100), (2, 200), (3, 300);");
-    execute("insert into t45 values (1, 2), (1, 2), (2, 5);");
-    execute("insert into t46 values (1, 10), (2, 20), (3, 30);");
+    execute("insert into t44 values ('x', 100), ('y', 200), ('z', 300);");
+    execute("insert into t45 values ('x', 2), ('x', 2), ('y', 5);");
+    execute("insert into t46 values ('x', 10), ('y', 20), ('z', 30);");
 
     {
       QueryResult result = query("select a, s.s from t46;");
       assertHeader(new String[] { "a", "s" }, result);
-      assertValues(new Object[][] { { 1L, 40L }, { 2L, 100L }, { 3L, null } }, result);
+      assertValues(new Object[][] { { "x", 40L }, { "y", 100L }, { "z", null } }, result);
     }
 
     execute("alter table t44 add aggref s (select sum(b) as s from rev_fk1 where parent.d = 100);");
     {
       QueryResult result = query("select a, s.s from t44;");
       assertHeader(new String[] { "a", "s" }, result);
-      assertValues(new Object[][] { { 1L, 4L }, { 2L, null }, { 3L, null } }, result);
+      assertValues(new Object[][] { { "x", 4L }, { "y", null }, { "z", null } }, result);
     }
   }
 
@@ -581,5 +581,20 @@ public class AlterStatementTest extends UnitTestBase {
       assertHeader(new String[] { "a", "sum" }, result);
       assertValues(new Object[][] { { 1L, 4L } }, result);
     }
+  }
+
+  @Test
+  public void testAlterTableAggRefParentOnSameTable() throws Exception {
+    execute("create table t51 (a varchar, constraint pk_a primary key (a));");
+    execute("create table t52 (b integer, a varchar, constraint fk1 foreign key (a) references t51);");
+    execute("alter table t52 add aggref s (select count(1) as c from fk1.rev_fk1 where b < parent.b);");
+
+    execute("insert into t51 values ('x'), ('y');");
+    execute("insert into t52 values (1, 'x'), (2, 'x'), (3, 'x'), (1, 'y'), (2, 'y');");
+
+    QueryResult result = query("select a, b, s.c from t52;");
+    assertHeader(new String[] { "a", "b", "c" }, result);
+    assertValues(new Object[][] { { "x", 1L, 0L }, { "x", 2L, 1L }, { "x", 3L, 2L },
+        { "y", 1L, 0L }, { "y", 2L, 1L } }, result);
   }
 }

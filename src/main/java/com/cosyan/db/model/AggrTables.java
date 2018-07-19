@@ -103,8 +103,8 @@ public abstract class AggrTables extends IterableTableMeta {
       return sourceTable;
     }
 
-    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
-      return new AggrTableReader(sourceTable.reader(key, resources, context)) {
+    public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
+      return new AggrTableReader(sourceTable.reader(resources, context)) {
         @Override
         public Object[] next() throws IOException {
           if (!aggregated) {
@@ -190,8 +190,9 @@ public abstract class AggrTables extends IterableTableMeta {
       return sourceTable;
     }
 
-    public IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException {
-      return new AggrTableReader(sourceTable.reader(key, resources, context)) {
+    @Override
+    public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
+      return new AggrTableReader(sourceTable.reader(resources, context)) {
 
         @Override
         public Object[] next() throws IOException {

@@ -69,11 +69,7 @@ public abstract class TableMeta implements CompiledObject {
 
   public static abstract class IterableTableMeta extends TableMeta {
 
-    public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
-      return reader(null, resources, context);
-    }
-
-    public abstract IterableTableReader reader(Object key, Resources resources, TableContext context) throws IOException;
+    public abstract IterableTableReader reader(Resources resources, TableContext context) throws IOException;
 
     // Iterable tables cannot override this function.
     public final Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException {

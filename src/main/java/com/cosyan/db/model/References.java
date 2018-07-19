@@ -259,12 +259,12 @@ public class References {
     }
 
     @Override
-    public IterableTableReader reader(final Object key, Resources resources, TableContext context)
-        throws IOException {
+    public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
+      Object[] parentValues = parent.values(context.values(TableContext.PARENT), resources, context);
+      Object key = parentValues[reverseForeignKey.getColumn().getIndex()];
       String table = reverseForeignKey.getRefTable().tableName();
       final IndexReader index = resources.getIndex(reverseForeignKey);
-      return new MultiFilteredTableReader(resources.reader(table), ColumnMeta.TRUE_COLUMN,
-          resources) {
+      return new MultiFilteredTableReader(resources.reader(table), ColumnMeta.TRUE_COLUMN, resources) {
 
         @Override
         protected void readPositions() throws IOException {
@@ -325,9 +325,7 @@ public class References {
     @Override
     public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
         throws IOException {
-      Object key = sourceValues[reverseForeignKey.getColumn().getIndex()];
-      IterableTableReader reader = sourceTable.reader(key, resources,
-          TableContext.withParent(sourceValues));
+      IterableTableReader reader = sourceTable.reader(resources, TableContext.withParent(sourceValues));
       Object[] aggrValues = reader.next();
       reader.close();
       Object[] values = new Object[columns.size()];
