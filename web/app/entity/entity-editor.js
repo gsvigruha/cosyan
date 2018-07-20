@@ -189,6 +189,12 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
           }, fk.refTable);
     	}
       };
+      
+      scope.$watch('entity', function(newVal, oldVal){
+    	scope.dirty = false;
+        scope.entityList = {};
+        scope.entityPick = undefined;
+      });
     },
   };
 }]);
