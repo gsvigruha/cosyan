@@ -29,7 +29,7 @@ public class LogoutServlet extends HttpServlet {
       throws ServletException, IOException {
     try {
       JSONObject obj = new JSONObject();
-      sessionHandler.logout(req.getParameter("user"));
+      sessionHandler.logout(req.getParameter("token"));
       resp.setStatus(HttpStatus.OK_200);
       resp.getWriter().println(obj);
     } catch (NoSessionExpression | ConfigException e) {

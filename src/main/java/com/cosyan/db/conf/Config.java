@@ -23,6 +23,12 @@ public class Config {
 
   public static final String AUTH = "AUTH";
 
+  public static final String WEBSERVER_NUM_THREADS = "WEBSERVER_NUM_THREADS";
+
+  public static final String DB_NUM_THREADS = "DB_NUM_THREADS";
+
+  public static final String TR_RETRY_MS = "TR_RETRY_MS";
+
   private final String confDir;
   private final Properties props;
 
@@ -96,5 +102,20 @@ public class Config {
     } catch (RuleException e) {
       throw new ConfigException(e.getMessage());
     }
+  }
+
+  private int integer(String value) throws ConfigException {
+    try {
+      return Integer.valueOf(value);
+    } catch (NumberFormatException e) {
+      throw new ConfigException(e.getMessage());
+    }
+  }
+
+  public int getInt(String key) throws ConfigException {
+    if (!props.containsKey(key)) {
+      throw new ConfigException(String.format("Missing config %s.", key));
+    }
+    return integer(props.getProperty(key));
   }
 }

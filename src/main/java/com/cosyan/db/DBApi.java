@@ -68,18 +68,22 @@ public class DBApi {
         transactionJournal,
         metaJournal,
         backupManager,
-        AuthToken.ADMIN_AUTH,
+        AuthToken.adminToken(authenticator.token()),
         new Parser(),
         new Lexer());
   }
 
   public Session authSession(String username, String password, Authenticator.Method method) throws AuthException {
+    return authSession(authenticator.auth(username, password, method));
+  }
+
+  public Session authSession(AuthToken authToken) {
     return new Session(
         metaRepo,
         transactionHandler,
         transactionJournal,
         metaJournal,
-        authenticator.auth(username, password, method),
+        authToken,
         new Parser(),
         new Lexer());
   }

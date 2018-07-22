@@ -8,7 +8,15 @@ public interface AuthToken {
 
   public boolean isAdmin();
 
+  public String token();
+
   public static class AdminToken implements AuthToken {
+
+    private final String token;
+
+    public AdminToken(String token) {
+      this.token = token;
+    }
 
     @Override
     public void close() {
@@ -23,7 +31,14 @@ public interface AuthToken {
     public boolean isAdmin() {
       return true;
     }
+
+    @Override
+    public String token() {
+      return token;
+    }
   }
 
-  public static final AuthToken ADMIN_AUTH = new AdminToken();
+  public static AdminToken adminToken(String token) {
+    return new AdminToken(token);
+  }
 }

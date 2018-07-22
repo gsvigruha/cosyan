@@ -9,11 +9,11 @@ angular.module('cosyan').controller('LoginCtrl', function($scope, $http) {
 				method : 'LOCAL',
 			}
 		}).then(function success(response) {
-			sessionStorage.setItem('user', response.data.token);
+			sessionStorage.setItem('token', response.data.token);
 			$scope.$error = undefined;
 			$scope.loggedIn = true;
 		}, function error(response) {
-			sessionStorage.removeItem('user');
+			sessionStorage.removeItem('token');
 			$scope.$error = response.data.error;
 		});
 	};
@@ -21,10 +21,10 @@ angular.module('cosyan').controller('LoginCtrl', function($scope, $http) {
 	$scope.logout = function() {
 		$http.get("/cosyan/logout", {
 			params : {
-				user : sessionStorage.getItem('user')
+				token : sessionStorage.getItem('token'),
 			}
 		}).then(function success(response) {
-			sessionStorage.removeItem('user');
+			sessionStorage.removeItem('token');
 			$scope.$error = undefined;
 			$scope.loggedIn = false;
 		}, function error(response) {

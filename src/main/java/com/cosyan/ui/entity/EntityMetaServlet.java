@@ -7,9 +7,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.eclipse.jetty.http.HttpStatus;
-import org.json.JSONObject;
-
 import com.cosyan.db.DBApi;
 import com.cosyan.db.entity.EntityHandler;
 import com.cosyan.db.session.Session;
@@ -30,13 +27,7 @@ public class EntityMetaServlet extends HttpServlet {
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     sessionHandler.execute(req, resp, (Session session) -> {
-      JSONObject result = entityHandler.entityMeta(session).toJSON();
-      if (result.has("error")) {
-        resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-      } else {
-        resp.setStatus(HttpStatus.OK_200);
-      }
-      resp.getWriter().println(result);
+      return entityHandler.entityMeta(session).toJSON();
     });
   }
 }

@@ -4,7 +4,7 @@ angular.module('cosyan')
 .controller('EntityCtrl', function($scope, $http, util) {
   $scope.load = function() {
     $http.get("/cosyan/entityMeta", {
-      params: { user: sessionStorage.getItem('user') }
+      params: { token: sessionStorage.getItem('token') }
     }).then(function success(response) {
       $scope.data = response.data;
       $scope.$error = undefined;
@@ -59,7 +59,7 @@ angular.module('cosyan')
     }
     query = query + ';';
     $http.get("/cosyan/sql", {
-      params: { sql: query, user: sessionStorage.getItem('user') }
+      params: { sql: query, token: sessionStorage.getItem('token') }
     }).then(function success(response) {
       $scope.entityList = response.data.result[0];
       $scope.$error = undefined;
@@ -78,7 +78,7 @@ angular.module('cosyan')
   $scope.openEntity = function(id) {
     var table = $scope.activeEntityType.name;
     $http.get("/cosyan/loadEntity", {
-      params: { table: table, id: id, user: sessionStorage.getItem('user') }
+      params: { table: table, id: id, token: sessionStorage.getItem('token') }
     }).then(function success(response) {
       $scope.loadedEntity = response.data.result[0];
       $scope.$error = undefined;
@@ -98,7 +98,7 @@ angular.module('cosyan')
     var idName = $scope.activeEntityType.fields[0].name;
     var query = 'delete from ' + table + ' where ' + idName + ' = ' + id + ';';
     $http.get("/cosyan/sql", {
-      params: { sql: query, user: sessionStorage.getItem('user') }
+      params: { sql: query, token: sessionStorage.getItem('token') }
     }).then(function success(response) {
       $scope.searchEntity();
     }, function error(response) {

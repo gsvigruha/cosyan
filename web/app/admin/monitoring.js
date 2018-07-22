@@ -4,7 +4,7 @@ angular.module('cosyan')
 .controller('MonitoringCtrl', function($scope, $http) {
   $scope.loadMonitoring = function() {
     $http.get("/cosyan/monitoring", {
-        params: { user: sessionStorage.getItem('user') }
+        params: { token: sessionStorage.getItem('token') }
     }).then(function(response) {
       $scope.data = response.data;
     });
@@ -15,7 +15,7 @@ angular.module('cosyan')
   
   $scope.loadIndexValues = function(indexName) {
 	$http.get("/cosyan/index", {
-	  params: { user: sessionStorage.getItem('user'), index: indexName, key: $scope.testKeys[indexName] }
+	  params: { token: sessionStorage.getItem('token'), index: indexName, key: $scope.testKeys[indexName] }
 	}).then(function success(response) {
 	  $scope.testValues[indexName] = response.data.pointers;
 	}, function error(response) {

@@ -11,6 +11,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
 import com.cosyan.db.meta.Grants.GrantException;
@@ -25,9 +26,9 @@ public class MetaResourcesTest extends UnitTestBase {
   private Lexer lexer = new Lexer();
 
   private Map<String, Resource> resources(String sql)
-      throws ModelException, ParserException, GrantException, IOException {
+      throws ModelException, ParserException, GrantException, IOException, ConfigException {
     DataTransaction transaction = transactionHandler
-        .begin(parser.parseStatements(lexer.tokenize(sql)));
+        .begin(parser.parseStatements(lexer.tokenize(sql)), metaRepo.config());
     Iterable<Resource> ress = transaction.collectResources(metaRepo).all();
     Map<String, Resource> map = new HashMap<>();
     for (Resource res : ress) {

@@ -39,7 +39,7 @@ angular.module('cosyan').directive('entityPick', ['$http', 'util', function($htt
         }
     	query = query + ';';
     	$http.get("/cosyan/sql", {
-    	  params: { sql: query, user: sessionStorage.getItem('user') }
+    	  params: { sql: query, token: sessionStorage.getItem('token') }
         }).then(function success(response) {
     	  scope.entityList = response.data.result[0];
           scope.$error = undefined;

@@ -15,9 +15,11 @@ public class LocalUsers {
   public static class LocalUserToken implements AuthToken {
 
     private final String username;
+    private final String token;
 
-    public LocalUserToken(String username) {
+    public LocalUserToken(String username, String token) {
       this.username = username;
+      this.token = token;
     }
 
     @Override
@@ -33,6 +35,11 @@ public class LocalUsers {
     public boolean isAdmin() {
       return false;
     }
+
+    @Override
+    public String token() {
+      return token;
+    }
   }
 
   private final Map<String, String> users;
@@ -47,14 +54,14 @@ public class LocalUsers {
         .printHexBinary(digest.digest(password.getBytes(StandardCharsets.UTF_8)));
   }
 
-  public AuthToken auth(String username, String password) throws AuthException {
+  public AuthToken auth(String username, String password, String token) throws AuthException {
     try {
       String hex = hash(password);
       if (users.containsKey(username) && users.get(username).equals(hex)) {
         if (username.equals("admin")) {
-          return AuthToken.ADMIN_AUTH;
+          return AuthToken.adminToken(token);
         } else {
-          return new LocalUserToken(username);
+          return new LocalUserToken(username, token);
         }
       } else {
         throw new AuthException("Wrong username/password.");

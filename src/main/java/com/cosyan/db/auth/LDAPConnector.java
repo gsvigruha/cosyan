@@ -11,10 +11,12 @@ public class LDAPConnector {
 
     private final LDAPConnection connection;
     private final String username;
+    private final String token;
 
-    public LDAPToken(LDAPConnection connection, String username) {
+    public LDAPToken(LDAPConnection connection, String username, String token) {
       this.connection = connection;
       this.username = username;
+      this.token = token;
     }
 
     @Override
@@ -31,6 +33,11 @@ public class LDAPConnector {
     public boolean isAdmin() {
       return false;
     }
+
+    @Override
+    public String token() {
+      return token;
+    }
   }
 
   private final Config config;
@@ -39,7 +46,7 @@ public class LDAPConnector {
     this.config = config;
   }
 
-  public AuthToken auth(String username, String password) throws AuthException {
+  public AuthToken auth(String username, String password, String token) throws AuthException {
     String ldapHost = config.get(Config.LDAP_HOST);
     try {
       LDAPConnection connection = new LDAPConnection(
@@ -49,7 +56,7 @@ public class LDAPConnector {
           password);
 
       if (connection.isConnected()) {
-        return new LDAPToken(connection, username);
+        return new LDAPToken(connection, username, token);
       } else {
         connection.close();
         throw new AuthException("Connection not connected.");

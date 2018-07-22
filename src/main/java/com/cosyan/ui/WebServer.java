@@ -24,14 +24,15 @@ import com.cosyan.ui.sql.SQLServlet;
 
 public class WebServer {
   public static void main(String[] args) throws Exception {
-    ThreadPool threadPool = new QueuedThreadPool(20, 4);
+    Config config = new Config(System.getenv("COSYAN_CONF"));
+    ThreadPool threadPool = new QueuedThreadPool(
+        Math.max(2, config.getInt(Config.WEBSERVER_NUM_THREADS)), 2);
     Server server = new Server(threadPool);
     ServerConnector connector = new ServerConnector(server);
     connector.setPort(7070);
     server.setConnectors(new Connector[] { connector });
 
     ServletContextHandler handler = new ServletContextHandler(server, "/cosyan");
-    Config config = new Config(System.getenv("COSYAN_CONF"));
     DBApi dbApi = new DBApi(config);
     SessionHandler sessionHandler = new SessionHandler(dbApi);
 
@@ -42,8 +43,10 @@ public class WebServer {
     handler.addServlet(new ServletHolder(new IndexServlet(sessionHandler)), "/index");
     handler.addServlet(new ServletHolder(new SQLServlet(sessionHandler)), "/sql");
     handler.addServlet(new ServletHolder(new SQLServlet(sessionHandler)), "/cancel");
-    handler.addServlet(new ServletHolder(new EntityMetaServlet(dbApi, sessionHandler)), "/entityMeta");
-    handler.addServlet(new ServletHolder(new EntityLoadServlet(dbApi, sessionHandler)), "/loadEntity");
+    handler.addServlet(new ServletHolder(new EntityMetaServlet(dbApi, sessionHandler)),
+        "/entityMeta");
+    handler.addServlet(new ServletHolder(new EntityLoadServlet(dbApi, sessionHandler)),
+        "/loadEntity");
 
     ResourceHandler resourceHandler = new ResourceHandler();
     resourceHandler.setDirectoriesListed(false);

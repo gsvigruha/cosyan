@@ -11,7 +11,9 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 
 import com.cosyan.db.auth.Authenticator.AuthException;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.ui.SessionHandler;
+import com.cosyan.ui.SessionHandler.NoSessionExpression;
 import com.google.common.collect.ImmutableMap;
 
 public class LoginServlet extends HttpServlet {
@@ -32,7 +34,7 @@ public class LoginServlet extends HttpServlet {
       obj.put("token", token);
       resp.setStatus(HttpStatus.OK_200);
       resp.getWriter().println(obj);
-    } catch (AuthException e) {
+    } catch (AuthException | ConfigException | NoSessionExpression e) {
       JSONObject error = new JSONObject();
       error.put("error", new JSONObject(ImmutableMap.of("msg", e.getMessage())));
       resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);

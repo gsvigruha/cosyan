@@ -12,7 +12,7 @@ angular.module('cosyan')
   
   $scope.loadTables = function() {
 	$http.get("/cosyan/admin", {
-      params: { user: sessionStorage.getItem('user') }
+      params: { token: sessionStorage.getItem('token') }
     }).then(function(response) {
       $scope.data = response.data;
       if ($scope.activeTable) {
@@ -23,7 +23,7 @@ angular.module('cosyan')
   
   $scope.runQuery = function(query) {
     $http.get("/cosyan/sql", {
-	  params: { sql: query, user: sessionStorage.getItem('user') }
+	  params: { sql: query, token: sessionStorage.getItem('token') }
 	}).then(function success(response) {
       $scope.$error = undefined;
       $scope.loadTables();

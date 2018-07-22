@@ -2,6 +2,8 @@ package com.cosyan.db.transaction;
 
 import java.io.IOException;
 
+import com.cosyan.db.conf.Config;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
@@ -19,8 +21,8 @@ public class AlterTransaction extends Transaction {
 
   private final AlterStatement alterStatement;
 
-  public AlterTransaction(long trxNumber, AlterStatement alterStatement) {
-    super(trxNumber);
+  public AlterTransaction(long trxNumber, AlterStatement alterStatement, Config config) throws ConfigException {
+    super(trxNumber, config.getInt(Config.TR_RETRY_MS));
     this.alterStatement = alterStatement;
   }
 

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cosyan.db.conf.Config;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.expr.SyntaxTree.Statement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
@@ -22,8 +24,8 @@ import com.google.common.collect.ImmutableList;
 public class DataTransaction extends Transaction {
   private final ImmutableList<Statement> statements;
 
-  public DataTransaction(long trxNumber, Iterable<Statement> statements) {
-    super(trxNumber);
+  public DataTransaction(long trxNumber, Iterable<Statement> statements, Config config) throws ConfigException {
+    super(trxNumber, config.getInt(Config.TR_RETRY_MS));
     this.statements = ImmutableList.copyOf(statements);
   }
 

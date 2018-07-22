@@ -38,7 +38,7 @@ angular.module('cosyan')
   
   this.meta = function(s, e, type) {
 	$http.get("/cosyan/entityMeta", {
-	  params: { user: sessionStorage.getItem('user') }
+	  params: { token: sessionStorage.getItem('token') }
 	}).then(function success(response) {
       var meta = response.data.entities.find(function(entity) {
         return entity.name === type;

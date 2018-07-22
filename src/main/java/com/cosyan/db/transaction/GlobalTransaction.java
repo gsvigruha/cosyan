@@ -2,6 +2,8 @@ package com.cosyan.db.transaction;
 
 import java.io.IOException;
 
+import com.cosyan.db.conf.Config;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
@@ -17,15 +19,15 @@ public class GlobalTransaction extends Transaction {
 
   private final GlobalStatement globalStatement;
 
-  public GlobalTransaction(long trxNumber, GlobalStatement globalStatement) {
-    super(trxNumber);
+  public GlobalTransaction(long trxNumber, GlobalStatement globalStatement, Config config) throws ConfigException {
+    super(trxNumber, config.getInt(Config.TR_RETRY_MS));
     this.globalStatement = globalStatement;
   }
 
   @Override
   public Result execute(MetaRepo metaRepo, Session session) {
     TransactionJournal journal = session.transactionJournal();
-    metaRepo.metaRepoReadLock();
+    metaRepo.metaRepoWriteLock();
     try {
       try {
         journal.start(trxNumber);
@@ -52,7 +54,7 @@ public class GlobalTransaction extends Transaction {
       }
       return new CrashResult(e);
     } finally {
-      metaRepo.metaRepoReadUnlock();
+      metaRepo.metaRepoWriteUnlock();
     }
   }
 

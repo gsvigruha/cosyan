@@ -1,9 +1,11 @@
 package com.cosyan.db.session;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.auth.Authenticator.AuthException;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.transaction.Result;
@@ -28,17 +30,12 @@ public class Session {
   private final MetaJournal metaJournal;
   private final AuthToken authToken;
 
-  private Transaction lastTransaction = null;
-  private boolean running;
+  private Transaction lastTransaction;
+  private AtomicBoolean running = new AtomicBoolean(false);
 
-  public Session(
-      MetaRepo metaRepo,
-      TransactionHandler transactionHandler,
-      TransactionJournal transactionJournal,
-      MetaJournal metaJournal,
-      AuthToken authToken,
-      IParser parser,
-      ILexer lexer) {
+  public Session(MetaRepo metaRepo, TransactionHandler transactionHandler,
+      TransactionJournal transactionJournal, MetaJournal metaJournal, AuthToken authToken,
+      IParser parser, ILexer lexer) {
     this.metaRepo = metaRepo;
     this.transactionHandler = transactionHandler;
     this.transactionJournal = transactionJournal;
@@ -48,13 +45,13 @@ public class Session {
     this.lexer = lexer;
   }
 
-  public synchronized Result execute(String sql) {
-    running = true;
+  public Result execute(String sql) {
+    running.set(true);
     try {
       PeekingIterator<Token> tokens = lexer.tokenize(sql);
       if (parser.isMeta(tokens)) {
         MetaStatement stmt = parser.parseMetaStatement(tokens);
-        lastTransaction = transactionHandler.begin(stmt);
+        lastTransaction = transactionHandler.begin(stmt, metaRepo.config());
         Result result = lastTransaction.execute(metaRepo, this);
         try {
           if (result.isSuccess() && stmt.log()) {
@@ -65,23 +62,23 @@ public class Session {
         }
         return result;
       } else {
-        lastTransaction = transactionHandler.begin(parser.parseStatements(tokens));
+        lastTransaction = transactionHandler.begin(parser.parseStatements(tokens), metaRepo.config());
         return lastTransaction.execute(metaRepo, this);
       }
-    } catch (ParserException e) {
+    } catch (ParserException | ConfigException e) {
       return new ErrorResult(e);
     } finally {
-      running = false;
+      running.set(false);
       lastTransaction = null;
     }
   }
 
   public boolean running() {
-    return running;
+    return running.get();
   }
 
   public void cancel() {
-    if (lastTransaction != null && running) {
+    if (running.get() && lastTransaction == null) {
       lastTransaction.cancel();
     }
   }

@@ -10,11 +10,13 @@ import com.cosyan.db.session.Session;
 public abstract class Transaction {
 
   protected final long trxNumber;
+  private final int retryMS;
 
   protected AtomicBoolean cancelled = new AtomicBoolean(false);
 
-  public Transaction(long trxNumber) {
+  public Transaction(long trxNumber, int retryMS) {
     this.trxNumber = trxNumber;
+    this.retryMS = retryMS;
   }
 
   public long getTrxNumber() {
@@ -29,7 +31,7 @@ public abstract class Transaction {
         locked = true;
       } else {
         try {
-          Thread.sleep(random.nextInt(100));
+          Thread.sleep(random.nextInt(retryMS));
         } catch (InterruptedException e) {
           cancelled.set(true);
         }

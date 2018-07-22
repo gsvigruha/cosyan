@@ -7,7 +7,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 
 import com.cosyan.db.session.Session;
@@ -27,13 +26,7 @@ public class SQLServlet extends HttpServlet {
       throws ServletException, IOException {
     sessionHandler.execute(req, resp, (Session session) -> {
       String sql = req.getParameter("sql");
-      JSONObject result = session.execute(sql).toJSON();
-      if (result.has("error")) {
-        resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-      } else {
-        resp.setStatus(HttpStatus.OK_200);
-      }
-      resp.getWriter().println(result);
+      return session.execute(sql).toJSON();
     });
   }
 
@@ -42,6 +35,7 @@ public class SQLServlet extends HttpServlet {
       throws ServletException, IOException {
     sessionHandler.execute(req, resp, (Session session) -> {
       session.cancel();
+      return new JSONObject();
     });
   }
 }

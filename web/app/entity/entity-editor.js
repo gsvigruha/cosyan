@@ -68,7 +68,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
         }
         
         $http.get("/cosyan/sql", {
-          params: { sql: query, user: sessionStorage.getItem('user') }
+          params: { sql: query, token: sessionStorage.getItem('token') }
         }).then(function success(response) {
           scope.dirty = false;
           var newIDs = response.data.result[0].newIDs;
@@ -96,7 +96,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
           return;
         }
         $http.get("/cosyan/loadEntity", {
-          params: { table: fk.refTable, id: fk.value, user: sessionStorage.getItem('user') }
+          params: { table: fk.refTable, id: fk.value, token: sessionStorage.getItem('token') }
         }).then(function success(response) {
           scope.entityList[fk.name] = response.data.result[0];
         }, function error(response) {
@@ -111,7 +111,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
         }
         var query = 'select * from ' + rfk.refTable + ' where ' + rfk.refColumn + ' = ' + scope.entity.fields[0].value + ';';
         $http.get("/cosyan/sql", {
-          params: { sql: query, user: sessionStorage.getItem('user') }
+          params: { sql: query, token: sessionStorage.getItem('token') }
         }).then(function success(response) {
           scope.entityList[rfk.name] = response.data.result[0];
         }, function error(response) {
@@ -127,7 +127,7 @@ angular.module('cosyan').directive('entityEditor', ['$http', 'util', function($h
     	var cols = aggref.columns.map(c => aggref.name + '.' + c).join(', ');
         var query = 'select ' + cols + ' from ' + scope.entity.type + ' where ' + scope.entity.fields[0].name + ' = ' + scope.entity.fields[0].value + ';';
         $http.get("/cosyan/sql", {
-          params: { sql: query, user: sessionStorage.getItem('user') }
+          params: { sql: query, token: sessionStorage.getItem('token') }
         }).then(function success(response) {
           var entity = { type: aggref.name, fields: [] };
           var r = response.data.result[0];

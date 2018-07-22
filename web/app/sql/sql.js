@@ -4,7 +4,7 @@ angular.module('cosyan')
 .controller('SQLCtrl', function($scope, $http) {
   $scope.run = function() {
     $http.get("/cosyan/sql", {
-      params: { sql: $scope.query, user: sessionStorage.getItem('user') }
+      params: { sql: $scope.query, token: sessionStorage.getItem('token') }
     }).then(function success(response) {
       $scope.data = response.data;
       $scope.$error = undefined;
@@ -15,7 +15,7 @@ angular.module('cosyan')
   };
   $scope.cancel = function() {
     $http.post("/cosyan/cancel", {
-	  params: { sql: $scope.query, user: sessionStorage.getItem('user') }
+	  params: { sql: $scope.query, token: sessionStorage.getItem('token') }
 	});
   };
 });

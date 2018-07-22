@@ -1,10 +1,7 @@
 package com.cosyan.db.meta;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -386,11 +383,6 @@ public class MetaRepo implements TableProvider, MetaRepoExecutor {
 
   public boolean hasAccess(MaterializedTable tableMeta, AuthToken authToken, Method method) {
     return grants.hasAccess(tableMeta, authToken, method);
-  }
-
-  public OutputStream openForWrite(
-      String tableName, ImmutableMap<String, BasicColumn> columns) throws ModelException, FileNotFoundException {
-    return new FileOutputStream(config.tableDir() + File.separator + tableName);
   }
 
   public Resources resources(MetaResources metaResources) throws IOException {
