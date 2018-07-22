@@ -33,10 +33,11 @@ public class SessionHandler {
         throws IOException, AuthException, RuleException, ConfigException;
   }
 
-  private final Map<String, AuthToken> tokens = new HashMap<>();
+  private final Map<String, Session> sessions = new HashMap<>();
   private final DBApi dbApi;
-  private ThreadPoolExecutor threadPoolExecutor;
-  private ArrayBlockingQueue<Runnable> queue;
+  private final ThreadPoolExecutor threadPoolExecutor;
+  private final ArrayBlockingQueue<Runnable> queue;
+  private final Session adminSession;
 
   public SessionHandler(DBApi dbApi) throws ConfigException {
     this.dbApi = dbApi;
@@ -45,13 +46,14 @@ public class SessionHandler {
     this.queue = new ArrayBlockingQueue<>(numThreads * 16);
     this.threadPoolExecutor = new ThreadPoolExecutor(numThreads, numThreads, Long.MAX_VALUE,
         TimeUnit.SECONDS, queue);
+    this.adminSession = dbApi.newAdminSession();
   }
 
   public Session session(String token) throws NoSessionExpression, ConfigException {
     if (!dbApi.config().auth()) {
-      return dbApi.newAdminSession();
-    } else if (tokens.containsKey(token)) {
-      return dbApi.authSession(tokens.get(token));
+      return adminSession;
+    } else if (sessions.containsKey(token)) {
+      return sessions.get(token);
     }
     throw new NoSessionExpression();
   }
@@ -74,17 +76,14 @@ public class SessionHandler {
           }
           pw.write(result.toString());
         } catch (NoSessionExpression e) {
-          e.printStackTrace();
           resp.setStatus(HttpStatus.UNAUTHORIZED_401);
           pw.println(new JSONObject(
               ImmutableMap.of("error", new JSONObject(ImmutableMap.of("msg", "Need to login.")))));
         } catch (ConfigException | RuleException | IOException e) {
-          e.printStackTrace();
           resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
           pw.println(new JSONObject(
               ImmutableMap.of("error", new JSONObject(ImmutableMap.of("msg", e.getMessage())))));
         } catch (AuthException e) {
-          e.printStackTrace();
           resp.setStatus(HttpStatus.UNAUTHORIZED_401);
           pw.println(new JSONObject(
               ImmutableMap.of("error", new JSONObject(ImmutableMap.of("msg", e.getMessage())))));
@@ -99,15 +98,9 @@ public class SessionHandler {
   public String login(String username, String password, String method)
       throws AuthException, ConfigException, NoSessionExpression {
     if (dbApi.config().auth()) {
-      for (AuthToken token : tokens.values()) {
-        if (token.username().equals(username)) {
-          dbApi.authenticator().auth(username, password, Authenticator.Method.valueOf(method));
-          return token.token();
-        }
-      }
       AuthToken token = dbApi.authenticator().auth(username, password,
           Authenticator.Method.valueOf(method));
-      tokens.put(token.token(), token);
+      sessions.put(token.token(), dbApi.authSession(token));
       return token.token();
     }
     throw new NoSessionExpression();
@@ -115,8 +108,8 @@ public class SessionHandler {
 
   public void logout(String token) throws NoSessionExpression, ConfigException {
     if (dbApi.config().auth()) {
-      if (tokens.containsKey(token)) {
-        tokens.remove(token);
+      if (sessions.containsKey(token)) {
+        sessions.remove(token);
         return;
       }
     }

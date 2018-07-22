@@ -20,6 +20,7 @@ import com.cosyan.ui.admin.LogoutServlet;
 import com.cosyan.ui.admin.MonitoringServlet;
 import com.cosyan.ui.entity.EntityLoadServlet;
 import com.cosyan.ui.entity.EntityMetaServlet;
+import com.cosyan.ui.sql.CancelServlet;
 import com.cosyan.ui.sql.SQLServlet;
 
 public class WebServer {
@@ -42,7 +43,7 @@ public class WebServer {
     handler.addServlet(new ServletHolder(new MonitoringServlet(sessionHandler)), "/monitoring");
     handler.addServlet(new ServletHolder(new IndexServlet(sessionHandler)), "/index");
     handler.addServlet(new ServletHolder(new SQLServlet(sessionHandler)), "/sql");
-    handler.addServlet(new ServletHolder(new SQLServlet(sessionHandler)), "/cancel");
+    handler.addServlet(new ServletHolder(new CancelServlet(sessionHandler)), "/cancel");
     handler.addServlet(new ServletHolder(new EntityMetaServlet(dbApi, sessionHandler)),
         "/entityMeta");
     handler.addServlet(new ServletHolder(new EntityLoadServlet(dbApi, sessionHandler)),

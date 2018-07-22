@@ -45,7 +45,7 @@ public class Session {
     this.lexer = lexer;
   }
 
-  public Result execute(String sql) {
+  public synchronized Result execute(String sql) {
     running.set(true);
     try {
       PeekingIterator<Token> tokens = lexer.tokenize(sql);
@@ -78,7 +78,7 @@ public class Session {
   }
 
   public void cancel() {
-    if (running.get() && lastTransaction == null) {
+    if (running.get() && lastTransaction != null) {
       lastTransaction.cancel();
     }
   }
