@@ -1,6 +1,7 @@
 package com.cosyan.ui.admin;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -85,7 +86,8 @@ public class SessionServlets {
         throws ServletException, IOException {
       try {
         JSONObject obj = new JSONObject();
-        String sessionId = sessionHandler.createSession(req.getParameter("token"));
+        String token = Optional.of(req.getParameter("token")).orElse("no_token");
+        String sessionId = sessionHandler.createSession(token);
         obj.put("session", sessionId);
         resp.setStatus(HttpStatus.OK_200);
         resp.getWriter().println(obj);
