@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +66,7 @@ public class SessionHandler {
     if (session == null) {
       throw new NoSessionExpression("Invalid session.");
     }
-    if (!session.authToken().token().equals(token)) {
+    if (!Objects.equals(session.authToken().token(), token)) {
       throw new NoSessionExpression("Token mismatch.");
     }
     return session;

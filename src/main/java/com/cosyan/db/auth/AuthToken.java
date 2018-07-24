@@ -1,7 +1,5 @@
 package com.cosyan.db.auth;
 
-import com.google.common.base.Preconditions;
-
 public interface AuthToken {
 
   public void close();
@@ -17,7 +15,7 @@ public interface AuthToken {
     private final String token;
 
     public AdminToken(String token) {
-      this.token = Preconditions.checkNotNull(token);
+      this.token = token;
     }
 
     @Override
