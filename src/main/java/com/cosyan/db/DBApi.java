@@ -10,7 +10,6 @@ import com.cosyan.db.entity.EntityHandler;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
 import com.cosyan.db.lock.LockManager;
-import com.cosyan.db.logging.MetaJournal;
 import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.MetaRepo;
@@ -25,7 +24,6 @@ public class DBApi {
   private final MetaRepo metaRepo;
   private final TransactionHandler transactionHandler;
   private final TransactionJournal transactionJournal;
-  private final MetaJournal metaJournal;
   private final Authenticator authenticator;
   private final BackupManager backupManager;
   private final EntityHandler entityHandler;
@@ -38,7 +36,6 @@ public class DBApi {
     metaRepo = new MetaRepo(config, lockManager, authenticator.localUsers(), new Lexer(), new Parser());
     transactionHandler = new TransactionHandler();
     transactionJournal = new TransactionJournal(config);
-    metaJournal = new MetaJournal(config);
     backupManager = new BackupManager(config, metaRepo);
     entityHandler = new EntityHandler(metaRepo, transactionHandler);
     metaRepo.init();
@@ -62,13 +59,16 @@ public class DBApi {
   }
 
   public Session newAdminSession() {
+    return newAdminSession(authenticator.token());
+  }
+
+  public Session newAdminSession(String token) {
     return new AdminSession(
         metaRepo,
         transactionHandler,
         transactionJournal,
-        metaJournal,
         backupManager,
-        AuthToken.adminToken(authenticator.token()),
+        AuthToken.adminToken(token),
         new Parser(),
         new Lexer());
   }
@@ -82,7 +82,6 @@ public class DBApi {
         metaRepo,
         transactionHandler,
         transactionJournal,
-        metaJournal,
         authToken,
         new Parser(),
         new Lexer());

@@ -15,13 +15,15 @@ import com.cosyan.db.DBApi;
 import com.cosyan.db.conf.Config;
 import com.cosyan.ui.admin.AdminServlet;
 import com.cosyan.ui.admin.IndexServlet;
-import com.cosyan.ui.admin.LoginServlet;
-import com.cosyan.ui.admin.LogoutServlet;
 import com.cosyan.ui.admin.MonitoringServlet;
+import com.cosyan.ui.admin.SessionServlets.CloseSessionServlet;
+import com.cosyan.ui.admin.SessionServlets.CreateSessionServlet;
+import com.cosyan.ui.admin.SessionServlets.LoginServlet;
+import com.cosyan.ui.admin.SessionServlets.LogoutServlet;
 import com.cosyan.ui.entity.EntityLoadServlet;
 import com.cosyan.ui.entity.EntityMetaServlet;
-import com.cosyan.ui.sql.CancelServlet;
-import com.cosyan.ui.sql.SQLServlet;
+import com.cosyan.ui.sql.SQLServlets.CancelServlet;
+import com.cosyan.ui.sql.SQLServlets.SQLServlet;
 
 public class WebServer {
   public static void main(String[] args) throws Exception {
@@ -44,6 +46,9 @@ public class WebServer {
     handler.addServlet(new ServletHolder(new IndexServlet(sessionHandler)), "/index");
     handler.addServlet(new ServletHolder(new SQLServlet(sessionHandler)), "/sql");
     handler.addServlet(new ServletHolder(new CancelServlet(sessionHandler)), "/cancel");
+    handler.addServlet(new ServletHolder(new CreateSessionServlet(sessionHandler)),
+        "/createSession");
+    handler.addServlet(new ServletHolder(new CloseSessionServlet(sessionHandler)), "/closeSession");
     handler.addServlet(new ServletHolder(new EntityMetaServlet(dbApi, sessionHandler)),
         "/entityMeta");
     handler.addServlet(new ServletHolder(new EntityLoadServlet(dbApi, sessionHandler)),
