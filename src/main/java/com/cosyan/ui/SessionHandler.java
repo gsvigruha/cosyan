@@ -71,7 +71,7 @@ public class SessionHandler {
     return session;
   }
 
-  public void cancel(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+  public synchronized void cancel(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     PrintWriter pw = resp.getWriter();
     try {
       Session session = getSession(req.getParameter("token"), req.getParameter("session"));
@@ -86,7 +86,7 @@ public class SessionHandler {
     }
   }
 
-  public void execute(HttpServletRequest req, HttpServletResponse resp, CheckedFunction func)
+  public synchronized void execute(HttpServletRequest req, HttpServletResponse resp, CheckedFunction func)
       throws IOException {
     AsyncContext async = req.startAsync(req, resp);
     PrintWriter pw = resp.getWriter();
@@ -119,7 +119,7 @@ public class SessionHandler {
     });
   }
 
-  public String login(String username, String password, String method)
+  public synchronized String login(String username, String password, String method)
       throws AuthException, ConfigException, NoSessionExpression {
     if (dbApi.config().auth()) {
       AuthToken token = dbApi.authenticator().auth(username, password,
@@ -130,7 +130,7 @@ public class SessionHandler {
     throw new NoSessionExpression("Login not enabled.");
   }
 
-  public void logout(String token) throws NoSessionExpression, ConfigException {
+  public synchronized void logout(String token) throws NoSessionExpression, ConfigException {
     if (dbApi.config().auth()) {
       if (tokens.containsKey(token)) {
         tokens.remove(token);
@@ -141,19 +141,19 @@ public class SessionHandler {
     throw new NoSessionExpression("Logout not enabled or invalid token.");
   }
 
-  public String createSession(String token) throws NoSessionExpression, ConfigException {
+  public synchronized String createSession(String token) throws NoSessionExpression, ConfigException {
     String sessionId = dbApi.authenticator().token();
     sessions.put(sessionId, session(token));
     return sessionId;
   }
 
-  public void closeSession(String token, String sessionId)
+  public synchronized void closeSession(String token, String sessionId)
       throws NoSessionExpression, ConfigException {
     getSession(token, sessionId);
     sessions.remove(sessionId);
   }
 
-  public Session session(String token) throws NoSessionExpression, ConfigException {
+  public synchronized Session session(String token) throws NoSessionExpression, ConfigException {
     if (!dbApi.config().auth()) {
       return dbApi.newAdminSession(token);
     } else if (tokens.containsKey(token)) {
