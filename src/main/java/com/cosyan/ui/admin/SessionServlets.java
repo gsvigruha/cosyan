@@ -86,7 +86,7 @@ public class SessionServlets {
         throws ServletException, IOException {
       try {
         JSONObject obj = new JSONObject();
-        String token = Optional.of(req.getParameter("token")).orElse("no_token");
+        String token = Optional.ofNullable(req.getParameter("token")).orElse("no_token");
         String sessionId = sessionHandler.createSession(token);
         obj.put("session", sessionId);
         resp.setStatus(HttpStatus.OK_200);
