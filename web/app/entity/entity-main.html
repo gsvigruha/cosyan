@@ -1,5 +1,5 @@
 <div class="toolbar">
-  <span ng-repeat="entity in data.entities">
+  <span ng-repeat="entity in entities">
     <button ng-click="switchEntityType(entity.name);" class="tab" ng-class="{selected: activeEntityType.name == entity.name}">{{ entity.name }}</button>
   </span>
 </div>

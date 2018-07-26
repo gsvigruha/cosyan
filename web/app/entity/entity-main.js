@@ -2,27 +2,16 @@
 
 angular.module('cosyan')
 .controller('EntityCtrl', function($scope, $http, util) {
-  $scope.load = function() {
-    $http.get("/cosyan/entityMeta", {
-      params: { token: sessionStorage.getItem('token') }
-    }).then(function success(response) {
-      $scope.data = response.data;
-      $scope.$error = undefined;
-      $scope.loadedEntity = undefined;
-      $scope.entityList = undefined;
-    }, function error(response) {
-      $scope.meta = undefined;
-      $scope.$error = response.data.error;
-      $scope.loadedEntity = undefined;
-      $scope.entityList = undefined;
-    });
-  };
+  util.entities(function(e) { $scope.entities = e; });
+  $scope.$error = undefined;
+  $scope.loadedEntity = undefined;
+  $scope.entityList = undefined;
   
   $scope.switchEntityType = function(name) {
-	for (var i = 0; i < $scope.data.entities.length; i++) {
-      if ($scope.data.entities[i].name == name) {
+	for (var i = 0; i < $scope.entities.length; i++) {
+      if ($scope.entities[i].name == name) {
     	$scope.searchFields = {};
-    	var aet = $scope.data.entities[i];
+    	var aet = $scope.entities[i];
     	for (var j in aet.fields) {
     	  var field = aet.fields[j];
     	  if (field.search) {
@@ -105,6 +94,4 @@ angular.module('cosyan')
       $scope.$error = response.data.error;
     });
   };
-  
-  $scope.load();
 });

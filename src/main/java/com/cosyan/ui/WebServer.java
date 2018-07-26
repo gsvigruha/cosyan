@@ -32,7 +32,7 @@ public class WebServer {
         Math.max(2, config.getInt(Config.WEBSERVER_NUM_THREADS)), 2);
     Server server = new Server(threadPool);
     ServerConnector connector = new ServerConnector(server);
-    connector.setPort(7070);
+    connector.setPort(config.port());
     server.setConnectors(new Connector[] { connector });
 
     ServletContextHandler handler = new ServletContextHandler(server, "/cosyan");

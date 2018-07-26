@@ -36,16 +36,22 @@ angular.module('cosyan')
     }
   };
   
-  this.meta = function(s, e, type) {
-	$http.get("/cosyan/entityMeta", {
-	  params: { token: sessionStorage.getItem('token') }
-	}).then(function success(response) {
-      var meta = response.data.entities.find(function(entity) {
+  this.entities = function(f) { 
+    $http.get("/cosyan/entityMeta", {
+	  params: { token: sessionStorage.getItem('token') },
+      cache: true,
+    }).then(function success(response) {
+	  f(response.data.entities);
+    });
+  };
+  
+  this.meta = function(success, error, type) {
+	function f(e) {
+      var meta = e.find(function(entity) {
         return entity.name === type;
       });
-	  s(meta);
-	}, function error(response) {
-	  e(response.data.error);
-	});  
+      success(meta);
+    };
+    this.entities(f);
   };
 });

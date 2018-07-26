@@ -23,6 +23,8 @@ public class Config {
 
   public static final String AUTH = "AUTH";
 
+  public static final String PORT = "PORT";
+
   public static final String WEBSERVER_NUM_THREADS = "WEBSERVER_NUM_THREADS";
 
   public static final String DB_NUM_THREADS = "DB_NUM_THREADS";
@@ -86,6 +88,10 @@ public class Config {
 
   public boolean auth() throws ConfigException {
     return bool(props.getProperty(AUTH));
+  }
+
+  public int port() throws ConfigException {
+    return integer(props.getProperty(PORT));
   }
 
   public static class ConfigException extends Exception {
