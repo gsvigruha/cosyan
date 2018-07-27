@@ -114,7 +114,7 @@ public abstract class Result {
       JSONObject obj = new JSONObject();
       obj.put("type", "statement");
       obj.put("lines", getAffectedLines());
-      obj.put("msg", String.format("Statement affected %s lines.", getAffectedLines()));
+      obj.put("msg", String.format("Statement affected %s records.", getAffectedLines()));
       return obj;
     }
   }
@@ -165,11 +165,13 @@ public abstract class Result {
 
     @Override
     public JSONObject toJSON() {
+      JSONArray list = new JSONArray();
       JSONObject obj = new JSONObject();
       obj.put("type", "statement");
       obj.put("lines", "1");
       obj.put("msg", "Statement affected 1 table.");
-      return obj;
+      list.put(obj);
+      return new JSONObject().put("result", list);
     }
   }
 
