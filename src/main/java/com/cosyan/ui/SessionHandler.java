@@ -90,6 +90,7 @@ public class SessionHandler {
   public synchronized void execute(HttpServletRequest req, HttpServletResponse resp, CheckedFunction func)
       throws IOException {
     AsyncContext async = req.startAsync(req, resp);
+    async.setTimeout(0);
     PrintWriter pw = resp.getWriter();
     threadPoolExecutor.execute(new Runnable() {
 
