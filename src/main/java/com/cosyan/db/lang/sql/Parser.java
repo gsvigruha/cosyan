@@ -136,7 +136,14 @@ public class Parser implements IParser {
           withHeader = true;
         }
       }
-      return new CSVImport(fileName, table, withHeader);
+      long commitAfterNRecords;
+      if (tokens.peek().is(Tokens.COMMIT)) {
+        tokens.next();
+        commitAfterNRecords = parseLongLiteral(tokens).getValue();
+      } else {
+        commitAfterNRecords = 10000;
+      }
+      return new CSVImport(fileName, table, withHeader, commitAfterNRecords);
     } else {
       Token token = tokens.next();
       throw new ParserException(String.format("Invalid file format '%s'.", token), token);
@@ -576,7 +583,7 @@ public class Parser implements IParser {
       tokens.next();
       assertNext(tokens, Tokens.BY);
       groupBy = Optional.of(parseExprs(tokens, true, String.valueOf(Tokens.COMMA_COLON),
-          String.valueOf(Tokens.PARENT_CLOSED), Tokens.HAVING, Tokens.ORDER));
+          String.valueOf(Tokens.PARENT_CLOSED), Tokens.HAVING, Tokens.ORDER, Tokens.LIMIT));
       if (tokens.peek().is(Tokens.HAVING)) {
         tokens.next();
         having = Optional.of(parseExpression(tokens, 0));
@@ -592,7 +599,7 @@ public class Parser implements IParser {
       tokens.next();
       assertNext(tokens, Tokens.BY);
       orderBy = Optional.of(parseExprs(tokens, true, String.valueOf(Tokens.COMMA_COLON),
-          String.valueOf(Tokens.PARENT_CLOSED)));
+          String.valueOf(Tokens.PARENT_CLOSED), Tokens.LIMIT));
     } else {
       orderBy = Optional.empty();
     }

@@ -43,7 +43,7 @@ public class TableStats {
     return cnt == 0;
   }
 
-  public void insert(int insertedLines) {
+  public void insert(long insertedLines) {
     cnt += insertedLines;
   }
 

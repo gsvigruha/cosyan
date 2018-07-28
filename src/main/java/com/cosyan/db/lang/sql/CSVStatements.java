@@ -43,6 +43,7 @@ public class CSVStatements {
     private final StringLiteral fileName;
     private final Ident table;
     private final boolean withHeader;
+    private final long commitAfterNRecords;
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     private MaterializedTable tableMeta;
@@ -62,22 +63,35 @@ public class CSVStatements {
       TableWriter writer = resources.writer(tableMeta.tableName());
       BufferedReader reader = new BufferedReader(new FileReader(fileName.getValue()));
       CSVFormat format = CSVFormat.DEFAULT.withRecordSeparator("\n");
+      CSVParser csvParser;
+      int numCols;
       if (withHeader) {
         format = format.withFirstRecordAsHeader();
+        csvParser = new CSVParser(reader, format);
+        numCols = csvParser.getHeaderMap().size();
+      } else {
+        csvParser = new CSVParser(reader, format);
+        numCols = tableMeta.columnNames().size();
       }
-      int lines = 0;
-      CSVParser csvParser = new CSVParser(reader, format);
+      long lines = 0;
       try {
-        int numCols = csvParser.getHeaderMap().size();
         for (CSVRecord csvRecord : csvParser) {
           Object[] values = new Object[numCols];
           for (int i = 0; i < numCols; i++) {
-            values[i] = columns.get(i).getType().fromString(csvRecord.get(i));
+            if (withHeader) {
+              String name = csvRecord.get(tableMeta.columnNames().get(i));
+              values[i] = columns.get(i).getType().fromString(name);
+            } else {
+              values[i] = columns.get(i).getType().fromString(csvRecord.get(i));  
+            }
           }
           writer.insert(resources, values, /* checkReferencingRules= */true);
           lines++;
           if (cancelled.get()) {
             break;
+          }
+          if ((lines - 1) % commitAfterNRecords == 0) {
+            writer.commit();
           }
         }
       } finally {

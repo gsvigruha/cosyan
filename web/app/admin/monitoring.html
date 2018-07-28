@@ -12,6 +12,22 @@
   <tr><td>Max memory:</td><td>{{ data.maxMemory | number : fractionSize }}</td></tr>
 </table>
 
+Tables:
+<div>
+  <table>
+    <thead>
+      <th>Name</th>
+      <th>File size</th>
+    </thead>
+    <tbody>
+      <tr ng-repeat="table in data.tables">
+        <td>{{ table.name }}</td>
+        <td>{{ table.fileSize | number : fractionSize }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
 Unique indexes:
 <div>
   <table>
@@ -37,7 +53,6 @@ Unique indexes:
     </tbody>
   </table>
 </div>
-
 
 Multi indexes:
 <div>

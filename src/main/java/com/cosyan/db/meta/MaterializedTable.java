@@ -234,7 +234,7 @@ public class MaterializedTable {
     assert !columnNames().contains(name) && !foreignKeys.containsKey(name) && !reverseForeignKeys.containsKey(name);
   }
 
-  public void insert(int insertedLines) {
+  public void insert(long insertedLines) {
     stats.insert(insertedLines);
   }
 
@@ -244,6 +244,10 @@ public class MaterializedTable {
 
   public TableStats stats() {
     return stats;
+  }
+
+  public TableStat stat() throws IOException {
+    return new TableStat(raf.length());
   }
 
   public ForeignKey createForeignKey(ForeignKeyDefinition foreignKeyDefinition, MaterializedTable refTable)

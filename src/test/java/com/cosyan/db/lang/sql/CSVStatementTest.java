@@ -48,4 +48,31 @@ public class CSVStatementTest extends UnitTestBase {
     execute("export into csv '" + output + "' (select * from t3);");
     assertFileContent(output, getClass().getClassLoader().getResource("test_3.csv").getFile());
   }
+
+  @Test
+  public void testCSVImportNoHeader() throws IOException, ParseException {
+    String csv = getClass().getClassLoader().getResource("test_2.csv").getFile();
+    execute("create table t4(a varchar, b integer);");
+    execute("import from csv '" + csv + "' into t4;");
+    QueryResult r = query("select * from t4;");
+    assertValues(new Object[][] { { "abc", 1L } }, r);
+  }
+  
+  @Test
+  public void testCSVImportDifferentColumnOrder() throws IOException, ParseException {
+    String csv = getClass().getClassLoader().getResource("test_4.csv").getFile();
+    execute("create table t5(a varchar, b integer, c float);");
+    execute("import from csv '" + csv + "' into t5 with header;");
+    QueryResult r = query("select * from t5;");
+    assertValues(new Object[][] { { "abc", 1L, 1.0 } }, r);
+  }
+
+  @Test
+  public void testCSVImportCimmitAfterNRecords() throws IOException, ParseException {
+    String csv = getClass().getClassLoader().getResource("test_5.csv").getFile();
+    execute("create table t6(a varchar);");
+    execute("import from csv '" + csv + "' into t6 commit 1;");
+    QueryResult r = query("select * from t6;");
+    assertValues(new Object[][] { { "abc" }, { "abc" }, { "abc" } }, r);
+  }
 }

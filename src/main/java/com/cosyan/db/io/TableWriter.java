@@ -59,7 +59,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   private final ReverseRuleDependencies reverseRules;
   private final Optional<PrimaryKey> primaryKey;
 
-  private final long fileIndex0;
+  private long fileIndex0;
   private long actFileIndex;
   private final Set<Long> recordsToDelete = new LinkedHashSet<>();
   private final TreeMap<Long, byte[]> recordsToInsert = new TreeMap<>();
@@ -167,20 +167,28 @@ public class TableWriter extends SeekableTableReader implements TableIO {
 
   public void commit() throws IOException {
     try {
+      int delta = 0;
       if (recordsToInsert.size() > 1) {
         ByteArrayOutputStream finalBuffer = new ByteArrayOutputStream(1024);
         for (byte[] data : recordsToInsert.values()) {
           finalBuffer.write(data);
         }
-        writer.write(fileIndex0, finalBuffer.toByteArray());
+        byte[] data = finalBuffer.toByteArray();
+        writer.write(fileIndex0, data);
+        delta = data.length;
       } else {
         for (byte[] data : recordsToInsert.values()) {
           writer.write(fileIndex0, data);
+          delta += data.length;
         }
       }
       for (Long pos : recordsToDelete) {
         writer.write(pos, new byte[] { 0 });
       }
+      recordsToInsert.clear();
+      recordsToDelete.clear();
+      fileIndex0 += delta;
+      actFileIndex = fileIndex0;
     } catch (IOException e) {
       rollback();
       writer.getChannel().truncate(fileIndex0);
@@ -205,6 +213,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   public void rollback() {
     recordsToDelete.clear();
     recordsToInsert.clear();
+    actFileIndex = fileIndex0;
     for (TableUniqueIndex index : uniqueIndexes.values()) {
       index.rollback();
     }

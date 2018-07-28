@@ -13,6 +13,7 @@ import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.TableStat;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.SessionHandler;
 import com.cosyan.ui.SessionHandler.NoSessionExpression;
@@ -39,6 +40,16 @@ public class SystemMonitoring {
       obj.put("freeMemory", Runtime.getRuntime().freeMemory());
       obj.put("totalMemory", Runtime.getRuntime().totalMemory());
       obj.put("maxMemory", Runtime.getRuntime().maxMemory());
+      {
+        JSONArray tables = new JSONArray();
+        for (Entry<String, TableStat> entry : metaRepo.tableStats().entrySet()) {
+          JSONObject table = new JSONObject();
+          table.put("name", entry.getKey());
+          table.put("fileSize", entry.getValue().getFileSize());
+          tables.put(table);
+        }
+        obj.put("tables", tables);
+      }
       {
         JSONArray uniqueIndexes = new JSONArray();
         for (Entry<String, ByteTrieStat> entry : metaRepo.uniqueIndexStats().entrySet()) {

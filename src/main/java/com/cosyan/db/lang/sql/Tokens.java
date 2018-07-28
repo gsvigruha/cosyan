@@ -149,6 +149,8 @@ public class Tokens {
 
   public static String CSV = "csv";
 
+  public static String COMMIT = "commit";
+
   public static char SPACE = ' ';
 
   public static char TAB = '\t';

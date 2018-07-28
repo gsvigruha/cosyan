@@ -35,5 +35,4 @@ public class MonitoringServlet extends HttpServlet {
       resp.getWriter().println(error);
     }
   }
-
 }

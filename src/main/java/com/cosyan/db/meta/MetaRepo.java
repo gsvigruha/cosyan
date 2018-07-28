@@ -505,6 +505,10 @@ public class MetaRepo implements TableProvider, MetaRepoExecutor {
     lockManager.unlock(metaResources);
   }
 
+  public ImmutableMap<String, TableStat> tableStats() throws IOException {
+    return Util.<String, MaterializedTable, TableStat>mapValuesIOException(tables, MaterializedTable::stat);
+  }
+
   public ImmutableMap<String, ByteTrieStat> uniqueIndexStats() throws IOException {
     return Util.<String, TableUniqueIndex, ByteTrieStat>mapValuesIOException(uniqueIndexes, TableUniqueIndex::stats);
   }
