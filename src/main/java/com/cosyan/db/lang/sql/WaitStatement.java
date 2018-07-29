@@ -3,10 +3,10 @@ package com.cosyan.db.lang.sql;
 import java.io.IOException;
 import java.util.Optional;
 
-import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.Statements.Statement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.WaitResult;
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.transaction.MetaResources;
@@ -25,7 +25,7 @@ public class WaitStatement extends Statement {
   private boolean cancelled = false;
 
   @Override
-  public MetaResources compile(MetaRepo metaRepo) throws ModelException {
+  public MetaResources compile(MetaReader metaRepo) throws ModelException {
     return MetaResources.empty();
   }
 

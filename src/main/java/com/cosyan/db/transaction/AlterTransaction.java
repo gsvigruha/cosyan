@@ -4,12 +4,12 @@ import java.io.IOException;
 
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.conf.Config.ConfigException;
-import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
+import com.cosyan.db.lang.expr.Statements.AlterStatement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
-import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.logging.MetaJournal.DBException;
+import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;

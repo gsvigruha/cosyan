@@ -2,10 +2,10 @@ package com.cosyan.db.transaction;
 
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.conf.Config.ConfigException;
-import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
-import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
-import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
-import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.Statements.AlterStatement;
+import com.cosyan.db.lang.expr.Statements.GlobalStatement;
+import com.cosyan.db.lang.expr.Statements.MetaStatement;
+import com.cosyan.db.lang.expr.Statements.Statement;
 
 public class TransactionHandler {
 

@@ -5,10 +5,10 @@ import java.util.Optional;
 
 import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
-import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.Statements.Statement;
 import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.meta.MaterializedTable;
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
@@ -33,7 +33,7 @@ public class LoadEntityStatement extends Statement {
   private BasicColumn column;
 
   @Override
-  public MetaResources compile(MetaRepo metaRepo) throws ModelException {
+  public MetaResources compile(MetaReader metaRepo) throws ModelException {
     tableMeta = metaRepo.table(new Ident(table, new Loc(0, 0)));
     header = tableMeta.columns().values().asList();
     Optional<BasicColumn> pkColumn = tableMeta.pkColumn();

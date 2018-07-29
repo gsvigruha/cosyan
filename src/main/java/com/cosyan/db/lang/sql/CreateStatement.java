@@ -10,8 +10,8 @@ import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Expression;
-import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
-import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
+import com.cosyan.db.lang.expr.Statements.AlterStatement;
+import com.cosyan.db.lang.expr.Statements.GlobalStatement;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ConstraintDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
@@ -158,11 +158,6 @@ public class CreateStatement {
         tableMeta.addRule(rule);
       }
     }
-
-    @Override
-    public boolean log() {
-      return true;
-    }
   }
 
   @Data
@@ -183,11 +178,6 @@ public class CreateStatement {
       basicColumn.checkIndexType(column);
       indexWriter = metaRepo.registerIndex(tableMeta, basicColumn);
       return MetaResources.tableMeta(tableMeta);
-    }
-
-    @Override
-    public boolean log() {
-      return true;
     }
 
     @Override

@@ -5,8 +5,8 @@ import java.io.IOException;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.io.TableWriter;
-import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
-import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
+import com.cosyan.db.lang.expr.Statements.AlterStatement;
+import com.cosyan.db.lang.expr.Statements.GlobalStatement;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.transaction.Result;
@@ -47,11 +47,6 @@ public class AlterStatementConstraints {
     }
 
     @Override
-    public boolean log() {
-      return true;
-    }
-
-    @Override
     public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
       writer = resources.writer(table.getString());
@@ -83,11 +78,6 @@ public class AlterStatementConstraints {
       MaterializedTable tableMeta = metaRepo.table(table);
       rule = tableMeta.createRule(constraint);
       return MetaResources.tableMeta(tableMeta).merge(rule.getColumn().readResources());
-    }
-
-    @Override
-    public boolean log() {
-      return true;
     }
 
     @Override
@@ -124,11 +114,6 @@ public class AlterStatementConstraints {
             constraint, table), constraint);
       }
       return Result.META_OK;
-    }
-
-    @Override
-    public boolean log() {
-      return true;
     }
   }
 }

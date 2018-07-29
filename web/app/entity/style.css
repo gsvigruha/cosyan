@@ -76,6 +76,10 @@ td.empty {
     color: white;
 }
 
+.editor input {
+    width: 80px;
+}
+
 div.entity-editor-tab {
     display: flex;
     padding: 4px;

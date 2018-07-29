@@ -1,7 +1,5 @@
 package com.cosyan.db.lang.expr;
 
-import static com.cosyan.db.lang.expr.SyntaxTree.assertType;
-
 import java.io.IOException;
 import java.util.Date;
 

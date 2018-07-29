@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import com.cosyan.db.DBApi;
 import com.cosyan.db.UnitTestBase;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -16,7 +17,7 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 public class BackupManagerTest extends UnitTestBase {
 
   @Test
-  public void testCreateBackup() throws IOException, DBException {
+  public void testCreateBackup() throws IOException, DBException, ConfigException {
     BackupManager backupManager = new BackupManager(config, metaRepo);
     execute("create table t1 (a varchar, b integer);");
     execute("insert into t1 values ('abc', 123), ('abc', 123), ('abc', 123);");

@@ -3,7 +3,7 @@ package com.cosyan.db.lang.sql;
 import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
-import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
+import com.cosyan.db.lang.expr.Statements.GlobalStatement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MaterializedTable;
@@ -44,11 +44,6 @@ public class DropStatement {
       metaRepo.dropTable(tableMeta, authToken);
       return Result.META_OK;
     }
-
-    @Override
-    public boolean log() {
-      return true;
-    }
   }
 
   @Data
@@ -69,11 +64,6 @@ public class DropStatement {
       }
       metaRepo.dropIndex(tableMeta, basicColumn, authToken);
       return Result.META_OK;
-    }
-
-    @Override
-    public boolean log() {
-      return true;
     }
   }
 }

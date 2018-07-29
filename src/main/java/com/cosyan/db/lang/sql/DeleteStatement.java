@@ -4,13 +4,13 @@ import java.io.IOException;
 
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Expression;
-import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.Statements.Statement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.StatementResult;
 import com.cosyan.db.logic.PredicateHelper;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
 import com.cosyan.db.meta.MaterializedTable;
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.ColumnMeta;
@@ -52,7 +52,7 @@ public class DeleteStatement {
     }
 
     @Override
-    public MetaResources compile(MetaRepo metaRepo) throws ModelException {
+    public MetaResources compile(MetaReader metaRepo) throws ModelException {
       MaterializedTable materializedTableMeta = metaRepo.table(table);
       tableMeta = materializedTableMeta.reader();
       whereColumn = where.compileColumn(tableMeta);

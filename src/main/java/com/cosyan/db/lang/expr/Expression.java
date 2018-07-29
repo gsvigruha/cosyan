@@ -2,7 +2,6 @@ package com.cosyan.db.lang.expr;
 
 import java.io.IOException;
 
-import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta;
@@ -53,7 +52,7 @@ public abstract class Expression extends Node {
     public DerivedColumn compile(TableMeta sourceTable) throws ModelException {
       if (type == Type.NOT) {
         ColumnMeta exprColumn = expr.compileColumn(sourceTable);
-        SyntaxTree.assertType(DataTypes.BoolType, exprColumn.getType(), expr.loc());
+        Node.assertType(DataTypes.BoolType, exprColumn.getType(), expr.loc());
         return new DerivedColumnWithDeps(
             DataTypes.BoolType,
             exprColumn.tableDependencies(),

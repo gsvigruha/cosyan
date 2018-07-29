@@ -23,9 +23,9 @@ public class SQLServlets {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
-      sessionHandler.execute(req, resp, (Session task) -> {
+      sessionHandler.execute(req, resp, (Session session) -> {
         String sql = req.getParameter("sql");
-        return task.execute(sql).toJSON();
+        return session.execute(sql).toJSON();
       });
     }
   }

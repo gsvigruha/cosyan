@@ -1,7 +1,5 @@
 package com.cosyan.db.lang.sql;
 
-import static com.cosyan.db.lang.expr.SyntaxTree.assertType;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -16,15 +14,15 @@ import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.lang.expr.BinaryExpression;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.FuncCallExpression;
-import com.cosyan.db.lang.expr.SyntaxTree.Node;
-import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.Node;
+import com.cosyan.db.lang.expr.Statements.Statement;
 import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.logic.PredicateHelper;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.meta.TableProvider;
@@ -74,7 +72,7 @@ public class SelectStatement extends Statement {
   private IterableTableReader reader;
 
   @Override
-  public MetaResources compile(MetaRepo metaRepo) throws ModelException {
+  public MetaResources compile(MetaReader metaRepo) throws ModelException {
     tableMeta = select.compileTable(metaRepo);
     return tableMeta.readResources();
   }
@@ -226,7 +224,7 @@ public class SelectStatement extends Statement {
         ExposedTableMeta sourceTable, Expression where)
         throws ModelException {
       ColumnMeta whereColumn = where.compileColumn(sourceTable);
-      assertType(DataTypes.BoolType, whereColumn.getType(), where.loc());
+      Node.assertType(DataTypes.BoolType, whereColumn.getType(), where.loc());
       if (sourceTable instanceof SeekableTableMeta) {
         SeekableTableMeta tableMeta = (SeekableTableMeta) sourceTable;
         VariableEquals clause = PredicateHelper.getBestClause(tableMeta, where);
@@ -245,7 +243,7 @@ public class SelectStatement extends Statement {
         Optional<Expression> having) throws ModelException {
       if (having.isPresent()) {
         ColumnMeta havingColumn = having.get().compileColumn(sourceTable);
-        assertType(DataTypes.BoolType, havingColumn.getType(), having.get().loc());
+        Node.assertType(DataTypes.BoolType, havingColumn.getType(), having.get().loc());
         return havingColumn;
       } else {
         return ColumnMeta.TRUE_COLUMN;

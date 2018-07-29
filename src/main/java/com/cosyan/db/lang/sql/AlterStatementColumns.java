@@ -3,7 +3,7 @@ package com.cosyan.db.lang.sql;
 import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
-import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
+import com.cosyan.db.lang.expr.Statements.AlterStatement;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.MaterializedTable;
@@ -37,11 +37,6 @@ public class AlterStatementColumns {
     }
 
     @Override
-    public boolean log() {
-      return true;
-    }
-
-    @Override
     public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(table.getString());
       tableMeta.addColumn(basicColumn);
@@ -68,11 +63,6 @@ public class AlterStatementColumns {
       basicColumn = tableMeta.column(column);
       tableMeta.checkDeleteColumn(column);
       return MetaResources.tableMeta(tableMeta);
-    }
-
-    @Override
-    public boolean log() {
-      return true;
     }
 
     @Override
@@ -115,11 +105,6 @@ public class AlterStatementColumns {
             column.getName());
       }
       return MetaResources.tableMeta(tableMeta);
-    }
-
-    @Override
-    public boolean log() {
-      return true;
     }
 
     @Override

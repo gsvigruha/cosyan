@@ -22,12 +22,12 @@ public class EntityHandler {
   public Result entityMeta(Session session) throws ConfigException {
     val stmt = new EntityMetaStatement();
     val transaction = transactionHandler.begin(stmt, metaRepo.config());
-    return transaction.execute(metaRepo, session);
+    return session.execute(transaction);
   }
 
   public Result loadEntity(String table, String id, Session session) throws ConfigException {
     val stmt = new LoadEntityStatement(table, id);
     val transaction = transactionHandler.begin(ImmutableList.of(stmt), metaRepo.config());
-    return transaction.execute(metaRepo, session);
+    return session.execute(transaction);
   }
 }

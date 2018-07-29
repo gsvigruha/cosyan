@@ -5,9 +5,6 @@ import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
@@ -20,7 +17,6 @@ import com.cosyan.db.DBApi;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.auth.Authenticator;
 import com.cosyan.db.auth.Authenticator.AuthException;
-import com.cosyan.db.conf.Config;
 import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.session.Session;
@@ -36,19 +32,12 @@ public class SessionHandler {
 
   private final Map<String, AuthToken> tokens;
   private final DBApi dbApi;
-  private final ThreadPoolExecutor threadPoolExecutor;
-  private final ArrayBlockingQueue<Runnable> queue;
   private final Map<String, Session> sessions;
 
   public SessionHandler(DBApi dbApi) throws ConfigException {
     this.dbApi = dbApi;
     this.sessions = new HashMap<>();
     this.tokens = new HashMap<>();
-    int numThreads = dbApi.config().getInt(Config.DB_NUM_THREADS);
-    // TODO: figure out capacity.
-    this.queue = new ArrayBlockingQueue<>(numThreads * 16);
-    this.threadPoolExecutor = new ThreadPoolExecutor(numThreads, numThreads, Long.MAX_VALUE,
-        TimeUnit.SECONDS, queue);
   }
 
   private Session getSession(HttpServletRequest req) throws NoSessionExpression, ConfigException {
@@ -92,7 +81,7 @@ public class SessionHandler {
     AsyncContext async = req.startAsync(req, resp);
     async.setTimeout(0);
     PrintWriter pw = resp.getWriter();
-    threadPoolExecutor.execute(new Runnable() {
+    dbApi.execute(new Runnable() {
 
       @Override
       public void run() {

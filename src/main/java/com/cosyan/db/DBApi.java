@@ -1,11 +1,15 @@
 package com.cosyan.db;
 
 import java.io.IOException;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.auth.Authenticator;
 import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.entity.EntityHandler;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
@@ -28,7 +32,10 @@ public class DBApi {
   private final BackupManager backupManager;
   private final EntityHandler entityHandler;
 
-  public DBApi(Config config) throws IOException, DBException {
+  private final ThreadPoolExecutor threadPoolExecutor;
+  private final ArrayBlockingQueue<Runnable> queue;
+
+  public DBApi(Config config) throws IOException, DBException, ConfigException {
     // System.out.println("Server starting in root directory " + config.confDir());
     this.config = config;
     LockManager lockManager = new LockManager();
@@ -40,6 +47,11 @@ public class DBApi {
     entityHandler = new EntityHandler(metaRepo, transactionHandler);
     metaRepo.init();
     // System.out.println("Server started.");
+    int numThreads = config.getInt(Config.DB_NUM_THREADS);
+    // TODO: figure out capacity.
+    this.queue = new ArrayBlockingQueue<>(numThreads * 16);
+    this.threadPoolExecutor = new ThreadPoolExecutor(numThreads, numThreads, Long.MAX_VALUE,
+        TimeUnit.SECONDS, queue);
   }
 
   public MetaRepo getMetaRepo() {
@@ -89,5 +101,9 @@ public class DBApi {
 
   public void shutdown() throws IOException {
     metaRepo.shutdown();
+  }
+
+  public void execute(Runnable runnable) {
+    threadPoolExecutor.execute(runnable);
   }
 }

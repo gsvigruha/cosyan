@@ -1,8 +1,8 @@
 package com.cosyan.db.session;
 
 import com.cosyan.db.lang.expr.Expression;
-import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
-import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.Statements.MetaStatement;
+import com.cosyan.db.lang.expr.Statements.Statement;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.lang.sql.Tokens.Token;

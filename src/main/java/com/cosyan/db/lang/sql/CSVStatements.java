@@ -15,13 +15,13 @@ import org.apache.commons.csv.CSVRecord;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
-import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.Statements.Statement;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.lang.transaction.Result.StatementResult;
 import com.cosyan.db.meta.MaterializedTable;
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
@@ -50,7 +50,7 @@ public class CSVStatements {
     private ImmutableList<BasicColumn> columns;
 
     @Override
-    public MetaResources compile(MetaRepo metaRepo) throws ModelException {
+    public MetaResources compile(MetaReader metaRepo) throws ModelException {
       tableMeta = metaRepo.table(table);
       columns = tableMeta.columns().values().asList();
       return MetaResources.insertIntoTable(tableMeta)
@@ -117,7 +117,7 @@ public class CSVStatements {
     private ExposedTableMeta tableMeta;
 
     @Override
-    public MetaResources compile(MetaRepo metaRepo) throws ModelException {
+    public MetaResources compile(MetaReader metaRepo) throws ModelException {
       tableMeta = select.compileTable(metaRepo);
       return tableMeta.readResources();
     }

@@ -1,7 +1,7 @@
 package com.cosyan.db.lang.sql;
 
 import com.cosyan.db.auth.AuthToken;
-import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
+import com.cosyan.db.lang.expr.Statements.GlobalStatement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants;
 import com.cosyan.db.meta.Grants.GrantAllTablesToken;
@@ -42,11 +42,6 @@ public class GrantStatement {
       }
       metaRepo.createGrant(grantToken, authToken);
       return Result.META_OK;
-    }
-
-    @Override
-    public boolean log() {
-      return true;
     }
   }
 }

@@ -8,11 +8,11 @@ import java.util.Optional;
 
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Literals.Literal;
-import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.Statements.Statement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.InsertIntoResult;
 import com.cosyan.db.meta.MaterializedTable;
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
@@ -40,7 +40,7 @@ public class InsertIntoStatement {
     private ImmutableMap<Ident, Integer> indexes;
 
     @Override
-    public MetaResources compile(MetaRepo metaRepo) throws ModelException {
+    public MetaResources compile(MetaReader metaRepo) throws ModelException {
       tableMeta = metaRepo.table(table);
       ImmutableMap.Builder<Ident, Integer> indexesBuilder = ImmutableMap.builder();
       if (columns.isPresent()) {

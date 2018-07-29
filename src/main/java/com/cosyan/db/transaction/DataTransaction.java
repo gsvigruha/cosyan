@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.conf.Config.ConfigException;
-import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.Statements.Statement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;

@@ -57,7 +57,7 @@ public class CSVStatementTest extends UnitTestBase {
     QueryResult r = query("select * from t4;");
     assertValues(new Object[][] { { "abc", 1L } }, r);
   }
-  
+
   @Test
   public void testCSVImportDifferentColumnOrder() throws IOException, ParseException {
     String csv = getClass().getClassLoader().getResource("test_4.csv").getFile();

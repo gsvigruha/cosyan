@@ -1,6 +1,7 @@
 package com.cosyan.db.lang.sql;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.util.Optional;
 
@@ -14,7 +15,7 @@ import com.cosyan.db.lang.expr.FuncCallExpression;
 import com.cosyan.db.lang.expr.Literals.DoubleLiteral;
 import com.cosyan.db.lang.expr.Literals.LongLiteral;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
-import com.cosyan.db.lang.expr.SyntaxTree.Statement;
+import com.cosyan.db.lang.expr.Statements.Statement;
 import com.cosyan.db.lang.sql.SelectStatement.AsteriskExpression;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.sql.SelectStatement.TableRef;

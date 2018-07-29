@@ -3,7 +3,7 @@ package com.cosyan.db.session;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.conf.Config.ConfigException;
-import com.cosyan.db.lang.expr.SyntaxTree.MetaStatement;
+import com.cosyan.db.lang.expr.Statements.MetaStatement;
 import com.cosyan.db.lang.sql.Tokens.Token;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
@@ -26,8 +26,8 @@ public class Session {
 
   private Transaction lastTransaction = null;
 
-  public Session(MetaRepo metaRepo, TransactionHandler transactionHandler,
-      TransactionJournal transactionJournal, AuthToken authToken, IParser parser, ILexer lexer) {
+  public Session(MetaRepo metaRepo, TransactionHandler transactionHandler, TransactionJournal transactionJournal, AuthToken authToken,
+      IParser parser, ILexer lexer) {
     this.metaRepo = metaRepo;
     this.transactionHandler = transactionHandler;
     this.transactionJournal = transactionJournal;
@@ -37,22 +37,30 @@ public class Session {
   }
 
   public Result execute(String sql) {
+    try {
+      Transaction transaction = transaction(sql);
+      return execute(transaction);
+    } catch (ParserException | ConfigException e) {
+      return new ErrorResult(e);
+    }
+  }
+
+  private Transaction transaction(String sql) throws ConfigException, ParserException {
+    PeekingIterator<Token> tokens = lexer.tokenize(sql);
+    if (parser.isMeta(tokens)) {
+      MetaStatement stmt = parser.parseMetaStatement(tokens);
+      return transactionHandler.begin(stmt, metaRepo.config());
+    } else {
+      return transactionHandler.begin(parser.parseStatements(tokens), metaRepo.config());
+    }
+  }
+
+  public Result execute(Transaction transaction) {
     synchronized (this) {
       if (lastTransaction != null) {
         return new ErrorResult(new IllegalStateException("Already executing."));
       }
-      try {
-        PeekingIterator<Token> tokens = lexer.tokenize(sql);
-        if (parser.isMeta(tokens)) {
-          MetaStatement stmt = parser.parseMetaStatement(tokens);
-          lastTransaction = transactionHandler.begin(stmt, metaRepo.config());
-        } else {
-          lastTransaction = transactionHandler.begin(parser.parseStatements(tokens),
-              metaRepo.config());
-        }
-      } catch (ParserException | ConfigException e) {
-        return new ErrorResult(e);
-      }
+      lastTransaction = transaction;
     }
     try {
       return lastTransaction.execute(metaRepo, this);

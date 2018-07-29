@@ -2,7 +2,6 @@ package com.cosyan.db.lang.expr;
 
 import java.util.Optional;
 
-import com.cosyan.db.lang.expr.SyntaxTree.Node;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;

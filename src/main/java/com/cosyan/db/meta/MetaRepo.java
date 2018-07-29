@@ -65,7 +65,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 
-public class MetaRepo implements TableProvider, MetaRepoExecutor {
+public class MetaRepo implements MetaRepoExecutor, MetaReader {
 
   private final Config config;
   private final HashMap<String, MaterializedTable> tables;
@@ -175,6 +175,7 @@ public class MetaRepo implements TableProvider, MetaRepoExecutor {
     return tables.get(name);
   }
 
+  @Override
   public MaterializedTable table(Ident ident) throws ModelException {
     if (!tables.containsKey(ident.getString())) {
       throw new ModelException("Table '" + ident.getString() + "' does not exist.", ident);

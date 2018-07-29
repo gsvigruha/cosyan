@@ -3,8 +3,8 @@ package com.cosyan.db.lang.sql;
 import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
-import com.cosyan.db.lang.expr.SyntaxTree.AlterStatement;
-import com.cosyan.db.lang.expr.SyntaxTree.GlobalStatement;
+import com.cosyan.db.lang.expr.Statements.AlterStatement;
+import com.cosyan.db.lang.expr.Statements.GlobalStatement;
 import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
@@ -39,11 +39,6 @@ public class AlterStatementRefs {
     }
 
     @Override
-    public boolean log() {
-      return true;
-    }
-
-    @Override
     public Result executeData(MetaRepoExecutor metaRepo, Resources resources) {
       MaterializedTable tableMeta = resources.meta(table.getString());
       tableMeta.addRef(new TableRef(
@@ -71,11 +66,6 @@ public class AlterStatementRefs {
         throw new ModelException(String.format("Aggref '%s' not found in table '%s'.", ref, table), ref);
       }
       return Result.META_OK;
-    }
-
-    @Override
-    public boolean log() {
-      return true;
     }
   }
 }

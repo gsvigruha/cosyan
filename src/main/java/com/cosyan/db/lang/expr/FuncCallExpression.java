@@ -87,7 +87,7 @@ public class FuncCallExpression extends Expression {
       Expression expr = objColumn != null ? i == 0 ? object : args.get(i - 1) : args.get(i);
       if (!(expectedType == DataTypes.DoubleType && dataType == DataTypes.LongType)) {
         // Skip check for Double/Long pairs, there will be an implicit type conversion.
-        SyntaxTree.assertType(expectedType, dataType, expr.loc());
+        assertType(expectedType, dataType, expr.loc());
       }
       resources = resources.merge(argColumns.get(i).readResources());
       tableDependencies.addToThis(argColumns.get(i).tableDependencies());
