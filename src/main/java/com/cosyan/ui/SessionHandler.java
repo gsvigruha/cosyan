@@ -14,11 +14,11 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 
 import com.cosyan.db.DBApi;
+import com.cosyan.db.DBApi.Task;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.auth.Authenticator;
 import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.conf.Config.ConfigException;
-import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.session.Session;
 import com.google.common.collect.ImmutableMap;
 
@@ -26,8 +26,7 @@ public class SessionHandler {
 
   @FunctionalInterface
   public interface CheckedFunction {
-    JSONObject apply(Session session)
-        throws IOException, AuthException, RuleException, ConfigException;
+    JSONObject apply(Session session);
   }
 
   private final Map<String, AuthToken> tokens;
@@ -69,52 +68,49 @@ public class SessionHandler {
       resp.setStatus(HttpStatus.OK_200);
     } catch (NoSessionExpression e) {
       resp.setStatus(HttpStatus.UNAUTHORIZED_401);
-      pw.println(new JSONObject(
-          ImmutableMap.of("error", new JSONObject(ImmutableMap.of("msg", e.getMessage())))));
+      pw.println(new JSONObject(ImmutableMap.of("error", new JSONObject(ImmutableMap.of("msg", e.getMessage())))));
     } finally {
       pw.close();
     }
   }
 
-  public synchronized void execute(HttpServletRequest req, HttpServletResponse resp, CheckedFunction func)
-      throws IOException {
+  public synchronized void execute(HttpServletRequest req, HttpServletResponse resp, CheckedFunction func) throws IOException {
     AsyncContext async = req.startAsync(req, resp);
     async.setTimeout(0);
     PrintWriter pw = resp.getWriter();
-    dbApi.execute(new Runnable() {
+    try {
+      Session session = getSession(req);
+      dbApi.execute(new Task(session) {
 
-      @Override
-      public void run() {
-        try {
-          Session session = getSession(req);
-          JSONObject result = func.apply(session);
-          if (result.has("error")) {
-            resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-          } else {
-            resp.setStatus(HttpStatus.OK_200);
+        @Override
+        public void run(Session session) {
+          try {
+            JSONObject result = func.apply(session);
+            if (result.has("error")) {
+              resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+            } else {
+              resp.setStatus(HttpStatus.OK_200);
+            }
+            pw.write(result.toString());
+          } finally {
+            async.complete();
+            pw.close();
           }
-          pw.write(result.toString());
-        } catch (ConfigException | RuleException | IOException e) {
-          resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-          pw.println(new JSONObject(
-              ImmutableMap.of("error", new JSONObject(ImmutableMap.of("msg", e.getMessage())))));
-        } catch (AuthException | NoSessionExpression e) {
-          resp.setStatus(HttpStatus.UNAUTHORIZED_401);
-          pw.println(new JSONObject(
-              ImmutableMap.of("error", new JSONObject(ImmutableMap.of("msg", e.getMessage())))));
-        } finally {
-          async.complete();
-          pw.close();
         }
-      }
-    });
+      });
+    } catch (NoSessionExpression e) {
+      resp.setStatus(HttpStatus.UNAUTHORIZED_401);
+      pw.println(new JSONObject(ImmutableMap.of("error", new JSONObject(ImmutableMap.of("msg", e.getMessage())))));
+    } catch (ConfigException e) {
+      resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+      pw.println(new JSONObject(ImmutableMap.of("error", new JSONObject(ImmutableMap.of("msg", e.getMessage())))));
+    }
   }
 
   public synchronized String login(String username, String password, String method)
       throws AuthException, ConfigException, NoSessionExpression {
     if (dbApi.config().auth()) {
-      AuthToken token = dbApi.authenticator().auth(username, password,
-          Authenticator.Method.valueOf(method));
+      AuthToken token = dbApi.authenticator().auth(username, password, Authenticator.Method.valueOf(method));
       tokens.put(token.token(), token);
       return token.token();
     }
@@ -138,8 +134,7 @@ public class SessionHandler {
     return sessionId;
   }
 
-  public synchronized void closeSession(String token, String sessionId)
-      throws NoSessionExpression, ConfigException {
+  public synchronized void closeSession(String token, String sessionId) throws NoSessionExpression, ConfigException {
     getSession(token, sessionId);
     sessions.remove(sessionId);
   }

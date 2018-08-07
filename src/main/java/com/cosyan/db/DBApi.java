@@ -44,7 +44,7 @@ public class DBApi {
     transactionHandler = new TransactionHandler();
     transactionJournal = new TransactionJournal(config);
     backupManager = new BackupManager(config, metaRepo);
-    entityHandler = new EntityHandler(metaRepo, transactionHandler);
+    entityHandler = new EntityHandler(metaRepo.config(), transactionHandler);
     metaRepo.init();
     // System.out.println("Server started.");
     int numThreads = config.getInt(Config.DB_NUM_THREADS);
@@ -105,5 +105,22 @@ public class DBApi {
 
   public void execute(Runnable runnable) {
     threadPoolExecutor.execute(runnable);
+  }
+
+  public static abstract class Task implements Runnable {
+
+    private final Session session;
+
+    public Task(Session session) {
+      this.session = session;
+    }
+
+    @Override
+    public void run() {
+      run(session);
+    }
+
+    public abstract void run(Session session);
+    
   }
 }
