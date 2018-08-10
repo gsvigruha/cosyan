@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -22,6 +23,8 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import com.cosyan.db.conf.Config;
+import com.cosyan.db.conf.ConfigType;
 import com.cosyan.db.doc.FunctionDocumentation.Func;
 import com.cosyan.db.doc.FunctionDocumentation.FuncCat;
 import com.cosyan.db.model.Aggregators;
@@ -41,19 +44,40 @@ public class DocPrinter {
 
   public static void main(String[] args) throws IOException {
     String resourcesDir = args[0] + File.separator + "resources";
-    String funcDocRootDir = resourcesDir + File.separator + "doc" + File.separator + "func"
-        + File.separator;
+    String funcDocRootDir = resourcesDir + File.separator + "doc" + File.separator + "func" + File.separator;
     printSimpleFunctions(funcDocRootDir);
 
     printAggrFunctions(funcDocRootDir);
 
+    String confDocRootDir = resourcesDir + File.separator + "doc" + File.separator + "conf" + File.separator;
+    printConfig(confDocRootDir);
+
     markdownToHtml(resourcesDir);
+  }
+
+  private static void printConfig(String confDocRootDir) throws FileNotFoundException {
+    PrintWriter confPrinter = new PrintWriter(confDocRootDir + File.separator + "conf.md");
+    try {
+      for (Field field : Config.class.getFields()) {
+        ConfigType configType = field.getAnnotation(ConfigType.class);
+        if (configType != null) {
+          confPrinter.print("### " + field.getName() + "\n\n");
+          confPrinter.print(configType.type());
+          if (configType.mandatory()) {
+            confPrinter.print(", mandatory");
+          }
+          confPrinter.print(": ");
+          confPrinter.print(configType.doc() + "\n\n");
+        }
+      }
+    } finally {
+      confPrinter.close();
+    }
   }
 
   private static void markdownToHtml(String resourcesDir) throws IOException {
     File docRoot = new File(resourcesDir + File.separator + "doc");
-    Collection<File> files = FileUtils
-        .listFiles(docRoot, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE).stream()
+    Collection<File> files = FileUtils.listFiles(docRoot, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE).stream()
         .sorted((f1, f2) -> f1.getName().compareTo(f2.getName())).collect(Collectors.toList());
     JSONArray items = new JSONArray();
     String webRoot = "web" + File.separator + "app" + File.separator + "help";
@@ -62,8 +86,7 @@ public class DocPrinter {
       Parser parser = Parser.builder().build();
       Node document = parser.parse(FileUtils.readFileToString(markdown, Charset.defaultCharset()));
       HtmlRenderer renderer = HtmlRenderer.builder().build();
-      String suffix = markdown.getAbsolutePath().substring(docRoot.getAbsolutePath().length() + 1,
-          markdown.getAbsolutePath().length() - 3);
+      String suffix = markdown.getAbsolutePath().substring(docRoot.getAbsolutePath().length() + 1, markdown.getAbsolutePath().length() - 3);
       File html = new File(webRoot + File.separator + suffix + ".html");
       FileUtils.writeStringToFile(html, renderer.render(document), Charset.defaultCharset());
       JSONObject object = new JSONObject();
@@ -71,13 +94,11 @@ public class DocPrinter {
       object.put("title", ((Text) document.getFirstChild().getFirstChild()).getLiteral());
       items.put(object);
     }
-    FileUtils.writeStringToFile(new File(webRoot + File.separator + "list"), items.toString(),
-        Charset.defaultCharset());
+    FileUtils.writeStringToFile(new File(webRoot + File.separator + "list"), items.toString(), Charset.defaultCharset());
   }
 
   private static void printAggrFunctions(String funcDocRootDir) throws FileNotFoundException {
-    ImmutableList<Class<?>> categories = ImmutableList.of(Aggregators.class, StatAggregators.class,
-        ListAggregators.class);
+    ImmutableList<Class<?>> categories = ImmutableList.of(Aggregators.class, StatAggregators.class, ListAggregators.class);
     Map<Class<?>, Map<String, String>> docss = new LinkedHashMap<>();
     for (Class<?> clss : categories) {
       docss.put(clss, new TreeMap<>());
@@ -104,8 +125,7 @@ public class DocPrinter {
   }
 
   private static void printSimpleFunctions(String funcDocRootDir) throws FileNotFoundException {
-    ImmutableList<Class<?>> categories = ImmutableList.of(StringFunctions.class,
-        MathFunctions.class, DateFunctions.class);
+    ImmutableList<Class<?>> categories = ImmutableList.of(StringFunctions.class, MathFunctions.class, DateFunctions.class);
     Map<Class<?>, Map<String, String>> docss = new LinkedHashMap<>();
     for (Class<?> clss : categories) {
       docss.put(clss, new TreeMap<>());

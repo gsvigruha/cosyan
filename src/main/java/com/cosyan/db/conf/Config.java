@@ -11,24 +11,28 @@ import com.cosyan.db.model.DataTypes;
 
 public class Config {
 
-  public static final String CONF_DIR = "CONF_DIR";
-
-  public static final String CONF_DIR_DEFAULT = "conf";
-
+  @ConfigType(type = ConfigType.FILE, mandatory = true, doc = "The directory containing the config files.")
   public static final String DATA_DIR = "DATA_DIR";
 
+  @ConfigType(type = ConfigType.STRING, mandatory = false, doc = "The hostame of the LDAP server.")
   public static final String LDAP_HOST = "LDAP_HOST";
 
+  @ConfigType(type = ConfigType.INT, mandatory = false, doc = "The port of the LDAP server.")
   public static final String LDAP_PORT = "LDAP_PORT";
 
+  @ConfigType(type = ConfigType.BOOL, mandatory = true, doc = "Whether authentication is enabled or not.")
   public static final String AUTH = "AUTH";
 
+  @ConfigType(type = ConfigType.INT, mandatory = true, doc = "The port Cosyan server listens on.")
   public static final String PORT = "PORT";
 
+  @ConfigType(type = ConfigType.INT, mandatory = true, doc = "The number of threads for the webserver.")
   public static final String WEBSERVER_NUM_THREADS = "WEBSERVER_NUM_THREADS";
 
+  @ConfigType(type = ConfigType.INT, mandatory = true, doc = "The number of threads for the DB.")
   public static final String DB_NUM_THREADS = "DB_NUM_THREADS";
 
+  @ConfigType(type = ConfigType.INT, mandatory = true, doc = "The amount of time tasks sleep before trying to acquire locks again.")
   public static final String TR_RETRY_MS = "TR_RETRY_MS";
 
   private final String confDir;
