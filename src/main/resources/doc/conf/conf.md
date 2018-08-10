@@ -1,32 +1,26 @@
-### DATA_DIR
+### Configuration
 
-FILE, mandatory: The directory containing the config files.
+ * `DATA_DIR`<br/>
+   `FILE, mandatory`: The directory containing the config files.
 
-### LDAP_HOST
+ * `LDAP_HOST`<br/>
+   `STRING`: The hostame of the LDAP server.
 
-STRING: The hostame of the LDAP server.
+ * `LDAP_PORT`<br/>
+   `INT`: The port of the LDAP server.
 
-### LDAP_PORT
+ * `AUTH`<br/>
+   `BOOL, mandatory`: Whether authentication is enabled or not.
 
-INT: The port of the LDAP server.
+ * `PORT`<br/>
+   `INT, mandatory`: The port Cosyan server listens on.
 
-### AUTH
+ * `WEBSERVER_NUM_THREADS`<br/>
+   `INT, mandatory`: The number of threads for the webserver.
 
-BOOL, mandatory: Whether authentication is enabled or not.
+ * `DB_NUM_THREADS`<br/>
+   `INT, mandatory`: The number of threads for the DB.
 
-### PORT
-
-INT, mandatory: The port Cosyan server listens on.
-
-### WEBSERVER_NUM_THREADS
-
-INT, mandatory: The number of threads for the webserver.
-
-### DB_NUM_THREADS
-
-INT, mandatory: The number of threads for the DB.
-
-### TR_RETRY_MS
-
-INT, mandatory: The amount of time tasks sleep before trying to acquire locks again.
+ * `TR_RETRY_MS`<br/>
+   `INT, mandatory`: The amount of time tasks sleep before trying to acquire locks again.
 

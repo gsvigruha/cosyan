@@ -58,15 +58,16 @@ public class DocPrinter {
   private static void printConfig(String confDocRootDir) throws FileNotFoundException {
     PrintWriter confPrinter = new PrintWriter(confDocRootDir + File.separator + "conf.md");
     try {
+      confPrinter.print("### Configuration\n\n");
       for (Field field : Config.class.getFields()) {
         ConfigType configType = field.getAnnotation(ConfigType.class);
         if (configType != null) {
-          confPrinter.print("### " + field.getName() + "\n\n");
-          confPrinter.print(configType.type());
+          confPrinter.print(" * `" + field.getName() + "`<br/>\n");
+          confPrinter.print("   `" + configType.type());
           if (configType.mandatory()) {
             confPrinter.print(", mandatory");
           }
-          confPrinter.print(": ");
+          confPrinter.print("`: ");
           confPrinter.print(configType.doc() + "\n\n");
         }
       }
