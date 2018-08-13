@@ -1,6 +1,6 @@
 #!/bin/sh -xue
 
-DEPLOY_DIR=deploy/cosyan-$VERSION
+DEPLOY_DIR=deploy/cosyandb-$VERSION
 
 rm -rf $DEPLOY_DIR
 mkdir -p $DEPLOY_DIR
@@ -12,4 +12,4 @@ cp stop.sh $DEPLOY_DIR/
 cp restart.sh $DEPLOY_DIR/
 cp -r conf $DEPLOY_DIR/
 cd deploy/
-tar -czf ~/cosyan-$VERSION.tar.gz cosyan-$VERSION
+tar -czf ~/cosyandb-$VERSION.tar.gz cosyandb-$VERSION
