@@ -1,9 +1,11 @@
 body {
-    background-color: #FFFFFF;
+    background-color: rgba(192, 192, 192, 1);
+    background-image: url("/icons/steel.jpg");
+    background-blend-mode: overlay;
 }
 
 .admin table {
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    font-family: Lucida;
     font-size: 14px;
     border-collapse: collapse;
     width: 100%;
@@ -33,7 +35,7 @@ h4.sql {
 
 textarea.sql {
     width: 500px;
-    background-color: #F8FBFF;
+    background-color: rgba(240, 240, 240, 0.8);
     margin: 8px;
 }
 
@@ -42,7 +44,7 @@ div.sql-result {
 }
 
 button.tab {
-    background-color: #FAFAFA;
+    background-color: rgba(0, 0, 0, 0);
     padding: 4px;
     margin: 4px;
     width: 80px;
@@ -50,7 +52,7 @@ button.tab {
 }
 
 button.tab:hover {
-    background: radial-gradient(rgba(128, 192, 255, 1) 10%, rgba(128, 192, 255, 0.0) 90%);
+    background: radial-gradient(rgba(128, 255, 192, 1) 10%, rgba(128, 255, 192, 0.0) 90%);
 }
 
 button.tab:active {
@@ -64,7 +66,7 @@ button.tab:focus {
 }
 
 button.selected {
-    background: radial-gradient(rgba(64, 160, 255, 1) 10%, rgba(64, 160, 255, 0.0) 90%);
+    background: radial-gradient(rgba(64, 208, 160, 1) 10%, rgba(64, 208, 160, 0.0) 90%);
 }
 
 div.sql {
@@ -74,7 +76,6 @@ div.sql {
 }
 
 .menu span {
-    padding: 4px;
     margin: 4px;
     font-size: 14px;
 }
@@ -114,7 +115,7 @@ div.monitoring {
 }
 
 .monitoring table {
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    font-family: Lucida;
     font-size: 12px;
     border-collapse: collapse;
     width: 800px;
@@ -141,7 +142,7 @@ div.monitoring {
 }
 
 .admin table {
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    font-family: Lucida;
     font-size: 12px;
     border-collapse: collapse;
     width: auto;
@@ -219,4 +220,16 @@ input.admin-input-wide {
 textarea.admin-input-wide {
     width: 200px;
     height: 40px;
+}
+
+a.menu {
+	padding: 4px;
+  color: #333;
+  background: none;
+  text-decoration: none;
+}
+
+a.menu:hover {
+	background: radial-gradient(rgba(128, 255, 192, 1) 10%, rgba(128, 255, 192, 0.0) 90%);
+	text-decoration: none;
 }

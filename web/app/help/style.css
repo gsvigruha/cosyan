@@ -11,12 +11,12 @@ div.help-right {
 }
 
 div.help-button:hover {
-  background: radial-gradient(rgba(64, 160, 255, 1) 50%, rgba(64, 160, 255, 0.5));
+  background: radial-gradient(rgba(128, 255, 192, 0.8) 50%, rgba(128, 255, 192, 0.2) 80%);
   cursor: pointer;
 }
 
 div.help-button:active {
-  background: radial-gradient(rgba(64, 160, 255, 1) 50%, rgba(64, 160, 255, 0.5));
+  background: radial-gradient(rgba(64, 208, 160, 0.8) 50%, rgba(64, 208, 160, 0.2) 80%);
 }
 
 div.help-button {

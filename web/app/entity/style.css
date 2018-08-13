@@ -1,9 +1,5 @@
-div.toolbar {
-    background-color: #FAFAFA;
-}
-
 .entity table {
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    font-family: Lucida;
     font-size: 12px;
     border-collapse: collapse;
     width: 900px;
@@ -40,12 +36,12 @@ span.enabled {
     opacity: 1;
 }
 
-span.button:hover {background: radial-gradient(rgba(64, 160, 255, 1), rgba(64, 160, 255, 0.0) 80%);}
+span.button:hover {background: radial-gradient(rgba(128, 255, 192, 1), rgba(128, 255, 192, 0.0) 80%);}
 
-span.button:active {background: radial-gradient(rgba(32, 128, 255, 1), rgba(32, 128, 255, 0.0) 80%);}
+span.button:active {background: radial-gradient(rgba(128, 255, 192, 1), rgba(128, 255, 192, 0.0) 80%);}
 
 .editor table {
-    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    font-family: Lucida;
     font-size: 12px;
     border-collapse: collapse;
     width: 250px;
@@ -146,7 +142,7 @@ span.entity-menu-label {
 }
 
 span.entity-menu-label:hover {
-	background: radial-gradient(rgba(64, 160, 255, 1), rgba(64, 160, 255, 0.0) 80%);
+	background: radial-gradient(rgba(128, 255, 192, 1) 10%, rgba(128, 255, 192, 0.0) 90%);
 }
 
 span.entity-title {
@@ -156,25 +152,21 @@ span.entity-title {
 }
 
 span.subentity {
-    padding: 2px;
+    padding: 1px;
+    margin-left: 1px;
     border-style: solid;
     border-width: 1px;
-    border-color: #E0E0E0;
-    background-color: rgba(192, 192, 192, 0.1);
+    border-color: #F8F8F8;
+    background-color: rgba(240, 255, 255, 0.1);
     border-radius: 8px;
     height: 100%;
 }
 
 .subentity span.subentity {
-    height: 0px;
     position: relative;
 }
 
 span.entity-name {
-    background-color: rgba(240, 248, 255, 0.9);
-    border-style: solid;
-    border-width: 1px;
-    border-color: #E0F0FF;
     padding-top: 2px;
     padding-bottom: 2px;
     padding-left: 4px;
