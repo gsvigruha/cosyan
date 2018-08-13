@@ -2,7 +2,6 @@
     font-family: Lucida;
     font-size: 12px;
     border-collapse: collapse;
-    width: 900px;
 }
 
 .entity td, .entity th {
@@ -44,15 +43,15 @@ span.button:active {background: radial-gradient(rgba(128, 255, 192, 1), rgba(128
     font-family: Lucida;
     font-size: 12px;
     border-collapse: collapse;
-    width: 250px;
     margin: 2px;
-    margin-right: 4px
+    margin-right: 4px;
 }
 
 .editor td, .entity th {
     border: 1px solid #ddd;
     padding: 2px;
     font-size: 12px;
+    min-width: 60px;
 }
 
 td.empty {
@@ -91,31 +90,32 @@ div.entity-list {
 
 .entity-list table {
     max-width: 508px;
+    display: inline-block;
+    max-height: 120px;
+    overflow-y: auto;
 }
 
 .entity-list tbody {
     overflow-y: scroll;
-    display: block;
+    max-height: 200px;
 }
 
 .entity-list thead {
-    display: table;
     width: calc(100% - 15px);
-    table-layout: fixed;
 }
 
 .entity-list tr {
     width: 100%;
-    table-layout: fixed;
-    display: table;
 }
 
 td.icon {
     width: 28px;
+    min-width: 28px;
 }
 
 th.icon {
     width: 28px;
+    min-width: 28px;
 }
 
 div.editor {
@@ -192,7 +192,7 @@ div.popup {
     padding: 12px;
     height: 440px;
     width: 80%;
-    background: rgba(240, 244, 248, 0.9);
+    background: rgba(240, 248, 248, 0.9);
 }
 
 .popup tbody {

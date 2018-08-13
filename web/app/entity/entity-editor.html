@@ -40,7 +40,7 @@
         <span title="Reference"><img src="icons/fk.svg" class="icons"></img></span>
         <span class="entity-menu-label" ng-click="expandEntity(fk);">{{ fk.name }}</span>
       </div>
-      <div ng-if="entityList[fk.name]">
+      <div>
         <span ng-click="pickEntity(fk);" title="Pick" class="button glyphicon glyphicon-list-alt" ng-class="{ disabled: fk.immutable }"></span>
         <span ng-click="newEntity(fk);" title="New" class="button glyphicon glyphicon-new-window" ng-class="{ disabled: fk.immutable }"></span>
         <span ng-click="unsetEntity(fk);" title="Unset" class="button glyphicon glyphicon-remove"></span>
