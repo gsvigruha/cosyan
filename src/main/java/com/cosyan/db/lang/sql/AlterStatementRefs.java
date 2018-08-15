@@ -44,11 +44,11 @@ public class AlterStatementRefs {
     public Result executeData(MetaRepoExecutor metaRepo, Resources resources) {
       MaterializedTable tableMeta = resources.meta(table.getString());
       tableMeta.addRef(new TableRef(
-    		  ref.getName().getString(),
-    		  ref.getSelect().print(),
-    		  metaRepo.maxRefIndex() + 1,
-    		  /*aggr =*/ true,
-    		  refTableMeta));
+          ref.getName().getString(),
+          ref.getSelect().print(),
+          metaRepo.maxRefIndex() + 1,
+          /* aggr = */ true,
+          refTableMeta));
       return Result.META_OK;
     }
 
@@ -97,7 +97,7 @@ public class AlterStatementRefs {
           ref.getName().getString(),
           ref.getSelect().print(),
           metaRepo.maxRefIndex() + 1,
-          /*aggr =*/ false,
+          /* aggr = */ false,
           refTableMeta));
       return Result.META_OK;
     }
