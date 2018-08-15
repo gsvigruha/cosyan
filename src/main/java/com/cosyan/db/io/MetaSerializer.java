@@ -17,6 +17,7 @@ import org.json.JSONObject;
 
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.FlatRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.meta.MaterializedTable;
@@ -26,9 +27,9 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
-import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableRef;
 import com.cosyan.db.session.ILexer;
 import com.cosyan.db.session.IParser;
@@ -87,6 +88,7 @@ public class MetaSerializer {
     obj.put("name", ref.getName());
     obj.put("expr", ref.getExpr() + ";");
     obj.put("index", ref.getIndex());
+    obj.put("aggr", ref.isAggr());
     return obj;
   }
 
@@ -162,12 +164,23 @@ public class MetaSerializer {
 
   public void loadRef(MaterializedTable table, JSONObject refObj)
       throws JSONException, IOException, ModelException, ParserException {
-    AggRefDefinition ref = new AggRefDefinition(
-        new Ident(refObj.getString("name")),
-        parser.parseSelect(lexer.tokenizeExpression(refObj.getString("expr"))));
-    AggRefTableMeta refTableMeta = table.createAggRef(ref);
+    boolean aggr = refObj.getBoolean("aggr");
+    String name = refObj.getString("name");
+    String expr = refObj.getString("expr");
+    TableMeta refTableMeta;
+    if (aggr) {
+      AggRefDefinition ref = new AggRefDefinition(
+          new Ident(name),
+          parser.parseSelect(lexer.tokenizeExpression(expr)));
+      refTableMeta = table.createAggRef(ref);
+    } else {
+      FlatRefDefinition ref = new FlatRefDefinition(
+          new Ident(name),
+          parser.parseSelect(lexer.tokenizeExpression(expr)));
+      refTableMeta = table.createFlatRef(ref);
+    }
     table.addRef(new TableRef(
-        ref.getName().getString(), ref.getSelect().print(), refObj.getInt("index"), refTableMeta));
+        name, expr, refObj.getInt("index"), aggr, refTableMeta));
   }
 
   public void loadRules(MaterializedTable table, JSONObject obj)

@@ -22,6 +22,7 @@ import com.cosyan.db.lang.expr.Statements.Statement;
 import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ConstraintDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.FlatRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.PrimaryKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
@@ -32,7 +33,9 @@ import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddForeignKey;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddRule;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableDropConstraint;
 import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableAddAggRef;
+import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableAddFlatRef;
 import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableDropAggRef;
+import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableDropFlatRef;
 import com.cosyan.db.lang.sql.CSVStatements.CSVExport;
 import com.cosyan.db.lang.sql.CSVStatements.CSVImport;
 import com.cosyan.db.lang.sql.CreateStatement.CreateIndex;
@@ -346,6 +349,15 @@ public class Parser implements IParser {
     return new AggRefDefinition(ident, select);
   }
 
+  private FlatRefDefinition parseFlatRef(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.FLATREF);
+    Ident ident = parseIdent(tokens);
+    assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+    Select select = parseSelect(tokens);
+    assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+    return new FlatRefDefinition(ident, select);
+  }
+
   private MetaStatement parseDrop(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.DROP);
     assertPeek(tokens, Tokens.TABLE, Tokens.INDEX);
@@ -370,6 +382,8 @@ public class Parser implements IParser {
       tokens.next();
       if (tokens.peek().is(Tokens.AGGREF)) {
         return new AlterTableAddAggRef(ident, parseAggRef(tokens));
+      } else if (tokens.peek().is(Tokens.FLATREF)) {
+        return new AlterTableAddFlatRef(ident, parseFlatRef(tokens));
       } else if (tokens.peek().is(Tokens.CONSTRAINT)) {
         ConstraintDefinition constraint = parseConstraint(tokens);
         if (constraint instanceof ForeignKeyDefinition) {
@@ -395,6 +409,10 @@ public class Parser implements IParser {
         tokens.next();
         Ident constraint = parseIdent(tokens);
         return new AlterTableDropAggRef(ident, constraint);
+      } else if (tokens.peek().is(Tokens.FLATREF)) {
+        tokens.next();
+        Ident constraint = parseIdent(tokens);
+        return new AlterTableDropFlatRef(ident, constraint);
       } else {
         Ident columnName = parseIdent(tokens);
         return new AlterTableDropColumn(ident, columnName);

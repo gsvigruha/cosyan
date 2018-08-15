@@ -71,4 +71,11 @@ public class TableDefinition {
     private final Ident name;
     private final Select select;
   }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class FlatRefDefinition extends Node {
+    private final Ident name;
+    private final Select select;
+  }
 }

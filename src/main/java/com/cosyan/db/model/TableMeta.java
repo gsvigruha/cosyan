@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.annotation.Nullable;
 
 import com.cosyan.db.io.TableReader.IterableTableReader;
+import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.DataTypes.DataType;
@@ -70,6 +71,8 @@ public abstract class TableMeta implements CompiledObject {
   public static abstract class IterableTableMeta extends TableMeta {
 
     public abstract IterableTableReader reader(Resources resources, TableContext context) throws IOException;
+
+    public abstract TableDependencies tableDependencies();
 
     // Iterable tables cannot override this function.
     public final Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException {

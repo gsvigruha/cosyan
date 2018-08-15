@@ -8,8 +8,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.cosyan.db.model.Keys.Ref;
-import com.cosyan.db.model.Keys.ReverseForeignKey;
-import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.References.ReferencedRefTableMeta;
 import com.cosyan.db.model.References.ReferencedSimpleTableMeta;
@@ -77,21 +75,6 @@ public class Dependencies {
 
     public TableDependencies() {
       deps = new HashMap<>();
-    }
-
-    public TableDependencies(AggRefTableMeta tableMeta,
-        TableDependencies tableDependencies) {
-      deps = new HashMap<>();
-      ReverseForeignKey reverseForeignKey = tableMeta.getReverseForeignKey();
-      deps.put(reverseForeignKey.getName(), new TableDependency(reverseForeignKey));
-      TableDependency tableDependency = deps.get(reverseForeignKey.getName());
-      for (Map.Entry<String, TableDependency> other : tableDependencies.getDeps().entrySet()) {
-        if (other.getValue().ref().equals(reverseForeignKey)) {
-          deps.put(other.getKey(), other.getValue());
-        } else {
-          tableDependency.deps.put(other.getKey(), other.getValue());
-        }
-      }
     }
 
     public TableDependencies(ReferencedRefTableMeta table, TableDependencies tableDependencies) {

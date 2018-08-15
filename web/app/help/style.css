@@ -11,15 +11,14 @@ div.help-right {
 }
 
 div.help-button:hover {
-  background: radial-gradient(rgba(128, 255, 192, 0.8) 50%, rgba(128, 255, 192, 0.2) 80%);
+  background: radial-gradient(rgba(128, 255, 192, 0.8) 40%, rgba(128, 255, 192, 0.3) 70%, rgba(128, 255, 192, 0.1) 90%);
   cursor: pointer;
 }
 
 div.help-button:active {
-  background: radial-gradient(rgba(64, 208, 160, 0.8) 50%, rgba(64, 208, 160, 0.2) 80%);
+  background: radial-gradient(rgba(64, 208, 160, 0.8) 40%, rgba(64, 208, 160, 0.3) 70%, rgba(64, 208, 160, 0.1) 90%);
 }
 
 div.help-button {
-  padding: 2px;
-  padding-bottom: 8px;
+  padding: 6px;
 }

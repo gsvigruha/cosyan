@@ -137,7 +137,10 @@ public abstract class ColumnMeta implements CompiledObject {
 
     @Override
     public TableDependencies tableDependencies() {
-      return baseColumn.tableDependencies();
+      TableDependencies deps = new TableDependencies();
+      deps.addToThis(baseColumn.tableDependencies());
+      deps.addToThis(sourceTable.tableDependencies());
+      return deps;
     }
   }
 

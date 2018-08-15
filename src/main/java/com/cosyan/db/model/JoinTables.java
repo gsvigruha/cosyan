@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.cosyan.db.io.TableReader.IterableTableReader;
+import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.DataTypes.DataType;
@@ -215,6 +216,14 @@ public class JoinTables {
           joined = true;
         }
       };
+    }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      TableDependencies deps = new TableDependencies();
+      deps.addToThis(mainTable.tableDependencies());
+      deps.addToThis(joinTable.tableDependencies());
+      return deps;
     }
   }
 }

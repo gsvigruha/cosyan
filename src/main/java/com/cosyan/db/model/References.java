@@ -80,7 +80,7 @@ public class References {
   public static class ReferencedRefTableMeta extends TableMeta implements ReferencedTable {
 
     private final ReferencedTable parent;
-    private final AggRefTableMeta refTable;
+    private final TableMeta refTable;
 
     @Override
     public ImmutableList<String> columnNames() {
@@ -243,6 +243,13 @@ public class References {
     }
 
     @Override
+    public TableDependencies tableDependencies() {
+      TableDependencies deps = new TableDependencies();
+      deps.addTableDependency(this);
+      return deps;
+    }
+
+    @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
       if (ident.is(Tokens.PARENT)) {
         return new ParentTableMeta(foreignKeyChain().get(0).getTable().reader());
@@ -294,7 +301,6 @@ public class References {
   public static class AggRefTableMeta extends TableMeta {
     private final GlobalAggrTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
-    private final ReverseForeignKey reverseForeignKey;
 
     @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
@@ -302,8 +308,7 @@ public class References {
       if (column == null) {
         return null;
       }
-      TableDependencies deps = new TableDependencies(this, column.tableDependencies());
-      return new IndexColumn(sourceTable, indexOf(columns.keySet(), ident), column.getType(), deps);
+      return new IndexColumn(sourceTable, indexOf(columns.keySet(), ident), column.getType(), column.tableDependencies());
     }
 
     @Override
@@ -314,10 +319,10 @@ public class References {
 
     @Override
     public MetaResources readResources() {
-      return sourceTable.readResources()
-          .merge(MetaResources.readTable(reverseForeignKey.getRefTable()));
+      return sourceTable.readResources().merge(DerivedTables.resourcesFromColumns(columns.values()));
     }
 
+    @Override
     public ImmutableList<String> columnNames() {
       return columns.keySet().asList();
     }
@@ -332,6 +337,50 @@ public class References {
       int i = 0;
       for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
         values[i++] = entry.getValue().value(aggrValues, resources, context);
+      }
+      return values;
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class FlatRefTableMeta extends TableMeta {
+    private final ExposedTableMeta sourceTable;
+    private final ImmutableMap<String, ColumnMeta> columns;
+
+    @Override
+    protected IndexColumn getColumn(Ident ident) throws ModelException {
+      ColumnMeta column = columns.get(ident.getString());
+      if (column == null) {
+        return null;
+      }
+      return new IndexColumn(sourceTable, indexOf(columns.keySet(), ident), column.getType(), column.tableDependencies());
+    }
+
+    @Override
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      // Cannot reference any further tables from a ref, only access its fields.
+      return null;
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources().merge(DerivedTables.resourcesFromColumns(columns.values()));
+    }
+
+    @Override
+    public ImmutableList<String> columnNames() {
+      return columns.keySet().asList();
+    }
+
+    @Override
+    public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
+        throws IOException {
+      Object[] v = sourceTable.values(sourceValues, resources, context);
+      Object[] values = new Object[columns.size()];
+      int i = 0;
+      for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
+        values[i++] = entry.getValue().value(v, resources, context);
       }
       return values;
     }

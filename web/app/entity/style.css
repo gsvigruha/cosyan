@@ -2,6 +2,7 @@
     font-family: Lucida;
     font-size: 12px;
     border-collapse: collapse;
+    border-radius: 6px;
 }
 
 .entity td, .entity th {
@@ -45,6 +46,7 @@ span.button:active {background: radial-gradient(rgba(128, 255, 192, 1), rgba(128
     border-collapse: collapse;
     margin: 2px;
     margin-right: 4px;
+    border-radius: 6px;
 }
 
 .editor td, .entity th {
@@ -66,6 +68,7 @@ td.empty {
 .editor th {
     padding-top: 2px;
     padding-bottom: 2px;
+    padding-left: 2px;
     text-align: left;
     background-color: #602040;
     color: white;
@@ -73,6 +76,7 @@ td.empty {
 
 .editor input {
     width: 80px;
+    border-radius: 1px;
 }
 
 div.entity-editor-tab {
@@ -93,6 +97,7 @@ div.entity-list {
     display: inline-block;
     max-height: 120px;
     overflow-y: auto;
+    border-radius: 6px;
 }
 
 .entity-list tbody {
@@ -176,6 +181,7 @@ span.entity-name {
 input.search {
     margin-left: 4px;
     width: 80px;
+    border-radius: 1px;
 }
 
 div.popup {

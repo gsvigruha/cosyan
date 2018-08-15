@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.cosyan.db.io.TableReader.IterableTableReader;
+import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Aggregators.Aggregator;
 import com.cosyan.db.model.ColumnMeta.AggrColumn;
@@ -239,5 +240,10 @@ public abstract class AggrTables extends IterableTableMeta {
 
   public int numAggrColumns() {
     return aggrColumns.size();
+  }
+
+  @Override
+  public TableDependencies tableDependencies() {
+    return sourceTable().tableDependencies();
   }
 }

@@ -145,13 +145,13 @@ public class RestartDBTest {
 
     MaterializedTable t7 = dbApi.getMetaRepo().table("t7");
     assertEquals(1, t7.refs().size());
-    assertEquals("rev_fk_a1", t7.refs().get("s").getTableMeta().getReverseForeignKey().getName());
+    assertEquals(ImmutableList.of("sa"), t7.refs().get("s").getTableMeta().columnNames());
     assertEquals(1, t7.rules().size());
 
     dbApi = new DBApi(config);
     MaterializedTable newT7 = dbApi.getMetaRepo().table("t7");
     assertEquals(1, newT7.refs().size());
-    assertEquals("rev_fk_a1", newT7.refs().get("s").getTableMeta().getReverseForeignKey().getName());
+    assertEquals(ImmutableList.of("sa"), newT7.refs().get("s").getTableMeta().columnNames());
     assertEquals(1, newT7.rules().size());
 
     dbApi.newAdminSession().execute("insert into t7 values (11);");
@@ -313,7 +313,7 @@ public class RestartDBTest {
     dbApi = new DBApi(config);
     {
       MaterializedTable t18 = dbApi.getMetaRepo().table("t18");
-      assertEquals("select sum(s.c) as s from rev_fk1 ", t18.refs().get("s").getExpr());
+      assertEquals("select sum(s.c) as s from rev_fk1 ;", t18.refs().get("s").getExpr());
     }
   }
 }

@@ -13,6 +13,7 @@ import com.cosyan.db.io.TableReader.DerivedIterableTableReader;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.MultiFilteredTableReader;
 import com.cosyan.db.logic.PredicateHelper.VariableEquals;
+import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
@@ -30,7 +31,7 @@ import lombok.EqualsAndHashCode;
 
 public class DerivedTables {
 
-  protected static MetaResources resourcesFromColumns(Iterable<? extends ColumnMeta> columns) {
+  public static MetaResources resourcesFromColumns(Iterable<? extends ColumnMeta> columns) {
     MetaResources resources = MetaResources.empty();
     for (ColumnMeta columnMeta : columns) {
       resources = resources.merge(columnMeta.readResources());
@@ -98,6 +99,11 @@ public class DerivedTables {
         }
       };
     }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return sourceTable.tableDependencies();
+    }
   }
 
   @Data
@@ -154,6 +160,11 @@ public class DerivedTables {
         }
       };
     }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return sourceTable.tableDependencies();
+    }
   }
 
   @Data
@@ -207,6 +218,11 @@ public class DerivedTables {
         }
       };
     }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return sourceTable.tableDependencies();
+    }
   }
 
   @Data
@@ -243,6 +259,11 @@ public class DerivedTables {
     @Override
     public ImmutableList<String> columnNames() {
       return keyColumns.keySet().asList();
+    }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return sourceTable.tableDependencies();
     }
   }
 
@@ -334,6 +355,11 @@ public class DerivedTables {
         }
       };
     }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return sourceTable.tableDependencies();
+    }
   }
 
   @Data
@@ -399,6 +425,11 @@ public class DerivedTables {
         }
       };
     }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return sourceTable.tableDependencies();
+    }
   }
 
   @Data
@@ -444,6 +475,11 @@ public class DerivedTables {
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       return sourceTable.reader(resources, context);
     }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return sourceTable.tableDependencies();
+    }
   }
 
   @Data
@@ -476,6 +512,11 @@ public class DerivedTables {
     @Override
     public ImmutableList<String> columnNames() {
       return childTable.columnNames();
+    }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return sourceTable.tableDependencies();
     }
   }
   
@@ -530,6 +571,11 @@ public class DerivedTables {
     @Override
     public MetaResources readResources() {
       return sourceTable.readResources();
+    }
+
+    @Override
+    public TableDependencies tableDependencies() {
+      return sourceTable.tableDependencies();
     }
   }
 }

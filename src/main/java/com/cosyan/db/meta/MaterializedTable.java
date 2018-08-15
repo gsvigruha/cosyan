@@ -17,6 +17,7 @@ import com.cosyan.db.io.SeekableOutputStream;
 import com.cosyan.db.io.SeekableOutputStream.RAFSeekableOutputStream;
 import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.FlatRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.sql.SelectStatement;
@@ -40,6 +41,7 @@ import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.References.AggRefTableMeta;
+import com.cosyan.db.model.References.FlatRefTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
@@ -341,8 +343,14 @@ public class MaterializedTable {
             TableMeta.wholeTableKeys));
     // Columns have aggregations, recompile with an AggrTable.
     TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
-    return new AggRefTableMeta(
-        aggrTable, tableColumns.getColumns(), srcTableMeta.getReverseForeignKey());
+    return new AggRefTableMeta(aggrTable, tableColumns.getColumns());
+  }
+
+  public FlatRefTableMeta createFlatRef(FlatRefDefinition ref) throws ModelException {
+    checkName(ref.getName());
+    ExposedTableMeta derivedTable = ref.getSelect().getTable().compile(reader());
+    TableColumns tableColumns = SelectStatement.Select.tableColumns(derivedTable, ref.getSelect().getColumns());
+    return new FlatRefTableMeta(derivedTable, tableColumns.getColumns());
   }
 
   public void addRef(TableRef ref) {
@@ -385,10 +393,11 @@ public class MaterializedTable {
     ForeignKey fk = foreignKeys.remove(ident.getString());
     fk.getRefTable().reverseForeignKeys.remove(fk.getRevName());
     for (TableRef ref : fk.getRefTable().refs().values()) {
-      ReverseForeignKey revFK = ref.getTableMeta().getReverseForeignKey();
-      if (revFK.getRefTable() == this) {
+      try {
+        ref.reCompile(this);
+      } catch (ModelException e) {
         throw new ModelException(String.format(
-            "Cannot drop foreign key '%s', it is used by aggref '%s'.", ident, ref), ident);
+            "Cannot drop foreign key '%s', aggref '%s' fails.\n%s", ident, ref, e.getMessage()), ident);
       }
     }
     for (Rule rule : rules().values()) {
@@ -409,7 +418,7 @@ public class MaterializedTable {
     }
   }
 
-  public void dropAggRef(Ident ident) throws ModelException {
+  public void dropRef(Ident ident) throws ModelException {
     assert refs.containsKey(ident.getString());
     refs.remove(ident.getString());
     for (Rule rule : rules().values()) {
@@ -455,7 +464,7 @@ public class MaterializedTable {
     return rules.containsKey(ruleName);
   }
 
-  public boolean hasAggRef(String aggRefName) {
+  public boolean hasRef(String aggRefName) {
     return refs.containsKey(aggRefName);
   }
 

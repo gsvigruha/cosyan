@@ -15,6 +15,7 @@ import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
@@ -441,7 +442,7 @@ public class AlterStatementTest extends UnitTestBase {
     {
       ErrorResult result = error("alter table t33 drop constraint fk_a;");
       assertEquals(
-          "[32, 36]: Cannot drop foreign key 'fk_a', it is used by aggref 's [select count(1) as cnt from rev_fk_a ]'.",
+          "[32, 36]: Cannot drop foreign key 'fk_a', aggref 's [select count(1) as cnt from rev_fk_a ]' fails.\n[28, 36]: Table 'rev_fk_a' not found.",
           result.getError().getMessage());
       assertNotNull(metaRepo.table(new Ident("t32")).reverseForeignKeys().get("rev_fk_a"));
       assertNotNull(metaRepo.table(new Ident("t33")).foreignKeys().get("fk_a"));
@@ -596,5 +597,33 @@ public class AlterStatementTest extends UnitTestBase {
     assertHeader(new String[] { "a", "b", "c" }, result);
     assertValues(new Object[][] { { "x", 1L, 0L }, { "x", 2L, 1L }, { "x", 3L, 2L },
         { "y", 1L, 0L }, { "y", 2L, 1L } }, result);
+  }
+
+  @Test
+  public void testAlterTableAggRefThroughFKInRule() throws Exception {
+    execute("create table t53 (a integer, constraint pk_a primary key (a));");
+    execute("create table t54 (b integer, a integer, constraint fk1 foreign key (a) references t53);");
+    execute("create table t55 (c integer, a integer, constraint fk2 foreign key (a) references t53);");
+    execute("alter table t55 add aggref s (select sum(b) as s from fk2.rev_fk1);");
+    execute("alter table t55 add constraint c_1 check(s.s < c);");
+
+    execute("insert into t53 values (1);");
+    execute("insert into t55 values (5, 1);");
+    execute("insert into t54 values (2, 1), (2, 1);");
+
+    ErrorResult e = error("insert into t54 values (1, 1);");
+    assertError(RuleException.class, "Referencing constraint check t55.c_1 failed.", e);
+  }
+
+  @Test
+  public void testAlterTableAddFlatRef() throws Exception {
+    execute("create table t56 (a id, b integer);");
+    execute("create table t57 (a integer, constraint fk_a foreign key (a) references t56);");
+    execute("insert into t56 values (10);");
+    execute("insert into t57 values (0);");
+    execute("alter table t57 add flatref r (select fk_a.b + 1 as c from t57);");
+    QueryResult result = query("select r.c from t57;");
+    assertHeader(new String[] { "c" }, result);
+    assertValues(new Object[][] { { 11L } }, result);
   }
 }

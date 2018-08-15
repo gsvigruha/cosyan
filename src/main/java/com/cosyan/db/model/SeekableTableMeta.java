@@ -83,7 +83,9 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
 
   @Override
   public TableMeta tableMeta(Ident ident) throws ModelException {
-    if (tableMeta.hasReverseForeignKey(ident.getString())) {
+    if (tableName().equals(ident.getString())) {
+      return this;
+    } else if (tableMeta.hasReverseForeignKey(ident.getString())) {
       return new ReferencedMultiTableMeta(this, tableMeta.reverseForeignKey(ident));
     } else {
       throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
@@ -113,5 +115,10 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
   @Override
   public TableMeta parent() {
     return this;
+  }
+
+  @Override
+  public TableDependencies tableDependencies() {
+    return new TableDependencies();
   }
 }

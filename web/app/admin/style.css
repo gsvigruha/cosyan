@@ -1,7 +1,5 @@
 body {
-    background-color: rgba(192, 192, 192, 1);
-    background-image: url("/icons/steel.jpg");
-    background-blend-mode: overlay;
+    background-image: url("/icons/steel2.jpg");
 }
 
 .admin table {
