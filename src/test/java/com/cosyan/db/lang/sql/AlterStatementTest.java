@@ -126,7 +126,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t7 (a varchar);");
     {
       ErrorResult result = error("alter table t7 add a varchar;");
-      assertEquals("[19, 20]: Duplicate column, foreign key or reversed foreign key name in 't7': 'a'.",
+      assertEquals("[19, 20]: Duplicate column, foreign key, reversed foreign key or ref name in 't7': 'a'.",
           result.getError().getMessage());
     }
     assertEquals(1, metaRepo.table(new Ident("t7")).columns().size());
@@ -462,7 +462,7 @@ public class AlterStatementTest extends UnitTestBase {
 
     ErrorResult result = error("alter table t34 drop aggref s;");
     assertEquals(
-        "[28, 29]: Cannot drop aggref 's', check 'c [(s.cnt < 5)]' fails.\n[1, 2]: Column 's' not found in table 't34'.",
+        "[28, 29]: Cannot drop ref 's', check 'c [(s.cnt < 5)]' fails.\n[1, 2]: Column 's' not found in table 't34'.",
         result.getError().getMessage());
     assertNotNull(metaRepo.table(new Ident("t34")).refs().get("s"));
 

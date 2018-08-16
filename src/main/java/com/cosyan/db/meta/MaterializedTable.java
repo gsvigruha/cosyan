@@ -225,9 +225,12 @@ public class MaterializedTable {
 
   public void checkName(Ident ident) throws ModelException {
     String name = ident.getString();
-    if (columnNames().contains(name) || foreignKeys.containsKey(name) || reverseForeignKeys.containsKey(name)) {
+    if (columnNames().contains(name)
+        || foreignKeys.containsKey(name)
+        || reverseForeignKeys.containsKey(name)
+        || refs.containsKey(name)) {
       throw new ModelException(
-          String.format("Duplicate column, foreign key or reversed foreign key name in '%s': '%s'.", tableName, name),
+          String.format("Duplicate column, foreign key, reversed foreign key or ref name in '%s': '%s'.", tableName, name),
           ident);
     }
   }
@@ -401,7 +404,7 @@ public class MaterializedTable {
     }
     for (Rule rule : rules().values()) {
       try {
-        rule.reCompile(this);
+        rule.reCompile(reader());
       } catch (ModelException e) {
         throw new ModelException(String.format(
             "Cannot drop foreign key '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
@@ -409,7 +412,7 @@ public class MaterializedTable {
     }
     for (Rule rule : reverseRuleDependencies().allRules()) {
       try {
-        rule.reCompile(this);
+        rule.reCompile(rule.getTable());
       } catch (ModelException e) {
         throw new ModelException(String.format(
             "Cannot drop foreign '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
@@ -422,18 +425,18 @@ public class MaterializedTable {
     refs.remove(ident.getString());
     for (Rule rule : rules().values()) {
       try {
-        rule.reCompile(this);
+        rule.reCompile(reader());
       } catch (ModelException e) {
         throw new ModelException(String.format(
-            "Cannot drop aggref '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
+            "Cannot drop ref '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
       }
     }
     for (Rule rule : reverseRuleDependencies().allRules()) {
       try {
-        rule.reCompile(this);
+        rule.reCompile(rule.getTable());
       } catch (ModelException e) {
         throw new ModelException(String.format(
-            "Cannot drop aggref '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
+            "Cannot drop ref '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
       }
     }
   }
@@ -547,7 +550,7 @@ public class MaterializedTable {
       }
       for (Rule rule : rules().values()) {
         try {
-          rule.reCompile(this);
+          rule.reCompile(reader());
         } catch (ModelException e) {
           throw new ModelException(String.format(
               "Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()), column);
@@ -555,7 +558,7 @@ public class MaterializedTable {
       }
       for (Rule rule : reverseRuleDependencies().allRules()) {
         try {
-          rule.reCompile(this);
+          rule.reCompile(rule.getTable());
         } catch (ModelException e) {
           throw new ModelException(String.format(
               "Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()), column);

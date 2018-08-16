@@ -8,7 +8,6 @@ import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
-import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.session.IParser.ParserException;
@@ -54,11 +53,11 @@ public class Rule {
     return column.getType();
   }
 
-  public void reCompile(MaterializedTable tableMeta) throws ModelException {
+  public void reCompile(SeekableTableMeta tableMeta) throws ModelException {
     Parser parser = new Parser();
     Lexer lexer = new Lexer();
     try {
-      parser.parseExpression(lexer.tokenizeExpression(expr.print())).compileColumn(tableMeta.reader());
+      parser.parseExpression(lexer.tokenizeExpression(expr.print())).compileColumn(tableMeta);
     } catch (ParserException e) {
       throw new RuntimeException(e); // This should not happen.
     }
