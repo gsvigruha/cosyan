@@ -19,6 +19,7 @@ import com.cosyan.db.model.References.FlatRefTableMeta;
 import com.cosyan.db.model.TableRef;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
+import com.google.common.base.Joiner;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -95,7 +96,7 @@ public class AlterStatementRefs {
       MaterializedTable tableMeta = resources.meta(table.getString());
       tableMeta.addRef(new TableRef(
           ref.getName().getString(),
-          ref.getSelect().print(),
+          Joiner.on(", ").join(ref.getExprs().stream().map(c -> c.print()).iterator()),
           metaRepo.maxRefIndex() + 1,
           /* aggr = */ false,
           refTableMeta));

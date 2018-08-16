@@ -6,6 +6,7 @@ import com.cosyan.db.lang.expr.Statements.Statement;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.lang.sql.Tokens.Token;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.PeekingIterator;
 
 public interface IParser {
@@ -40,4 +41,6 @@ public interface IParser {
   Select parseSelect(PeekingIterator<Token> tokens) throws ParserException;
 
   Expression parseExpression(PeekingIterator<Token> tokens) throws ParserException;
+
+  ImmutableList<Expression> parseExpressions(PeekingIterator<Token> tokens) throws ParserException;
 }

@@ -353,9 +353,9 @@ public class Parser implements IParser {
     assertNext(tokens, Tokens.FLATREF);
     Ident ident = parseIdent(tokens);
     assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
-    Select select = parseSelect(tokens);
+    ImmutableList<Expression> exprs = parseExpressions(tokens);
     assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-    return new FlatRefDefinition(ident, select);
+    return new FlatRefDefinition(ident, exprs);
   }
 
   private MetaStatement parseDrop(PeekingIterator<Token> tokens) throws ParserException {
@@ -745,6 +745,11 @@ public class Parser implements IParser {
     } else {
       return expr;
     }
+  }
+
+  @Override
+  public ImmutableList<Expression> parseExpressions(PeekingIterator<Token> tokens) throws ParserException {
+    return parseExprs(tokens, true, String.valueOf(Tokens.COMMA_COLON), String.valueOf(Tokens.PARENT_CLOSED));
   }
 
   private ImmutableList<Expression> parseExprs(PeekingIterator<Token> tokens, boolean allowAlias,

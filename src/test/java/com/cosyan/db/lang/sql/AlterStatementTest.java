@@ -621,7 +621,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t57 (a integer, constraint fk_a foreign key (a) references t56);");
     execute("insert into t56 values (10);");
     execute("insert into t57 values (0);");
-    execute("alter table t57 add flatref r (select fk_a.b + 1 as c from t57);");
+    execute("alter table t57 add flatref r (fk_a.b + 1 as c);");
     QueryResult result = query("select r.c from t57;");
     assertHeader(new String[] { "c" }, result);
     assertValues(new Object[][] { { 11L } }, result);

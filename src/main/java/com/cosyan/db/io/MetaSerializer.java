@@ -176,7 +176,7 @@ public class MetaSerializer {
     } else {
       FlatRefDefinition ref = new FlatRefDefinition(
           new Ident(name),
-          parser.parseSelect(lexer.tokenizeExpression(expr)));
+          parser.parseExpressions(lexer.tokenizeExpression(expr)));
       refTableMeta = table.createFlatRef(ref);
     }
     table.addRef(new TableRef(

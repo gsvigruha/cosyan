@@ -7,6 +7,7 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.google.common.collect.ImmutableList;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.SeekableTableMeta;
@@ -76,6 +77,6 @@ public class TableDefinition {
   @EqualsAndHashCode(callSuper = true)
   public static class FlatRefDefinition extends Node {
     private final Ident name;
-    private final Select select;
+    private final ImmutableList<Expression> exprs;
   }
 }

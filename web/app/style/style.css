@@ -1,0 +1,507 @@
+.entity table {
+    font-family: Lucida;
+    font-size: 12px;
+    border-collapse: collapse;
+    border-radius: 6px;
+}
+
+.entity td, .entity th {
+    border: 1px solid #ddd;
+    padding: 2px;
+    font-size: 12px;
+}
+
+.entity tr:nth-child(even){background-color: #F2F2F2;}
+.entity tr:nth-child(odd){background-color: #FFFFFF;}
+
+.entity tr:hover {background-color: #DDD;}
+
+.entity th {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    text-align: left;
+    background-color: #602040;
+    color: white;
+}
+
+span.button {
+    padding: 4px;
+}
+
+span.disabled {
+    opacity: .25;
+}
+
+span.enabled {
+    opacity: 1;
+}
+
+span.button:hover {background: radial-gradient(rgba(128, 255, 192, 1), rgba(128, 255, 192, 0.0) 80%);}
+
+span.button:active {background: radial-gradient(rgba(128, 255, 192, 1), rgba(128, 255, 192, 0.0) 80%);}
+
+.editor table {
+    font-family: Lucida;
+    font-size: 12px;
+    border-collapse: collapse;
+    margin: 2px;
+    margin-right: 4px;
+    border-radius: 6px;
+}
+
+.editor td, .entity th {
+    border: 1px solid #ddd;
+    padding: 2px;
+    font-size: 12px;
+    min-width: 60px;
+}
+
+td.empty {
+    background-color: #FFF0F0;
+}
+
+.editor tr:nth-child(even){background-color: #F2F2F2;}
+.editor tr:nth-child(odd){background-color: #FFFFFF;}
+
+.editor tr:hover {background-color: #DDD;}
+
+.editor th {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 2px;
+    text-align: left;
+    background-color: #602040;
+    color: white;
+}
+
+.editor input {
+    width: 80px;
+    border-radius: 1px;
+}
+
+div.entity-editor-tab {
+    display: flex;
+    padding-left: 2px;
+}
+
+div.entity {
+    padding-left: 4px;
+}
+
+div.entity-list {
+    padding-left: 4px;
+}
+
+.entity-list table {
+    max-width: 508px;
+    display: inline-block;
+    max-height: 120px;
+    overflow-y: auto;
+    border-radius: 6px;
+}
+
+.entity-list tbody {
+    overflow-y: scroll;
+    max-height: 200px;
+}
+
+.entity-list thead {
+    width: calc(100% - 15px);
+}
+
+.entity-list tr {
+    width: 100%;
+}
+
+td.icon {
+    width: 28px;
+    min-width: 28px;
+}
+
+th.icon {
+    width: 28px;
+    min-width: 28px;
+}
+
+div.editor {
+    
+}
+
+div.entity-menu {
+    
+}
+
+.subentity div.entity-editor-menu {
+  top: -28px;
+  left: 80px;
+  height: 0px;
+  position: relative;
+}
+
+span.entity-menu-label {
+    margin-left: 4px;
+    margin-right: 4px;
+    padding: 4px;
+    cursor: pointer;
+    vertical-align: text-bottom;
+}
+
+span.entity-menu-label:hover {
+  background: radial-gradient(rgba(128, 255, 192, 1) 10%, rgba(128, 255, 192, 0.0) 90%);
+}
+
+span.entity-title {
+    font-size: 18px;
+    margin-left: 8px;
+    margin-right: 8px;
+}
+
+span.subentity {
+    padding: 1px;
+    margin-left: 1px;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #F8F8F8;
+    background-color: rgba(240, 255, 255, 0.1);
+    border-radius: 8px;
+    height: 100%;
+}
+
+.subentity span.subentity {
+    position: relative;
+}
+
+span.entity-name {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+input.search {
+    margin-left: 4px;
+    width: 80px;
+    border-radius: 1px;
+}
+
+div.popup {
+    position:absolute;
+    margin:0 auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #D0D0D0;
+    border-radius: 8px;
+    padding: 12px;
+    height: 440px;
+    width: 80%;
+    background: rgba(240, 248, 248, 0.9);
+}
+
+.popup tbody {
+    max-height: 320px;
+}
+
+div.error {
+    color: #CC0000;
+    background-color: rgba(255, 240, 240, 0.1);
+    border-width: 1px;
+    border-style: solid;
+    border-color: #F0F0F0;
+}
+
+div.message {
+    margin: 2px;
+    height: 22px;
+}
+
+span.error {
+    color: #CC0000;
+    background-color: rgba(255, 240, 240, 0.1);
+    border-width: 1px;
+    border-style: solid;
+    border-color: #F0F0F0;
+}
+
+span.message {
+    margin: 2px;
+    height: 22px;
+}
+
+img.icons {
+    height: 20px;
+    width: 20px;
+    vertical-align: baseline;
+}
+
+hr.entity-main {
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.entity-main tbody {
+    max-height: 200px;
+}
+
+
+body {
+    background-image: url("/icons/steel3.jpg");
+}
+
+.admin table {
+    font-family: Lucida;
+    font-size: 14px;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.admin td, .admin th {
+    border: 1px solid #ddd;
+    padding: 4px;
+    font-size: 14px;
+}
+
+.admin tr:nth-child(even){background-color: #F2F2F2;}
+
+.admin tr:hover {background-color: #DDD;}
+
+.admin th {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    text-align: left;
+    background-color: #602040;
+    color: white;
+}
+
+h4.sql {
+    padding: 8px;
+}
+
+textarea.sql {
+    width: 500px;
+    background-color: rgba(240, 240, 240, 0.8);
+    margin: 8px;
+}
+
+div.sql-result {
+    padding: 8px;
+}
+
+button.tab {
+    background-color: rgba(0, 0, 0, 0);
+    padding: 4px;
+    margin: 4px;
+    width: 80px;
+    border: none;
+}
+
+button.tab:hover {
+    background: radial-gradient(rgba(128, 255, 192, 1) 10%, rgba(128, 255, 192, 0.0) 90%);
+}
+
+button.tab:active {
+    border: none;
+    outline: 0;
+}
+
+button.tab:focus {
+    border: none;
+    outline: 0;
+}
+
+button.selected {
+    background: radial-gradient(rgba(64, 208, 160, 1) 10%, rgba(64, 208, 160, 0.0) 90%);
+}
+
+div.sql {
+    padding: 4px;
+    margin: 4px;
+    border-bottom: 1px solid #DDD;
+}
+
+.menu span {
+    margin: 4px;
+    font-size: 14px;
+}
+
+div.menu {
+    padding: 4px;
+    margin: 4px;
+    font-size: 14px;
+    border-bottom: 1px solid #DDD;
+}
+
+h3.menu {
+    padding: 4px;
+    margin: 4px;
+    border-bottom: 1px solid #DDD;
+}
+
+div.login {
+    padding: 8px;
+    
+}
+
+.login div {
+    padding: 4px;
+}
+
+.login input {
+    padding: 4px;
+}
+
+.login button {
+    padding: 4px;
+}
+
+div.monitoring {
+    padding: 8px;
+}
+
+.monitoring table {
+    font-family: Lucida;
+    font-size: 12px;
+    border-collapse: collapse;
+    width: 800px;
+    margin: 8px;
+}
+
+.monitoring td, .monitoring th {
+    border: 1px solid #ddd;
+    padding: 2px;
+    font-size: 12px;
+}
+
+.monitoring tr:nth-child(even){background-color: #F2F2F2;}
+.monitoring tr:nth-child(odd){background-color: #FFFFFF;}
+
+.monitoring tr:hover {background-color: #DDD;}
+
+.monitoring th {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    text-align: left;
+    background-color: #602040;
+    color: white;
+}
+
+.admin table {
+    font-family: Lucida;
+    font-size: 12px;
+    border-collapse: collapse;
+    width: auto;
+    margin: 8px;
+}
+
+.admin td, .admin th {
+    border: 1px solid #ddd;
+    padding: 2px;
+    font-size: 12px;
+}
+
+.admin tr {
+    width: 100%;
+    table-layout: fixed;
+    display: table;
+}
+
+.admin tbody {
+    overflow-y: scroll;
+    overflow-x: none;
+    display: block;
+    max-height: 300px;
+    width: 655px;
+}
+
+.admin thead {
+    display: table;
+    width: 640px;
+    table-layout: fixed;
+}
+
+.admin tr:nth-child(even){background-color: #F2F2F2;}
+.admin tr:nth-child(odd){background-color: #FFFFFF;}
+
+.admin tr:hover {background-color: #DDD;}
+
+.admin th {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    text-align: left;
+    background-color: #602040;
+    color: white;
+}
+
+span.admin-table {
+    padding: 4px;
+    margin: 4px;
+    border: 1px;
+    border-style: solid;
+    border-color: #E0E8F0;
+}
+
+div.admin-tab {
+    display: inline-flex;
+    padding-left: 8px;
+    padding-bottom: 8px;
+}
+
+span.admin-label {
+    padding: 4px;
+    margin: 4px;
+    margin-left: 8px;
+    background-color: #E0F0FF;
+}
+
+input.admin-input {
+    width: 80px;
+}
+
+input.admin-input-wide {
+    width: 200px;
+}
+
+textarea.admin-input-wide {
+    width: 200px;
+    height: 40px;
+}
+
+a.menu {
+  padding: 4px;
+  color: #333;
+  background: none;
+  text-decoration: none;
+}
+
+a.menu:hover {
+  background: radial-gradient(rgba(128, 255, 192, 1) 10%, rgba(128, 255, 192, 0.0) 90%);
+  text-decoration: none;
+}
+
+div.help-left {
+  float: left;
+  width: 20%;
+  padding: 8px;
+}
+
+div.help-right {
+  float: right;
+  width: 80%;
+  padding: 8px;
+}
+
+div.help-button:hover {
+  background: radial-gradient(rgba(128, 255, 192, 0.8) 40%, rgba(128, 255, 192, 0.3) 70%, rgba(128, 255, 192, 0.1) 90%);
+  cursor: pointer;
+}
+
+div.help-button:active {
+  background: radial-gradient(rgba(64, 208, 160, 0.8) 40%, rgba(64, 208, 160, 0.3) 70%, rgba(64, 208, 160, 0.1) 90%);
+}
+
+div.help-button {
+  padding: 6px;
+}

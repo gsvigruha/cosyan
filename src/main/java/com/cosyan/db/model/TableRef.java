@@ -1,10 +1,15 @@
 package com.cosyan.db.model;
 
+import com.cosyan.db.lang.expr.Expression;
+import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.FlatRefDefinition;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
+import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.session.IParser.ParserException;
+import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
 
@@ -26,7 +31,13 @@ public class TableRef {
     Parser parser = new Parser();
     Lexer lexer = new Lexer();
     try {
-      parser.parseSelect(lexer.tokenizeExpression(expr + ";")).getTable().compile(tableMeta.reader());
+      if (aggr) {
+        Select select = parser.parseSelect(lexer.tokenizeExpression(expr + ";"));
+        tableMeta.createAggRef(new AggRefDefinition(new Ident(name), select));
+      } else {
+        ImmutableList<Expression> exprs = parser.parseExpressions(lexer.tokenize(expr + ";"));
+        tableMeta.createFlatRef(new FlatRefDefinition(new Ident(name), exprs));
+      }
     } catch (ParserException e) {
       throw new RuntimeException(e); // This should not happen.
     }

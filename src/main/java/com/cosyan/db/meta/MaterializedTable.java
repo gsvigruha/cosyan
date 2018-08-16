@@ -21,6 +21,7 @@ import com.cosyan.db.lang.expr.TableDefinition.FlatRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.sql.SelectStatement;
+import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.sql.SelectStatement.Select.TableColumns;
 import com.cosyan.db.meta.Dependencies.ReverseRuleDependencies;
 import com.cosyan.db.meta.Dependencies.ReverseRuleDependency;
@@ -42,7 +43,6 @@ import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.References.FlatRefTableMeta;
-import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SeekableTableMeta;
@@ -328,8 +328,7 @@ public class MaterializedTable {
 
   public AggRefTableMeta createAggRef(AggRefDefinition ref) throws ModelException {
     checkName(ref.getName());
-    ReferencedMultiTableMeta srcTableMeta = (ReferencedMultiTableMeta) ref.getSelect().getTable()
-        .compile(reader());
+    ExposedTableMeta srcTableMeta = ref.getSelect().getTable().compile(reader());
     ExposedTableMeta derivedTable;
     if (ref.getSelect().getWhere().isPresent()) {
       ColumnMeta whereColumn = ref.getSelect().getWhere().get().compileColumn(srcTableMeta);
@@ -348,9 +347,9 @@ public class MaterializedTable {
 
   public FlatRefTableMeta createFlatRef(FlatRefDefinition ref) throws ModelException {
     checkName(ref.getName());
-    ExposedTableMeta derivedTable = ref.getSelect().getTable().compile(reader());
-    TableColumns tableColumns = SelectStatement.Select.tableColumns(derivedTable, ref.getSelect().getColumns());
-    return new FlatRefTableMeta(derivedTable, tableColumns.getColumns());
+    SeekableTableMeta tableMeta = reader();
+    TableColumns columns = Select.tableColumns(tableMeta, ref.getExprs());
+    return new FlatRefTableMeta(tableMeta, columns.getColumns());
   }
 
   public void addRef(TableRef ref) {
