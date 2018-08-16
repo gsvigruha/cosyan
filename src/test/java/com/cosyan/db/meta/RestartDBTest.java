@@ -316,4 +316,23 @@ public class RestartDBTest {
       assertEquals("select sum(s.c) as s from rev_fk1 ;", t18.refs().get("s").getExpr());
     }
   }
+
+  @Test
+  public void testFlatRefAfterRestart() throws Exception {
+    DBApi dbApi = new DBApi(config);
+    dbApi.newAdminSession().execute("create table t19(a id, b integer);");
+    dbApi.newAdminSession().execute("create table t20 (a id, b integer, constraint fk1 foreign key (b) references t19);");
+    dbApi.newAdminSession().execute("alter table t20 add flatref s (fk1.b + 1 as x, fk1.b + 2 as y);");
+
+    {
+      MaterializedTable t20 = dbApi.getMetaRepo().table("t20");
+      assertEquals("(fk1.b + 1) as x, (fk1.b + 2) as y", t20.refs().get("s").getExpr());
+    }
+
+    dbApi = new DBApi(config);
+    {
+      MaterializedTable t20 = dbApi.getMetaRepo().table("t20");
+      assertEquals("(fk1.b + 1) as x, (fk1.b + 2) as y;", t20.refs().get("s").getExpr());
+    }
+  }
 }

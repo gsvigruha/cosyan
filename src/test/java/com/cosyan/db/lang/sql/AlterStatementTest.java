@@ -626,4 +626,26 @@ public class AlterStatementTest extends UnitTestBase {
     assertHeader(new String[] { "c" }, result);
     assertValues(new Object[][] { { 11L } }, result);
   }
+
+  @Test
+  public void testAlterTableFlatRefWithAggRef() throws Exception {
+    execute("create table t58 (a id, b integer);");
+    execute("create table t59 (a integer, constraint fk_a foreign key (a) references t58);");
+    execute("alter table t59 add flatref f1 (fk_a.b + 1 as x);");
+    execute("alter table t58 add aggref s (select sum(f1.x) as sx from rev_fk_a);");
+
+    execute("insert into t58 values (10);");
+    execute("insert into t59 values (0), (0);");
+
+    {
+      QueryResult result = query("select a, s.sx from t58;");
+      assertHeader(new String[] { "a", "sx" }, result);
+      assertValues(new Object[][] { { 0L, 22L } }, result);
+    }
+    {
+      QueryResult result = query("select a, f1.* from t59;");
+      assertHeader(new String[] { "a", "x" }, result);
+      assertValues(new Object[][] { { 0L, 11L }, { 0L, 11L } }, result);
+    }
+  }
 }
