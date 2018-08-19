@@ -3,9 +3,11 @@
 Cosyan DB is a transactional RDBMS with sophisticated multi table constraint logic. The long term goal of the project is
 to eliminate the need to manually program the business logic layer (like Java EE). This approach comes with immediate benefits:
 
- * Much faster development cycle
- * Dependency tracking for free
- * Performance
+ * Much faster development cycle: no need for coding in Java EE, wait for releases, new deployment,
+   just submit the logic as an SQL statement.
+ * Dependency tracking for free: no need to think about which constraint can be broken by an insert,
+   update or delete on a certain table.
+ * Performance: no need for multiple queries to check constraints.
 
 ## Setup
 
