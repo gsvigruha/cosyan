@@ -10,7 +10,7 @@ the project is to eliminate the need to manually program the business logic laye
  * Performance: no need for multiple queries to check constraints. More, this integrated can optimize constraint evaluation
    by caching.
 
-Users, contributors and constructive feedback is welcome!
+Users, contributors and constructive feedback is welcome! Please don't forget to *hit a star* if you like the project.
 
 ## Setup
 
