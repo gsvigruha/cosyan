@@ -1,16 +1,19 @@
 # Cosyan DB
 
-Cosyan DB is an SQL based transactional RDBMS with sophisticated multi table constraint logic. The long term goal of
-the project is to eliminate the need to manually program the business logic layer (like Java EE). This approach comes with immediate benefits:
+Cosyan DB is an SQL based transactional RDBMS with sophisticated multi table constraint logic and language enhancements
+building heavily on foreign keys.
+
+Users, contributors and constructive feedback is welcome! Please don't forget to **hit a star** if you like the project.
+
+The long term goal of the project is to substitute the business logic layer (like what you would do in Java EE).
+This approach comes with some immediate benefits:
 
  * Faster development cycle: no need for coding in Java EE, wait for releases, new deployment,
    just submit the logic as an SQL statement.
  * Dependency tracking: no need to think about which constraint can be broken by a particular `insert`,
-   `update` or `delete` on a certain table. This is something triggers usually don not cover.
+   `update` or `delete` on a certain table. This is something triggers usually do not cover.
  * Performance: no need for multiple queries to check constraints. More, this integrated can optimize constraint evaluation
    by caching.
-
-Users, contributors and constructive feedback is welcome! Please don't forget to **hit a star** if you like the project.
 
 ## Setup
 
@@ -44,21 +47,21 @@ In addition to SQL, extra features are introduced to help with multi-table const
 
 Cosyan DB supports the following SQL DML features:
 
- * Select
- * Distinct
- * Where
- * Group by
- * Having
- * Order by
- * Inner, left and right join
+ * `Select`
+ * `Distinct`
+ * `Where`
+ * `Group by`
+ * `Having`
+ * `Order by`
+ * `Inner`, `left` and `right join`
  * Arithmetic and logical expressions
- * Insert
- * Delete
- * Update
+ * `Insert`
+ * `Delete`
+ * `Update`
 
 DDL features:
 
- * Create/drop table
- * Create/drop index (on one attribute)
- * Alter table add/drop column
- * Alter table add/drop constraint
+ * `Create`/`drop table`
+ * `Create`/`drop index` (on one attribute)
+ * `Alter table add`/`drop column`
+ * `Alter table add`/`drop constraint`
