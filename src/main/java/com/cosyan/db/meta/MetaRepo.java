@@ -30,7 +30,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.cosyan.db.auth.AuthToken;
-import com.cosyan.db.auth.LocalUsers;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.index.ByteMultiTrie.LongMultiIndex;
 import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
@@ -91,7 +90,7 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
   private final LockManager lockManager;
   private final MetaSerializer metaSerializer;
 
-  public MetaRepo(Config config, LockManager lockManager, LocalUsers localUsers, ILexer lexer, IParser parser)
+  public MetaRepo(Config config, LockManager lockManager, Grants grants, ILexer lexer, IParser parser)
       throws IOException, DBException {
     this.config = config;
     this.lockManager = lockManager;
@@ -99,7 +98,7 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
     this.tables = new HashMap<>();
     this.uniqueIndexes = new HashMap<>();
     this.multiIndexes = new HashMap<>();
-    this.grants = new Grants(localUsers);
+    this.grants = grants;
 
     Files.createDirectories(Paths.get(config.tableDir()));
     Files.createDirectories(Paths.get(config.indexDir()));
@@ -401,7 +400,7 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
     return grants.hasAccess(tableMeta, authToken, method);
   }
 
-  public Resources resources(MetaResources metaResources) throws IOException {
+  public Resources resources(MetaResources metaResources, AuthToken authToken) throws IOException {
     ImmutableMap.Builder<String, SeekableTableReader> readers = ImmutableMap.builder();
     ImmutableMap.Builder<String, TableWriter> writers = ImmutableMap.builder();
     ImmutableMap.Builder<String, MaterializedTable> metas = ImmutableMap.builder();

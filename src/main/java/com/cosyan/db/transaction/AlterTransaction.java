@@ -64,7 +64,7 @@ public class AlterTransaction extends Transaction {
       lock(metaResources, metaRepo);
       journal.start(trxNumber);
       Result result;
-      Resources resources = metaRepo.resources(metaResources);
+      Resources resources = metaRepo.resources(metaResources, session.authToken());
       try {
         result = alterStatement.executeData(metaRepo, resources);
       } catch (RuleException e) {

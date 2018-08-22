@@ -395,7 +395,7 @@ public class References {
       Object[] newValues = new Object[columns.size()];
       int i = 0;
       for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-        values[i++] = entry.getValue().value(values, resources, context);
+        newValues[i++] = entry.getValue().value(values, resources, context);
       }
       return newValues;
     }

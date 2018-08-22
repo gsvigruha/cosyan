@@ -19,21 +19,28 @@ import java.io.IOException;
 import java.util.Random;
 
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.meta.Grants;
 
 public class Authenticator {
 
   private final LDAPConnector ldapConnector;
   private final LocalUsers localUsers;
+  private final Grants grants;
   private final Random random;
 
   public Authenticator(Config config) throws IOException {
-    ldapConnector = new LDAPConnector(config);
-    localUsers = new LocalUsers();
-    random = new Random(System.currentTimeMillis());
+    this.ldapConnector = new LDAPConnector(config);
+    this.localUsers = new LocalUsers();
+    this.grants = new Grants(localUsers);
+    this.random = new Random(System.currentTimeMillis());
   }
 
   public LocalUsers localUsers() {
     return localUsers;
+  }
+
+  public Grants grants() {
+    return grants;
   }
 
   public static enum Method {

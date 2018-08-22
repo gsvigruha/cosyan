@@ -161,8 +161,8 @@ span.subentity {
     margin-left: 1px;
     border-style: solid;
     border-width: 1px;
-    border-color: #F8F8F8;
-    background-color: rgba(240, 255, 255, 0.1);
+    border-color: #807078;
+    background-color: rgba(216, 216, 216, 0.2);
     border-radius: 8px;
     height: 100%;
 }
@@ -198,6 +198,7 @@ div.popup {
     padding: 12px;
     height: 440px;
     width: 80%;
+    min-width: 800px;
     background: rgba(240, 248, 248, 0.9);
 }
 
@@ -248,7 +249,7 @@ hr.entity-main {
 
 
 body {
-    background-image: url("/icons/steel3.jpg");
+    background-image: url("/icons/steel_bright.jpg");
 }
 
 .admin table {
@@ -294,7 +295,7 @@ button.tab {
     background-color: rgba(0, 0, 0, 0);
     padding: 4px;
     margin: 4px;
-    width: 80px;
+    min-width: 80px;
     border: none;
 }
 

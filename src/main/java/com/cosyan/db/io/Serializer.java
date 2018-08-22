@@ -70,6 +70,7 @@ public class Serializer {
       throws IOException {
     DataOutputStream stream = new DataOutputStream(out);
     stream.writeByte(1);
+    //stream.writeShort(authToken.userId());
     ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
     DataOutputStream recordStream = new DataOutputStream(bos);
     int i = 0;

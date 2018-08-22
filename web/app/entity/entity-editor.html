@@ -18,7 +18,7 @@
         <tr ng-repeat="field in entity.fields track by $index">
           <td>{{ field.name }}</td>
           <td>{{ field.type.type }}</td>
-          <td ng-switch on="field.type.type" ng-class="{'empty': field.value == undefined}">
+          <td ng-switch on="field.type.type" ng-class="{ empty: field.value == undefined }">
             <input ng-model="field.value" ng-change="valueChange()" disabled ng-switch-when="id" ng-disabled="field.immutable"></input>
             <input ng-model="field.value" ng-change="valueChange()" placeholder="###" ng-switch-when="integer" ng-disabled="field.immutable"></input>
             <input ng-model="field.value" ng-change="valueChange()" placeholder="##.#" ng-switch-when="float" ng-disabled="field.immutable"></input>
@@ -29,7 +29,7 @@
             <input ng-model="field.value" ng-change="valueChange()" ng-switch-default ng-disabled="field.immutable"></input>
           </td>
           <td class="icon">
-            <span ng-click="unsetValue(field);" title="Unset" ng-class="{enabled: field.value != undefined}"
+            <span ng-click="unsetValue(field);" title="Unset" ng-class="{ enabled: field.value != undefined} "
                   class="button disabled glyphicon glyphicon-remove" ng-if="field.type.type != 'id'"></span>
           </td>
         </tr>
@@ -38,7 +38,7 @@
     <span ng-repeat="fk in entity.foreignKeys track by $index" class="subentity">
       <div class="entity-menu">
         <span title="Reference"><img src="icons/fk.svg" class="icons"></img></span>
-        <span class="entity-menu-label" ng-click="expandEntity(fk);">{{ fk.name }}</span>
+        <span class="entity-menu-label" ng-click="expandEntity(fk);" ng-class="{ disabled: fk.value == undefined }">{{ fk.name }}</span>
       </div>
       <div>
         <span ng-click="pickEntity(fk);" title="Pick" class="button glyphicon glyphicon-list-alt" ng-class="{ disabled: fk.immutable }"></span>

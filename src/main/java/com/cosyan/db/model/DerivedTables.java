@@ -55,6 +55,7 @@ import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -73,6 +74,9 @@ public class DerivedTables {
     return MaterializedTable.readResources(column.tableDependencies().getDeps().values());
   }
 
+  /**
+   * Table with a new set of derived column expressions.
+   */
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class DerivedTableMeta extends ExposedTableMeta {
@@ -136,6 +140,9 @@ public class DerivedTables {
     }
   }
 
+  /**
+   * Table with a filter expression.
+   */
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class FilteredTableMeta extends ExposedTableMeta {
@@ -197,21 +204,15 @@ public class DerivedTables {
     }
   }
 
+  /**
+   * Table with a filter expression which is used in an index.
+   */
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class IndexFilteredTableMeta extends ExposedTableMeta {
-    private final VariableEquals clause;
     private final SeekableTableMeta sourceTable;
     private final ColumnMeta whereColumn;
-
-    public IndexFilteredTableMeta(
-        SeekableTableMeta sourceTable,
-        ColumnMeta whereColumn,
-        VariableEquals clause) {
-      this.clause = clause;
-      this.sourceTable = sourceTable;
-      this.whereColumn = whereColumn;
-    }
+    private final VariableEquals clause;
 
     @Override
     public ImmutableList<String> columnNames() {
@@ -255,6 +256,9 @@ public class DerivedTables {
     }
   }
 
+  /**
+   * A table with key expressions to aggregate on.
+   */
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class KeyValueTableMeta extends IterableTableMeta {
@@ -297,15 +301,14 @@ public class DerivedTables {
     }
   }
 
+  /**
+   * A sorted table.
+   */
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class SortedTableMeta extends ExposedTableMeta {
     private final ExposedTableMeta sourceTable;
     private final ImmutableList<OrderColumn> orderColumns;
-
-    private Object[] values;
-    private boolean sorted;
-    private Iterator<Object[]> iterator;
 
     @Override
     public ImmutableList<String> columnNames() {
@@ -335,6 +338,9 @@ public class DerivedTables {
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       return new DerivedIterableTableReader(sourceTable.reader(resources, context)) {
 
+        private boolean sorted;
+        private Iterator<Object[]> iterator;
+
         private void sort() throws IOException {
           TreeMap<ArrayList<Object>, Object[]> values = new TreeMap<>(new Comparator<ArrayList<Object>>() {
             @Override
@@ -357,6 +363,7 @@ public class DerivedTables {
               return 0;
             }
           });
+
           while (!cancelled.get()) {
             Object[] sourceValues = sourceReader.next();
             if (sourceValues == null) {
@@ -392,14 +399,13 @@ public class DerivedTables {
     }
   }
 
+  /**
+   * A table containing only distinct rows.
+   */
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class DistinctTableMeta extends ExposedTableMeta {
     private final ExposedTableMeta sourceTable;
-
-    private Object[] values;
-    private boolean distinct;
-    private Iterator<Object[]> iterator;
 
     @Override
     public ImmutableList<String> columnNames() {
@@ -430,14 +436,17 @@ public class DerivedTables {
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       return new DerivedIterableTableReader(sourceTable.reader(resources, context)) {
 
+        private boolean distinct;
+        private Iterator<Object[]> iterator;
+
         private void distinct() throws IOException {
-          LinkedHashSet<ImmutableList<Object>> values = new LinkedHashSet<>();
+          LinkedHashSet<ArrayList<Object>> values = new LinkedHashSet<>();
           while (!cancelled.get()) {
             Object[] sourceValues = sourceReader.next();
             if (sourceValues == null) {
               break;
             }
-            values.add(ImmutableList.copyOf(sourceValues));
+            values.add(Lists.newArrayList(sourceValues));
           }
           iterator = values.stream().map(list -> list.toArray()).iterator();
           distinct = true;
@@ -462,6 +471,9 @@ public class DerivedTables {
     }
   }
 
+  /**
+   * An aliased table.
+   */
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class AliasedTableMeta extends ExposedTableMeta {
@@ -550,6 +562,9 @@ public class DerivedTables {
     }
   }
 
+  /**
+   * A table with a limit on the number of returned rows.
+   */
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class LimitedTableMeta extends ExposedTableMeta {
