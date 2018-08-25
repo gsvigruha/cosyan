@@ -57,7 +57,7 @@ public class DropStatement {
         ReverseForeignKey foreignKey = tableMeta.reverseForeignKeys().values().iterator().next();
         throw new ModelException(String.format("Cannot drop table '%s', referenced by foreign key '%s.%s'.",
             tableWithOwner,
-            foreignKey.getRefTable().tableName(),
+            foreignKey.getRefTable().fullName(),
             foreignKey.getReverse()),
             table.getTable());
       }
@@ -81,7 +81,7 @@ public class DropStatement {
       basicColumn = tableMeta.column(tableColumn.getColumn());
       if (basicColumn.isUnique()) {
         throw new ModelException(String.format("Cannot drop index '%s.%s', column is unique.",
-            tableMeta.tableName(), basicColumn.getName()), tableColumn.getColumn());
+            tableMeta.fullName(), basicColumn.getName()), tableColumn.getColumn());
       }
       metaRepo.dropIndex(tableMeta, basicColumn, authToken);
       return Result.META_OK;

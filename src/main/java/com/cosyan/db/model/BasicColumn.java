@@ -19,8 +19,10 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.DataTypes.DataType;
 
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @EqualsAndHashCode()
+@ToString
 public class BasicColumn {
 
   private final String name;

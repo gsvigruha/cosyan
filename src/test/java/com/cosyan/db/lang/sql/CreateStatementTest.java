@@ -20,14 +20,17 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
+import com.cosyan.db.auth.Authenticator.Method;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MaterializedTable;
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
+import com.cosyan.db.session.Session;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.TableMultiIndex;
 import com.google.common.collect.ImmutableMap;
@@ -223,7 +226,7 @@ public class CreateStatementTest extends UnitTestBase {
     ErrorResult e1 = error("create table t24 (a integer, "
         + "constraint fk_a foreign key (a) references t23(a), "
         + "constraint c check (b > 1));");
-    assertEquals("[100, 101]: Column 'b' not found in table 't24'.", e1.getError().getMessage());
+    assertEquals("[100, 101]: Column 'b' not found in table 'admin.t24'.", e1.getError().getMessage());
     MaterializedTable t23 = metaRepo.table("admin", "t23");
     assertEquals(0, t23.reverseForeignKeys().size());
     assertFalse(metaRepo.hasTable("t24", "admin"));
@@ -246,5 +249,39 @@ public class CreateStatementTest extends UnitTestBase {
     TableMultiIndex index = metaRepo.collectMultiIndexes(t26).get("a");
     assertArrayEquals(new long[] { 0L, 32L }, index.get("x"));
     assertArrayEquals(new long[] { 16L }, index.get("y"));
+  }
+
+  @Test
+  public void testCreateTableForeignKeyNameResolution() throws Exception {
+    execute("create user u1 identified by 'abc';");
+    Session u1 = dbApi.authSession("u1", "abc", Method.LOCAL);
+    u1.execute("create table t27 (a id);");
+    u1.execute("insert into t27 values ('x');");
+
+    ErrorResult e1 = error("create table t28 (a integer, constraint fk_a foreign key (a) references t27);");
+    assertError(ModelException.class, "[72, 75]: Table 'admin.t27' does not exist.", e1);
+
+    execute("create table t28 (a integer, constraint fk_a foreign key (a) references u1.t27);");
+    MaterializedTable t28 = metaRepo.table("admin", "t28");
+
+    assertFalse(t28.column(new Ident("a")).isUnique());
+    assertTrue(t28.column(new Ident("a")).isIndexed());
+    MaterializedTable t27 = metaRepo.table("u1", "t27");
+    assertEquals(ImmutableMap.of("fk_a", new ForeignKey(
+        "fk_a",
+        "rev_fk_a",
+        t28,
+        (BasicColumn) t28.column(new Ident("a")),
+        t27,
+        (BasicColumn) t27.column(new Ident("a")))),
+        t28.foreignKeys());
+    assertEquals(ImmutableMap.of("rev_fk_a", new ReverseForeignKey(
+        "rev_fk_a",
+        "fk_a",
+        t27,
+        (BasicColumn) t27.column(new Ident("a")),
+        t28,
+        (BasicColumn) t28.column(new Ident("a")))),
+        t27.reverseForeignKeys());
   }
 }

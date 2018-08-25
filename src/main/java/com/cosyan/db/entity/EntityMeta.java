@@ -140,7 +140,7 @@ public class EntityMeta extends Result {
             reverseForeignKey.getRefTable().tableName()));
       }
       entities.add(new Entity(
-          table.tableName(),
+          table.fullName(),
           fields.build(),
           foreignKeys.build(),
           reverseForeignKeys.build(),

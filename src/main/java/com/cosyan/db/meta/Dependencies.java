@@ -218,7 +218,7 @@ public class Dependencies {
     }
 
     public void addRule(BooleanRule rule) {
-      assert rule.getTable().tableName().equals(key.getRefTable().tableName());
+      assert rule.getTable().fullName().equals(key.getRefTable().fullName());
       BooleanRule existingRule = rules.get(rule.getName());
       if (existingRule == null) {
         rules.put(rule.getName(), rule);
@@ -228,7 +228,7 @@ public class Dependencies {
     }
 
     public void removeRule(BooleanRule rule) {
-      assert rule.getTable().tableName().equals(key.getRefTable().tableName());
+      assert rule.getTable().fullName().equals(key.getRefTable().fullName());
       BooleanRule existingRule = rules.get(rule.getName());
       assert existingRule == rule;
       rules.remove(rule.getName());

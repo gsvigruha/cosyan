@@ -53,7 +53,7 @@ public class DropStatementTest extends UnitTestBase {
     execute("create table t4 (a varchar, constraint fk_a foreign key (a) references t3(a));");
 
     ErrorResult e = error("drop table t3;");
-    assertEquals("[11, 13]: Cannot drop table 'admin.t3', referenced by foreign key 't4.fk_a [a -> t3.a]'.",
+    assertEquals("[11, 13]: Cannot drop table 'admin.t3', referenced by foreign key 'admin.t4.fk_a [a -> admin.t3.a]'.",
         e.getError().getMessage());
   }
 
@@ -72,12 +72,12 @@ public class DropStatementTest extends UnitTestBase {
 
     {
       ErrorResult e = error("drop index t6.a;");
-      assertEquals("[14, 15]: Cannot drop index 't6.a', column is unique.", e.getError().getMessage());
+      assertEquals("[14, 15]: Cannot drop index 'admin.t6.a', column is unique.", e.getError().getMessage());
     }
     execute("drop index t6.b;");
     {
       ErrorResult e = error("drop index t6.c;");
-      assertEquals("[14, 15]: Column 'c' not found in table 't6'.", e.getError().getMessage());
+      assertEquals("[14, 15]: Column 'c' not found in table 'admin.t6'.", e.getError().getMessage());
     }
   }
 }

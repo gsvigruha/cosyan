@@ -148,7 +148,7 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
     for (MaterializedTable table : allTables()) {
       JSONObject obj = metaSerializer.toJSON(table);
       FileUtils.writeStringToFile(
-          new File(config.metaDir() + File.separator + table.tableName()),
+          new File(config.metaDir() + File.separator + table.fullName()),
           obj.toString(),
           Charset.defaultCharset());
     }
@@ -200,25 +200,34 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
   }
 
   @Override
-  public TableProvider tableProvider(TableWithOwner table) throws ModelException {
-    String ident = table.getTable().getString();
-    if (tables.containsKey(ident)) {
-      Map<String, MaterializedTable> userTables = tables.get(ident);
+  public TableProvider tableProvider(Ident ident, String owner) throws ModelException {
+    if (tables.containsKey(ident.getString())) {
+      Map<String, MaterializedTable> userTables = tables.get(ident.getString());
       return new TableProvider() {
 
         @Override
-        public TableProvider tableProvider(TableWithOwner table) throws ModelException {
-          return userTables.get(table.getTable().getString()).reader();
+        public TableProvider tableProvider(Ident ident2, String owner) throws ModelException {
+          if (!userTables.containsKey(ident2.getString())) {
+            throw new ModelException(String.format("Table '%s.%s' does not exist.", ident, ident2), ident2);
+          }
+          return userTables.get(ident2.getString()).reader();
         }
 
         @Override
         public TableMeta tableMeta(TableWithOwner table) throws ModelException {
+          if (!userTables.containsKey(table.getTable().getString())) {
+            throw new ModelException(String.format("Table '%s.%s' does not exist.", ident, table.getTable()), table.getTable());
+          }
           return userTables.get(table.getTable().getString()).reader();
         }
       };
-    } else {
-      return table(table).reader();
+    } else if (tables.containsKey(owner)) {
+      Map<String, MaterializedTable> userTables = tables.get(owner);
+      if (userTables.containsKey(ident.getString())) {
+        return userTables.get(ident.getString()).reader();
+      }
     }
+    throw new ModelException(String.format("Table '%s' does not exist.", ident), ident);
   }
 
   @VisibleForTesting
@@ -244,7 +253,7 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
     ImmutableMap.Builder<String, IndexReader> builder = ImmutableMap.builder();
     for (BasicColumn column : table.columns().values()) {
       if (column.isIndexed()) {
-        String indexName = table.tableName() + "." + column.getName();
+        String indexName = table.fullName() + "." + column.getName();
         if (column.isUnique()) {
           builder.put(column.getName(), uniqueIndexes.get(indexName));
         } else {
@@ -259,7 +268,7 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
   public ImmutableMap<String, TableUniqueIndex> collectUniqueIndexes(MaterializedTable table) {
     ImmutableMap.Builder<String, TableUniqueIndex> builder = ImmutableMap.builder();
     for (BasicColumn column : table.columns().values()) {
-      String indexName = table.tableName() + "." + column.getName();
+      String indexName = table.fullName() + "." + column.getName();
       if (column.isIndexed() && column.isUnique()) {
         builder.put(column.getName(), uniqueIndexes.get(indexName));
       }
@@ -271,7 +280,7 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
   public ImmutableMap<String, TableMultiIndex> collectMultiIndexes(MaterializedTable table) {
     ImmutableMap.Builder<String, TableMultiIndex> builder = ImmutableMap.builder();
     for (BasicColumn column : table.columns().values()) {
-      String indexName = table.tableName() + "." + column.getName();
+      String indexName = table.fullName() + "." + column.getName();
       if (column.isIndexed() && !column.isUnique()) {
         builder.put(column.getName(), multiIndexes.get(indexName));
       }
@@ -284,7 +293,7 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
     for (ForeignKey foreignKey : table.foreignKeys().values()) {
       builder.put(
           foreignKey.getColumn().getName(),
-          uniqueIndexes.get(foreignKey.getRefTable().tableName() + "." + foreignKey.getRefColumn().getName()));
+          uniqueIndexes.get(foreignKey.getRefTable().fullName() + "." + foreignKey.getRefColumn().getName()));
     }
     return builder.build();
   }
@@ -292,7 +301,7 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
   public ImmutableMultimap<String, IndexReader> collectReverseForeignIndexes(MaterializedTable table) {
     ImmutableMultimap.Builder<String, IndexReader> builder = ImmutableMultimap.builder();
     for (ReverseForeignKey reverseForeignKey : table.reverseForeignKeys().values()) {
-      String indexName = reverseForeignKey.getRefTable().tableName() + "."
+      String indexName = reverseForeignKey.getRefTable().fullName() + "."
           + reverseForeignKey.getRefColumn().getName();
       if (reverseForeignKey.getRefColumn().isUnique()) {
         builder.put(reverseForeignKey.getColumn().getName(), uniqueIndexes.get(indexName));
@@ -330,20 +339,18 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
   }
 
   public void registerTable(MaterializedTable tableMeta) throws IOException {
-    String tableName = tableMeta.tableName();
     syncIndex(tableMeta);
     syncMeta(tableMeta);
     if (!tables.containsKey(tableMeta.owner())) {
       tables.put(tableMeta.owner(), new HashMap<>());
     }
-    tables.get(tableMeta.owner()).put(tableName, tableMeta);
+    tables.get(tableMeta.owner()).put(tableMeta.tableName(), tableMeta);
     lockManager.registerLock(tableMeta);
   }
 
   public void dropTable(MaterializedTable tableMeta, AuthToken authToken) throws IOException, GrantException {
-    String tableName = tableMeta.tableName();
     grants.checkOwner(tableMeta, authToken);
-    tables.get(tableMeta.owner()).remove(tableName);
+    tables.get(tableMeta.owner()).remove(tableMeta.tableName());
     tableMeta.drop();
     for (BasicColumn column : tableMeta.allColumns()) {
       if (column.isIndexed()) {
@@ -362,7 +369,7 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
 
   private TableUniqueIndex registerUniqueIndex(MaterializedTable table, BasicColumn column)
       throws IOException {
-    String indexName = table.tableName() + "." + column.getName();
+    String indexName = table.fullName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
     if (!uniqueIndexes.containsKey(indexName)) {
       if (column.getType() == DataTypes.StringType) {
@@ -378,7 +385,7 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
 
   private TableMultiIndex registerMultiIndex(MaterializedTable table, BasicColumn column)
       throws IOException {
-    String indexName = table.tableName() + "." + column.getName();
+    String indexName = table.fullName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
     if (!multiIndexes.containsKey(indexName)) {
 
@@ -416,7 +423,7 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
   }
 
   private void dropUniqueIndex(MaterializedTable table, BasicColumn column) throws IOException {
-    String indexName = table.tableName() + "." + column.getName();
+    String indexName = table.fullName() + "." + column.getName();
     if (!uniqueIndexes.containsKey(indexName)) {
       return;
     }
@@ -425,7 +432,7 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
   }
 
   private void dropMultiIndex(MaterializedTable table, BasicColumn column) throws IOException {
-    String indexName = table.tableName() + "." + column.getName();
+    String indexName = table.fullName() + "." + column.getName();
     if (!multiIndexes.containsKey(indexName)) {
       return;
     }

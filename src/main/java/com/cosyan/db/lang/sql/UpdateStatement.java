@@ -86,7 +86,7 @@ public class UpdateStatement {
         BasicColumn column = materializedTableMeta.column(update.getIdent());
         if (column.isImmutable()) {
           throw new ModelException(String.format(
-              "Column '%s.%s' is immutable.", materializedTableMeta.tableName(), column.getName()), update.getIdent());
+              "Column '%s.%s' is immutable.", materializedTableMeta.fullName(), column.getName()), update.getIdent());
         }
         ColumnMeta columnExpr = update.getValue().compileColumn(tableMeta);
         check(column, columnExpr.getType(), update.getIdent());

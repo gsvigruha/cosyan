@@ -94,7 +94,7 @@ public class UpdateTest extends UnitTestBase {
     execute("insert into t5 values ('123', 'x');");
 
     ErrorResult r1 = error("update t4 set a = 'z' where a = 'x';");
-    assertError(ModelException.class, "[14, 15]: Column 't4.a' is immutable.", r1);
+    assertError(ModelException.class, "[14, 15]: Column 'admin.t4.a' is immutable.", r1);
 
     ErrorResult r2 = error("update t5 set b = 'z' where b = 'x';");
     assertError(RuleException.class, "Foreign key violation, value 'z' not present.", r2);
@@ -346,7 +346,7 @@ public class UpdateTest extends UnitTestBase {
     assertValues(new Object[][] { { "x", "z" } }, r2);
 
     ErrorResult e1 = error("update t27 set a = 'z';");
-    assertEquals("[15, 16]: Column 't27.a' is immutable.", e1.getError().getMessage());
+    assertEquals("[15, 16]: Column 'admin.t27.a' is immutable.", e1.getError().getMessage());
 
     execute("alter table t27 drop a;");
     execute("alter table t27 add a varchar;");
@@ -377,7 +377,7 @@ public class UpdateTest extends UnitTestBase {
     execute("create table t29 (a id, b varchar, c integer);");
     execute("insert into t29 values ('x', 10), ('y', 10);");
     ErrorResult e1 = error("update t29 set a = 1;");
-    assertError(ModelException.class, "[15, 16]: Column 't29.a' is immutable.", e1);
+    assertError(ModelException.class, "[15, 16]: Column 'admin.t29.a' is immutable.", e1);
     execute("update t29 set c = 1;");
     QueryResult r1 = query("select * from t29;");
     assertValues(new Object[][] { { 0l, "x", 1l }, { 1l, "y", 1l } }, r1);

@@ -112,11 +112,11 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
   }
 
   @Override
-  public TableProvider tableProvider(TableWithOwner table) throws ModelException {
-    if (tableMeta.hasForeignKey(table.getTable().getString())) {
-      return new ReferencedSimpleTableMeta(this, tableMeta.foreignKey(table.getTable()));
+  public TableProvider tableProvider(Ident ident, String owner) throws ModelException {
+    if (tableMeta.hasForeignKey(ident.getString())) {
+      return new ReferencedSimpleTableMeta(this, tableMeta.foreignKey(ident));
     } else {
-      throw new ModelException(String.format("Table '%s' not found.", table.getTable().getString()), table.getTable());
+      throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
     }
   }
 

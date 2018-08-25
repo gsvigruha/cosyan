@@ -18,7 +18,12 @@ package com.cosyan.db.lang.sql;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
+import com.cosyan.db.auth.Authenticator.AuthException;
+import com.cosyan.db.auth.Authenticator.Method;
+import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
+import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.session.Session;
 
 public class SelectStatementTest extends UnitTestBase {
 
@@ -199,5 +204,22 @@ public class SelectStatementTest extends UnitTestBase {
     QueryResult r1 = query("select fk_a.* from t24;");
     assertHeader(new String[] { "a", "b" }, r1);
     assertValues(new Object[][] { { "x", "y" } }, r1);
+  }
+
+  @Test
+  public void testNameResolution() throws AuthException {
+    execute("create user u1 identified by 'abc';");
+    Session u1 = dbApi.authSession("u1", "abc", Method.LOCAL);
+    u1.execute("create table t25 (a varchar);");
+    u1.execute("insert into t25 values ('x');");
+
+    ErrorResult e1 = error("select * from t25;");
+    assertError(ModelException.class, "[14, 17]: Table 'admin.t25' does not exist.", e1);
+
+    ErrorResult e2 = error("select * from u1.bad;");
+    assertError(ModelException.class, "[17, 20]: Table 'u1.bad' does not exist.", e2);
+
+    QueryResult r = query("select * from u1.t25;");
+    assertValues(new Object[][] { { "x" } }, r);
   }
 }

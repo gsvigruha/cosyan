@@ -65,6 +65,6 @@ public interface TableProvider {
 
   public TableMeta tableMeta(TableWithOwner table) throws ModelException;
 
-  public TableProvider tableProvider(TableWithOwner table) throws ModelException;
+  public TableProvider tableProvider(Ident ident, String owner) throws ModelException;
 
 }

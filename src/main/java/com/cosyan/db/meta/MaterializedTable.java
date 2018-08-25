@@ -202,7 +202,7 @@ public class MaterializedTable {
 
   public BasicColumn column(Ident ident) throws ModelException {
     if (!columns().containsKey(ident.getString())) {
-      throw new ModelException(String.format("Column '%s' not found in table '%s'.", ident, tableName), ident);
+      throw new ModelException(String.format("Column '%s' not found in table '%s'.", ident, fullName()), ident);
     }
     return columns().get(ident.getString());
   }

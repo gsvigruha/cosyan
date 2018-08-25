@@ -46,7 +46,7 @@ public class MetaRepoConnector {
     JSONObject list = new JSONObject();
     for (MaterializedTable tableMeta : metaRepo.getTables(session.authToken())) {
       JSONObject tableObj = new JSONObject();
-      tableObj.put("name", tableMeta.tableName());
+      tableObj.put("name", tableMeta.fullName());
       JSONArray columns = new JSONArray();
       for (BasicColumn column : tableMeta.columns().values()) {
         JSONObject columnObj = new JSONObject();
@@ -70,7 +70,7 @@ public class MetaRepoConnector {
         fkObj.put("name", foreignKey.getName());
         fkObj.put("column", foreignKey.getColumn().getName());
         fkObj.put("revName", foreignKey.getRevName());
-        fkObj.put("refTable", foreignKey.getRefTable().tableName());
+        fkObj.put("refTable", foreignKey.getRefTable().fullName());
         fkObj.put("refColumn", foreignKey.getRefColumn().getName());
         foreignKeys.put(fkObj);
       }
@@ -81,7 +81,7 @@ public class MetaRepoConnector {
         JSONObject fkObj = new JSONObject();
         fkObj.put("name", reverseForeignKey.getName());
         fkObj.put("revName", reverseForeignKey.getRevName());
-        fkObj.put("refTable", reverseForeignKey.getRefTable().tableName());
+        fkObj.put("refTable", reverseForeignKey.getRefTable().fullName());
         fkObj.put("refColumn", reverseForeignKey.getRefColumn().getName());
         reverseForeignKeys.put(fkObj);
       }
@@ -105,7 +105,7 @@ public class MetaRepoConnector {
       }
       tableObj.put("rules", rules);
       
-      list.put(tableMeta.tableName(), tableObj);
+      list.put(tableMeta.fullName(), tableObj);
     }
     return list;
   }

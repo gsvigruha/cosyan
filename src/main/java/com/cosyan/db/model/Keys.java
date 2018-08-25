@@ -55,7 +55,7 @@ public class Keys {
 
     @Override
     public String toString() {
-      return name + " [" + column.getName() + " -> " + refTable.tableName() + "." + refColumn.getName() + "]";
+      return name + " [" + column.getName() + " -> " + refTable.fullName() + "." + refColumn.getName() + "]";
     }
 
     public ReverseForeignKey createReverse() {
@@ -78,7 +78,7 @@ public class Keys {
 
     @Override
     public String toString() {
-      return name + " [" + refTable.tableName() + "." + refColumn.getName() + " -> " + column.getName() + "]";
+      return name + " [" + refTable.fullName() + "." + refColumn.getName() + " -> " + column.getName() + "]";
     }
 
     public ForeignKey getReverse() {

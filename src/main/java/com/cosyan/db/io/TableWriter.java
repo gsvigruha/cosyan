@@ -472,9 +472,9 @@ public class TableWriter extends SeekableTableReader implements TableIO {
           throw new RuleException(
               String.format("Invalid key '%s' (value of '%s.%s'), not found in referenced table '%s.%s'.",
                   key,
-                  foreignKey.getTable().tableName(),
+                  foreignKey.getTable().fullName(),
                   foreignKey.getColumn().getName(),
-                  foreignKey.getRefTable().tableName(),
+                  foreignKey.getRefTable().fullName(),
                   foreignKey.getRefColumn().getName()));
         }
       }

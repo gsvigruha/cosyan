@@ -79,19 +79,19 @@ public class AlterStatementTest extends UnitTestBase {
     {
       ErrorResult result = error("alter table t3 drop a;");
       assertEquals("[20, 21]: Cannot drop column 'a', check 'c_a [(a > 1)]' fails.\n" +
-          "[1, 2]: Column 'a' not found in table 't3'.", result.getError().getMessage());
+          "[1, 2]: Column 'a' not found in table 'admin.t3'.", result.getError().getMessage());
     }
     assertEquals(false, metaRepo.table("admin", "t3").column(new Ident("a")).isDeleted());
     execute("create table t4 (a integer, constraint fk_a foreign key (a) references t3(b));");
     {
       ErrorResult result = error("alter table t4 drop a;");
-      assertEquals("[20, 21]: Cannot drop column 'a', it is used by foreign key 'fk_a [a -> t3.b]'.",
+      assertEquals("[20, 21]: Cannot drop column 'a', it is used by foreign key 'fk_a [a -> admin.t3.b]'.",
           result.getError().getMessage());
     }
     assertEquals(false, metaRepo.table("admin", "t4").column(new Ident("a")).isDeleted());
     {
       ErrorResult result = error("alter table t3 drop b;");
-      assertEquals("[20, 21]: Cannot drop column 'b', it is used by reverse foreign key 'rev_fk_a [t4.a -> b]'.",
+      assertEquals("[20, 21]: Cannot drop column 'b', it is used by reverse foreign key 'rev_fk_a [admin.t4.a -> b]'.",
           result.getError().getMessage());
     }
     assertEquals(false, metaRepo.table("admin", "t3").column(new Ident("b")).isDeleted());
@@ -191,7 +191,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t10 (a varchar, b varchar, c varchar);");
     {
       ErrorResult result = error("alter table t10 alter d varchar;");
-      assertEquals("[22, 23]: Column 'd' not found in table 't10'.", result.getError().getMessage());
+      assertEquals("[22, 23]: Column 'd' not found in table 'admin.t10'.", result.getError().getMessage());
     }
     {
       ErrorResult result = error("alter table t10 alter a integer;");
@@ -230,7 +230,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t12 (a varchar, b integer);");
     execute("alter table t12 drop b;");
     ErrorResult result = error("select a, b from t12;");
-    assertEquals("[10, 11]: Column 'b' not found in table 't12'.", result.getError().getMessage());
+    assertEquals("[10, 11]: Column 'b' not found in table 'admin.t12'.", result.getError().getMessage());
   }
 
   @Test
@@ -305,7 +305,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("insert into t19 values ('x'), ('y');");
     execute("insert into t20 values (1), (0), (2);");
     ErrorResult e = error("alter table t20 add constraint fk_a foreign key (a) references t19;");
-    assertEquals("Invalid key '2' (value of 't20.a'), not found in referenced table 't19.a'.",
+    assertEquals("Invalid key '2' (value of 'admin.t20.a'), not found in referenced table 'admin.t19.a'.",
         e.getError().getMessage());
 
     MaterializedTable t20 = metaRepo.table("admin", "t20");
@@ -447,7 +447,7 @@ public class AlterStatementTest extends UnitTestBase {
     {
       ErrorResult result = error("alter table t33 drop constraint fk_a;");
       assertEquals(
-          "[32, 36]: Cannot drop foreign key 'fk_a', check 'c [(length(fk_a.b) < 5)]' fails.\n[8, 12]: Column 'fk_a' not found in table 't33'.",
+          "[32, 36]: Cannot drop foreign key 'fk_a', check 'c [(length(fk_a.b) < 5)]' fails.\n[8, 12]: Column 'fk_a' not found in table 'admin.t33'.",
           result.getError().getMessage());
       assertNotNull(metaRepo.table("admin", "t32").reverseForeignKeys().get("rev_fk_a"));
       assertNotNull(metaRepo.table("admin", "t33").foreignKeys().get("fk_a"));
@@ -477,7 +477,7 @@ public class AlterStatementTest extends UnitTestBase {
 
     ErrorResult result = error("alter table t34 drop aggref s;");
     assertEquals(
-        "[28, 29]: Cannot drop ref 's', check 'c [(s.cnt < 5)]' fails.\n[1, 2]: Column 's' not found in table 't34'.",
+        "[28, 29]: Cannot drop ref 's', check 'c [(s.cnt < 5)]' fails.\n[1, 2]: Column 's' not found in table 'admin.t34'.",
         result.getError().getMessage());
     assertNotNull(metaRepo.table("admin", "t34").refs().get("s"));
 
@@ -570,7 +570,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t48 (a integer, b integer, constraint fk1 foreign key (a) references t47);");
 
     ErrorResult error = error("select a, parent.a from t48;");
-    assertError(ModelException.class, "[10, 16]: Column 'parent' not found in table 't48'.", error);
+    assertError(ModelException.class, "[10, 16]: Column 'parent' not found in table 'admin.t48'.", error);
   }
 
   @Test

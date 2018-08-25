@@ -212,11 +212,11 @@ public class References {
     }
 
     @Override
-    public TableProvider tableProvider(TableWithOwner table) throws ModelException {
-      if (foreignKey.getRefTable().foreignKeys().containsKey(table.getTable().getString())) {
-        return new ReferencedSimpleTableMeta(this, foreignKey.getRefTable().foreignKey(table.getTable()));
+    public TableProvider tableProvider(Ident ident, String owner) throws ModelException {
+      if (foreignKey.getRefTable().foreignKeys().containsKey(ident.getString())) {
+        return new ReferencedSimpleTableMeta(this, foreignKey.getRefTable().foreignKey(ident));
       } else {
-        throw new ModelException(String.format("Table '%s' not found.", table.getTable().getString()), table.getTable());
+        throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
       }
     }
 
