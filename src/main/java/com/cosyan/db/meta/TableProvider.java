@@ -15,14 +15,56 @@
  */
 package com.cosyan.db.meta;
 
+import java.util.Optional;
+
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.TableMeta;
 
 public interface TableProvider {
 
-  public TableMeta tableMeta(Ident ident) throws ModelException;
-  
-  public TableProvider tableProvider(Ident ident) throws ModelException;
+  public static class TableWithOwner {
+    private final Ident table;
+    private final String owner;
+
+    private TableWithOwner(Ident table, String owner) {
+      this.table = table;
+      this.owner = owner;
+    }
+
+    public Ident getTable() {
+      return table;
+    }
+
+    public String getOwner() {
+      return owner;
+    }
+
+    public String resourceId() {
+      return owner + "." + table.getString();
+    }
+
+    @Override
+    public String toString() {
+      return resourceId();
+    }
+
+    public static TableWithOwner create(Ident table, Optional<Ident> owner, AuthToken authToken) {
+      if (owner.isPresent()) {
+        return new TableWithOwner(table, owner.get().getString());
+      } else {
+        return new TableWithOwner(table, authToken.username());
+      }
+    }
+
+    public static TableWithOwner of(Ident table, String owner) {
+      return new TableWithOwner(table, owner);
+    }
+  }
+
+  public TableMeta tableMeta(TableWithOwner table) throws ModelException;
+
+  public TableProvider tableProvider(TableWithOwner table) throws ModelException;
 
 }

@@ -108,7 +108,7 @@ public class Grants {
       JSONObject obj = new JSONObject();
       obj.put("method", method.name());
       obj.put("grant", withGrantOption);
-      obj.put("table", "*");
+      obj.put("table_name", "*");
       return obj;
     }
   }
@@ -138,7 +138,7 @@ public class Grants {
 
     @Override
     public String objects() {
-      return table.tableName();
+      return table.fullName();
     }
 
     @Override
@@ -171,7 +171,8 @@ public class Grants {
       JSONObject obj = new JSONObject();
       obj.put("method", method.name());
       obj.put("grant", withGrantOption);
-      obj.put("table", table.tableName());
+      obj.put("table_name", table.tableName());
+      obj.put("table_owner", table.owner());
       return obj;
     }
   }
@@ -184,7 +185,7 @@ public class Grants {
     this.localUsers = localUsers;
   }
 
-  public void fromJSON(JSONArray tokensObj, Map<String, MaterializedTable> tables) {
+  public void fromJSON(JSONArray tokensObj, Map<String, Map<String, MaterializedTable>> tables) {
     Multimap<String, GrantToken> tokens = HashMultimap.create();
     Map<String, String> users = new HashMap<>();
     for (int i = 0; i < tokensObj.length(); i++) {
@@ -196,7 +197,7 @@ public class Grants {
         JSONArray arr = tokensObj.getJSONObject(i).getJSONArray("tokens");
         for (int j = 0; j < arr.length(); j++) {
           JSONObject tokenObj = arr.getJSONObject(j);
-          if (tokenObj.getString("table").equals("*")) {
+          if (tokenObj.getString("table_name").equals("*")) {
             tokens.put(username, new GrantAllTablesToken(
                 username,
                 Method.valueOf(tokenObj.getString("method")),
@@ -205,7 +206,7 @@ public class Grants {
             tokens.put(username, new GrantTableToken(
                 username,
                 Method.valueOf(tokenObj.getString("method")),
-                tables.get(tokenObj.getString("table")),
+                tables.get(tokenObj.getString("table_owner")).get(tokenObj.get("table_name")),
                 tokenObj.getBoolean("grant")));
           }
         }
@@ -267,16 +268,16 @@ public class Grants {
   }
 
   private void checkAccess(
-      Collection<GrantToken> grants, MaterializedTable tableMeta, Method method, String table, AuthToken authToken)
+      Collection<GrantToken> grants, MaterializedTable tableMeta, Method method, AuthToken authToken)
       throws GrantException {
-    if (!hasAccess(grants, tableMeta, method, table, authToken)) {
+    if (!hasAccess(grants, tableMeta, method, authToken)) {
       throw new GrantException(
-          String.format("User '%s' has no %s right on '%s'.", authToken.username(), method, table));
+          String.format("User '%s' has no %s right on '%s'.", authToken.username(), method, tableMeta.fullName()));
     }
   }
 
   private boolean hasAccess(
-      Collection<GrantToken> grants, MaterializedTable tableMeta, Method method, String table, AuthToken authToken) {
+      Collection<GrantToken> grants, MaterializedTable tableMeta, Method method, AuthToken authToken) {
     for (GrantToken grant : grants) {
       if (grant.hasAccess(method, tableMeta, authToken)) {
         return true;
@@ -287,44 +288,41 @@ public class Grants {
 
   public void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
     MaterializedTable tableMeta = resource.getTableMeta();
-    String table = tableMeta.tableName();
     if (authToken.isAdmin() || authToken.username().equals(resource.getTableMeta().owner())) {
       return;
     }
     Collection<GrantToken> grants = userGrants.get(authToken.username());
     if (resource.write()) {
       if (resource.isInsert()) {
-        checkAccess(grants, tableMeta, Method.INSERT, table, authToken);
+        checkAccess(grants, tableMeta, Method.INSERT, authToken);
       }
       if (resource.isDelete()) {
-        checkAccess(grants, tableMeta, Method.DELETE, table, authToken);
+        checkAccess(grants, tableMeta, Method.DELETE, authToken);
       }
       if (resource.isUpdate()) {
-        checkAccess(grants, tableMeta, Method.UPDATE, table, authToken);
+        checkAccess(grants, tableMeta, Method.UPDATE, authToken);
       }
     } else {
       if (resource.isSelect()) {
-        checkAccess(grants, tableMeta, Method.SELECT, table, authToken);
+        checkAccess(grants, tableMeta, Method.SELECT, authToken);
       }
     }
   }
 
   public boolean hasAccess(MaterializedTable tableMeta, AuthToken authToken) {
-    String table = tableMeta.tableName();
     if (authToken.isAdmin() || authToken.username().equals(tableMeta.owner())) {
       return true;
     }
     Collection<GrantToken> grants = userGrants.get(authToken.username());
-    return hasAccess(grants, tableMeta, Method.SELECT, table, authToken);
+    return hasAccess(grants, tableMeta, Method.SELECT, authToken);
   }
 
   public boolean hasAccess(MaterializedTable tableMeta, AuthToken authToken, Method method) {
-    String table = tableMeta.tableName();
     if (authToken.isAdmin() || authToken.username().equals(tableMeta.owner())) {
       return true;
     }
     Collection<GrantToken> grants = userGrants.get(authToken.username());
-    return hasAccess(grants, tableMeta, method, table, authToken);
+    return hasAccess(grants, tableMeta, method, authToken);
   }
 
   public void checkOwner(MaterializedTable tableMeta, AuthToken authToken) throws GrantException {
@@ -332,7 +330,7 @@ public class Grants {
       return;
     }
     throw new GrantException(String.format("User '%s' has no ownership right on '%s'.",
-        authToken.username(), tableMeta.tableName()));
+        authToken.username(), tableMeta.fullName()));
   }
 
   public static class GrantException extends Exception {

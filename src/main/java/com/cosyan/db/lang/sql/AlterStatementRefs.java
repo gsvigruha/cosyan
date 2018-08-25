@@ -22,12 +22,14 @@ import com.cosyan.db.lang.expr.Statements.AlterStatement;
 import com.cosyan.db.lang.expr.Statements.GlobalStatement;
 import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.FlatRefDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepoExecutor;
+import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.References.FlatRefTableMeta;
@@ -44,21 +46,23 @@ public class AlterStatementRefs {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class AlterTableAddAggRef extends AlterStatement {
-    private final Ident table;
+    private final TableWithOwnerDefinition table;
     private final AggRefDefinition ref;
 
+    private TableWithOwner tableWithOwner;
     private AggRefTableMeta refTableMeta;
 
     @Override
     public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException {
-      MaterializedTable tableMeta = metaRepo.table(table);
-      refTableMeta = tableMeta.createAggRef(ref);
+      tableWithOwner = table.resolve(authToken);
+      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
+      refTableMeta = tableMeta.createAggRef(ref, tableMeta.owner());
       return MetaResources.tableMeta(tableMeta);
     }
 
     @Override
     public Result executeData(MetaRepoExecutor metaRepo, Resources resources) {
-      MaterializedTable tableMeta = resources.meta(table.getString());
+      MaterializedTable tableMeta = resources.meta(tableWithOwner.resourceId());
       tableMeta.addRef(new TableRef(
           ref.getName().getString(),
           ref.getSelect().print(),
@@ -76,12 +80,12 @@ public class AlterStatementRefs {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class AlterTableDropAggRef extends GlobalStatement {
-    private final Ident table;
+    private final TableWithOwnerDefinition table;
     private final Ident ref;
 
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
-      MaterializedTable tableMeta = metaRepo.table(table);
+      MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
       if (tableMeta.hasRef(ref.getString())) {
         tableMeta.dropRef(ref);
       } else {
@@ -94,21 +98,23 @@ public class AlterStatementRefs {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class AlterTableAddFlatRef extends AlterStatement {
-    private final Ident table;
+    private final TableWithOwnerDefinition table;
     private final FlatRefDefinition ref;
 
+    private TableWithOwner tableWithOwner;
     private FlatRefTableMeta refTableMeta;
 
     @Override
     public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException {
-      MaterializedTable tableMeta = metaRepo.table(table);
+      tableWithOwner = table.resolve(authToken);
+      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
       refTableMeta = tableMeta.createFlatRef(ref);
       return MetaResources.tableMeta(tableMeta);
     }
 
     @Override
     public Result executeData(MetaRepoExecutor metaRepo, Resources resources) {
-      MaterializedTable tableMeta = resources.meta(table.getString());
+      MaterializedTable tableMeta = resources.meta(tableWithOwner.resourceId());
       tableMeta.addRef(new TableRef(
           ref.getName().getString(),
           Joiner.on(", ").join(ref.getExprs().stream().map(c -> c.print()).iterator()),
@@ -126,12 +132,12 @@ public class AlterStatementRefs {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class AlterTableDropFlatRef extends GlobalStatement {
-    private final Ident table;
+    private final TableWithOwnerDefinition table;
     private final Ident ref;
 
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
-      MaterializedTable tableMeta = metaRepo.table(table);
+      MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
       if (tableMeta.hasRef(ref.getString())) {
         tableMeta.dropRef(ref);
       } else {

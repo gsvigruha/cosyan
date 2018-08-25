@@ -45,7 +45,7 @@ public class AlterStatementTest extends UnitTestBase {
   public void testDropColumn() throws Exception {
     execute("create table t1 (a varchar, b integer, c float);");
     execute("alter table t1 drop b;");
-    MaterializedTable tableMeta = metaRepo.table(new Ident("t1"));
+    MaterializedTable tableMeta = metaRepo.table("admin", "t1");
     assertEquals(2, tableMeta.columns().size());
     assertEquals(new BasicColumn(0, new Ident("a"), DataTypes.StringType, true, false, false),
         tableMeta.column(new Ident("a")));
@@ -81,27 +81,27 @@ public class AlterStatementTest extends UnitTestBase {
       assertEquals("[20, 21]: Cannot drop column 'a', check 'c_a [(a > 1)]' fails.\n" +
           "[1, 2]: Column 'a' not found in table 't3'.", result.getError().getMessage());
     }
-    assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("a")).isDeleted());
+    assertEquals(false, metaRepo.table("admin", "t3").column(new Ident("a")).isDeleted());
     execute("create table t4 (a integer, constraint fk_a foreign key (a) references t3(b));");
     {
       ErrorResult result = error("alter table t4 drop a;");
       assertEquals("[20, 21]: Cannot drop column 'a', it is used by foreign key 'fk_a [a -> t3.b]'.",
           result.getError().getMessage());
     }
-    assertEquals(false, metaRepo.table(new Ident("t4")).column(new Ident("a")).isDeleted());
+    assertEquals(false, metaRepo.table("admin", "t4").column(new Ident("a")).isDeleted());
     {
       ErrorResult result = error("alter table t3 drop b;");
       assertEquals("[20, 21]: Cannot drop column 'b', it is used by reverse foreign key 'rev_fk_a [t4.a -> b]'.",
           result.getError().getMessage());
     }
-    assertEquals(false, metaRepo.table(new Ident("t3")).column(new Ident("b")).isDeleted());
+    assertEquals(false, metaRepo.table("admin", "t3").column(new Ident("b")).isDeleted());
   }
 
   @Test
   public void testAddColumn() throws Exception {
     execute("create table t5 (a varchar, b integer);");
     execute("alter table t5 add c float;");
-    MaterializedTable tableMeta = metaRepo.table(new Ident("t5"));
+    MaterializedTable tableMeta = metaRepo.table("admin", "t5");
     assertEquals(3, tableMeta.columns().size());
     assertEquals(new BasicColumn(0, new Ident("a"), DataTypes.StringType, true, false, false),
         tableMeta.column(new Ident("a")));
@@ -144,14 +144,14 @@ public class AlterStatementTest extends UnitTestBase {
       assertEquals("[19, 20]: Duplicate column, foreign key, reversed foreign key or ref name in 't7': 'a'.",
           result.getError().getMessage());
     }
-    assertEquals(1, metaRepo.table(new Ident("t7")).columns().size());
+    assertEquals(1, metaRepo.table("admin", "t7").columns().size());
     execute("insert into t7 values ('x');");
     {
       ErrorResult result = error("alter table t7 add b varchar not null;");
       assertEquals("[19, 20]: Cannot add column 'b', new columns on a non empty table have to be nullable.",
           result.getError().getMessage());
     }
-    assertEquals(1, metaRepo.table(new Ident("t7")).columns().size());
+    assertEquals(1, metaRepo.table("admin", "t7").columns().size());
   }
 
   @Test
@@ -261,8 +261,8 @@ public class AlterStatementTest extends UnitTestBase {
     execute("insert into t17 values (1), (0), (1);");
     execute("alter table t17 add constraint fk_a foreign key (a) references t16;");
 
-    MaterializedTable t16 = metaRepo.table(new Ident("t16"));
-    MaterializedTable t17 = metaRepo.table(new Ident("t17"));
+    MaterializedTable t16 = metaRepo.table("admin", "t16");
+    MaterializedTable t17 = metaRepo.table("admin", "t17");
 
     ForeignKey fk = t17.foreignKey(new Ident("fk_a"));
     assertEquals("fk_a", fk.getName());
@@ -291,7 +291,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("insert into t18 values (1), (2);");
     execute("alter table t18 add constraint c1 check (a > 0);");
 
-    MaterializedTable t18 = metaRepo.table(new Ident("t18"));
+    MaterializedTable t18 = metaRepo.table("admin", "t18");
     assertNotNull(t18.rules().get("c1"));
 
     ErrorResult e = error("insert into t18 values (0);");
@@ -308,9 +308,9 @@ public class AlterStatementTest extends UnitTestBase {
     assertEquals("Invalid key '2' (value of 't20.a'), not found in referenced table 't19.a'.",
         e.getError().getMessage());
 
-    MaterializedTable t20 = metaRepo.table(new Ident("t20"));
+    MaterializedTable t20 = metaRepo.table("admin", "t20");
     assertEquals(0, t20.foreignKeys().size());
-    MaterializedTable t19 = metaRepo.table(new Ident("t19"));
+    MaterializedTable t19 = metaRepo.table("admin", "t19");
     assertEquals(0, t19.reverseForeignKeys().size());
     assertFalse(t20.column(new Ident("a")).isIndexed());
     assertEquals(0, metaRepo.collectIndexReaders(t20).size());
@@ -335,10 +335,10 @@ public class AlterStatementTest extends UnitTestBase {
     execute("insert into t23 values (1, 2), (1, 2);");
     execute("alter table t22 add constraint c1 check (s.b < 5);");
 
-    MaterializedTable t22 = metaRepo.table(new Ident("t22"));
+    MaterializedTable t22 = metaRepo.table("admin", "t22");
     Rule r1 = t22.rules().get("c1");
     assertNotNull(r1);
-    MaterializedTable t23 = metaRepo.table(new Ident("t23"));
+    MaterializedTable t23 = metaRepo.table("admin", "t23");
     Rule r2 = t23.reverseRuleDependencies().getDeps().get("fk_a").rule("c1");
     assertNotNull(r2);
     assertSame(r1, r2);
@@ -358,9 +358,9 @@ public class AlterStatementTest extends UnitTestBase {
     ErrorResult e = error("alter table t24 add constraint c1 check (s.b < 5);");
     assertEquals("Constraint check c1 failed.", e.getError().getMessage());
 
-    MaterializedTable t24 = metaRepo.table(new Ident("t24"));
+    MaterializedTable t24 = metaRepo.table("admin", "t24");
     assertEquals(0, t24.rules().size());
-    MaterializedTable t25 = metaRepo.table(new Ident("t25"));
+    MaterializedTable t25 = metaRepo.table("admin", "t25");
     assertEquals(0, t25.reverseRuleDependencies().getDeps().size());
 
     statement("insert into t25 values (1, 1);");
@@ -374,8 +374,8 @@ public class AlterStatementTest extends UnitTestBase {
     execute("insert into t27 values (1, 'a'), (0, 'b'), (null, 'c');");
     execute("alter table t27 add constraint fk_a foreign key (a) references t26;");
 
-    MaterializedTable t26 = metaRepo.table(new Ident("t26"));
-    MaterializedTable t27 = metaRepo.table(new Ident("t27"));
+    MaterializedTable t26 = metaRepo.table("admin", "t26");
+    MaterializedTable t27 = metaRepo.table("admin", "t27");
 
     ForeignKey fk = t27.foreignKey(new Ident("fk_a"));
     assertEquals("fk_a", fk.getName());
@@ -404,8 +404,8 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t29 (a integer, constraint fk_a foreign key (a) references t28);");
     execute("alter table t29 add constraint c_1 check (fk_a.b = 'x');");
 
-    MaterializedTable t28 = metaRepo.table(new Ident("t28"));
-    MaterializedTable t29 = metaRepo.table(new Ident("t29"));
+    MaterializedTable t28 = metaRepo.table("admin", "t28");
+    MaterializedTable t29 = metaRepo.table("admin", "t29");
 
     Rule rule = t29.rules().get("c_1");
     assertEquals("c_1", rule.getName());
@@ -421,8 +421,8 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t30 (a id, b varchar);");
     execute("create table t31 (a integer, constraint fk_a foreign key (a) references t30);");
 
-    MaterializedTable t30 = metaRepo.table(new Ident("t30"));
-    MaterializedTable t31 = metaRepo.table(new Ident("t31"));
+    MaterializedTable t30 = metaRepo.table("admin", "t30");
+    MaterializedTable t31 = metaRepo.table("admin", "t31");
 
     assertEquals("fk_a", t31.foreignKeys().get("fk_a").getName());
     assertEquals("rev_fk_a", t30.reverseForeignKeys().get("rev_fk_a").getName());
@@ -438,8 +438,8 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t33 (a integer, constraint fk_a foreign key (a) references t32);");
     execute("alter table t33 add constraint c check(length(fk_a.b) < 5);");
 
-    MaterializedTable t32 = metaRepo.table(new Ident("t32"));
-    MaterializedTable t33 = metaRepo.table(new Ident("t33"));
+    MaterializedTable t32 = metaRepo.table("admin", "t32");
+    MaterializedTable t33 = metaRepo.table("admin", "t33");
 
     assertEquals("fk_a", t33.foreignKeys().get("fk_a").getName());
     assertEquals("rev_fk_a", t32.reverseForeignKeys().get("rev_fk_a").getName());
@@ -449,8 +449,8 @@ public class AlterStatementTest extends UnitTestBase {
       assertEquals(
           "[32, 36]: Cannot drop foreign key 'fk_a', check 'c [(length(fk_a.b) < 5)]' fails.\n[8, 12]: Column 'fk_a' not found in table 't33'.",
           result.getError().getMessage());
-      assertNotNull(metaRepo.table(new Ident("t32")).reverseForeignKeys().get("rev_fk_a"));
-      assertNotNull(metaRepo.table(new Ident("t33")).foreignKeys().get("fk_a"));
+      assertNotNull(metaRepo.table("admin", "t32").reverseForeignKeys().get("rev_fk_a"));
+      assertNotNull(metaRepo.table("admin", "t33").foreignKeys().get("fk_a"));
     }
 
     execute("alter table t32 add aggref s (select count(1) as cnt from rev_fk_a);");
@@ -459,8 +459,8 @@ public class AlterStatementTest extends UnitTestBase {
       assertEquals(
           "[32, 36]: Cannot drop foreign key 'fk_a', aggref 's [select count(1) as cnt from rev_fk_a ]' fails.\n[28, 36]: Table 'rev_fk_a' not found.",
           result.getError().getMessage());
-      assertNotNull(metaRepo.table(new Ident("t32")).reverseForeignKeys().get("rev_fk_a"));
-      assertNotNull(metaRepo.table(new Ident("t33")).foreignKeys().get("fk_a"));
+      assertNotNull(metaRepo.table("admin", "t32").reverseForeignKeys().get("rev_fk_a"));
+      assertNotNull(metaRepo.table("admin", "t33").foreignKeys().get("fk_a"));
     }
   }
 
@@ -471,7 +471,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("alter table t34 add aggref s (select count(1) as cnt from rev_fk_a);");
     execute("alter table t34 add constraint c check(s.cnt < 5);");
 
-    MaterializedTable t34 = metaRepo.table(new Ident("t34"));
+    MaterializedTable t34 = metaRepo.table("admin", "t34");
 
     assertEquals("s", t34.refs().get("s").getName());
 
@@ -479,11 +479,11 @@ public class AlterStatementTest extends UnitTestBase {
     assertEquals(
         "[28, 29]: Cannot drop ref 's', check 'c [(s.cnt < 5)]' fails.\n[1, 2]: Column 's' not found in table 't34'.",
         result.getError().getMessage());
-    assertNotNull(metaRepo.table(new Ident("t34")).refs().get("s"));
+    assertNotNull(metaRepo.table("admin", "t34").refs().get("s"));
 
     execute("alter table t34 drop constraint c;");
     execute("alter table t34 drop aggref s;");
-    assertNull(metaRepo.table(new Ident("t34")).refs().get("s"));
+    assertNull(metaRepo.table("admin", "t34").refs().get("s"));
   }
 
   @Test

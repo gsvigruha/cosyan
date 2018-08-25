@@ -111,7 +111,6 @@ public class EntityMeta extends Result {
   public EntityMeta(MetaRepo metaRepo, AuthToken authToken) {
     super(true);
     ImmutableList<MaterializedTable> tables = metaRepo.getTables(authToken)
-        .values()
         .stream()
         .filter(t -> t.pkColumn().map(c -> c.getType() == DataTypes.IDType).orElse(false))
         .collect(ImmutableList.toImmutableList());

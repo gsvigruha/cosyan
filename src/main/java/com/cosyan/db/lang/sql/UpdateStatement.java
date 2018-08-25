@@ -18,10 +18,12 @@ package com.cosyan.db.lang.sql;
 import java.io.IOException;
 import java.util.Optional;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.Node;
 import com.cosyan.db.lang.expr.Statements.Statement;
+import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.StatementResult;
 import com.cosyan.db.logic.PredicateHelper;
@@ -30,6 +32,7 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes.DataType;
@@ -63,18 +66,20 @@ public class UpdateStatement {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class Update extends Statement {
-    private final Ident table;
+    private final TableWithOwnerDefinition table;
     private final ImmutableList<SetExpression> updates;
     private final Optional<Expression> where;
 
+    private TableWithOwner tableWithOwner;
     private SeekableTableMeta tableMeta;
     private ColumnMeta whereColumn;
     private ImmutableMap<Integer, ColumnMeta> columnExprs;
     private VariableEquals clause;
 
     @Override
-    public MetaResources compile(MetaReader metaRepo) throws ModelException {
-      MaterializedTable materializedTableMeta = metaRepo.table(table);
+    public MetaResources compile(MetaReader metaRepo, AuthToken authToken) throws ModelException {
+      tableWithOwner = table.resolve(authToken);
+      MaterializedTable materializedTableMeta = metaRepo.table(tableWithOwner);
       tableMeta = materializedTableMeta.reader();
       ImmutableMap.Builder<Integer, ColumnMeta> columnExprsBuilder = ImmutableMap.builder();
       for (SetExpression update : updates) {
@@ -102,7 +107,7 @@ public class UpdateStatement {
       // The rules must be re-evaluated for updated records. In addition, rules of
       // other tables referencing this table have to be re-evaluated as well. We need
       // the rule dependencies for the rules of this table and referencing rules.
-      TableWriter writer = resources.writer(tableMeta.tableName());
+      TableWriter writer = resources.writer(tableWithOwner.resourceId());
       if (clause == null) {
         return new StatementResult(writer.update(resources, columnExprs, whereColumn));
       } else {

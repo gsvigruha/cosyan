@@ -399,7 +399,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
 
   @Override
   public Record get(Object key, Resources resources) throws IOException {
-    IndexReader index = resources.getPrimaryKeyIndex(tableMeta.tableName());
+    IndexReader index = resources.getPrimaryKeyIndex(tableMeta.fullName());
     long filePointer = index.get(key)[0];
     return get(filePointer);
   }
@@ -417,7 +417,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     return new MultiFilteredTableReader(this, whereColumn, resources) {
       @Override
       protected void readPositions() throws IOException {
-        IndexReader index = resources.getIndex(tableMeta.tableName(), clause.getIdent().getString());
+        IndexReader index = resources.getIndex(tableMeta.fullName(), clause.getIdent().getString());
         positions = index.get(clause.getValue());
       }
     };
@@ -462,7 +462,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
 
   public void checkForeignKey(ForeignKey foreignKey, Resources resources) throws RuleException, IOException {
     RecordReader reader = recordReader();
-    IndexReader index = resources.getPrimaryKeyIndex(foreignKey.getRefTable().tableName());
+    IndexReader index = resources.getPrimaryKeyIndex(foreignKey.getRefTable().fullName());
     int columnIndex = tableMeta.columnNames().asList().indexOf(foreignKey.getColumn().getName());
     Record record;
     try {

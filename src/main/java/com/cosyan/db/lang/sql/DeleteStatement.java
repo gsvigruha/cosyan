@@ -17,9 +17,11 @@ package com.cosyan.db.lang.sql;
 
 import java.io.IOException;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.Statements.Statement;
+import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.StatementResult;
 import com.cosyan.db.logic.PredicateHelper;
@@ -28,8 +30,8 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.ColumnMeta;
-import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -42,16 +44,27 @@ public class DeleteStatement {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class Delete extends Statement {
-    private final Ident table;
+    private final TableWithOwnerDefinition table;
     private final Expression where;
 
+    private TableWithOwner tableWithOwner;
     private SeekableTableMeta tableMeta;
     private ColumnMeta whereColumn;
     private VariableEquals clause;
 
     @Override
+    public MetaResources compile(MetaReader metaRepo, AuthToken authToken) throws ModelException {
+      tableWithOwner = table.resolve(authToken);
+      MaterializedTable materializedTableMeta = metaRepo.table(tableWithOwner);
+      tableMeta = materializedTableMeta.reader();
+      whereColumn = where.compileColumn(tableMeta);
+      clause = PredicateHelper.getBestClause(tableMeta, where);
+      return MetaResources.deleteFromTable(materializedTableMeta);
+    }
+
+    @Override
     public Result execute(Resources resources) throws RuleException, IOException {
-      TableWriter writer = resources.writer(tableMeta.tableName());
+      TableWriter writer = resources.writer(tableWithOwner.resourceId());
       long deletedLines;
       if (clause == null) {
         deletedLines = writer.delete(resources, whereColumn);
@@ -64,15 +77,6 @@ public class DeleteStatement {
 
     @Override
     public void cancel() {
-    }
-
-    @Override
-    public MetaResources compile(MetaReader metaRepo) throws ModelException {
-      MaterializedTable materializedTableMeta = metaRepo.table(table);
-      tableMeta = materializedTableMeta.reader();
-      whereColumn = where.compileColumn(tableMeta);
-      clause = PredicateHelper.getBestClause(tableMeta, where);
-      return MetaResources.deleteFromTable(materializedTableMeta);
     }
   }
 }

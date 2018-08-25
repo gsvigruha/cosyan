@@ -71,11 +71,11 @@ public class MetaResources {
 
     public ImmutableMap<String, Resource> resources() {
       Map<String, Resource> builder = new HashMap<>();
-      String tableName = tableMeta.tableName();
-      builder.put(tableName, new Resource(tableName, write()));
+      String fullName = tableMeta.fullName();
+      builder.put(fullName, new Resource(fullName, write()));
       if (reverseForeignIndexes) {
         for (ReverseForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
-          String refTableName = foreignKey.getRefTable().tableName();
+          String refTableName = foreignKey.getRefTable().fullName();
           builder.put(refTableName, new Resource(refTableName, /* write= */false));
         }
       }
@@ -104,7 +104,7 @@ public class MetaResources {
 
   public static MetaResources readTable(MaterializedTable tableMeta) {
     return new MetaResources(ImmutableMap.of(
-        tableMeta.tableName(),
+        tableMeta.fullName(),
         new TableMetaResource(
             tableMeta,
             /* select= */true,
@@ -118,7 +118,7 @@ public class MetaResources {
 
   public static MetaResources updateTable(MaterializedTable tableMeta) {
     return new MetaResources(ImmutableMap.of(
-        tableMeta.tableName(),
+        tableMeta.fullName(),
         new TableMetaResource(
             tableMeta,
             /* select= */false,
@@ -134,7 +134,7 @@ public class MetaResources {
 
   public static MetaResources insertIntoTable(MaterializedTable tableMeta) {
     return new MetaResources(ImmutableMap.of(
-        tableMeta.tableName(),
+        tableMeta.fullName(),
         new TableMetaResource(
             tableMeta,
             /* select= */false,
@@ -150,7 +150,7 @@ public class MetaResources {
 
   public static MetaResources deleteFromTable(MaterializedTable tableMeta) {
     return new MetaResources(ImmutableMap.of(
-        tableMeta.tableName(),
+        tableMeta.fullName(),
         new TableMetaResource(
             tableMeta,
             /* select= */false,
@@ -165,7 +165,7 @@ public class MetaResources {
 
   public static MetaResources tableMeta(MaterializedTable tableMeta) {
     return new MetaResources(ImmutableMap.of(
-        tableMeta.tableName(),
+        tableMeta.fullName(),
         new TableMetaResource(
             tableMeta,
             /* select= */true,

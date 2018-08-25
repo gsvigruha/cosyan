@@ -15,8 +15,6 @@
  */
 package com.cosyan.ui.admin;
 
-import java.util.Map;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -46,10 +44,9 @@ public class MetaRepoConnector {
     Session session = sessionHandler.session(userToken);
     MetaRepo metaRepo = session.metaRepo();
     JSONObject list = new JSONObject();
-    for (Map.Entry<String, MaterializedTable> table : metaRepo.getTables(session.authToken()).entrySet()) {
+    for (MaterializedTable tableMeta : metaRepo.getTables(session.authToken())) {
       JSONObject tableObj = new JSONObject();
-      tableObj.put("name", table.getKey());
-      MaterializedTable tableMeta = table.getValue();
+      tableObj.put("name", tableMeta.tableName());
       JSONArray columns = new JSONArray();
       for (BasicColumn column : tableMeta.columns().values()) {
         JSONObject columnObj = new JSONObject();

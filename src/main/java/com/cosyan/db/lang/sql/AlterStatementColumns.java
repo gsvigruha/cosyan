@@ -20,12 +20,14 @@ import java.io.IOException;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.Statements.AlterStatement;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.meta.MetaRepoExecutor;
+import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.transaction.MetaResources;
@@ -39,21 +41,23 @@ public class AlterStatementColumns {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class AlterTableAddColumn extends AlterStatement {
-    private final Ident table;
+    private final TableWithOwnerDefinition table;
     private final ColumnDefinition column;
 
+    private TableWithOwner tableWithOwner;
     private BasicColumn basicColumn;
 
     @Override
     public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
-      MaterializedTable tableMeta = metaRepo.table(table);
+      tableWithOwner = table.resolve(authToken);
+      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
       basicColumn = tableMeta.createColumn(column);
       return MetaResources.tableMeta(tableMeta);
     }
 
     @Override
     public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
-      MaterializedTable tableMeta = resources.meta(table.getString());
+      MaterializedTable tableMeta = resources.meta(tableWithOwner.resourceId());
       tableMeta.addColumn(basicColumn);
       metaRepo.syncMeta(tableMeta);
       return Result.META_OK;
@@ -67,14 +71,14 @@ public class AlterStatementColumns {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class AlterTableDropColumn extends AlterStatement {
-    private final Ident table;
+    private final TableWithOwnerDefinition table;
     private final Ident column;
 
     private BasicColumn basicColumn;
 
     @Override
     public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
-      MaterializedTable tableMeta = metaRepo.table(table);
+      MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
       basicColumn = tableMeta.column(column);
       tableMeta.checkDeleteColumn(column);
       return MetaResources.tableMeta(tableMeta);
@@ -94,14 +98,14 @@ public class AlterStatementColumns {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class AlterTableAlterColumn extends AlterStatement {
-    private final Ident table;
+    private final TableWithOwnerDefinition table;
     private final ColumnDefinition column;
 
     private BasicColumn originalColumn;
 
     @Override
     public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
-      MaterializedTable tableMeta = metaRepo.table(table);
+      MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
       originalColumn = tableMeta.column(column.getName());
       if (originalColumn.getType() != column.getType()) {
         throw new ModelException(

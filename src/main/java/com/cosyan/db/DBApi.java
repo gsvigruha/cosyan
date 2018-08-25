@@ -55,7 +55,8 @@ public class DBApi {
     this.config = config;
     LockManager lockManager = new LockManager();
     authenticator = new Authenticator(config);
-    metaRepo = new MetaRepo(config, lockManager, authenticator.grants(), new Lexer(), new Parser());
+    metaRepo = new MetaRepo(
+        config, lockManager, authenticator.grants(), new Lexer(), new Parser());
     transactionHandler = new TransactionHandler();
     transactionJournal = new TransactionJournal(config);
     backupManager = new BackupManager(config, metaRepo);

@@ -31,7 +31,7 @@ import com.cosyan.db.transaction.Resources;
 public class Statements {
   public static abstract class Statement {
 
-    public abstract MetaResources compile(MetaReader metaRepo) throws ModelException;
+    public abstract MetaResources compile(MetaReader metaRepo, AuthToken authToken) throws ModelException;
 
     public abstract Result execute(Resources resources) throws RuleException, IOException;
 

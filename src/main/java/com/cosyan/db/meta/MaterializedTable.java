@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.io.MemoryBufferedSeekableFileStream;
 import com.cosyan.db.io.RAFBufferedInputStream;
@@ -128,15 +129,23 @@ public class MaterializedTable {
   }
 
   public String fileName() {
-    return config.tableDir() + File.separator + tableName();
+    return config.tableDir() + File.separator + fullName();
   }
 
   public Type type() {
     return type;
   }
 
+  public String tableName() {
+    return tableName;
+  }
+
   public String owner() {
     return owner;
+  }
+
+  public String fullName() {
+    return owner + "." + tableName;
   }
 
   public RandomAccessFile raf() {
@@ -206,10 +215,6 @@ public class MaterializedTable {
     }
   }
 
-  public String tableName() {
-    return tableName;
-  }
-
   public Map<String, BooleanRule> rules() {
     return Collections.unmodifiableMap(rules);
   }
@@ -275,7 +280,7 @@ public class MaterializedTable {
     checkName(foreignKeyDefinition.getName());
     refTable.checkName(foreignKeyDefinition.getRevName());
     BasicColumn keyColumn = column(foreignKeyDefinition.getKeyColumn());
-    Ident refTableName = foreignKeyDefinition.getRefTable();
+    Ident refTableName = foreignKeyDefinition.getRefTable().getTable();
 
     Optional<BasicColumn> refColumnOpt = refTable.pkColumn();
     if (!refColumnOpt.isPresent()) {
@@ -344,9 +349,9 @@ public class MaterializedTable {
     columns.add(column);
   }
 
-  public AggRefTableMeta createAggRef(AggRefDefinition ref) throws ModelException {
+  public AggRefTableMeta createAggRef(AggRefDefinition ref, String owner) throws ModelException {
     checkName(ref.getName());
-    ExposedTableMeta srcTableMeta = ref.getSelect().getTable().compile(reader());
+    ExposedTableMeta srcTableMeta = ref.getSelect().getTable().compile(reader(), owner);
     ExposedTableMeta derivedTable;
     if (ref.getSelect().getWhere().isPresent()) {
       ColumnMeta whereColumn = ref.getSelect().getWhere().get().compileColumn(srcTableMeta);
@@ -405,7 +410,7 @@ public class MaterializedTable {
     rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */false);
   }
 
-  public void dropForeignKey(Ident ident) throws ModelException {
+  public void dropForeignKey(Ident ident, AuthToken authToken) throws ModelException {
     assert foreignKeys.containsKey(ident.getString());
     ForeignKey fk = foreignKeys.remove(ident.getString());
     fk.getRefTable().reverseForeignKeys.remove(fk.getRevName());

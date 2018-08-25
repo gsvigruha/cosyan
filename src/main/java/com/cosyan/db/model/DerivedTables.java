@@ -241,10 +241,10 @@ public class DerivedTables {
 
     @Override
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
-      return new MultiFilteredTableReader(resources.reader(sourceTable.tableName()), whereColumn, resources) {
+      return new MultiFilteredTableReader(resources.reader(sourceTable.fullName()), whereColumn, resources) {
         @Override
         protected void readPositions() throws IOException {
-          IndexReader index = resources.getIndex(sourceTable.tableName(), clause.getIdent().getString());
+          IndexReader index = resources.getIndex(sourceTable.fullName(), clause.getIdent().getString());
           positions = index.get(clause.getValue());
         }
       };

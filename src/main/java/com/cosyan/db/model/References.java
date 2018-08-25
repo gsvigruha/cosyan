@@ -196,27 +196,27 @@ public class References {
       if (key == null) {
         return nulls;
       } else {
-        SeekableTableReader reader = resources.reader(foreignKey.getRefTable().tableName());
+        SeekableTableReader reader = resources.reader(foreignKey.getRefTable().fullName());
         return reader.get(key, resources).getValues();
       }
     }
 
     @Override
-    public TableMeta tableMeta(Ident ident) throws ModelException {
-      if (foreignKey.getRefTable().reverseForeignKeys().containsKey(ident.getString())) {
+    public TableMeta tableMeta(TableWithOwner table) throws ModelException {
+      if (foreignKey.getRefTable().reverseForeignKeys().containsKey(table.getTable().getString())) {
         return new ReferencedMultiTableMeta(this,
-            foreignKey.getRefTable().reverseForeignKey(ident));
+            foreignKey.getRefTable().reverseForeignKey(table.getTable()));
       } else {
-        throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
+        throw new ModelException(String.format("Table '%s' not found.", table.getTable().getString()), table.getTable());
       }
     }
 
     @Override
-    public TableProvider tableProvider(Ident ident) throws ModelException {
-      if (foreignKey.getRefTable().foreignKeys().containsKey(ident.getString())) {
-        return new ReferencedSimpleTableMeta(this, foreignKey.getRefTable().foreignKey(ident));
+    public TableProvider tableProvider(TableWithOwner table) throws ModelException {
+      if (foreignKey.getRefTable().foreignKeys().containsKey(table.getTable().getString())) {
+        return new ReferencedSimpleTableMeta(this, foreignKey.getRefTable().foreignKey(table.getTable()));
       } else {
-        throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
+        throw new ModelException(String.format("Table '%s' not found.", table.getTable().getString()), table.getTable());
       }
     }
 
@@ -284,9 +284,8 @@ public class References {
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       Object[] parentValues = parent.values(context.values(TableContext.PARENT), resources, context);
       Object key = parentValues[reverseForeignKey.getColumn().getIndex()];
-      String table = reverseForeignKey.getRefTable().tableName();
       final IndexReader index = resources.getIndex(reverseForeignKey);
-      return new MultiFilteredTableReader(resources.reader(table), ColumnMeta.TRUE_COLUMN, resources) {
+      return new MultiFilteredTableReader(resources.reader(reverseForeignKey.getRefTable().fullName()), ColumnMeta.TRUE_COLUMN, resources) {
 
         @Override
         protected void readPositions() throws IOException {

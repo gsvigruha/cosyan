@@ -18,6 +18,7 @@ package com.cosyan.db.lang.sql;
 import java.io.IOException;
 import java.util.Optional;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.Statements.Statement;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.WaitResult;
@@ -40,7 +41,7 @@ public class WaitStatement extends Statement {
   private boolean cancelled = false;
 
   @Override
-  public MetaResources compile(MetaReader metaRepo) throws ModelException {
+  public MetaResources compile(MetaReader metaRepo, AuthToken authToken) throws ModelException {
     return MetaResources.empty();
   }
 

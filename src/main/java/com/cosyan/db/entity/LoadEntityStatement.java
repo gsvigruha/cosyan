@@ -18,9 +18,11 @@ package com.cosyan.db.entity;
 import java.io.IOException;
 import java.util.Optional;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.lang.expr.Statements.Statement;
+import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaReader;
@@ -48,8 +50,9 @@ public class LoadEntityStatement extends Statement {
   private BasicColumn column;
 
   @Override
-  public MetaResources compile(MetaReader metaRepo) throws ModelException {
-    tableMeta = metaRepo.table(new Ident(table, new Loc(0, 0)));
+  public MetaResources compile(MetaReader metaRepo, AuthToken authToken) throws ModelException {
+    TableWithOwnerDefinition tableWithOwnerDefinition = new TableWithOwnerDefinition(Optional.empty(), new Ident(table, new Loc(0, 0)));
+    tableMeta = metaRepo.table(tableWithOwnerDefinition.resolve(authToken));
     header = tableMeta.columns().values().asList();
     Optional<BasicColumn> pkColumn = tableMeta.pkColumn();
     if (pkColumn.isPresent()) {

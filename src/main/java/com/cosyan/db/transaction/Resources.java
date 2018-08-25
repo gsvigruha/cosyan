@@ -61,7 +61,7 @@ public class Resources {
   }
 
   public MaterializedTable meta(String table) {
-    assert metas.containsKey(table);
+    assert metas.containsKey(table) : String.format("Invalid table %s.", table);
     return metas.get(table);
   }
 
@@ -107,6 +107,6 @@ public class Resources {
   }
 
   public IndexReader getIndex(Ref foreignKey) {
-    return getIndex(foreignKey.getRefTable().tableName(), foreignKey.getRefColumn().getName());
+    return getIndex(foreignKey.getRefTable().fullName(), foreignKey.getRefColumn().getName());
   }
 }

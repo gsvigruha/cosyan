@@ -21,15 +21,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Literals.Literal;
 import com.cosyan.db.lang.expr.Statements.Statement;
+import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.InsertIntoResult;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
@@ -47,16 +50,18 @@ public class InsertIntoStatement {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class InsertInto extends Statement {
-    private final Ident table;
+    private final TableWithOwnerDefinition table;
     private final Optional<ImmutableList<Ident>> columns;
     private final ImmutableList<ImmutableList<Literal>> valuess;
 
+    private TableWithOwner tableWithOwner;
     private MaterializedTable tableMeta;
     private ImmutableMap<Ident, Integer> indexes;
 
     @Override
-    public MetaResources compile(MetaReader metaRepo) throws ModelException {
-      tableMeta = metaRepo.table(table);
+    public MetaResources compile(MetaReader metaRepo, AuthToken authToken) throws ModelException {
+      tableWithOwner = table.resolve(authToken);
+      tableMeta = metaRepo.table(tableWithOwner);
       ImmutableMap.Builder<Ident, Integer> indexesBuilder = ImmutableMap.builder();
       if (columns.isPresent()) {
         for (int i = 0; i < columns.get().size(); i++) {
@@ -79,8 +84,8 @@ public class InsertIntoStatement {
       boolean hasID = cols.get(0).getType() == DataTypes.IDType;
       Object[] fullValues = new Object[cols.size()];
 
-      long lastID = hasID ? ((IDTableIndex) resources.getPrimaryKeyIndex(table.getString())).getLastID() : -1;
-      TableWriter writer = resources.writer(tableMeta.tableName());
+      long lastID = hasID ? ((IDTableIndex) resources.getPrimaryKeyIndex(tableWithOwner.resourceId())).getLastID() : -1;
+      TableWriter writer = resources.writer(tableWithOwner.resourceId());
       List<Long> newIDs = new ArrayList<>();
       for (ImmutableList<Literal> values : valuess) {
         if (columns.isPresent()) {

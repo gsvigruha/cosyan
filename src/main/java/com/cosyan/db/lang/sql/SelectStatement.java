@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.lang.expr.BinaryExpression;
 import com.cosyan.db.lang.expr.Expression;
@@ -41,6 +42,7 @@ import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.meta.TableProvider;
+import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.AggrTables;
 import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.AggrTables.KeyValueAggrTableMeta;
@@ -87,8 +89,8 @@ public class SelectStatement extends Statement {
   private IterableTableReader reader;
 
   @Override
-  public MetaResources compile(MetaReader metaRepo) throws ModelException {
-    tableMeta = select.compileTable(metaRepo);
+  public MetaResources compile(MetaReader metaRepo, AuthToken authToken) throws ModelException {
+    tableMeta = select.compileTable(metaRepo, authToken.username());
     return tableMeta.readResources();
   }
 
@@ -123,8 +125,8 @@ public class SelectStatement extends Statement {
     private final boolean distinct;
     private final Optional<Long> limit;
 
-    public ExposedTableMeta compileTable(TableProvider tableProvider) throws ModelException {
-      ExposedTableMeta sourceTable = table.compile(tableProvider);
+    public ExposedTableMeta compileTable(TableProvider tableProvider, String owner) throws ModelException {
+      ExposedTableMeta sourceTable = table.compile(tableProvider, owner);
       ExposedTableMeta filteredTable;
       if (where.isPresent()) {
         filteredTable = filteredTable(sourceTable, where.get());
@@ -330,7 +332,7 @@ public class SelectStatement extends Statement {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static abstract class Table extends Node {
-    public abstract ExposedTableMeta compile(TableProvider tableProvider) throws ModelException;
+    public abstract ExposedTableMeta compile(TableProvider tableProvider, String owner) throws ModelException;
 
     public abstract String print();
   }
@@ -341,8 +343,8 @@ public class SelectStatement extends Statement {
     private final Ident ident;
 
     @Override
-    public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
-      return (ExposedTableMeta) tableProvider.tableMeta(ident);
+    public ExposedTableMeta compile(TableProvider tableProvider, String owner) throws ModelException {
+      return (ExposedTableMeta) tableProvider.tableMeta(TableWithOwner.of(ident, owner));
     }
 
     @Override
@@ -358,8 +360,8 @@ public class SelectStatement extends Statement {
     private final Table table;
 
     @Override
-    public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
-      return table.compile(tableProvider.tableProvider(ident));
+    public ExposedTableMeta compile(TableProvider tableProvider, String owner) throws ModelException {
+      return table.compile(tableProvider.tableProvider(TableWithOwner.of(ident, owner)), owner);
     }
 
     @Override
@@ -373,8 +375,8 @@ public class SelectStatement extends Statement {
   public static class TableExpr extends Table {
     private final Select select;
 
-    public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
-      return select.compileTable(tableProvider);
+    public ExposedTableMeta compile(TableProvider tableProvider, String owner) throws ModelException {
+      return select.compileTable(tableProvider, owner);
     }
 
     @Override
@@ -391,9 +393,9 @@ public class SelectStatement extends Statement {
     private final Table right;
     private final Expression onExpr;
 
-    public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
-      ExposedTableMeta leftTable = left.compile(tableProvider);
-      ExposedTableMeta rightTable = right.compile(tableProvider);
+    public ExposedTableMeta compile(TableProvider tableProvider, String owner) throws ModelException {
+      ExposedTableMeta leftTable = left.compile(tableProvider, owner);
+      ExposedTableMeta rightTable = right.compile(tableProvider, owner);
       ImmutableList.Builder<ColumnMeta> leftJoinColumns = ImmutableList.builder();
       ImmutableList.Builder<ColumnMeta> rightJoinColumns = ImmutableList.builder();
       ImmutableList<BinaryExpression> exprs = ImmutableList
@@ -468,8 +470,8 @@ public class SelectStatement extends Statement {
     private final Table table;
 
     @Override
-    public ExposedTableMeta compile(TableProvider tableProvider) throws ModelException {
-      return new AliasedTableMeta(ident, table.compile(tableProvider));
+    public ExposedTableMeta compile(TableProvider tableProvider, String owner) throws ModelException {
+      return new AliasedTableMeta(ident, table.compile(tableProvider, owner));
     }
 
     @Override

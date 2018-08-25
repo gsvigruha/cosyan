@@ -37,7 +37,6 @@ import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.lang.transaction.Result.TransactionResult;
-import com.cosyan.db.model.Ident;
 import com.cosyan.db.session.Session;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -74,14 +73,14 @@ public class RestartDBTest {
         + "a integer,"
         + "constraint pk_a primary key (a),"
         + "constraint c_a check(a > 1));");
-    MaterializedTable tableMeta = dbApi.getMetaRepo().table("t1");
+    MaterializedTable tableMeta = dbApi.getMetaRepo().table("admin", "t1");
     assertEquals(1, tableMeta.columns().size());
     assertEquals(1, tableMeta.rules().size());
     assertEquals(true, tableMeta.primaryKey().isPresent());
     assertTrue(dbApi.getMetaRepo().collectUniqueIndexes(tableMeta).containsKey("a"));
 
     dbApi = new DBApi(config);
-    MaterializedTable newTableMeta = dbApi.getMetaRepo().table("t1");
+    MaterializedTable newTableMeta = dbApi.getMetaRepo().table("admin", "t1");
     assertEquals(tableMeta.columns(), newTableMeta.columns());
     assertEquals(tableMeta.rules().toString(), newTableMeta.rules().toString());
     assertEquals(tableMeta.primaryKey(), newTableMeta.primaryKey());
@@ -103,16 +102,16 @@ public class RestartDBTest {
     dbApi.newAdminSession().execute("create table t4("
         + "a integer,"
         + "constraint fk_a2 foreign key (a) references t2(a));");
-    MaterializedTable t2 = dbApi.getMetaRepo().table("t2");
+    MaterializedTable t2 = dbApi.getMetaRepo().table("admin", "t2");
     assertEquals(2, t2.reverseForeignKeys().size());
-    MaterializedTable t3 = dbApi.getMetaRepo().table("t3");
+    MaterializedTable t3 = dbApi.getMetaRepo().table("admin", "t3");
     assertEquals(1, t3.foreignKeys().size());
-    MaterializedTable t4 = dbApi.getMetaRepo().table("t4");
+    MaterializedTable t4 = dbApi.getMetaRepo().table("admin", "t4");
     assertEquals(1, t4.foreignKeys().size());
     dbApi = new DBApi(config);
-    MaterializedTable newT2 = dbApi.getMetaRepo().table("t2");
-    MaterializedTable newT3 = dbApi.getMetaRepo().table("t3");
-    MaterializedTable newT4 = dbApi.getMetaRepo().table("t4");
+    MaterializedTable newT2 = dbApi.getMetaRepo().table("admin", "t2");
+    MaterializedTable newT3 = dbApi.getMetaRepo().table("admin", "t3");
+    MaterializedTable newT4 = dbApi.getMetaRepo().table("admin", "t4");
     // Foreign keys doesn't have proper equals and hashcode to avoid infinite loops.
     assertEquals(t2.reverseForeignKeys().toString(), newT2.reverseForeignKeys().toString());
     assertEquals(t3.foreignKeys().toString(), newT3.foreignKeys().toString());
@@ -129,17 +128,17 @@ public class RestartDBTest {
         + "a integer,"
         + "constraint fk_a1 foreign key (a) references t5(a),"
         + "constraint c_1 check(a = fk_a1.a));");
-    MaterializedTable t5 = dbApi.getMetaRepo().table("t5");
+    MaterializedTable t5 = dbApi.getMetaRepo().table("admin", "t5");
     assertEquals(1, t5.reverseRuleDependencies().getDeps().size());
-    MaterializedTable t6 = dbApi.getMetaRepo().table("t6");
+    MaterializedTable t6 = dbApi.getMetaRepo().table("admin", "t6");
     assertEquals(1, t6.rules().size());
     assertEquals(
         Iterables.getOnlyElement(t5.reverseRuleDependencies().getDeps().get("rev_fk_a1").rules()),
         t6.rules().get("c_1"));
     dbApi = new DBApi(config);
-    MaterializedTable newT5 = dbApi.getMetaRepo().table("t5");
+    MaterializedTable newT5 = dbApi.getMetaRepo().table("admin", "t5");
     assertEquals(1, newT5.reverseRuleDependencies().getDeps().size());
-    MaterializedTable newT6 = dbApi.getMetaRepo().table("t6");
+    MaterializedTable newT6 = dbApi.getMetaRepo().table("admin", "t6");
     assertEquals(1, newT6.rules().size());
     assertEquals(
         Iterables.getOnlyElement(newT5.reverseRuleDependencies().getDeps().get("rev_fk_a1").rules()),
@@ -158,13 +157,13 @@ public class RestartDBTest {
     dbApi.newAdminSession().execute("alter table t7 add aggref s (select sum(a) as sa from rev_fk_a1);");
     dbApi.newAdminSession().execute("alter table t7 add constraint c_1 check(s.sa < 10);");
 
-    MaterializedTable t7 = dbApi.getMetaRepo().table("t7");
+    MaterializedTable t7 = dbApi.getMetaRepo().table("admin", "t7");
     assertEquals(1, t7.refs().size());
     assertEquals(ImmutableList.of("sa"), t7.refs().get("s").getTableMeta().columnNames());
     assertEquals(1, t7.rules().size());
 
     dbApi = new DBApi(config);
-    MaterializedTable newT7 = dbApi.getMetaRepo().table("t7");
+    MaterializedTable newT7 = dbApi.getMetaRepo().table("admin", "t7");
     assertEquals(1, newT7.refs().size());
     assertEquals(ImmutableList.of("sa"), newT7.refs().get("s").getTableMeta().columnNames());
     assertEquals(1, newT7.rules().size());
@@ -179,15 +178,15 @@ public class RestartDBTest {
     DBApi dbApi = new DBApi(config);
     dbApi.newAdminSession().execute("create table t9(a integer, b varchar);");
 
-    MaterializedTable t9 = dbApi.getMetaRepo().table(new Ident("t9"));
+    MaterializedTable t9 = dbApi.getMetaRepo().table("admin", "t9");
     assertEquals(2, t9.columns().size());
 
     dbApi = new DBApi(config);
-    MaterializedTable t9_2 = dbApi.getMetaRepo().table(new Ident("t9"));
+    MaterializedTable t9_2 = dbApi.getMetaRepo().table("admin", "t9");
     assertEquals(2, t9_2.columns().size());
 
     dbApi = new DBApi(config);
-    MaterializedTable t9_3 = dbApi.getMetaRepo().table(new Ident("t9"));
+    MaterializedTable t9_3 = dbApi.getMetaRepo().table("admin", "t9");
     assertEquals(2, t9_3.columns().size());
   }
 
@@ -242,28 +241,28 @@ public class RestartDBTest {
     dbApi.newAdminSession().execute("create user u2 identified by 'abc';");
 
     Session u1 = dbApi.authSession("u1", "abc", Method.LOCAL);
-    ErrorResult e1 = (ErrorResult) u1.execute("select * from t13;");
-    assertEquals("User 'u1' has no SELECT right on 't13'.", e1.getError().getMessage());
+    ErrorResult e1 = (ErrorResult) u1.execute("select * from admin.t13;");
+    assertEquals("User 'u1' has no SELECT right on 'admin.t13'.", e1.getError().getMessage());
 
     dbApi.newAdminSession().execute("grant select on t13 to u1;");
-    QueryResult r1 = query("select * from t13;", u1);
+    QueryResult r1 = query("select * from admin.t13;", u1);
     assertArrayEquals(new Object[] { 1L }, r1.getValues().get(0));
 
     Session u2 = dbApi.authSession("u2", "abc", Method.LOCAL);
-    ErrorResult e2 = (ErrorResult) u2.execute("select * from t13;");
-    assertEquals("User 'u2' has no SELECT right on 't13'.", e2.getError().getMessage());
+    ErrorResult e2 = (ErrorResult) u2.execute("select * from admin.t13;");
+    assertEquals("User 'u2' has no SELECT right on 'admin.t13'.", e2.getError().getMessage());
 
     dbApi.newAdminSession().execute("grant all on * to u2;");
-    QueryResult r2 = query("select * from t13;", u2);
+    QueryResult r2 = query("select * from admin.t13;", u2);
     assertArrayEquals(new Object[] { 1L }, r2.getValues().get(0));
 
     dbApi = new DBApi(config);
     Session u1_2 = dbApi.authSession("u1", "abc", Method.LOCAL);
-    QueryResult r1_2 = query("select * from t13;", u1_2);
+    QueryResult r1_2 = query("select * from admin.t13;", u1_2);
     assertArrayEquals(new Object[] { 1L }, r1_2.getValues().get(0));
 
     Session u2_2 = dbApi.authSession("u2", "abc", Method.LOCAL);
-    QueryResult r2_2 = query("select * from t13;", u2_2);
+    QueryResult r2_2 = query("select * from admin.t13;", u2_2);
     assertArrayEquals(new Object[] { 1L }, r2_2.getValues().get(0));
   }
 
@@ -274,7 +273,7 @@ public class RestartDBTest {
     dbApi.newAdminSession().execute("insert into t14 values (1), (2);");
     dbApi.newAdminSession().execute("create index t14.a;");
     {
-      MaterializedTable t14 = dbApi.getMetaRepo().table("t14");
+      MaterializedTable t14 = dbApi.getMetaRepo().table("admin", "t14");
       IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t14).get("a");
       assertArrayEquals(new long[] { 0L }, index.get(1L));
       assertArrayEquals(new long[] { 18L }, index.get(2L));
@@ -282,7 +281,7 @@ public class RestartDBTest {
 
     dbApi = new DBApi(config);
     {
-      MaterializedTable t14 = dbApi.getMetaRepo().table("t14");
+      MaterializedTable t14 = dbApi.getMetaRepo().table("admin", "t14");
       IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t14).get("a");
       assertArrayEquals(new long[] { 0L }, index.get(1L));
       assertArrayEquals(new long[] { 18L }, index.get(2L));
@@ -296,7 +295,7 @@ public class RestartDBTest {
     dbApi.newAdminSession().execute("insert into t15 values ('x');");
     dbApi.newAdminSession().execute("insert into t15 values ('y');");
     {
-      MaterializedTable t15 = dbApi.getMetaRepo().table("t15");
+      MaterializedTable t15 = dbApi.getMetaRepo().table("admin", "t15");
       IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t15).get("a");
       assertArrayEquals(new long[] { 0L }, index.get(0L));
       assertArrayEquals(new long[] { 25L }, index.get(1L));
@@ -304,7 +303,7 @@ public class RestartDBTest {
 
     dbApi = new DBApi(config);
     {
-      MaterializedTable t15 = dbApi.getMetaRepo().table("t15");
+      MaterializedTable t15 = dbApi.getMetaRepo().table("admin", "t15");
       IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t15).get("a");
       assertArrayEquals(new long[] { 0L }, index.get(0L));
       assertArrayEquals(new long[] { 25L }, index.get(1L));
@@ -321,13 +320,13 @@ public class RestartDBTest {
     dbApi.newAdminSession().execute("alter table t18 add aggref s (select sum(s.c) as s from rev_fk1);");
 
     {
-      MaterializedTable t18 = dbApi.getMetaRepo().table("t18");
+      MaterializedTable t18 = dbApi.getMetaRepo().table("admin", "t18");
       assertEquals("select sum(s.c) as s from rev_fk1 ", t18.refs().get("s").getExpr());
     }
 
     dbApi = new DBApi(config);
     {
-      MaterializedTable t18 = dbApi.getMetaRepo().table("t18");
+      MaterializedTable t18 = dbApi.getMetaRepo().table("admin", "t18");
       assertEquals("select sum(s.c) as s from rev_fk1 ;", t18.refs().get("s").getExpr());
     }
   }
@@ -340,13 +339,13 @@ public class RestartDBTest {
     dbApi.newAdminSession().execute("alter table t20 add flatref s (fk1.b + 1 as x, fk1.b + 2 as y);");
 
     {
-      MaterializedTable t20 = dbApi.getMetaRepo().table("t20");
+      MaterializedTable t20 = dbApi.getMetaRepo().table("admin", "t20");
       assertEquals("(fk1.b + 1) as x, (fk1.b + 2) as y", t20.refs().get("s").getExpr());
     }
 
     dbApi = new DBApi(config);
     {
-      MaterializedTable t20 = dbApi.getMetaRepo().table("t20");
+      MaterializedTable t20 = dbApi.getMetaRepo().table("admin", "t20");
       assertEquals("(fk1.b + 1) as x, (fk1.b + 2) as y;", t20.refs().get("s").getExpr());
     }
   }

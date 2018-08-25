@@ -48,7 +48,7 @@ public class TableRef {
     try {
       if (aggr) {
         Select select = parser.parseSelect(lexer.tokenizeExpression(expr + ";"));
-        tableMeta.createAggRef(new AggRefDefinition(new Ident(name), select));
+        tableMeta.createAggRef(new AggRefDefinition(new Ident(name), select), tableMeta.owner());
       } else {
         ImmutableList<Expression> exprs = parser.parseExpressions(lexer.tokenize(expr + ";"));
         tableMeta.createFlatRef(new FlatRefDefinition(new Ident(name), exprs));

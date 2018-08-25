@@ -56,8 +56,8 @@ public class MetaSerializerTest extends UnitTestBase {
   public void testForeignKey() throws ModelException {
     execute("create table t1 (a varchar, constraint pk_a primary key (a));");
     execute("create table t2 (b varchar, constraint fk_a foreign key (b) references t1);");
-    ForeignKey fk = metaRepo.table("t2").foreignKey(new Ident("fk_a"));
-    assertEquals("{\"rev_name\":\"rev_fk_a\",\"name\":\"fk_a\",\"column\":\"b\",\"ref_table\":\"t1\"}",
+    ForeignKey fk = metaRepo.table("admin", "t2").foreignKey(new Ident("fk_a"));
+    assertEquals("{\"rev_name\":\"rev_fk_a\",\"ref_table_owner\":\"admin\",\"ref_table_name\":\"t1\",\"name\":\"fk_a\",\"column\":\"b\"}",
         serializer.toJSON(fk).toString());
   }
 
@@ -66,7 +66,7 @@ public class MetaSerializerTest extends UnitTestBase {
     execute("create table t3 (a varchar, constraint pk_a primary key (a));");
     execute("create table t4 (b varchar, c integer, constraint fk_a foreign key (b) references t3);");
     execute("alter table t3 add aggref s (select sum(c) from rev_fk_a);");
-    TableRef ref = metaRepo.table("t3").refs().get("s");
+    TableRef ref = metaRepo.table("admin", "t3").refs().get("s");
     assertEquals("{\"name\":\"s\",\"index\":1,\"expr\":\"select sum(c) from rev_fk_a ;\",\"aggr\":true}",
         serializer.toJSON(ref).toString());
   }
@@ -74,7 +74,7 @@ public class MetaSerializerTest extends UnitTestBase {
   @Test
   public void testRule() throws ModelException {
     execute("create table t5 (a integer, constraint c_1 check (a > 0));");
-    BooleanRule rule = metaRepo.table("t5").rules().get("c_1");
+    BooleanRule rule = metaRepo.table("admin", "t5").rules().get("c_1");
     assertEquals("{\"name\":\"c_1\",\"null_is_true\":true,\"expr\":\"(a > 0)\"}",
         serializer.toJSON(rule).toString());
   }

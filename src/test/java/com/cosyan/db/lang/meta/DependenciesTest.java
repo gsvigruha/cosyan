@@ -20,10 +20,9 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import com.cosyan.db.UnitTestBase;
-import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.Dependencies.ReverseRuleDependency;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
-import com.cosyan.db.model.Ident;
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.model.Rule;
 
 public class DependenciesTest extends UnitTestBase {
@@ -34,7 +33,7 @@ public class DependenciesTest extends UnitTestBase {
     execute("create table t2 (a varchar,"
         + "constraint fk_a foreign key (a) references t1(a),"
         + "constraint c_b check (fk_a.b > 1));");
-    MaterializedTable t2 = metaRepo.table(new Ident("t2"));
+    MaterializedTable t2 = metaRepo.table("admin", "t2");
     Rule rule = t2.rules().get("c_b");
     assertEquals("c_b", rule.getName());
 
@@ -42,7 +41,7 @@ public class DependenciesTest extends UnitTestBase {
     assertEquals(0, t2.reverseRuleDependencies().getDeps().size());
     assertEquals("fk_a", t2.ruleDependencies().get("fk_a").ref().getName());
 
-    MaterializedTable t1 = metaRepo.table(new Ident("t1"));
+    MaterializedTable t1 = metaRepo.table("admin", "t1");
     assertEquals(0, t1.ruleDependencies().size());
     assertEquals(1, t1.reverseRuleDependencies().getDeps().size());
     assertEquals(1, t1.reverseRuleDependencies().getDeps().size());
@@ -59,7 +58,7 @@ public class DependenciesTest extends UnitTestBase {
     execute("alter table t3 add aggref s (select count(1) as c from rev_fk_a);");
     execute("alter table t3 add constraint c_1 check (s.c <= 2);");
 
-    MaterializedTable t3 = metaRepo.table(new Ident("t3"));
+    MaterializedTable t3 = metaRepo.table("admin", "t3");
     Rule rule = t3.rules().get("c_1");
     TableDependencies deps = rule.getColumn().tableDependencies();
     assertEquals(1, deps.getDeps().size());
@@ -69,7 +68,7 @@ public class DependenciesTest extends UnitTestBase {
     assertEquals(0, t3.reverseRuleDependencies().getDeps().size());
     assertEquals("rev_fk_a", t3.ruleDependencies().get("rev_fk_a").ref().getName());
 
-    MaterializedTable t4 = metaRepo.table(new Ident("t4"));
+    MaterializedTable t4 = metaRepo.table("admin", "t4");
     assertEquals(0, t4.ruleDependencies().size());
     assertEquals(1, t4.reverseRuleDependencies().getDeps().size());
     assertEquals("fk_a", t4.reverseRuleDependencies().getDeps().get("fk_a").getKey().getName());
@@ -83,7 +82,7 @@ public class DependenciesTest extends UnitTestBase {
         + "constraint fk_a_2 foreign key (a) references t5(a),"
         + "constraint c check (fk_a_1.b > fk_a_2.b));");
 
-    MaterializedTable t6 = metaRepo.table(new Ident("t6"));
+    MaterializedTable t6 = metaRepo.table("admin", "t6");
     Rule rule = t6.rules().get("c");
     TableDependencies deps = rule.getColumn().tableDependencies();
     assertEquals(2, deps.getDeps().size());
@@ -95,7 +94,7 @@ public class DependenciesTest extends UnitTestBase {
     assertEquals("fk_a_1", t6.ruleDependencies().get("fk_a_1").ref().getName());
     assertEquals("fk_a_2", t6.ruleDependencies().get("fk_a_2").ref().getName());
 
-    MaterializedTable t5 = metaRepo.table(new Ident("t5"));
+    MaterializedTable t5 = metaRepo.table("admin", "t5");
     assertEquals(0, t5.ruleDependencies().size());
     assertEquals(2, t5.reverseRuleDependencies().getDeps().size());
     assertEquals("rev_fk_a_1", t5.reverseRuleDependencies().getDeps().get("rev_fk_a_1").getKey().getName());
@@ -113,17 +112,17 @@ public class DependenciesTest extends UnitTestBase {
     execute("alter table t7 add aggref s (select sum(s.s) as s from rev_fk_b2));");
     execute("alter table t7 add constraint c check (s.s <= 10);");
 
-    MaterializedTable t7 = metaRepo.table(new Ident("t7"));
+    MaterializedTable t7 = metaRepo.table("admin", "t7");
     assertEquals(1, t7.ruleDependencies().size());
     assertEquals(0, t7.reverseRuleDependencies().getDeps().size());
 
-    MaterializedTable t8 = metaRepo.table(new Ident("t8"));
+    MaterializedTable t8 = metaRepo.table("admin", "t8");
     assertEquals(0, t8.ruleDependencies().size());
     assertEquals(1, t8.reverseRuleDependencies().getDeps().size());
     assertEquals(1, t8.reverseRuleDependencies().getDeps().get("fk_b2").rules().size());
     assertEquals("c", t8.reverseRuleDependencies().getDeps().get("fk_b2").rule("c").getName());
 
-    MaterializedTable t9 = metaRepo.table(new Ident("t9"));
+    MaterializedTable t9 = metaRepo.table("admin", "t9");
     assertEquals(0, t9.ruleDependencies().size());
     assertEquals(1, t9.reverseRuleDependencies().getDeps().size());
     ReverseRuleDependency rev = t9.reverseRuleDependencies().getDeps().get("fk_b3");

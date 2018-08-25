@@ -59,7 +59,7 @@ public class RuleDependencyReader {
                     rule.getTable().tableName(), rule.name()));
           }
         }
-        SeekableTableReader reader = resources.reader(ref.getRefTable().tableName());
+        SeekableTableReader reader = resources.reader(ref.getRefTable().fullName());
         checkReferencingRules(dep.getDeps().values(), reader.get(pointer));
       }
     }

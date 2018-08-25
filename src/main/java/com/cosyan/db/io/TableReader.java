@@ -147,7 +147,7 @@ public abstract class TableReader implements TableIO {
       if (cachedKey != null && cachedKey.equals(key)) {
         return cachedRecord;
       }
-      TableUniqueIndex index = resources.getPrimaryKeyIndex(tableMeta.tableName());
+      TableUniqueIndex index = resources.getPrimaryKeyIndex(tableMeta.fullName());
       long filePointer = index.get0(key);
       Record record = get(filePointer);
       cachedKey = key;

@@ -27,10 +27,12 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
 import com.cosyan.db.lang.expr.Statements.Statement;
+import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
@@ -39,8 +41,8 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.BasicColumn;
-import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.TableContext;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -56,17 +58,19 @@ public class CSVStatements {
   @EqualsAndHashCode(callSuper = true)
   public static class CSVImport extends Statement {
     private final StringLiteral fileName;
-    private final Ident table;
+    private final TableWithOwnerDefinition table;
     private final boolean withHeader;
     private final long commitAfterNRecords;
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
+    private TableWithOwner tableWithOwner;
     private MaterializedTable tableMeta;
     private ImmutableList<BasicColumn> columns;
 
     @Override
-    public MetaResources compile(MetaReader metaRepo) throws ModelException {
-      tableMeta = metaRepo.table(table);
+    public MetaResources compile(MetaReader metaRepo, AuthToken authToken) throws ModelException {
+      tableWithOwner = table.resolve(authToken);
+      tableMeta = metaRepo.table(tableWithOwner);
       columns = tableMeta.columns().values().asList();
       return MetaResources.insertIntoTable(tableMeta)
           .merge(tableMeta.ruleDependenciesReadResources())
@@ -75,7 +79,7 @@ public class CSVStatements {
 
     @Override
     public Result execute(Resources resources) throws RuleException, IOException {
-      TableWriter writer = resources.writer(tableMeta.tableName());
+      TableWriter writer = resources.writer(tableMeta.fullName());
       BufferedReader reader = new BufferedReader(new FileReader(fileName.getValue()));
       CSVFormat format = CSVFormat.DEFAULT.withRecordSeparator("\n");
       CSVParser csvParser;
@@ -132,8 +136,8 @@ public class CSVStatements {
     private ExposedTableMeta tableMeta;
 
     @Override
-    public MetaResources compile(MetaReader metaRepo) throws ModelException {
-      tableMeta = select.compileTable(metaRepo);
+    public MetaResources compile(MetaReader metaRepo, AuthToken authToken) throws ModelException {
+      tableMeta = select.compileTable(metaRepo, authToken.username());
       return tableMeta.readResources();
     }
 

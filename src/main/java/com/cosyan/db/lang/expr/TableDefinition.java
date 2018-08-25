@@ -17,9 +17,11 @@ package com.cosyan.db.lang.expr;
 
 import java.util.Optional;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.google.common.collect.ImmutableList;
@@ -77,7 +79,7 @@ public class TableDefinition {
     private final Ident name;
     private final Ident revName;
     private final Ident keyColumn;
-    private final Ident refTable;
+    private final TableWithOwnerDefinition refTable;
     private final Optional<Ident> refColumn;
   }
 
@@ -93,5 +95,31 @@ public class TableDefinition {
   public static class FlatRefDefinition extends Node {
     private final Ident name;
     private final ImmutableList<Expression> exprs;
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class TableWithOwnerDefinition extends Node {
+    private final Optional<Ident> owner;
+    private final Ident table;
+
+    public TableWithOwner resolve(AuthToken authToken) {
+      return TableWithOwner.create(table, owner, authToken);
+    }
+
+    public String print() {
+      if (owner.isPresent()) {
+        return owner.get().getString() + "." + table.getString();
+      } else {
+        return table.getString();
+      }
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class TableColumnDefinition extends Node {
+    private final TableWithOwnerDefinition table;
+    private final Ident column;
   }
 }

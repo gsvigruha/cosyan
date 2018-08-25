@@ -41,6 +41,8 @@ import com.cosyan.db.lang.expr.TableDefinition.FlatRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.PrimaryKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.TableColumnDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAddColumn;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAlterColumn;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableDropColumn;
@@ -145,7 +147,7 @@ public class Parser implements IParser {
       tokens.next();
       StringLiteral fileName = (StringLiteral) parseLiteral(tokens);
       assertNext(tokens, Tokens.INTO);
-      Ident table = parseIdent(tokens);
+      TableWithOwnerDefinition table = parseTableWithOwner(tokens);
       boolean withHeader = false;
       if (tokens.peek().is(Tokens.WITH)) {
         tokens.next();
@@ -197,16 +199,16 @@ public class Parser implements IParser {
   private Delete parseDelete(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.DELETE);
     assertNext(tokens, Tokens.FROM);
-    Ident ident = parseIdent(tokens);
+    TableWithOwnerDefinition table = parseTableWithOwner(tokens);
     assertNext(tokens, Tokens.WHERE);
     Expression where = parseExpression(tokens, 0);
-    return new Delete(ident, where);
+    return new Delete(table, where);
   }
 
   private InsertInto parseInsert(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.INSERT);
     assertNext(tokens, Tokens.INTO);
-    Ident ident = parseIdent(tokens);
+    TableWithOwnerDefinition table = parseTableWithOwner(tokens);
     Optional<ImmutableList<Ident>> columns;
     if (tokens.peek().is(Tokens.PARENT_OPEN)) {
       tokens.next();
@@ -246,7 +248,7 @@ public class Parser implements IParser {
         break;
       }
     }
-    return new InsertInto(ident, columns, valuess.build());
+    return new InsertInto(table, columns, valuess.build());
   }
 
   private Literal parseLiteral(PeekingIterator<Token> tokens) throws ParserException {
@@ -275,7 +277,7 @@ public class Parser implements IParser {
 
   private Update parseUpdate(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.UPDATE);
-    Ident ident = parseIdent(tokens);
+    TableWithOwnerDefinition table = parseTableWithOwner(tokens);
     assertNext(tokens, Tokens.SET);
     ImmutableList.Builder<SetExpression> updates = ImmutableList.builder();
     while (true) {
@@ -297,7 +299,7 @@ public class Parser implements IParser {
     } else {
       where = Optional.empty();
     }
-    return new Update(ident, updates.build(), where);
+    return new Update(table, updates.build(), where);
   }
 
   private MetaStatement parseCreate(PeekingIterator<Token> tokens) throws ParserException {
@@ -341,10 +343,7 @@ public class Parser implements IParser {
       return new CreateTable(ident, type, columns.build(), constraints.build(), partitioning);
     } else if (tokens.peek().is(Tokens.INDEX)) {
       assertNext(tokens, Tokens.INDEX);
-      Ident table = parseIdent(tokens);
-      assertNext(tokens, String.valueOf(Tokens.DOT));
-      Ident column = parseIdent(tokens);
-      return new CreateIndex(table, column);
+      return new CreateIndex(parseTableColumn(tokens));
     } else {
       assertNext(tokens, Tokens.USER);
       Ident username = parseIdent(tokens);
@@ -378,33 +377,48 @@ public class Parser implements IParser {
     assertPeek(tokens, Tokens.TABLE, Tokens.INDEX);
     if (tokens.peek().is(Tokens.TABLE)) {
       tokens.next();
-      Ident ident = parseIdent(tokens);
-      return new DropTable(ident);
+      return new DropTable(parseTableWithOwner(tokens));
     } else {
       assertNext(tokens, Tokens.INDEX);
-      Ident table = parseIdent(tokens);
-      assertNext(tokens, String.valueOf(Tokens.DOT));
-      Ident column = parseIdent(tokens);
-      return new DropIndex(table, column);
+      TableColumnDefinition tableColumn = parseTableColumn(tokens);
+      return new DropIndex(tableColumn);
     }
+  }
+
+  private TableColumnDefinition parseTableColumn(PeekingIterator<Token> tokens) throws ParserException {
+    Ident ident1 = parseIdent(tokens);
+    assertNext(tokens, String.valueOf(Tokens.DOT));
+    Ident ident2 = parseIdent(tokens);
+    TableWithOwnerDefinition table;
+    Ident column;
+    if (tokens.peek().is(Tokens.DOT)) {
+      tokens.next();
+      Ident ident3 = parseIdent(tokens);
+      table = new TableWithOwnerDefinition(Optional.of(ident1), ident2);
+      column = ident3;
+    } else {
+      table = new TableWithOwnerDefinition(Optional.empty(), ident1);
+      column = ident2;
+    }
+    return new TableColumnDefinition(table, column);
   }
 
   private MetaStatement parseAlter(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.ALTER);
     assertNext(tokens, Tokens.TABLE);
-    Ident ident = parseIdent(tokens);
+    TableWithOwnerDefinition table = parseTableWithOwner(tokens);
     if (tokens.peek().is(Tokens.ADD)) {
       tokens.next();
       if (tokens.peek().is(Tokens.AGGREF)) {
-        return new AlterTableAddAggRef(ident, parseAggRef(tokens));
+        return new AlterTableAddAggRef(table, parseAggRef(tokens));
       } else if (tokens.peek().is(Tokens.FLATREF)) {
-        return new AlterTableAddFlatRef(ident, parseFlatRef(tokens));
+        return new AlterTableAddFlatRef(table, parseFlatRef(tokens));
       } else if (tokens.peek().is(Tokens.CONSTRAINT)) {
         ConstraintDefinition constraint = parseConstraint(tokens);
         if (constraint instanceof ForeignKeyDefinition) {
-          return new AlterTableAddForeignKey(ident, (ForeignKeyDefinition) constraint);
+          return new AlterTableAddForeignKey(table, (ForeignKeyDefinition) constraint);
         } else if (constraint instanceof RuleDefinition) {
-          return new AlterTableAddRule(ident, (RuleDefinition) constraint);
+          return new AlterTableAddRule(table, (RuleDefinition) constraint);
         } else {
           throw new ParserException(
               String.format("Expected foreign key or rule definition, got '%s'.", constraint),
@@ -412,33 +426,44 @@ public class Parser implements IParser {
         }
       } else {
         ColumnDefinition column = parseColumnDefinition(tokens);
-        return new AlterTableAddColumn(ident, column);
+        return new AlterTableAddColumn(table, column);
       }
     } else if (tokens.peek().is(Tokens.DROP)) {
       tokens.next();
       if (tokens.peek().is(Tokens.CONSTRAINT)) {
         tokens.next();
         Ident constraint = parseIdent(tokens);
-        return new AlterTableDropConstraint(ident, constraint);
+        return new AlterTableDropConstraint(table, constraint);
       } else if (tokens.peek().is(Tokens.AGGREF)) {
         tokens.next();
         Ident constraint = parseIdent(tokens);
-        return new AlterTableDropAggRef(ident, constraint);
+        return new AlterTableDropAggRef(table, constraint);
       } else if (tokens.peek().is(Tokens.FLATREF)) {
         tokens.next();
         Ident constraint = parseIdent(tokens);
-        return new AlterTableDropFlatRef(ident, constraint);
+        return new AlterTableDropFlatRef(table, constraint);
       } else {
         Ident columnName = parseIdent(tokens);
-        return new AlterTableDropColumn(ident, columnName);
+        return new AlterTableDropColumn(table, columnName);
       }
     } else if (tokens.peek().is(Tokens.ALTER) || tokens.peek().is(Tokens.MODIFY)) {
       tokens.next();
       ColumnDefinition column = parseColumnDefinition(tokens);
-      return new AlterTableAlterColumn(ident, column);
+      return new AlterTableAlterColumn(table, column);
     } else {
       Token token = tokens.peek();
       throw new ParserException("Unsupported alter operation '" + token + "'.", token);
+    }
+  }
+
+  private TableWithOwnerDefinition parseTableWithOwner(PeekingIterator<Token> tokens) throws ParserException {
+    Ident ident = parseIdent(tokens);
+    if (tokens.peek().is(Tokens.DOT)) {
+      tokens.next();
+      Ident table = parseIdent(tokens);
+      return new TableWithOwnerDefinition(Optional.of(ident), table);
+    } else {
+      return new TableWithOwnerDefinition(Optional.empty(), ident);
     }
   }
 
@@ -447,11 +472,11 @@ public class Parser implements IParser {
     assertPeek(tokens, Tokens.SELECT, Tokens.INSERT, Tokens.UPDATE, Tokens.DELETE, Tokens.ALL);
     Ident method = parseIdent(tokens);
     assertNext(tokens, Tokens.ON);
-    Ident table;
+    TableWithOwnerDefinition table;
     if (tokens.peek().is(Tokens.ASTERISK)) {
-      table = new Ident("*", tokens.next().getLoc());
+      table = new TableWithOwnerDefinition(Optional.empty(), new Ident("*", tokens.next().getLoc()));
     } else {
-      table = parseIdent(tokens);
+      table = parseTableWithOwner(tokens);
     }
     assertNext(tokens, Tokens.TO);
     Ident username = parseIdent(tokens);
@@ -495,7 +520,7 @@ public class Parser implements IParser {
       Ident column = parseIdent(tokens);
       assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
       assertNext(tokens, Tokens.REFERENCES);
-      Ident refTable = parseIdent(tokens);
+      TableWithOwnerDefinition refTable = parseTableWithOwner(tokens);
       Optional<Ident> refColumn = Optional.empty();
       if (tokens.peek().is(Tokens.PARENT_OPEN)) {
         tokens.next();

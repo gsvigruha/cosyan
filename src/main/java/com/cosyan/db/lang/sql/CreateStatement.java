@@ -32,12 +32,14 @@ import com.cosyan.db.lang.expr.TableDefinition.ConstraintDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.PrimaryKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.TableColumnDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.meta.MetaRepoExecutor;
+import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
@@ -67,8 +69,8 @@ public class CreateStatement {
 
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
-      if (metaRepo.hasTable(name.getString())) {
-        throw new ModelException(String.format("Table '%s' already exists.", name), name);
+      if (metaRepo.hasTable(name.getString(), authToken.username())) {
+        throw new ModelException(String.format("Table '%s.%s' already exists.", authToken.username(), name), name);
       }
 
       Optional<PrimaryKeyDefinition> primaryKeyDefinition = Optional.empty();
@@ -129,7 +131,7 @@ public class CreateStatement {
           primaryKey,
           type);
 
-      addConstraints(metaRepo, tableMeta, constraints);
+      addConstraints(metaRepo, tableMeta, constraints, authToken);
 
       if (partitioning.isPresent()) {
         ColumnMeta columnMeta = partitioning.get().compileColumn(tableMeta.reader());
@@ -143,7 +145,8 @@ public class CreateStatement {
     private void addConstraints(
         MetaRepo metaRepo,
         MaterializedTable tableMeta,
-        List<ConstraintDefinition> constraints)
+        List<ConstraintDefinition> constraints,
+        AuthToken authToken)
         throws ModelException {
       List<RuleDefinition> ruleDefinitions = Lists.newArrayList();
       List<ForeignKeyDefinition> foreignKeyDefinitions = Lists.newArrayList();
@@ -162,7 +165,8 @@ public class CreateStatement {
       }
 
       for (ForeignKeyDefinition foreignKeyDefinition : foreignKeyDefinitions) {
-        MaterializedTable refTable = metaRepo.table(foreignKeyDefinition.getRefTable());
+        TableWithOwner refTableWithOwner = foreignKeyDefinition.getRefTable().resolve(authToken);
+        MaterializedTable refTable = metaRepo.table(refTableWithOwner);
         ForeignKey foreignKey = tableMeta.createForeignKey(foreignKeyDefinition, refTable);
         foreignKey.getColumn().setIndexed(true);
         tableMeta.addForeignKey(foreignKey);
@@ -179,26 +183,27 @@ public class CreateStatement {
   @EqualsAndHashCode(callSuper = true)
   public static class CreateIndex extends AlterStatement {
 
-    private final Ident table;
-    private final Ident column;
+    private final TableColumnDefinition tableColumn;
 
+    private TableWithOwner tableWithOwner;
     private BasicColumn basicColumn;
     private TableWriter writer;
     private IndexWriter indexWriter;
 
     @Override
     public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
-      MaterializedTable tableMeta = metaRepo.table(table);
-      basicColumn = tableMeta.column(column);
-      basicColumn.checkIndexType(column);
+      tableWithOwner = tableColumn.getTable().resolve(authToken);
+      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
+      basicColumn = tableMeta.column(tableColumn.getColumn());
+      basicColumn.checkIndexType(tableColumn.getColumn());
       indexWriter = metaRepo.registerIndex(tableMeta, basicColumn);
       return MetaResources.tableMeta(tableMeta);
     }
 
     @Override
     public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
-      writer = resources.writer(table.getString());
-      writer.buildIndex(column.getString(), indexWriter);
+      writer = resources.writer(tableWithOwner.resourceId());
+      writer.buildIndex(tableColumn.getColumn().getString(), indexWriter);
       return Result.META_OK;
     }
 

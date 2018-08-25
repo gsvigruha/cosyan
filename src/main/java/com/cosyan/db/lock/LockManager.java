@@ -23,7 +23,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
+import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.MetaResources.Resource;
 
@@ -52,7 +54,7 @@ public class LockManager {
     List<Lock> locks = new ArrayList<>();
     for (Resource resource : metaResources.all()) {
       ReentrantReadWriteLock rwlock = lockMap.get(resource.getResourceId());
-      assert rwlock != null : String.format("No lock '%s'", resource.getResourceId());
+      assert rwlock != null : String.format("Invalid resource '%s'. Existing: %s.", resource.getResourceId(), lockMap.keySet());
       Lock lock;
       if (resource.isWrite()) {
         lock = rwlock.writeLock();
@@ -75,7 +77,7 @@ public class LockManager {
   public synchronized void unlock(MetaResources metaResources) {
     for (Resource resource : metaResources.all()) {
       ReentrantReadWriteLock lock = lockMap.get(resource.getResourceId());
-      assert lock != null : String.format("Invalid resource '%s'.", resource.getResourceId());
+      assert lock != null : String.format("Invalid resource '%s'. Existing: %s.", resource.getResourceId(), lockMap.keySet());
       if (resource.isWrite()) {
         lock.writeLock().unlock();
       } else {
@@ -84,15 +86,16 @@ public class LockManager {
     }
   }
 
-  public synchronized void registerLock(String resourceId) {
-    lockMap.put(resourceId, new ReentrantReadWriteLock());
+  public synchronized void registerLock(MaterializedTable table) {
+    lockMap.put(table.fullName(), new ReentrantReadWriteLock());
   }
 
-  public synchronized void removeLock(String resourceId) {
-    lockMap.remove(resourceId);
+  public synchronized void removeLock(MaterializedTable table) {
+    lockMap.remove(table.fullName());
   }
 
-  public synchronized void syncLocks(Set<String> ids) {
+  public synchronized void syncLocks(List<MaterializedTable> tables) {
+    Set<String> ids = tables.stream().map(t -> t.fullName()).collect(Collectors.toSet());
     for (String resourceId : ids) {
       if (!lockMap.containsKey(resourceId)) {
         lockMap.put(resourceId, new ReentrantReadWriteLock());

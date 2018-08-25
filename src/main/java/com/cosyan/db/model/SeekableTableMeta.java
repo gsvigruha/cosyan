@@ -44,7 +44,7 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
   }
 
   public Record get(Resources resources, long position) throws IOException {
-    return resources.reader(tableName()).get(position);
+    return resources.reader(fullName()).get(position);
   }
 
   @Override
@@ -87,6 +87,10 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
     return tableMeta.tableName();
   }
 
+  public String fullName() {
+    return tableMeta.fullName();
+  }
+
   public MaterializedTable tableMeta() {
     return tableMeta;
   }
@@ -97,28 +101,28 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
   }
 
   @Override
-  public TableMeta tableMeta(Ident ident) throws ModelException {
-    if (tableName().equals(ident.getString())) {
+  public TableMeta tableMeta(TableWithOwner table) throws ModelException {
+    if (tableName().equals(table.getTable().getString())) {
       return this;
-    } else if (tableMeta.hasReverseForeignKey(ident.getString())) {
-      return new ReferencedMultiTableMeta(this, tableMeta.reverseForeignKey(ident));
+    } else if (tableMeta.hasReverseForeignKey(table.getTable().getString())) {
+      return new ReferencedMultiTableMeta(this, tableMeta.reverseForeignKey(table.getTable()));
     } else {
-      throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
+      throw new ModelException(String.format("Table '%s' not found.", table.getTable().getString()), table.getTable());
     }
   }
 
   @Override
-  public TableProvider tableProvider(Ident ident) throws ModelException {
-    if (tableMeta.hasForeignKey(ident.getString())) {
-      return new ReferencedSimpleTableMeta(this, tableMeta.foreignKey(ident));
+  public TableProvider tableProvider(TableWithOwner table) throws ModelException {
+    if (tableMeta.hasForeignKey(table.getTable().getString())) {
+      return new ReferencedSimpleTableMeta(this, tableMeta.foreignKey(table.getTable()));
     } else {
-      throw new ModelException(String.format("Table '%s' not found.", ident.getString()), ident);
+      throw new ModelException(String.format("Table '%s' not found.", table.getTable().getString()), table.getTable());
     }
   }
 
   @Override
   public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
-    return new DerivedIterableTableReader(resources.createIterableReader(tableName())) {
+    return new DerivedIterableTableReader(resources.createIterableReader(fullName())) {
 
       @Override
       public Object[] next() throws IOException {

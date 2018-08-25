@@ -19,13 +19,15 @@ import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.Statements.GlobalStatement;
+import com.cosyan.db.lang.expr.TableDefinition.TableColumnDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.BasicColumn;
-import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 
@@ -37,24 +39,27 @@ public class DropStatement {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class DropTable extends GlobalStatement {
-    private final Ident table;
+    private final TableWithOwnerDefinition table;
+
+    private TableWithOwner tableWithOwner;
 
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException, GrantException {
-      MaterializedTable tableMeta = metaRepo.table(table);
+      tableWithOwner = table.resolve(authToken);
+      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
       if (!tableMeta.foreignKeys().isEmpty()) {
         ForeignKey foreignKey = tableMeta.foreignKeys().values().iterator().next();
         throw new ModelException(String.format("Cannot drop table '%s', has foreign key '%s'.",
-            table.getString(), foreignKey),
-            table);
+            tableWithOwner, foreignKey),
+            table.getTable());
       }
       if (!tableMeta.reverseForeignKeys().isEmpty()) {
         ReverseForeignKey foreignKey = tableMeta.reverseForeignKeys().values().iterator().next();
         throw new ModelException(String.format("Cannot drop table '%s', referenced by foreign key '%s.%s'.",
-            table.getString(),
+            tableWithOwner,
             foreignKey.getRefTable().tableName(),
             foreignKey.getReverse()),
-            table);
+            table.getTable());
       }
       metaRepo.dropTable(tableMeta, authToken);
       return Result.META_OK;
@@ -64,18 +69,19 @@ public class DropStatement {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class DropIndex extends GlobalStatement {
-    private final Ident table;
-    private final Ident column;
+    private final TableColumnDefinition tableColumn;
 
+    private TableWithOwner tableWithOwner;
     private BasicColumn basicColumn;
 
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException, GrantException {
-      MaterializedTable tableMeta = metaRepo.table(table);
-      basicColumn = tableMeta.column(column);
+      tableWithOwner = tableColumn.getTable().resolve(authToken);
+      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
+      basicColumn = tableMeta.column(tableColumn.getColumn());
       if (basicColumn.isUnique()) {
         throw new ModelException(String.format("Cannot drop index '%s.%s', column is unique.",
-            tableMeta.tableName(), basicColumn.getName()), column);
+            tableMeta.tableName(), basicColumn.getName()), tableColumn.getColumn());
       }
       metaRepo.dropIndex(tableMeta, basicColumn, authToken);
       return Result.META_OK;

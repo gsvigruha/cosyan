@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.expr.Statements.Statement;
@@ -48,10 +49,10 @@ public class DataTransaction extends Transaction {
     return statements;
   }
 
-  protected MetaResources collectResources(MetaRepo metaRepo) throws ModelException {
+  protected MetaResources collectResources(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
     MetaResources metaResources = MetaResources.empty();
     for (Statement statement : statements) {
-      metaResources = metaResources.merge(statement.compile(metaRepo));
+      metaResources = metaResources.merge(statement.compile(metaRepo, authToken));
     }
     return metaResources;
   }
@@ -78,7 +79,7 @@ public class DataTransaction extends Transaction {
     metaRepo.metaRepoReadLock();
     MetaResources metaResources;
     try {
-      metaResources = collectResources(metaRepo);
+      metaResources = collectResources(metaRepo, session.authToken());
     } catch (ModelException e) {
       return new ErrorResult(e);
     } finally {

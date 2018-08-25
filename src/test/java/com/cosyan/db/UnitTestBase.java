@@ -23,6 +23,7 @@ import java.io.File;
 import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
 
+import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.lang.transaction.Result.CrashResult;
@@ -42,6 +43,7 @@ public abstract class UnitTestBase {
   protected static Config config;
   protected static DBApi dbApi;
   protected static MetaRepo metaRepo;
+  protected static AuthToken token;
 
   @BeforeClass
   public static void setUp() throws Exception {
@@ -53,6 +55,7 @@ public abstract class UnitTestBase {
     dbApi = new DBApi(config);
     metaRepo = dbApi.getMetaRepo();
     session = dbApi.newAdminSession();
+    token = session.authToken();
   }
 
   protected static void execute(String sql) {
