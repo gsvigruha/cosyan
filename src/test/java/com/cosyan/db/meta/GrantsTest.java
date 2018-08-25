@@ -186,4 +186,26 @@ public class GrantsTest extends UnitTestBase {
     assertEquals("User 'u13' has no INSERT right on 'admin.t12'.", e9.getError().getMessage());
 
   }
+
+  @Test
+  public void testAsteriskInSchema() throws AuthException {
+    execute("create table t14 (a varchar);");
+    execute("create user u14 identified by 'abc';");
+    Session u14 = dbApi.authSession("u14", "abc", Method.LOCAL);
+
+    ErrorResult e1 = (ErrorResult) u14.execute("select * from admin.t14;");
+    assertEquals("User 'u14' has no SELECT right on 'admin.t14'.", e1.getError().getMessage());
+
+    execute("grant select on admin.* to u14;");
+    query("select * from admin.t14;", u14);
+
+    execute("create user u15 identified by 'abc';");
+    Session u15 = dbApi.authSession("u15", "abc", Method.LOCAL);
+
+    ErrorResult e2 = (ErrorResult) u15.execute("select * from admin.t14;");
+    assertEquals("User 'u15' has no SELECT right on 'admin.t14'.", e2.getError().getMessage());
+
+    execute("grant select on * to u15;");
+    query("select * from admin.t14;", u15);
+  }
 }

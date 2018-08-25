@@ -22,12 +22,12 @@ import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.lang.expr.Statements.Statement;
-import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.TableUniqueIndex;
@@ -42,7 +42,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class LoadEntityStatement extends Statement {
 
-  private final String table;
+  private final String tableWithOwner;
   private final String id;
 
   private MaterializedTable tableMeta;
@@ -51,8 +51,9 @@ public class LoadEntityStatement extends Statement {
 
   @Override
   public MetaResources compile(MetaReader metaRepo, AuthToken authToken) throws ModelException {
-    TableWithOwnerDefinition tableWithOwnerDefinition = new TableWithOwnerDefinition(Optional.empty(), new Ident(table, new Loc(0, 0)));
-    tableMeta = metaRepo.table(tableWithOwnerDefinition.resolve(authToken));
+    String owner = tableWithOwner.substring(0, tableWithOwner.indexOf("."));
+    String table = tableWithOwner.substring(tableWithOwner.indexOf(".") + 1, tableWithOwner.length());
+    tableMeta = metaRepo.table(TableWithOwner.of(new Ident(table, new Loc(0, 0)), owner));
     header = tableMeta.columns().values().asList();
     Optional<BasicColumn> pkColumn = tableMeta.pkColumn();
     if (pkColumn.isPresent()) {
@@ -66,8 +67,8 @@ public class LoadEntityStatement extends Statement {
   @Override
   public Entity execute(Resources resources) throws RuleException, IOException {
     Object key = column.getType().fromString(id);
-    SeekableTableReader reader = resources.reader(table);
-    TableUniqueIndex index = resources.getPrimaryKeyIndex(table);
+    SeekableTableReader reader = resources.reader(tableWithOwner);
+    TableUniqueIndex index = resources.getPrimaryKeyIndex(tableWithOwner);
     Record record = reader.get(index.get0(key));
     return new Entity(tableMeta, header, record.getValues());
   }

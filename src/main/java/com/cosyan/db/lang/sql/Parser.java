@@ -457,10 +457,14 @@ public class Parser implements IParser {
   }
 
   private TableWithOwnerDefinition parseTableWithOwner(PeekingIterator<Token> tokens) throws ParserException {
-    Ident ident = parseIdent(tokens);
+    return parseTableWithOwner(tokens, /* acceptAsterisk= */false);
+  }
+
+  private TableWithOwnerDefinition parseTableWithOwner(PeekingIterator<Token> tokens, boolean acceptAsterisk) throws ParserException {
+    Ident ident = parseIdent(tokens, acceptAsterisk);
     if (tokens.peek().is(Tokens.DOT)) {
       tokens.next();
-      Ident table = parseIdent(tokens);
+      Ident table = parseIdent(tokens, acceptAsterisk);
       return new TableWithOwnerDefinition(Optional.of(ident), table);
     } else {
       return new TableWithOwnerDefinition(Optional.empty(), ident);
@@ -472,12 +476,7 @@ public class Parser implements IParser {
     assertPeek(tokens, Tokens.SELECT, Tokens.INSERT, Tokens.UPDATE, Tokens.DELETE, Tokens.ALL);
     Ident method = parseIdent(tokens);
     assertNext(tokens, Tokens.ON);
-    TableWithOwnerDefinition table;
-    if (tokens.peek().is(Tokens.ASTERISK)) {
-      table = new TableWithOwnerDefinition(Optional.empty(), new Ident("*", tokens.next().getLoc()));
-    } else {
-      table = parseTableWithOwner(tokens);
-    }
+    TableWithOwnerDefinition table = parseTableWithOwner(tokens, /* acceptAsterisk= */true);
     assertNext(tokens, Tokens.TO);
     Ident username = parseIdent(tokens);
     boolean withGrantOption = false;
@@ -818,9 +817,15 @@ public class Parser implements IParser {
   }
 
   private Ident parseIdent(PeekingIterator<Token> tokens) throws ParserException {
+    return parseIdent(tokens, /* acceptAsterisk= */false);
+  }
+
+  private Ident parseIdent(PeekingIterator<Token> tokens, boolean acceptAsterisk) throws ParserException {
     Token token = tokens.next();
     if (token.isIdent()) {
       return new Ident(token.getString(), token.getLoc());
+    } else if (token.is(Tokens.ASTERISK) && acceptAsterisk) {
+      return new Ident("*", token.getLoc());
     } else {
       throw new ParserException("Expected identifier but got " + token + ".", token);
     }

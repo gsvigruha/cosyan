@@ -61,6 +61,7 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMultiIndex;
@@ -202,11 +203,10 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
   @Override
   public TableProvider tableProvider(Ident ident, String owner) throws ModelException {
     if (tables.containsKey(ident.getString())) {
+      // Check first is ident is an existing owner.
       Map<String, MaterializedTable> userTables = tables.get(ident.getString());
       return new TableProvider() {
-
-        @Override
-        public TableProvider tableProvider(Ident ident2, String owner) throws ModelException {
+        private SeekableTableMeta reader(Ident ident2) throws ModelException {
           if (!userTables.containsKey(ident2.getString())) {
             throw new ModelException(String.format("Table '%s.%s' does not exist.", ident, ident2), ident2);
           }
@@ -214,14 +214,17 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
         }
 
         @Override
+        public TableProvider tableProvider(Ident ident2, String owner) throws ModelException {
+          return reader(ident2);
+        }
+
+        @Override
         public TableMeta tableMeta(TableWithOwner table) throws ModelException {
-          if (!userTables.containsKey(table.getTable().getString())) {
-            throw new ModelException(String.format("Table '%s.%s' does not exist.", ident, table.getTable()), table.getTable());
-          }
-          return userTables.get(table.getTable().getString()).reader();
+          return reader(table.getTable());
         }
       };
     } else if (tables.containsKey(owner)) {
+      // Otherwise check if it matches a table owned by the current user (owner).
       Map<String, MaterializedTable> userTables = tables.get(owner);
       if (userTables.containsKey(ident.getString())) {
         return userTables.get(ident.getString()).reader();
