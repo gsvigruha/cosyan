@@ -284,4 +284,17 @@ public class CreateStatementTest extends UnitTestBase {
         (BasicColumn) t28.column(new Ident("a")))),
         t27.reverseForeignKeys());
   }
+
+  @Test
+  public void testCreateIndexNameResolution() throws Exception {
+    execute("create user u2 identified by 'abc';");
+    Session u2 = dbApi.authSession("u2", "abc", Method.LOCAL);
+    u2.execute("create table t29 (a varchar);");
+
+    ErrorResult e = error("create index t29.a;");
+    assertError(ModelException.class, "[13, 16]: Table 'admin.t29' does not exist.", e);
+
+    execute("create index u2.t29.a;");
+    assertEquals(1, metaRepo.collectMultiIndexes(metaRepo.table("u2", "t29")).size());
+  }
 }

@@ -14,7 +14,7 @@
 .entity tr:nth-child(even){background-color: #F2F2F2;}
 .entity tr:nth-child(odd){background-color: #FFFFFF;}
 
-.entity tr:hover {background-color: #DDD;}
+.entity tr:hover {background-color: #E8EAEC;}
 
 .entity th {
     padding-top: 2px;
@@ -25,7 +25,8 @@
 }
 
 span.button {
-    padding: 4px;
+    padding: 6px;
+    margin: -2px;
 }
 
 span.disabled {
@@ -36,9 +37,9 @@ span.enabled {
     opacity: 1;
 }
 
-span.button:hover {background: radial-gradient(rgba(128, 255, 192, 1), rgba(128, 255, 192, 0.0) 80%);}
+span.button:hover {background: radial-gradient(rgba(255, 216, 128, 1), rgba(255, 216, 128, 0.0) 80%);}
 
-span.button:active {background: radial-gradient(rgba(128, 255, 192, 1), rgba(128, 255, 192, 0.0) 80%);}
+span.button:active {background: radial-gradient(rgba(255, 216, 128, 1), rgba(255, 216, 128, 0.0) 80%);}
 
 .editor table {
     font-family: Lucida;
@@ -63,7 +64,7 @@ td.empty {
 .editor tr:nth-child(even){background-color: #F2F2F2;}
 .editor tr:nth-child(odd){background-color: #FFFFFF;}
 
-.editor tr:hover {background-color: #DDD;}
+.editor tr:hover {background-color: #E8EAEC;}
 
 .editor th {
     padding-top: 2px;
@@ -147,7 +148,7 @@ span.entity-menu-label {
 }
 
 span.entity-menu-label:hover {
-  background: radial-gradient(rgba(128, 255, 192, 1) 10%, rgba(128, 255, 192, 0.0) 90%);
+  background: radial-gradient(rgba(255, 216, 128, 1) 10%, rgba(255, 216, 128, 0.0) 90%);
 }
 
 span.entity-title {
@@ -162,7 +163,7 @@ span.subentity {
     border-style: solid;
     border-width: 1px;
     border-color: #807078;
-    background-color: rgba(216, 216, 216, 0.2);
+    background-color: rgba(200, 216, 240, 0.2);
     border-radius: 8px;
     height: 100%;
 }
@@ -267,7 +268,7 @@ body {
 
 .admin tr:nth-child(even){background-color: #F2F2F2;}
 
-.admin tr:hover {background-color: #DDD;}
+.admin tr:hover {background-color: #E8EAEC;}
 
 .admin th {
     padding-top: 6px;
@@ -300,7 +301,7 @@ button.tab {
 }
 
 button.tab:hover {
-    background: radial-gradient(rgba(128, 255, 192, 1) 10%, rgba(128, 255, 192, 0.0) 90%);
+    background: radial-gradient(rgba(255, 216, 128, 1) 10%, rgba(255, 216, 128, 0.0) 90%);
 }
 
 button.tab:active {
@@ -314,7 +315,7 @@ button.tab:focus {
 }
 
 button.selected {
-    background: radial-gradient(rgba(64, 208, 160, 1) 10%, rgba(64, 208, 160, 0.0) 90%);
+    background: radial-gradient(rgba(240, 192, 96, 1) 10%, rgba(240, 192, 96, 0.0) 90%);
 }
 
 div.sql {
@@ -379,7 +380,7 @@ div.monitoring {
 .monitoring tr:nth-child(even){background-color: #F2F2F2;}
 .monitoring tr:nth-child(odd){background-color: #FFFFFF;}
 
-.monitoring tr:hover {background-color: #DDD;}
+.monitoring tr:hover {background-color: #E8EAEC;}
 
 .monitoring th {
     padding-top: 2px;
@@ -426,7 +427,7 @@ div.monitoring {
 .admin tr:nth-child(even){background-color: #F2F2F2;}
 .admin tr:nth-child(odd){background-color: #FFFFFF;}
 
-.admin tr:hover {background-color: #DDD;}
+.admin tr:hover {background-color: #E8EAEC;}
 
 .admin th {
     padding-top: 2px;
@@ -454,7 +455,6 @@ span.admin-label {
     padding: 4px;
     margin: 4px;
     margin-left: 8px;
-    background-color: #E0F0FF;
 }
 
 input.admin-input {
@@ -471,14 +471,14 @@ textarea.admin-input-wide {
 }
 
 a.menu {
-  padding: 4px;
+  padding: 6px;
   color: #333;
   background: none;
   text-decoration: none;
 }
 
 a.menu:hover {
-  background: radial-gradient(rgba(128, 255, 192, 1) 10%, rgba(128, 255, 192, 0.0) 90%);
+  background: radial-gradient(rgba(255, 216, 128, 1) 10%, rgba(255, 216, 128, 0.0) 90%);
   text-decoration: none;
 }
 
@@ -495,12 +495,12 @@ div.help-right {
 }
 
 div.help-button:hover {
-  background: radial-gradient(rgba(128, 255, 192, 0.8) 40%, rgba(128, 255, 192, 0.3) 70%, rgba(128, 255, 192, 0.1) 90%);
+  background: radial-gradient(rgba(255, 216, 128, 0.8) 40%, rgba(255, 216, 128, 0.3) 70%, rgba(128, 192, 255, 0.1) 90%);
   cursor: pointer;
 }
 
 div.help-button:active {
-  background: radial-gradient(rgba(64, 208, 160, 0.8) 40%, rgba(64, 208, 160, 0.3) 70%, rgba(64, 208, 160, 0.1) 90%);
+  background: radial-gradient(rgba(240, 192, 96, 0.8) 40%, rgba(240, 192, 96, 0.3) 70%, rgba(64, 160, 208, 0.1) 90%);
 }
 
 div.help-button {
