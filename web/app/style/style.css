@@ -163,7 +163,7 @@ span.subentity {
     border-style: solid;
     border-width: 1px;
     border-color: #807078;
-    background-color: rgba(200, 216, 240, 0.2);
+    background-color: rgba(200, 216, 240, 0.1);
     border-radius: 8px;
     height: 100%;
 }
@@ -200,7 +200,7 @@ div.popup {
     height: 440px;
     width: 80%;
     min-width: 800px;
-    background: rgba(240, 248, 248, 0.9);
+    background: rgba(232, 240, 248, 0.95);
 }
 
 .popup tbody {
