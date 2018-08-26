@@ -63,7 +63,7 @@ public class Entity extends Result {
 
   public Entity(MaterializedTable tableMeta, ImmutableList<BasicColumn> header, Object[] values) {
     super(true);
-    this.entityType = tableMeta.tableName();
+    this.entityType = tableMeta.fullName();
     this.pkColumn = tableMeta.pkColumn().get().getName();
     ImmutableList.Builder<Field> fields = ImmutableList.builder();
     ImmutableList.Builder<ForeignKey> foreignKeys = ImmutableList.builder();
@@ -77,7 +77,7 @@ public class Entity extends Result {
             column.getName(),
             column.getType(),
             foreignKey.getName(),
-            foreignKey.getRefTable().tableName(),
+            foreignKey.getRefTable().fullName(),
             values[i],
             foreignKey.getColumn().isImmutable()));
       }
@@ -85,7 +85,7 @@ public class Entity extends Result {
     ImmutableList.Builder<ReverseForeignKey> reverseForeignKeys = ImmutableList.builder();
     for (com.cosyan.db.model.Keys.ReverseForeignKey rfk : tableMeta.reverseForeignKeys().values()) {
       reverseForeignKeys.add(new ReverseForeignKey(
-          rfk.getName(), rfk.getRefTable().tableName(), rfk.getRefColumn().getName()));
+          rfk.getName(), rfk.getRefTable().fullName(), rfk.getRefColumn().getName()));
     }
     ImmutableList.Builder<TableRef> tableRefs = ImmutableList.builder();
     for (TableRef tableRef : tableMeta.refs().values()) {
