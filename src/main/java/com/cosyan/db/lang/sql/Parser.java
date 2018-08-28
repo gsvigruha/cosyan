@@ -918,10 +918,10 @@ public class Parser implements IParser {
     }
   }
 
-  private void assertNext(PeekingIterator<Token> tokens, String... values) throws ParserException {
+  private void assertNext(PeekingIterator<Token> tokens, String value) throws ParserException {
     Token next = tokens.next();
-    if (!ImmutableSet.copyOf(values).contains(next.getString())) {
-      throw new ParserException("Expected '" + join(values) + "' but got '" + next + "'.", next);
+    if (!value.equals(next.getString())) {
+      throw new ParserException("Expected '" + value + "' but got '" + next + "'.", next);
     }
   }
 
