@@ -1,0 +1,27 @@
+<div class="admin">
+  <div class="admin-tab">
+    <button ng-click="loadUsers()" class="tab">Reload</button>
+  </div>
+  <div class="message" ng-class="{error: $error}">{{ $error.msg }}</div>
+  <div ng-repeat="user in users">
+    <span class="admin-label">{{ user.username }}</span>
+    <table class="admin" ng-if="user.tokens">
+      <thead>
+        <tr>
+          <th>method</th>
+          <th>owner</th>
+          <th>table name</th>
+          <th>with grant option</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="token in user.tokens">
+          <td>{{ token.method }}</td>
+          <td>{{ token.table_owner }}</td>
+          <td>{{ token.table_name }}</td>
+          <td>{{ token.grant }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

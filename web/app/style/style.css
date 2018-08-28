@@ -359,43 +359,13 @@ div.login {
     padding: 4px;
 }
 
-div.monitoring {
-    padding: 8px;
-}
-
-.monitoring table {
-    font-family: Lucida;
-    font-size: 12px;
-    border-collapse: collapse;
-    width: 800px;
-    margin: 8px;
-}
-
-.monitoring td, .monitoring th {
-    border: 1px solid #ddd;
-    padding: 2px;
-    font-size: 12px;
-}
-
-.monitoring tr:nth-child(even){background-color: #F2F2F2;}
-.monitoring tr:nth-child(odd){background-color: #FFFFFF;}
-
-.monitoring tr:hover {background-color: #E8EAEC;}
-
-.monitoring th {
-    padding-top: 2px;
-    padding-bottom: 2px;
-    text-align: left;
-    background-color: #602040;
-    color: white;
-}
-
 .admin table {
     font-family: Lucida;
     font-size: 12px;
     border-collapse: collapse;
     width: auto;
     margin: 8px;
+    margin-left: 16px;
 }
 
 .admin td, .admin th {

@@ -1,20 +1,20 @@
-<div class="monitoring">
-<div>
-  <button ng-click="loadMonitoring()" class="tab">Reload</button>
-</div>
+<div class="admin">
+  <div class="admin-tab">
+    <button ng-click="loadMonitoring()" class="tab">Reload</button>
+  </div>
+  <div class="message" ng-class="{error: $error}">{{ $error.msg }}</div>
 
-<table>
-  <tr><td>Load:</td><td>{{ data.load }}</td></tr>
-  <tr><td>Cores:</td><td>{{ data.nproc }}</td></tr>
-  <tr><td>Threads:</td><td>{{ data.threads }}</td></tr>
-  <tr><td>Free memory:</td><td>{{ data.freeMemory | number : fractionSize }}</td></tr>
-  <tr><td>Total memory:</td><td>{{ data.totalMemory | number : fractionSize }}</td></tr>
-  <tr><td>Max memory:</td><td>{{ data.maxMemory | number : fractionSize }}</td></tr>
-</table>
+  <table class="admin">
+    <tr><td>Load:</td><td>{{ data.load }}</td></tr>
+    <tr><td>Cores:</td><td>{{ data.nproc }}</td></tr>
+    <tr><td>Threads:</td><td>{{ data.threads }}</td></tr>
+    <tr><td>Free memory:</td><td>{{ data.freeMemory | number : fractionSize }}</td></tr>
+    <tr><td>Total memory:</td><td>{{ data.totalMemory | number : fractionSize }}</td></tr>
+    <tr><td>Max memory:</td><td>{{ data.maxMemory | number : fractionSize }}</td></tr>
+  </table>
 
-Tables:
-<div>
-  <table>
+  <span class="admin-label">Tables:</span>
+  <table class="admin">
     <thead>
       <th>Name</th>
       <th>File size</th>
@@ -26,11 +26,9 @@ Tables:
       </tr>
     </tbody>
   </table>
-</div>
 
-Unique indexes:
-<div>
-  <table>
+  <span class="admin-label">Unique indexes:<span>
+  <table class="admin">
     <thead>
       <th>Name</th>
       <th>File size</th>
@@ -52,11 +50,9 @@ Unique indexes:
       </tr>
     </tbody>
   </table>
-</div>
 
-Multi indexes:
-<div>
-  <table>
+  <span class="admin-label">Multi indexes:</span>
+  <table class="admin">
     <thead>
       <th>Name</th>
       <th>Trie file size</th>
@@ -82,5 +78,4 @@ Multi indexes:
       </tr>
     </tbody>
   </table>
-</div>
 </div>

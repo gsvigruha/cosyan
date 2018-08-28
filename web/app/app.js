@@ -18,6 +18,10 @@ angular.module('cosyan', [
         templateUrl: 'admin/meta.html',
         controller: 'MetaCtrl',
       })
+      .when('/users', {
+        templateUrl: 'admin/users.html',
+        controller: 'UsersCtrl',
+      })
       .when('/monitoring', {
         templateUrl: 'admin/monitoring.html',
         controller: 'MonitoringCtrl',
