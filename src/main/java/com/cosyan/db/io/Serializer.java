@@ -20,7 +20,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.zip.CRC32;
 
 import com.cosyan.db.model.BasicColumn;
@@ -66,11 +65,10 @@ public class Serializer {
     return bos.toByteArray();
   }
 
-  public static void serialize(Object[] values, ImmutableList<BasicColumn> columns, OutputStream out)
+  private static void serialize(Object[] values, ImmutableList<BasicColumn> columns, ByteArrayOutputStream out)
       throws IOException {
     DataOutputStream stream = new DataOutputStream(out);
     stream.writeByte(1);
-    //stream.writeShort(authToken.userId());
     ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
     DataOutputStream recordStream = new DataOutputStream(bos);
     int i = 0;
@@ -83,7 +81,7 @@ public class Serializer {
     }
     stream.writeInt(bos.size());
     byte[] record = bos.toByteArray();
-    stream.write(record);
+    out.write(record);
     CRC32 checksum = new CRC32();
     checksum.update(record);
     stream.writeInt((int) checksum.getValue());
