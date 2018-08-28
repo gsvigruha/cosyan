@@ -590,6 +590,10 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
     return Util.<String, TableMultiIndex, ByteMultiTrieStat>mapValuesIOException(multiIndexes, TableMultiIndex::stats);
   }
 
+  public JSONArray collectUsers() {
+    return grants.toJSON();
+  }
+
   public IndexReader getIndex(String name) throws RuleException {
     if (uniqueIndexes.containsKey(name)) {
       return uniqueIndexes.get(name);

@@ -190,6 +190,10 @@ public class GrantsTest extends UnitTestBase {
   @Test
   public void testAsteriskInSchema() throws AuthException {
     execute("create table t14 (a varchar);");
+    execute("create user v1 identified by 'abc';");
+    Session v1 = dbApi.authSession("v1", "abc", Method.LOCAL);
+    metaStatement("create table t15 (a varchar);", v1);
+
     execute("create user u14 identified by 'abc';");
     Session u14 = dbApi.authSession("u14", "abc", Method.LOCAL);
 
@@ -198,14 +202,36 @@ public class GrantsTest extends UnitTestBase {
 
     execute("grant select on admin.* to u14;");
     query("select * from admin.t14;", u14);
+    ErrorResult e2 = (ErrorResult) u14.execute("select * from v1.t15;");
+    assertEquals("User 'u14' has no SELECT right on 'v1.t15'.", e2.getError().getMessage());
 
     execute("create user u15 identified by 'abc';");
     Session u15 = dbApi.authSession("u15", "abc", Method.LOCAL);
 
-    ErrorResult e2 = (ErrorResult) u15.execute("select * from admin.t14;");
-    assertEquals("User 'u15' has no SELECT right on 'admin.t14'.", e2.getError().getMessage());
+    ErrorResult e3 = (ErrorResult) u15.execute("select * from admin.t14;");
+    assertEquals("User 'u15' has no SELECT right on 'admin.t14'.", e3.getError().getMessage());
 
     execute("grant select on * to u15;");
     query("select * from admin.t14;", u15);
+    ErrorResult e4 = (ErrorResult) u15.execute("select * from v1.t15;");
+    assertEquals("User 'u15' has no SELECT right on 'v1.t15'.", e4.getError().getMessage());
+
+    execute("create user u16 identified by 'abc';");
+    Session u16 = dbApi.authSession("u16", "abc", Method.LOCAL);
+
+    ErrorResult e5 = (ErrorResult) u16.execute("select * from admin.t14;");
+    assertEquals("User 'u16' has no SELECT right on 'admin.t14'.", e5.getError().getMessage());
+
+    execute("grant select on *.* to u16;");
+    query("select * from admin.t14;", u16);
+    query("select * from v1.t15;", u16);
+  }
+
+  @Test
+  public void testWrongGrantTable() throws AuthException {
+    execute("create table t16 (a varchar);");
+    execute("create user u17 identified by 'abc';");
+    ErrorResult e1 = error("grant all on *.t16 to u17;");
+    assertEquals("[15, 18]: Wrong table '*.t16'. If the table name is '*', the owner also has to be '*'.", e1.getError().getMessage());
   }
 }

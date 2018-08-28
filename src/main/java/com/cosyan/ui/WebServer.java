@@ -35,6 +35,7 @@ import com.cosyan.ui.admin.SessionServlets.CloseSessionServlet;
 import com.cosyan.ui.admin.SessionServlets.CreateSessionServlet;
 import com.cosyan.ui.admin.SessionServlets.LoginServlet;
 import com.cosyan.ui.admin.SessionServlets.LogoutServlet;
+import com.cosyan.ui.admin.UsersServlet;
 import com.cosyan.ui.entity.EntityLoadServlet;
 import com.cosyan.ui.entity.EntityMetaServlet;
 import com.cosyan.ui.sql.SQLServlets.CancelServlet;
@@ -58,6 +59,7 @@ public class WebServer {
     handler.addServlet(new ServletHolder(new LoginServlet(sessionHandler)), "/login");
     handler.addServlet(new ServletHolder(new LogoutServlet(sessionHandler)), "/logout");
     handler.addServlet(new ServletHolder(new MonitoringServlet(sessionHandler)), "/monitoring");
+    handler.addServlet(new ServletHolder(new UsersServlet(sessionHandler)), "/users");
     handler.addServlet(new ServletHolder(new IndexServlet(sessionHandler)), "/index");
     handler.addServlet(new ServletHolder(new SQLServlet(sessionHandler)), "/sql");
     handler.addServlet(new ServletHolder(new CancelServlet(sessionHandler)), "/cancel");

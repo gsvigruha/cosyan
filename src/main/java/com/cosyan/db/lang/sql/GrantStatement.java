@@ -20,9 +20,7 @@ import com.cosyan.db.lang.expr.Statements.GlobalStatement;
 import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants;
-import com.cosyan.db.meta.Grants.GrantAllTablesToken;
 import com.cosyan.db.meta.Grants.GrantException;
-import com.cosyan.db.meta.Grants.GrantTableToken;
 import com.cosyan.db.meta.Grants.GrantToken;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -44,20 +42,17 @@ public class GrantStatement {
 
     @Override
     public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException {
-      GrantToken grantToken;
-      if (table.getTable().is(Tokens.ASTERISK)) {
-        grantToken = new GrantAllTablesToken(
-            user.getString(),
-            Grants.Method.valueOf(method.toUpperCase()),
-            withGrantOption);
-      } else {
-        TableWithOwner tableWithOwner = table.resolve(authToken);
-        grantToken = new GrantTableToken(
-            user.getString(),
-            Grants.Method.valueOf(method.toUpperCase()),
-            metaRepo.table(tableWithOwner),
-            withGrantOption);
+      TableWithOwner tableWithOwner = table.resolve(authToken);
+      if (!tableWithOwner.getTable().getString().equals("*") && tableWithOwner.getOwner().equals("*")) {
+        throw new ModelException(String.format("Wrong table '%s'. If the table name is '*', the owner also has to be '*'.", tableWithOwner), tableWithOwner.getTable());
       }
+      GrantToken grantToken;
+      grantToken = new GrantToken(
+          user.getString(),
+          Grants.Method.valueOf(method.toUpperCase()),
+          tableWithOwner.getOwner(),
+          tableWithOwner.getTable().getString(),
+          withGrantOption);
       metaRepo.createGrant(grantToken, authToken);
       return Result.META_OK;
     }

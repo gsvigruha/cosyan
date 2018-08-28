@@ -36,143 +36,64 @@ public class Grants {
     SELECT, INSERT, DELETE, UPDATE, ALL
   }
 
-  public interface GrantToken {
-    public String username();
-
-    public Method method();
-
-    public boolean withGrantOption();
-
-    public boolean hasAccess(Method method, MaterializedTable tableMeta, AuthToken authToken);
-
-    public String objects();
-
-    public boolean providesGrantTo(GrantToken grantToken);
-
-    public boolean ownedBy(AuthToken authToken);
-
-    public JSONObject toJSON();
-  }
-
-  public static class GrantAllTablesToken implements GrantToken {
+  public static class GrantToken {
     private final String username;
     private final Method method;
+    private final String owner;
+    private final String table;
     private final boolean withGrantOption;
 
-    public GrantAllTablesToken(String username, Method method, boolean withGrantOption) {
+    public GrantToken(String username, Method method, String owner, String table, boolean withGrantOption) {
       this.username = username;
       this.method = method;
-      this.withGrantOption = withGrantOption;
-    }
-
-    @Override
-    public String username() {
-      return username;
-    }
-
-    @Override
-    public Method method() {
-      return method;
-    }
-
-    @Override
-    public String objects() {
-      return "*";
-    }
-
-    @Override
-    public boolean withGrantOption() {
-      return withGrantOption;
-    }
-
-    @Override
-    public boolean hasAccess(Method method, MaterializedTable tableMeta, AuthToken authToken) {
-      return authToken.isAdmin()
-          || (authToken.username().equals(username)
-              && (method == this.method || this.method == Method.ALL));
-    }
-
-    @Override
-    public boolean providesGrantTo(GrantToken proposedGrantToken) {
-      return this.withGrantOption
-          && (this.method == proposedGrantToken.method() || this.method == Method.ALL);
-    }
-
-    @Override
-    public boolean ownedBy(AuthToken authToken) {
-      return authToken.isAdmin();
-    }
-
-    @Override
-    public JSONObject toJSON() {
-      JSONObject obj = new JSONObject();
-      obj.put("method", method.name());
-      obj.put("grant", withGrantOption);
-      obj.put("table_name", "*");
-      return obj;
-    }
-  }
-
-  public static class GrantTableToken implements GrantToken {
-    private final String username;
-    private final Method method;
-    private final MaterializedTable table;
-    private final boolean withGrantOption;
-
-    public GrantTableToken(String username, Method method, MaterializedTable table, boolean withGrantOption) {
-      this.username = username;
-      this.method = method;
+      this.owner = owner;
       this.table = table;
       this.withGrantOption = withGrantOption;
     }
 
-    @Override
     public String username() {
       return username;
     }
 
-    @Override
     public Method method() {
       return method;
     }
 
-    @Override
-    public String objects() {
-      return table.fullName();
+    public String print() {
+      return owner + "." + table;
     }
 
-    @Override
     public boolean withGrantOption() {
       return withGrantOption;
     }
 
-    @Override
+    private boolean tableMatches(MaterializedTable tableMeta) {
+      return (owner.equals("*") || owner.equals(tableMeta.owner())) && (table.equals("*") || table.equals(tableMeta.tableName()));
+    }
+
     public boolean hasAccess(Method method, MaterializedTable tableMeta, AuthToken authToken) {
       return authToken.isAdmin()
           || (authToken.username().equals(username)
               && (method == this.method || this.method == Method.ALL)
-              && tableMeta == this.table);
+              && tableMatches(tableMeta));
     }
 
-    @Override
     public boolean providesGrantTo(GrantToken proposedGrantToken) {
       return this.withGrantOption
           && (this.method == proposedGrantToken.method() || this.method == Method.ALL)
-          && this.objects().equals(proposedGrantToken.objects());
+          && (this.table.equals("*") || this.table.equals(proposedGrantToken.table));
     }
 
-    @Override
     public boolean ownedBy(AuthToken authToken) {
-      return authToken.isAdmin() || table.owner().equals(authToken.username());
+      return authToken.isAdmin() || owner.equals(authToken.username());
     }
 
-    @Override
     public JSONObject toJSON() {
       JSONObject obj = new JSONObject();
       obj.put("method", method.name());
       obj.put("grant", withGrantOption);
-      obj.put("table_name", table.tableName());
-      obj.put("table_owner", table.owner());
+      obj.put("table_owner", owner);
+      obj.put("table_name", table);
       return obj;
     }
   }
@@ -197,18 +118,12 @@ public class Grants {
         JSONArray arr = tokensObj.getJSONObject(i).getJSONArray("tokens");
         for (int j = 0; j < arr.length(); j++) {
           JSONObject tokenObj = arr.getJSONObject(j);
-          if (tokenObj.getString("table_name").equals("*")) {
-            tokens.put(username, new GrantAllTablesToken(
-                username,
-                Method.valueOf(tokenObj.getString("method")),
-                tokenObj.getBoolean("grant")));
-          } else {
-            tokens.put(username, new GrantTableToken(
-                username,
-                Method.valueOf(tokenObj.getString("method")),
-                tables.get(tokenObj.getString("table_owner")).get(tokenObj.get("table_name")),
-                tokenObj.getBoolean("grant")));
-          }
+          tokens.put(username, new GrantToken(
+              username,
+              Method.valueOf(tokenObj.getString("method")),
+              tokenObj.getString("table_owner"),
+              tokenObj.getString("table_name"),
+              tokenObj.getBoolean("grant")));
         }
       }
     }
@@ -238,22 +153,23 @@ public class Grants {
     return arr;
   }
 
-  public void createGrant(GrantToken grantToken, AuthToken authToken) throws GrantException {
-    String username = grantToken.username();
-    if (grantToken.ownedBy(authToken)) {
-      userGrants.put(username, grantToken);
+  public void createGrant(GrantToken proposedGrantToken, AuthToken authToken) throws GrantException {
+    String username = proposedGrantToken.username();
+    if (proposedGrantToken.ownedBy(authToken)) {
+      userGrants.put(username, proposedGrantToken);
       return;
     }
-    Collection<GrantToken> grants = userGrants.get(authToken.username());
-    for (GrantToken grant : grants) {
-      if (grant.providesGrantTo(grantToken)) {
-        userGrants.put(username, grantToken);
+    // Check if the current user have an existing grant allowing to create this new grant.
+    Collection<GrantToken> existingGrants = userGrants.get(authToken.username());
+    for (GrantToken existingGrant : existingGrants) {
+      if (existingGrant.providesGrantTo(proposedGrantToken)) {
+        userGrants.put(username, proposedGrantToken);
         return;
       }
     }
     throw new GrantException(
-        String.format("User '%s' has no grant %s right on '%s'.", authToken.username(), grantToken.method(),
-            grantToken.objects()));
+        String.format("User '%s' has no grant %s right on '%s'.", authToken.username(), proposedGrantToken.method(),
+            proposedGrantToken.print()));
   }
 
   public void createUser(String username, String password, AuthToken authToken) throws GrantException {
