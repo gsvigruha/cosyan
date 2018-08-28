@@ -116,9 +116,11 @@ public class SessionHandler {
     } catch (NoSessionExpression e) {
       resp.setStatus(HttpStatus.UNAUTHORIZED_401);
       pw.println(new JSONObject(ImmutableMap.of("error", new JSONObject(ImmutableMap.of("msg", e.getMessage())))));
+      async.complete();
     } catch (ConfigException e) {
       resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
       pw.println(new JSONObject(ImmutableMap.of("error", new JSONObject(ImmutableMap.of("msg", e.getMessage())))));
+      async.complete();
     }
   }
 

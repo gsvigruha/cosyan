@@ -5,13 +5,14 @@
   <div class="message" ng-class="{error: $error}">{{ $error.msg }}</div>
   <div ng-repeat="user in users">
     <span class="admin-label">{{ user.username }}</span>
-    <table class="admin" ng-if="user.tokens">
+    <table class="admin">
       <thead>
         <tr>
           <th>method</th>
           <th>owner</th>
           <th>table name</th>
           <th>with grant option</th>
+          <th>action</th>
         </tr>
       </thead>
       <tbody>
@@ -20,7 +21,26 @@
           <td>{{ token.table_owner }}</td>
           <td>{{ token.table_name }}</td>
           <td>{{ token.grant }}</td>
+          <td></td>
         </tr>
+        <tr>
+          <td>
+            <select ng-model="newGrant[user.username].method" class="admin-input">
+              <option value="select">select</option>
+              <option value="insert">insert</option>
+              <option value="delete">delete</option>
+              <option value="update">update</option>
+              <option value="all">all</option>
+            </select>
+          </td>
+          <td><input class="admin-input" ng-model="newGrant[user.username].tableOwner"></input></td>
+          <td><input class="admin-input" ng-model="newGrant[user.username].tableName"></input></td>
+          <td><input type="checkbox" ng-model="newGrant[user.username].withGrantOption"></input></td>
+          <td>
+            <span ng-click="addGrant(user.username);" title="Add"
+                  class="button enabled glyphicon glyphicon-plus"></span>
+          </td>
+        </tr>  
       </tbody>
     </table>
   </div>
