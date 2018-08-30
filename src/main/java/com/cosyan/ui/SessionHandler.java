@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.annotation.Nullable;
 import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -67,7 +68,7 @@ public class SessionHandler {
   private Session getSession(String token, String sessionId) throws NoSessionExpression {
     Session session = sessions.get(sessionId);
     if (session == null) {
-      throw new NoSessionExpression("Invalid session.");
+      throw new NoSessionExpression(String.format("Invalid session '%s'.", sessionId));
     }
     if (!Objects.equals(session.authToken().token(), token)) {
       throw new NoSessionExpression("Token mismatch.");
@@ -126,7 +127,7 @@ public class SessionHandler {
 
   public synchronized String login(String username, String password, String method)
       throws AuthException, ConfigException, NoSessionExpression {
-    if (dbApi.config().auth()) {
+    if (dbApi.config().auth()) { // Token cannot be null.
       AuthToken token = dbApi.authenticator().auth(username, password, Authenticator.Method.valueOf(method));
       tokens.put(token.token(), token);
       return token.token();
@@ -135,7 +136,7 @@ public class SessionHandler {
   }
 
   public synchronized void logout(String token) throws NoSessionExpression, ConfigException {
-    if (dbApi.config().auth()) {
+    if (dbApi.config().auth()) { // Token cannot be null.
       if (tokens.containsKey(token)) {
         tokens.remove(token);
         sessions.entrySet().removeIf(e -> e.getValue().authToken().token().equals(token));
@@ -156,13 +157,19 @@ public class SessionHandler {
     sessions.remove(sessionId);
   }
 
-  public synchronized Session session(String token) throws NoSessionExpression, ConfigException {
+  public synchronized Session session(@Nullable String token) throws NoSessionExpression, ConfigException {
+    if (token == null && dbApi.config().auth()) {
+      throw new NoSessionExpression("Token has to be set if authentication is enabled.");
+    }
+    if (token != null && !dbApi.config().auth()) {
+      throw new NoSessionExpression("Token cannot be set if authentication is not enabled.");
+    }
     if (!dbApi.config().auth()) {
-      return dbApi.newAdminSession(token);
+      return dbApi.newAdminSession(/* token= */null);
     } else if (tokens.containsKey(token)) {
       return dbApi.authSession(tokens.get(token));
     }
-    throw new NoSessionExpression("Invalid token.");
+    throw new NoSessionExpression(String.format("Invalid token '%s'.", token));
   }
 
   public static class NoSessionExpression extends Exception {

@@ -15,6 +15,8 @@
  */
 package com.cosyan.db.auth;
 
+import javax.annotation.Nullable;
+
 public interface AuthToken {
 
   public void close();
@@ -27,9 +29,9 @@ public interface AuthToken {
 
   public static class AdminToken implements AuthToken {
 
-    private final String token;
+    private final @Nullable String token;
 
-    public AdminToken(String token) {
+    public AdminToken(@Nullable String token) {
       this.token = token;
     }
 
@@ -48,12 +50,12 @@ public interface AuthToken {
     }
 
     @Override
-    public String token() {
+    public @Nullable String token() {
       return token;
     }
   }
 
-  public static AdminToken adminToken(String token) {
+  public static AdminToken adminToken(@Nullable String token) {
     return new AdminToken(token);
   }
 }

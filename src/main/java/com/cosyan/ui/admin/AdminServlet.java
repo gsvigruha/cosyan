@@ -41,7 +41,7 @@ public class AdminServlet extends HttpServlet {
       throws ServletException, IOException {
     try {
       JSONObject obj = new JSONObject();
-      obj.put("tables", metaRepoConnector.tables(req.getParameter("user")));
+      obj.put("tables", metaRepoConnector.tables(req.getParameter("token")));
       resp.setStatus(HttpStatus.OK_200);
       resp.getWriter().println(obj);
     } catch (Exception e) {

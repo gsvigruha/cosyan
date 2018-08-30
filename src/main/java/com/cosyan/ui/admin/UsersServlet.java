@@ -18,7 +18,6 @@ package com.cosyan.ui.admin;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -27,9 +26,10 @@ import org.json.JSONObject;
 
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.session.Session;
+import com.cosyan.ui.ParamServlet;
 import com.cosyan.ui.SessionHandler;
 
-public class UsersServlet extends HttpServlet {
+public class UsersServlet extends ParamServlet {
   private static final long serialVersionUID = 1L;
 
   private final SessionHandler sessionHandler;
@@ -38,11 +38,12 @@ public class UsersServlet extends HttpServlet {
     this.sessionHandler = sessionHandler;
   }
 
+  @Params(optional = { "token" })
   @Override
-  protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-      throws ServletException, IOException {
+  protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
+    throws ServletException, IOException {
     try {
-      Session session = sessionHandler.session(req.getParameter("user"));
+      Session session = sessionHandler.session(req.getParameter("token"));
       MetaRepo metaRepo = session.metaRepo();
       metaRepo.metaRepoReadLock();
       try {

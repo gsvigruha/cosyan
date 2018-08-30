@@ -20,6 +20,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nullable;
+
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.auth.Authenticator;
 import com.cosyan.db.auth.Authenticator.AuthException;
@@ -90,7 +92,7 @@ public class DBApi {
     return newAdminSession(authenticator.token());
   }
 
-  public Session newAdminSession(String token) {
+  public Session newAdminSession(@Nullable String token) {
     return new AdminSession(
         metaRepo,
         transactionHandler,
