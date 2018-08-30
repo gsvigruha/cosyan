@@ -18,7 +18,6 @@ package com.cosyan.ui.admin;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -30,9 +29,10 @@ import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.session.Session;
+import com.cosyan.ui.ParamServlet;
 import com.cosyan.ui.SessionHandler;
 
-public class IndexServlet extends HttpServlet {
+public class IndexServlet extends ParamServlet {
   private static final long serialVersionUID = 1L;
 
   private final SessionHandler sessionHandler;
@@ -41,8 +41,12 @@ public class IndexServlet extends HttpServlet {
     this.sessionHandler = sessionHandler;
   }
 
+  @Param(name = "token")
+  @Param(name = "session")
+  @Param(name = "index", mandatory = true)
+  @Param(name = "key", mandatory = true)
   @Override
-  protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+  protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
     sessionHandler.execute(req, resp, (Session session) -> {
       String id = req.getParameter("index");
       String key = req.getParameter("key");

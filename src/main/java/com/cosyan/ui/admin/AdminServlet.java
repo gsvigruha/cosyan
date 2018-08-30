@@ -18,16 +18,16 @@ package com.cosyan.ui.admin;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 
+import com.cosyan.ui.ParamServlet;
 import com.cosyan.ui.SessionHandler;
 
-public class AdminServlet extends HttpServlet {
+public class AdminServlet extends ParamServlet {
   private static final long serialVersionUID = 1L;
 
   private final MetaRepoConnector metaRepoConnector;
@@ -36,8 +36,9 @@ public class AdminServlet extends HttpServlet {
     this.metaRepoConnector = new MetaRepoConnector(sessionHandler);
   }
 
+  @Param(name = "token")
   @Override
-  protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+  protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     try {
       JSONObject obj = new JSONObject();

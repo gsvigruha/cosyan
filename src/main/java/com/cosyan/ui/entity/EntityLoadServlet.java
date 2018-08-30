@@ -18,16 +18,16 @@ package com.cosyan.ui.entity;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.cosyan.db.DBApi;
 import com.cosyan.db.entity.EntityHandler;
 import com.cosyan.db.session.Session;
+import com.cosyan.ui.ParamServlet;
 import com.cosyan.ui.SessionHandler;
 
-public class EntityLoadServlet extends HttpServlet {
+public class EntityLoadServlet extends ParamServlet {
   private static final long serialVersionUID = 1L;
 
   private final SessionHandler sessionHandler;
@@ -38,8 +38,12 @@ public class EntityLoadServlet extends HttpServlet {
     this.entityHandler = dbApi.entityHandler();
   }
 
+  @Param(name = "token")
+  @Param(name = "session")
+  @Param(name = "table", mandatory = true)
+  @Param(name = "id", mandatory = true)
   @Override
-  protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+  protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     sessionHandler.execute(req, resp, (Session session) -> {
       String table = req.getParameter("table");

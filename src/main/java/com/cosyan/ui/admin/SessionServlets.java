@@ -18,7 +18,6 @@ package com.cosyan.ui.admin;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -27,12 +26,13 @@ import org.json.JSONObject;
 
 import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.conf.Config.ConfigException;
+import com.cosyan.ui.ParamServlet;
 import com.cosyan.ui.SessionHandler;
 import com.cosyan.ui.SessionHandler.NoSessionExpression;
 import com.google.common.collect.ImmutableMap;
 
 public class SessionServlets {
-  public static class LoginServlet extends HttpServlet {
+  public static class LoginServlet extends ParamServlet {
     private static final long serialVersionUID = 1L;
 
     private final SessionHandler sessionHandler;
@@ -41,8 +41,11 @@ public class SessionServlets {
       this.sessionHandler = sessionHandler;
     }
 
+    @Param(name = "username", mandatory = true)
+    @Param(name = "password", mandatory = true)
+    @Param(name = "method", mandatory = true)
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+    protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
       try {
         JSONObject obj = new JSONObject();
@@ -60,7 +63,7 @@ public class SessionServlets {
     }
   }
 
-  public static class LogoutServlet extends HttpServlet {
+  public static class LogoutServlet extends ParamServlet {
     private static final long serialVersionUID = 1L;
 
     private final SessionHandler sessionHandler;
@@ -69,8 +72,9 @@ public class SessionServlets {
       this.sessionHandler = sessionHandler;
     }
 
+    @Param(name = "token", mandatory = true)
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+    protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
       try {
         JSONObject obj = new JSONObject();
@@ -86,7 +90,7 @@ public class SessionServlets {
     }
   }
 
-  public static class CreateSessionServlet extends HttpServlet {
+  public static class CreateSessionServlet extends ParamServlet {
     private static final long serialVersionUID = 1L;
 
     private final SessionHandler sessionHandler;
@@ -95,8 +99,9 @@ public class SessionServlets {
       this.sessionHandler = sessionHandler;
     }
 
+    @Param(name = "token")
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+    protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
       try {
         JSONObject obj = new JSONObject();
@@ -113,7 +118,7 @@ public class SessionServlets {
     }
   }
 
-  public static class CloseSessionServlet extends HttpServlet {
+  public static class CloseSessionServlet extends ParamServlet {
     private static final long serialVersionUID = 1L;
 
     private final SessionHandler sessionHandler;
@@ -122,8 +127,10 @@ public class SessionServlets {
       this.sessionHandler = sessionHandler;
     }
 
+    @Param(name = "token")
+    @Param(name = "session", mandatory = true)
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+    protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
       try {
         JSONObject obj = new JSONObject();

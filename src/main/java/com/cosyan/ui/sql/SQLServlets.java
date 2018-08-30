@@ -18,15 +18,15 @@ package com.cosyan.ui.sql;
 import java.io.IOException;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.cosyan.db.session.Session;
+import com.cosyan.ui.ParamServlet;
 import com.cosyan.ui.SessionHandler;
 
 public class SQLServlets {
-  public static class SQLServlet extends HttpServlet {
+  public static class SQLServlet extends ParamServlet {
     private static final long serialVersionUID = 1L;
 
     private final SessionHandler sessionHandler;
@@ -35,8 +35,11 @@ public class SQLServlets {
       this.sessionHandler = sessionHandler;
     }
 
+    @Param(name = "token")
+    @Param(name = "session")
+    @Param(name = "sql", mandatory = true)
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+    protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
       sessionHandler.execute(req, resp, (Session session) -> {
         String sql = req.getParameter("sql");
@@ -45,7 +48,7 @@ public class SQLServlets {
     }
   }
 
-  public static class CancelServlet extends HttpServlet {
+  public static class CancelServlet extends ParamServlet {
     private static final long serialVersionUID = 1L;
 
     private final SessionHandler sessionHandler;
@@ -54,8 +57,10 @@ public class SQLServlets {
       this.sessionHandler = sessionHandler;
     }
 
+    @Param(name = "token")
+    @Param(name = "session")
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+    protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
       sessionHandler.cancel(req, resp);
     }

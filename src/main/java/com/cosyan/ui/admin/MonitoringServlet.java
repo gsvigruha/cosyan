@@ -45,7 +45,7 @@ public class MonitoringServlet extends ParamServlet {
     this.sessionHandler = sessionHandler;
   }
 
-  @Params(optional = { "token" })
+  @Param(name = "token")
   @Override
   protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
