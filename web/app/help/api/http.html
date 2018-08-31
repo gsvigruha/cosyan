@@ -1,0 +1,91 @@
+<h3>HTTP API</h3>
+<h4>Path <code>/cosyan/admin</code><br/></h4>
+<p>HTTP <code>GET</code> Params<br/>
+Returns the metadata for all tables.<br/></p>
+<ul>
+<li><code>token</code>: User authentication token.<br/></li>
+</ul>
+<br/>
+<h4>Path <code>/cosyan/login</code><br/></h4>
+<p>HTTP <code>GET</code> Params<br/>
+Logs in to the DB and returns the user authentication token.<br/></p>
+<ul>
+<li><code>username</code>, mandatory: The name of the DB user.<br/></li>
+<li><code>password</code>, mandatory: The unencrypted password of the DB user.<br/></li>
+<li><code>method</code>, mandatory: Authentication method (LOCAL, LDAP).<br/></li>
+</ul>
+<br/>
+<h4>Path <code>/cosyan/monitoring</code><br/></h4>
+<p>HTTP <code>GET</code> Params<br/>
+Returns system monitoring info.<br/></p>
+<ul>
+<li><code>token</code>: User authentication token.<br/></li>
+</ul>
+<br/>
+<h4>Path <code>/cosyan/users</code><br/></h4>
+<p>HTTP <code>GET</code> Params<br/>
+Returns the list of uses and their grants.<br/></p>
+<ul>
+<li><code>token</code>: User authentication token.<br/></li>
+</ul>
+<br/>
+<h4>Path <code>/cosyan/index</code><br/></h4>
+<p>HTTP <code>GET</code> Params<br/>
+Looks up a key in an index and returns the corresponding values.<br/></p>
+<ul>
+<li><code>token</code>: User authentication token.<br/></li>
+<li><code>session</code>: Session ID.<br/></li>
+<li><code>index</code>, mandatory: Full index name.<br/></li>
+<li><code>key</code>, mandatory: The value in the index to check.<br/></li>
+</ul>
+<br/>
+<h4>Path <code>/cosyan/sql</code><br/></h4>
+<p>HTTP <code>GET</code> Params<br/>
+Executes an SQL script and returns the results.<br/></p>
+<ul>
+<li><code>token</code>: User authentication token.<br/></li>
+<li><code>session</code>: Session ID.<br/></li>
+<li><code>sql</code>, mandatory: The SQL script to execute.<br/></li>
+</ul>
+<br/>
+<h4>Path <code>/cosyan/cancel</code><br/></h4>
+<p>HTTP <code>GET</code> Params<br/>
+Cancels the currently running query in the session.<br/></p>
+<ul>
+<li><code>token</code>: User authentication token.<br/></li>
+<li><code>session</code>, mandatory: Session ID.<br/></li>
+</ul>
+<br/>
+<h4>Path <code>/cosyan/createSession</code><br/></h4>
+<p>HTTP <code>GET</code> Params<br/>
+Creates a session for a given user and returns the session ID.<br/></p>
+<ul>
+<li><code>token</code>: User authentication token.<br/></li>
+</ul>
+<br/>
+<h4>Path <code>/cosyan/closeSession</code><br/></h4>
+<p>HTTP <code>GET</code> Params<br/>
+Closes the session.<br/></p>
+<ul>
+<li><code>token</code>: User authentication token.<br/></li>
+<li><code>session</code>, mandatory: Session ID.<br/></li>
+</ul>
+<br/>
+<h4>Path <code>/cosyan/entityMeta</code><br/></h4>
+<p>HTTP <code>GET</code> Params<br/>
+User authentication token.<br/></p>
+<ul>
+<li><code>token</code>: User authentication token.<br/></li>
+<li><code>session</code>: Session ID.<br/></li>
+</ul>
+<br/>
+<h4>Path <code>/cosyan/loadEntity</code><br/></h4>
+<p>HTTP <code>GET</code> Params<br/>
+Returns the metadata for all entities.<br/></p>
+<ul>
+<li><code>token</code>: User authentication token.<br/></li>
+<li><code>session</code>: Session ID.<br/></li>
+<li><code>table</code>, mandatory: Full table name.<br/></li>
+<li><code>id</code>, mandatory: Value of the ID column of the table.<br/></li>
+</ul>
+<br/>

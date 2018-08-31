@@ -24,8 +24,10 @@ import javax.servlet.http.HttpServletResponse;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.ParamServlet;
 import com.cosyan.ui.SessionHandler;
+import com.cosyan.ui.ParamServlet.Servlet;
 
 public class SQLServlets {
+  @Servlet(path = "sql", doc = "Executes an SQL script and returns the results.")
   public static class SQLServlet extends ParamServlet {
     private static final long serialVersionUID = 1L;
 
@@ -35,9 +37,9 @@ public class SQLServlets {
       this.sessionHandler = sessionHandler;
     }
 
-    @Param(name = "token")
-    @Param(name = "session")
-    @Param(name = "sql", mandatory = true)
+    @Param(name = "token", doc = "User authentication token.")
+    @Param(name = "session", doc = "Session ID.")
+    @Param(name = "sql", mandatory = true, doc = "The SQL script to execute.")
     @Override
     protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
@@ -48,6 +50,7 @@ public class SQLServlets {
     }
   }
 
+  @Servlet(path = "cancel", doc = "Cancels the currently running query in the session.")
   public static class CancelServlet extends ParamServlet {
     private static final long serialVersionUID = 1L;
 
@@ -57,8 +60,8 @@ public class SQLServlets {
       this.sessionHandler = sessionHandler;
     }
 
-    @Param(name = "token")
-    @Param(name = "session")
+    @Param(name = "token", doc = "User authentication token.")
+    @Param(name = "session", mandatory = true, doc = "Session ID.")
     @Override
     protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {

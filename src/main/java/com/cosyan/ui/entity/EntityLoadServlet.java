@@ -26,7 +26,9 @@ import com.cosyan.db.entity.EntityHandler;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.ParamServlet;
 import com.cosyan.ui.SessionHandler;
+import com.cosyan.ui.ParamServlet.Servlet;
 
+@Servlet(path = "loadEntity", doc = "Returns the metadata for all entities.")
 public class EntityLoadServlet extends ParamServlet {
   private static final long serialVersionUID = 1L;
 
@@ -38,10 +40,10 @@ public class EntityLoadServlet extends ParamServlet {
     this.entityHandler = dbApi.entityHandler();
   }
 
-  @Param(name = "token")
-  @Param(name = "session")
-  @Param(name = "table", mandatory = true)
-  @Param(name = "id", mandatory = true)
+  @Param(name = "token", doc = "User authentication token.")
+  @Param(name = "session", doc = "Session ID.")
+  @Param(name = "table", mandatory = true, doc = "Full table name.")
+  @Param(name = "id", mandatory = true, doc = "Value of the ID column of the table.")
   @Override
   protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {

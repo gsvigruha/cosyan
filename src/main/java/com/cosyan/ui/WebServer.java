@@ -28,20 +28,40 @@ import org.eclipse.jetty.util.thread.ThreadPool;
 
 import com.cosyan.db.DBApi;
 import com.cosyan.db.conf.Config;
+import com.cosyan.ui.ParamServlet.Servlet;
 import com.cosyan.ui.admin.AdminServlet;
 import com.cosyan.ui.admin.IndexServlet;
 import com.cosyan.ui.admin.MonitoringServlet;
 import com.cosyan.ui.admin.SessionServlets.CloseSessionServlet;
 import com.cosyan.ui.admin.SessionServlets.CreateSessionServlet;
 import com.cosyan.ui.admin.SessionServlets.LoginServlet;
-import com.cosyan.ui.admin.SessionServlets.LogoutServlet;
 import com.cosyan.ui.admin.UsersServlet;
 import com.cosyan.ui.entity.EntityLoadServlet;
 import com.cosyan.ui.entity.EntityMetaServlet;
 import com.cosyan.ui.sql.SQLServlets.CancelServlet;
 import com.cosyan.ui.sql.SQLServlets.SQLServlet;
+import com.google.common.collect.ImmutableList;
 
 public class WebServer {
+
+  public final static ImmutableList<Class<? extends ParamServlet>> SERVLETS = ImmutableList.<Class<? extends ParamServlet>>builder()
+      .add(AdminServlet.class)
+      .add(LoginServlet.class)
+      .add(MonitoringServlet.class)
+      .add(UsersServlet.class)
+      .add(IndexServlet.class)
+      .add(SQLServlet.class)
+      .add(CancelServlet.class)
+      .add(CreateSessionServlet.class)
+      .add(CloseSessionServlet.class)
+      .add(EntityMetaServlet.class)
+      .add(EntityLoadServlet.class)
+      .build();
+
+  private static void add(ServletContextHandler handler, ParamServlet servlet) {
+    handler.addServlet(new ServletHolder(servlet), "/" + servlet.getClass().getAnnotation(Servlet.class).path());
+  }
+
   public static void main(String[] args) throws Exception {
     Config config = new Config(System.getenv("COSYAN_CONF"));
     ThreadPool threadPool = new QueuedThreadPool(
@@ -55,21 +75,15 @@ public class WebServer {
     DBApi dbApi = new DBApi(config);
     SessionHandler sessionHandler = new SessionHandler(dbApi);
 
-    handler.addServlet(new ServletHolder(new AdminServlet(sessionHandler)), "/admin");
-    handler.addServlet(new ServletHolder(new LoginServlet(sessionHandler)), "/login");
-    handler.addServlet(new ServletHolder(new LogoutServlet(sessionHandler)), "/logout");
-    handler.addServlet(new ServletHolder(new MonitoringServlet(sessionHandler)), "/monitoring");
-    handler.addServlet(new ServletHolder(new UsersServlet(sessionHandler)), "/users");
-    handler.addServlet(new ServletHolder(new IndexServlet(sessionHandler)), "/index");
-    handler.addServlet(new ServletHolder(new SQLServlet(sessionHandler)), "/sql");
-    handler.addServlet(new ServletHolder(new CancelServlet(sessionHandler)), "/cancel");
-    handler.addServlet(new ServletHolder(new CreateSessionServlet(sessionHandler)),
-        "/createSession");
-    handler.addServlet(new ServletHolder(new CloseSessionServlet(sessionHandler)), "/closeSession");
-    handler.addServlet(new ServletHolder(new EntityMetaServlet(dbApi, sessionHandler)),
-        "/entityMeta");
-    handler.addServlet(new ServletHolder(new EntityLoadServlet(dbApi, sessionHandler)),
-        "/loadEntity");
+    for (Class<? extends ParamServlet> clss : SERVLETS) {
+      ParamServlet servlet;
+      try {
+        servlet = clss.getConstructor(SessionHandler.class).newInstance(sessionHandler);
+      } catch (NoSuchMethodException e) {
+        servlet = clss.getConstructor(DBApi.class, SessionHandler.class).newInstance(dbApi, sessionHandler);
+      }
+      add(handler, servlet);
+    }
 
     ResourceHandler resourceHandler = new ResourceHandler();
     resourceHandler.setDirectoriesListed(false);

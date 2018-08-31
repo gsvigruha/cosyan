@@ -27,11 +27,14 @@ import org.json.JSONObject;
 import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.ui.ParamServlet;
+import com.cosyan.ui.ParamServlet.Servlet;
 import com.cosyan.ui.SessionHandler;
 import com.cosyan.ui.SessionHandler.NoSessionExpression;
 import com.google.common.collect.ImmutableMap;
 
 public class SessionServlets {
+
+  @Servlet(path = "login", doc = "Logs in to the DB and returns the user authentication token.")
   public static class LoginServlet extends ParamServlet {
     private static final long serialVersionUID = 1L;
 
@@ -41,9 +44,9 @@ public class SessionServlets {
       this.sessionHandler = sessionHandler;
     }
 
-    @Param(name = "username", mandatory = true)
-    @Param(name = "password", mandatory = true)
-    @Param(name = "method", mandatory = true)
+    @Param(name = "username", mandatory = true, doc = "The name of the DB user.")
+    @Param(name = "password", mandatory = true, doc = "The unencrypted password of the DB user.")
+    @Param(name = "method", mandatory = true, doc = "Authentication method (LOCAL, LDAP).")
     @Override
     protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
@@ -63,6 +66,7 @@ public class SessionServlets {
     }
   }
 
+  @Servlet(path = "logout", doc = "Logs out the DB user.")
   public static class LogoutServlet extends ParamServlet {
     private static final long serialVersionUID = 1L;
 
@@ -72,7 +76,7 @@ public class SessionServlets {
       this.sessionHandler = sessionHandler;
     }
 
-    @Param(name = "token", mandatory = true)
+    @Param(name = "token", mandatory = true, doc = "User authentication token.")
     @Override
     protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
@@ -90,6 +94,7 @@ public class SessionServlets {
     }
   }
 
+  @Servlet(path = "createSession", doc = "Creates a session for a given user and returns the session ID.")
   public static class CreateSessionServlet extends ParamServlet {
     private static final long serialVersionUID = 1L;
 
@@ -99,7 +104,7 @@ public class SessionServlets {
       this.sessionHandler = sessionHandler;
     }
 
-    @Param(name = "token")
+    @Param(name = "token", doc = "User authentication token.")
     @Override
     protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {
@@ -118,6 +123,7 @@ public class SessionServlets {
     }
   }
 
+  @Servlet(path = "closeSession", doc = "Closes the session.")
   public static class CloseSessionServlet extends ParamServlet {
     private static final long serialVersionUID = 1L;
 
@@ -127,8 +133,8 @@ public class SessionServlets {
       this.sessionHandler = sessionHandler;
     }
 
-    @Param(name = "token")
-    @Param(name = "session", mandatory = true)
+    @Param(name = "token", doc = "User authentication token.")
+    @Param(name = "session", mandatory = true, doc = "Session ID.")
     @Override
     protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
         throws ServletException, IOException {

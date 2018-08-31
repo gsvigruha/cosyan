@@ -31,7 +31,9 @@ import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.ParamServlet;
 import com.cosyan.ui.SessionHandler;
+import com.cosyan.ui.ParamServlet.Servlet;
 
+@Servlet(path = "index", doc = "Looks up a key in an index and returns the corresponding values.")
 public class IndexServlet extends ParamServlet {
   private static final long serialVersionUID = 1L;
 
@@ -41,10 +43,10 @@ public class IndexServlet extends ParamServlet {
     this.sessionHandler = sessionHandler;
   }
 
-  @Param(name = "token")
-  @Param(name = "session")
-  @Param(name = "index", mandatory = true)
-  @Param(name = "key", mandatory = true)
+  @Param(name = "token", doc = "User authentication token.")
+  @Param(name = "session", doc = "Session ID.")
+  @Param(name = "index", mandatory = true, doc = "Full index name.")
+  @Param(name = "key", mandatory = true, doc = "The value in the index to check.")
   @Override
   protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
     sessionHandler.execute(req, resp, (Session session) -> {

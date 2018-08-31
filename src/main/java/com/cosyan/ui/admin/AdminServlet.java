@@ -26,7 +26,9 @@ import org.json.JSONObject;
 
 import com.cosyan.ui.ParamServlet;
 import com.cosyan.ui.SessionHandler;
+import com.cosyan.ui.ParamServlet.Servlet;
 
+@Servlet(path = "admin", doc = "Returns the metadata for all tables.")
 public class AdminServlet extends ParamServlet {
   private static final long serialVersionUID = 1L;
 
@@ -36,7 +38,7 @@ public class AdminServlet extends ParamServlet {
     this.metaRepoConnector = new MetaRepoConnector(sessionHandler);
   }
 
-  @Param(name = "token")
+  @Param(name = "token", doc = "User authentication token.")
   @Override
   protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {

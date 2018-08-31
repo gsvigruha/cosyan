@@ -33,6 +33,14 @@ import com.google.common.collect.ImmutableSet;
 public abstract class ParamServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
 
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target({ ElementType.TYPE })
+  public @interface Servlet {
+    String path();
+
+    String doc();
+  }
+
   @Repeatable(Params.class)
   @Retention(RetentionPolicy.RUNTIME)
   @Target({ ElementType.METHOD })
@@ -40,6 +48,8 @@ public abstract class ParamServlet extends HttpServlet {
     String name();
 
     boolean mandatory() default false;
+
+    String doc();
   }
 
   @Retention(RetentionPolicy.RUNTIME)

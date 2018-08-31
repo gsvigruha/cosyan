@@ -28,7 +28,9 @@ import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.ParamServlet;
 import com.cosyan.ui.SessionHandler;
+import com.cosyan.ui.ParamServlet.Servlet;
 
+@Servlet(path = "users", doc = "Returns the list of uses and their grants.")
 public class UsersServlet extends ParamServlet {
   private static final long serialVersionUID = 1L;
 
@@ -38,10 +40,10 @@ public class UsersServlet extends ParamServlet {
     this.sessionHandler = sessionHandler;
   }
 
-  @Param(name = "token")
+  @Param(name = "token", doc = "User authentication token.")
   @Override
   protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
-    throws ServletException, IOException {
+      throws ServletException, IOException {
     try {
       Session session = sessionHandler.session(req.getParameter("token"));
       MetaRepo metaRepo = session.metaRepo();

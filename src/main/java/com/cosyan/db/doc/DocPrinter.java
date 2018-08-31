@@ -29,6 +29,9 @@ import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.commonmark.node.Node;
@@ -52,6 +55,10 @@ import com.cosyan.db.model.ListAggregators;
 import com.cosyan.db.model.MathFunctions;
 import com.cosyan.db.model.StatAggregators;
 import com.cosyan.db.model.StringFunctions;
+import com.cosyan.ui.ParamServlet;
+import com.cosyan.ui.ParamServlet.Param;
+import com.cosyan.ui.ParamServlet.Servlet;
+import com.cosyan.ui.WebServer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -61,13 +68,44 @@ public class DocPrinter {
     String resourcesDir = args[0] + File.separator + "resources";
     String funcDocRootDir = resourcesDir + File.separator + "doc" + File.separator + "func" + File.separator;
     printSimpleFunctions(funcDocRootDir);
-
     printAggrFunctions(funcDocRootDir);
 
     String confDocRootDir = resourcesDir + File.separator + "doc" + File.separator + "conf" + File.separator;
     printConfig(confDocRootDir);
 
+    String apiDocRootDir = resourcesDir + File.separator + "doc" + File.separator + "api" + File.separator;
+    printHttpApi(apiDocRootDir);
+
     markdownToHtml(resourcesDir);
+  }
+
+  private static void printHttpApi(String apiDocRootDir) throws FileNotFoundException {
+    PrintWriter confPrinter = new PrintWriter(apiDocRootDir + File.separator + "http.md");
+    try {
+      confPrinter.print("### HTTP API\n\n");
+      try {
+        for (Class<? extends ParamServlet> clss : WebServer.SERVLETS) {
+          Servlet servletAnn = clss.getAnnotation(Servlet.class);
+          confPrinter.print("#### Path `/cosyan/" + servletAnn.path() + "`<br/>\n");
+          Param[] getParams = clss.getDeclaredMethod("doGetImpl", HttpServletRequest.class, HttpServletResponse.class)
+              .getAnnotationsByType(Param.class);
+          confPrinter.print("HTTP `GET` Params<br/>\n");
+          confPrinter.print(servletAnn.doc() + "<br/>\n");
+          for (Param param : getParams) {
+            confPrinter.print(" * `" + param.name() + "`");
+            if (param.mandatory()) {
+              confPrinter.print(", mandatory");
+            }
+            confPrinter.print(": " + param.doc() + "<br/>\n");
+          }
+          confPrinter.print("<br/>\n\n");
+        }
+      } catch (NoSuchMethodException e) {
+        e.printStackTrace();
+      }
+    } finally {
+      confPrinter.close();
+    }
   }
 
   private static void printConfig(String confDocRootDir) throws FileNotFoundException {

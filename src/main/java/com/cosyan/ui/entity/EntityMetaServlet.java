@@ -26,7 +26,9 @@ import com.cosyan.db.entity.EntityHandler;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.ParamServlet;
 import com.cosyan.ui.SessionHandler;
+import com.cosyan.ui.ParamServlet.Servlet;
 
+@Servlet(path = "entityMeta", doc = "User authentication token.")
 public class EntityMetaServlet extends ParamServlet {
   private static final long serialVersionUID = 1L;
 
@@ -38,8 +40,8 @@ public class EntityMetaServlet extends ParamServlet {
     this.entityHandler = dbApi.entityHandler();
   }
 
-  @Param(name = "token")
-  @Param(name = "session")
+  @Param(name = "token", doc = "User authentication token.")
+  @Param(name = "session", doc = "Session ID.")
   @Override
   protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {

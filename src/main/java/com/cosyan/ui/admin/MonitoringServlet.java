@@ -35,7 +35,9 @@ import com.cosyan.db.meta.TableStat;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.ParamServlet;
 import com.cosyan.ui.SessionHandler;
+import com.cosyan.ui.ParamServlet.Servlet;
 
+@Servlet(path = "monitoring", doc = "Returns system monitoring info.")
 public class MonitoringServlet extends ParamServlet {
   private static final long serialVersionUID = 1L;
 
@@ -45,7 +47,7 @@ public class MonitoringServlet extends ParamServlet {
     this.sessionHandler = sessionHandler;
   }
 
-  @Param(name = "token")
+  @Param(name = "token", doc = "User authentication token.")
   @Override
   protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
