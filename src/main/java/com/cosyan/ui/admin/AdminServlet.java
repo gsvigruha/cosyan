@@ -48,7 +48,6 @@ public class AdminServlet extends ParamServlet {
       resp.setStatus(HttpStatus.OK_200);
       resp.getWriter().println(obj);
     } catch (Exception e) {
-      e.printStackTrace();
       JSONObject error = new JSONObject();
       error.put("error", e.getMessage());
       resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);

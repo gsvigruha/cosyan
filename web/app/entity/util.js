@@ -54,4 +54,12 @@ angular.module('cosyan')
     };
     this.entities(f);
   };
+
+  this.settings = function(f) { 
+    $http.get("/cosyan/settings", {
+      cache: true,
+    }).then(function success(response) {
+      f(response.data);
+    });
+  };
 });

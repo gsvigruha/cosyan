@@ -35,6 +35,7 @@ import com.cosyan.ui.admin.MonitoringServlet;
 import com.cosyan.ui.admin.SessionServlets.CloseSessionServlet;
 import com.cosyan.ui.admin.SessionServlets.CreateSessionServlet;
 import com.cosyan.ui.admin.SessionServlets.LoginServlet;
+import com.cosyan.ui.admin.SettingsServlet;
 import com.cosyan.ui.admin.UsersServlet;
 import com.cosyan.ui.entity.EntityLoadServlet;
 import com.cosyan.ui.entity.EntityMetaServlet;
@@ -56,6 +57,7 @@ public class WebServer {
       .add(CloseSessionServlet.class)
       .add(EntityMetaServlet.class)
       .add(EntityLoadServlet.class)
+      .add(SettingsServlet.class)
       .build();
 
   private static void add(ServletContextHandler handler, ParamServlet servlet) {
@@ -79,8 +81,12 @@ public class WebServer {
       ParamServlet servlet;
       try {
         servlet = clss.getConstructor(SessionHandler.class).newInstance(sessionHandler);
-      } catch (NoSuchMethodException e) {
-        servlet = clss.getConstructor(DBApi.class, SessionHandler.class).newInstance(dbApi, sessionHandler);
+      } catch (NoSuchMethodException e1) {
+        try {
+          servlet = clss.getConstructor(DBApi.class, SessionHandler.class).newInstance(dbApi, sessionHandler);
+        } catch (NoSuchMethodException e2) {
+          servlet = clss.getConstructor(Config.class).newInstance(config);
+        }
       }
       add(handler, servlet);
     }

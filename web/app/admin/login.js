@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('cosyan').controller('LoginCtrl', function($scope, $http) {
+angular.module('cosyan').controller('LoginCtrl', function($scope, $http, util) {
 	$scope.login = function() {
 		$http.get("/cosyan/login", {
 			params : {
@@ -31,4 +31,8 @@ angular.module('cosyan').controller('LoginCtrl', function($scope, $http) {
 			$scope.$error = response.data.error;
 		});
 	};
+
+    util.settings(function(s) {
+      $scope.auth = s.auth;
+    });
 });

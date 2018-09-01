@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('cosyan')
-.controller('UsersCtrl', function($scope, $http, $document) {
+.controller('UsersCtrl', function($scope, $http, $document, util) {
   $scope.newGrant = {};
   $scope.loadUsers = function() {
 	$http.get("/cosyan/users", {

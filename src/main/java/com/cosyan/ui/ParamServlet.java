@@ -28,6 +28,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jetty.http.HttpStatus;
+import org.json.JSONObject;
+
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 public abstract class ParamServlet extends HttpServlet {
@@ -78,12 +82,16 @@ public abstract class ParamServlet extends HttpServlet {
       throws ServletException, IOException {
     for (String p : mandatoryParams) {
       if (!req.getParameterMap().keySet().contains(p)) {
-        throw new ServletException(String.format("Missing parameter '%s'.", p));
+        resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+        resp.getWriter().println(new JSONObject(ImmutableMap.of("error", new JSONObject(
+            ImmutableMap.of("msg", String.format("Missing parameter '%s'.", p))))));
       }
     }
     for (String p : req.getParameterMap().keySet()) {
       if (!mandatoryParams.contains(p) && !optionalParams.contains(p)) {
-        throw new ServletException(String.format("Unexpected parameter '%s'.", p));
+        resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
+        resp.getWriter().println(new JSONObject(ImmutableMap.of("error", new JSONObject(
+            ImmutableMap.of("msg", String.format("Unexpected parameter '%s'.", p))))));
       }
     }
     doGetImpl(req, resp);

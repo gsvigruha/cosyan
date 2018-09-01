@@ -24,36 +24,28 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 
-import com.cosyan.db.meta.MetaRepo;
-import com.cosyan.db.session.Session;
+import com.cosyan.db.conf.Config;
 import com.cosyan.ui.ParamServlet;
-import com.cosyan.ui.SessionHandler;
 import com.cosyan.ui.ParamServlet.Servlet;
 
-@Servlet(path = "users", doc = "Returns the list of uses and their grants.")
-public class UsersServlet extends ParamServlet {
+@Servlet(path = "settings", doc = "Returns the CosyanDB settings.")
+public class SettingsServlet extends ParamServlet {
   private static final long serialVersionUID = 1L;
 
-  private final SessionHandler sessionHandler;
+  private final Config config;
 
-  public UsersServlet(SessionHandler sessionHandler) {
-    this.sessionHandler = sessionHandler;
+  public SettingsServlet(Config config) {
+    this.config = config;
   }
 
-  @Param(name = "token", doc = "User authentication token.")
   @Override
   protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     try {
-      Session session = sessionHandler.session(req.getParameter("token"));
-      MetaRepo metaRepo = session.metaRepo();
-      metaRepo.metaRepoReadLock();
-      try {
-        resp.setStatus(HttpStatus.OK_200);
-        resp.getWriter().println(metaRepo.collectUsers());
-      } finally {
-        metaRepo.metaRepoReadUnlock();
-      }
+      JSONObject obj = new JSONObject();
+      obj.put("auth", config.auth());
+      resp.setStatus(HttpStatus.OK_200);
+      resp.getWriter().println(obj);
     } catch (Exception e) {
       JSONObject error = new JSONObject();
       error.put("error", e.getMessage());

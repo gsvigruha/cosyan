@@ -52,8 +52,10 @@ public class SessionServlets {
         throws ServletException, IOException {
       try {
         JSONObject obj = new JSONObject();
-        String token = sessionHandler.login(req.getParameter("username"),
-            req.getParameter("password"), req.getParameter("method"));
+        String token = sessionHandler.login(
+            req.getParameter("username"),
+            req.getParameter("password"),
+            req.getParameter("method"));
         obj.put("token", token);
         resp.setStatus(HttpStatus.OK_200);
         resp.getWriter().println(obj);

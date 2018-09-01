@@ -52,7 +52,6 @@ public class MonitoringServlet extends ParamServlet {
   protected void doGetImpl(HttpServletRequest req, HttpServletResponse resp)
       throws ServletException, IOException {
     try {
-      resp.setStatus(HttpStatus.OK_200);
       String token = req.getParameter("token");
       Session session = sessionHandler.session(token);
       MetaRepo metaRepo = session.metaRepo();
@@ -102,12 +101,12 @@ public class MonitoringServlet extends ParamServlet {
           }
           obj.put("multiIndexes", multiIndexes);
         }
+        resp.setStatus(HttpStatus.OK_200);
         resp.getWriter().println(obj);
       } finally {
         metaRepo.metaRepoReadUnlock();
       }
     } catch (Exception e) {
-      e.printStackTrace();
       JSONObject error = new JSONObject();
       error.put("error", e.getMessage());
       resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);

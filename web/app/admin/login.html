@@ -1,4 +1,4 @@
-<div class="login">
+<div class="login" ng-show="auth">
   <div>
     Username: 
     <input ng-model="username"></input>
@@ -19,4 +19,7 @@
   <div ng-if="loggedIn">
     Logged in.
   </div>
+</div>
+<div class="login" ng-show="!auth">
+  Authentication is not enabled on the server.
 </div>

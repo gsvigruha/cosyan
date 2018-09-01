@@ -21,6 +21,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 
 import com.cosyan.db.auth.Authenticator.AuthException;
@@ -54,7 +55,6 @@ public class IndexServlet extends ParamServlet {
       String key = req.getParameter("key");
       try {
         MetaRepo metaRepo = session.metaRepo();
-
         metaRepo.metaRepoReadLock();
         long[] pointers;
         try {
@@ -65,8 +65,10 @@ public class IndexServlet extends ParamServlet {
         }
         JSONObject result = new JSONObject();
         result.put("pointers", pointers);
+        resp.setStatus(HttpStatus.OK_200);
         return result;
       } catch (AuthException | RuleException | IOException e) {
+        resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
         return new ErrorResult(e).toJSON();
       }
     });
