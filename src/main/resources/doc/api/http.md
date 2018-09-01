@@ -79,3 +79,8 @@ Returns the metadata for all entities.<br/>
  * `id`, mandatory: Value of the ID column of the table.<br/>
 <br/>
 
+#### Path `/cosyan/settings`<br/>
+HTTP `GET` Params<br/>
+Returns the CosyanDB settings.<br/>
+<br/>
+
