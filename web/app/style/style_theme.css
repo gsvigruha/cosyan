@@ -1,0 +1,90 @@
+.entity tr:nth-child(even){background-color: #F2F2F2;}
+.entity tr:nth-child(odd){background-color: #FFFFFF;}
+
+.entity tr:hover {background-color: #E8EAEC;}
+
+.entity th {
+	  background-color: #602040;
+    color: white;
+}
+
+span.button:hover {background: radial-gradient(rgba(255, 216, 128, 1), rgba(255, 216, 128, 0.0) 80%);}
+
+span.button:active {background: radial-gradient(rgba(255, 216, 128, 1), rgba(255, 216, 128, 0.0) 80%);}
+
+td.empty {
+    background-color: #FFF0F0;
+}
+
+.editor tr:nth-child(even){background-color: #F2F2F2;}
+.editor tr:nth-child(odd){background-color: #FFFFFF;}
+
+.editor tr:hover {background-color: #E8EAEC;}
+
+.editor th {
+	  background-color: #602040;
+    color: white;
+}
+
+span.entity-menu-label:hover {
+    background: radial-gradient(rgba(255, 216, 128, 1) 10%, rgba(255, 216, 128, 0.0) 90%);
+}
+
+span.subentity {
+	  border-color: #807078;
+    background-color: rgba(200, 216, 240, 0.1);
+}
+
+div.popup {
+	  border-color: #D0D0D0;
+    background: rgba(232, 240, 248, 0.95);
+}
+
+div.error {
+    color: #CC0000;
+    background-color: rgba(255, 240, 240, 0.1);
+}
+
+span.error {
+    color: #CC0000;
+    background-color: rgba(255, 240, 240, 0.1);
+}
+
+body {
+    background-image: url("/icons/steel_bright.jpg");
+}
+
+.admin th {
+	  background-color: #602040;
+    color: white;
+}
+
+textarea.sql {
+	  background-color: rgba(240, 240, 240, 0.8);
+}
+
+button.tab:hover {
+    background: radial-gradient(rgba(255, 216, 128, 1) 10%, rgba(255, 216, 128, 0.0) 90%);
+}
+
+
+button.selected {
+    background: radial-gradient(rgba(240, 192, 96, 1) 10%, rgba(240, 192, 96, 0.0) 90%);
+}
+
+.admin tr:nth-child(even){background-color: #F2F2F2;}
+.admin tr:nth-child(odd){background-color: #FFFFFF;}
+
+.admin tr:hover {background-color: #E8EAEC;}
+
+a.menu:hover {
+  background: radial-gradient(rgba(255, 216, 128, 1) 10%, rgba(255, 216, 128, 0.0) 90%);
+}
+
+div.help-button:hover {
+  background: radial-gradient(rgba(255, 216, 128, 0.8) 40%, rgba(255, 216, 128, 0.3) 70%, rgba(128, 192, 255, 0.1) 90%);
+}
+
+div.help-button:active {
+  background: radial-gradient(rgba(240, 192, 96, 0.8) 40%, rgba(240, 192, 96, 0.3) 70%, rgba(64, 160, 208, 0.1) 90%);
+}
