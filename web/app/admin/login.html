@@ -7,15 +7,11 @@
     Password: 
     <input ng-model="password"></input>
   </div>
-  <div>
-    <button ng-click="login();">Login</button>
+  <div class="admin-tab">
+    <span><button ng-click="login();" class="tab">Login</button></span>
+    <span><button ng-click="logout();" class="tab">Logout</button></span>
   </div>
-  <div>
-    <button ng-click="logout();">Logout</button>
-  </div>
-  <div>
-    {{ $error }}
-  </div>
+  <div class="message" ng-class="{error: $error}">{{ $error.msg }}</div>
   <div ng-if="loggedIn">
     Logged in.
   </div>

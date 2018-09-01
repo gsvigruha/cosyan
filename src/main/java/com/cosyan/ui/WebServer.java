@@ -35,6 +35,7 @@ import com.cosyan.ui.admin.MonitoringServlet;
 import com.cosyan.ui.admin.SessionServlets.CloseSessionServlet;
 import com.cosyan.ui.admin.SessionServlets.CreateSessionServlet;
 import com.cosyan.ui.admin.SessionServlets.LoginServlet;
+import com.cosyan.ui.admin.SessionServlets.LogoutServlet;
 import com.cosyan.ui.admin.SettingsServlet;
 import com.cosyan.ui.admin.UsersServlet;
 import com.cosyan.ui.entity.EntityLoadServlet;
@@ -47,12 +48,13 @@ public class WebServer {
 
   public final static ImmutableList<Class<? extends ParamServlet>> SERVLETS = ImmutableList.<Class<? extends ParamServlet>>builder()
       .add(AdminServlet.class)
-      .add(LoginServlet.class)
       .add(MonitoringServlet.class)
       .add(UsersServlet.class)
       .add(IndexServlet.class)
       .add(SQLServlet.class)
       .add(CancelServlet.class)
+      .add(LoginServlet.class)
+      .add(LogoutServlet.class)
       .add(CreateSessionServlet.class)
       .add(CloseSessionServlet.class)
       .add(EntityMetaServlet.class)

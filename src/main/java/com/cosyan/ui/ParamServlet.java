@@ -85,6 +85,7 @@ public abstract class ParamServlet extends HttpServlet {
         resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
         resp.getWriter().println(new JSONObject(ImmutableMap.of("error", new JSONObject(
             ImmutableMap.of("msg", String.format("Missing parameter '%s'.", p))))));
+        return;
       }
     }
     for (String p : req.getParameterMap().keySet()) {
@@ -92,6 +93,7 @@ public abstract class ParamServlet extends HttpServlet {
         resp.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
         resp.getWriter().println(new JSONObject(ImmutableMap.of("error", new JSONObject(
             ImmutableMap.of("msg", String.format("Unexpected parameter '%s'.", p))))));
+        return;
       }
     }
     doGetImpl(req, resp);
