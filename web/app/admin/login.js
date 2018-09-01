@@ -33,6 +33,6 @@ angular.module('cosyan').controller('LoginCtrl', function($scope, $http, util) {
 	};
 
     util.settings(function(s) {
-      $scope.auth = s.auth;
+      $scope.auth = s.AUTH;
     });
 });

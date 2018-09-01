@@ -112,17 +112,15 @@ public class DocPrinter {
     PrintWriter confPrinter = new PrintWriter(confDocRootDir + File.separator + "conf.md");
     try {
       confPrinter.print("### Configuration\n\n");
-      for (Field field : Config.class.getFields()) {
+      for (Field field : Config.fields(/* showHidden= */true)) {
         ConfigType configType = field.getAnnotation(ConfigType.class);
-        if (configType != null) {
-          confPrinter.print(" * `" + field.getName() + "`<br/>\n");
-          confPrinter.print("   `" + configType.type());
-          if (configType.mandatory()) {
-            confPrinter.print(", mandatory");
-          }
-          confPrinter.print("`: ");
-          confPrinter.print(configType.doc() + "\n\n");
+        confPrinter.print(" * `" + field.getName() + "`<br/>\n");
+        confPrinter.print("   `" + configType.type());
+        if (configType.mandatory()) {
+          confPrinter.print(", mandatory");
         }
+        confPrinter.print("`: ");
+        confPrinter.print(configType.doc() + "\n\n");
       }
     } finally {
       confPrinter.close();

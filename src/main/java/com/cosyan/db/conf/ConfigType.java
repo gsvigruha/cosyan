@@ -37,4 +37,6 @@ public @interface ConfigType {
   boolean mandatory();
 
   String doc();
+
+  boolean hidden() default false;
 }

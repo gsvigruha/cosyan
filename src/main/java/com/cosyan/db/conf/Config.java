@@ -19,20 +19,22 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Properties;
 
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.DataTypes;
+import com.google.common.collect.ImmutableList;
 
 public class Config {
 
-  @ConfigType(type = ConfigType.FILE, mandatory = true, doc = "The directory containing the config files.")
+  @ConfigType(type = ConfigType.FILE, mandatory = true, doc = "The directory containing the config files.", hidden = true)
   public static final String DATA_DIR = "DATA_DIR";
 
-  @ConfigType(type = ConfigType.STRING, mandatory = false, doc = "The hostame of the LDAP server.")
+  @ConfigType(type = ConfigType.STRING, mandatory = false, doc = "The hostame of the LDAP server.", hidden = true)
   public static final String LDAP_HOST = "LDAP_HOST";
 
-  @ConfigType(type = ConfigType.INT, mandatory = false, doc = "The port of the LDAP server.")
+  @ConfigType(type = ConfigType.INT, mandatory = false, doc = "The port of the LDAP server.", hidden = true)
   public static final String LDAP_PORT = "LDAP_PORT";
 
   @ConfigType(type = ConfigType.BOOL, mandatory = true, doc = "Whether authentication is enabled or not.")
@@ -142,5 +144,16 @@ public class Config {
       throw new ConfigException(String.format("Missing config %s.", key));
     }
     return integer(props.getProperty(key));
+  }
+
+  public static ImmutableList<Field> fields(boolean showHidden) {
+    ImmutableList.Builder<Field> builder = ImmutableList.builder();
+    for (Field field : Config.class.getFields()) {
+      ConfigType configType = field.getAnnotation(ConfigType.class);
+      if (configType != null && (!configType.hidden() || showHidden)) {
+        builder.add(field);
+      }
+    }
+    return builder.build();
   }
 }

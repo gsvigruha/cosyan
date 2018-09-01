@@ -16,6 +16,7 @@
 package com.cosyan.ui.admin;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -43,7 +44,10 @@ public class SettingsServlet extends ParamServlet {
       throws ServletException, IOException {
     try {
       JSONObject obj = new JSONObject();
-      obj.put("auth", config.auth());
+      for (Field field : Config.fields(/* showHidden= */false)) {
+        String key = (String) field.get(config);
+        obj.put(key, config.get(key));
+      }
       resp.setStatus(HttpStatus.OK_200);
       resp.getWriter().println(obj);
     } catch (Exception e) {
