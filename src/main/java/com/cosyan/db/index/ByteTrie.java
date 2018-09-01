@@ -26,10 +26,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Serializer;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.DataTypes.DataType;
+import com.google.common.collect.ImmutableList;
 
 /**
  * A prefix trie for indexing. Supports in memory caching to minimize file
@@ -44,8 +47,7 @@ import com.cosyan.db.model.DataTypes;
  * 
  * @author gsvigruha
  *
- * @param <K,
- *          V> type of the index.
+ * @param <K, V> type of the index.
  */
 public abstract class ByteTrie<K, V> {
 
@@ -167,8 +169,9 @@ public abstract class ByteTrie<K, V> {
         saveLeaf(node.getKey(), ((Leaf<K, V>) node.getValue()));
       }
     }
-    if (filePointer != raf.length()) {
-      throw new RuntimeIndexException("Inconsistent state.");
+    long rafLength = raf.length();
+    if (filePointer != rafLength) {
+      throw new RuntimeIndexException(String.format("Inconsistent state: '%s' != '%s'.", filePointer, rafLength));
     }
     trie.putAll(pendingNodes);
     pendingNodes.clear();
@@ -187,6 +190,8 @@ public abstract class ByteTrie<K, V> {
   protected abstract int leafSize(Leaf<K, V> leaf);
 
   protected abstract byte[] toByteArray(K key);
+
+  protected abstract boolean keysEqual(K key1, K key2);
 
   private Leaf<K, V> getLeaf(long id) throws IOException {
     Leaf<K, V> leafNode = (Leaf<K, V>) pendingNodes.get(id);
@@ -260,7 +265,7 @@ public abstract class ByteTrie<K, V> {
       long currentKey = pointers[256];
       if (currentKey > 0) {
         Leaf<K, V> leaf = getLeaf(currentKey);
-        if (keyObject.equals(leaf.key())) {
+        if (keysEqual(keyObject, leaf.key())) {
           return leaf.value();
         } else {
           throw new RuntimeIndexException("Inconsistent state.");
@@ -281,7 +286,7 @@ public abstract class ByteTrie<K, V> {
     } else {
       // Pointer to leaf node.
       Leaf<K, V> leaf = getLeaf(pointer);
-      if (keyObject.equals(leaf.key())) {
+      if (keysEqual(keyObject, leaf.key())) {
         return leaf.value();
       } else {
         // Search is over and not found.
@@ -328,7 +333,7 @@ public abstract class ByteTrie<K, V> {
     } else {
       // Pointer to leaf node.
       Leaf<K, V> leaf = getLeaf(pointer);
-      if (keyObject.equals(leaf.key())) {
+      if (keysEqual(keyObject, leaf.key())) {
         // Already present, throw exception.
         throw new IndexException("Key '" + keyObject + "' already present in index.");
       } else {
@@ -368,7 +373,7 @@ public abstract class ByteTrie<K, V> {
       long currentKey = pointers[256];
       if (currentKey > 0) {
         Leaf<K, V> leaf = getLeaf(currentKey);
-        if (keyObject.equals(leaf.key())) {
+        if (keysEqual(keyObject, leaf.key())) {
           modifyIndex(parentPointer, pointers, 256, 0);
           return true;
         } else {
@@ -390,7 +395,7 @@ public abstract class ByteTrie<K, V> {
     } else {
       // Pointer to leaf node.
       Leaf<K, V> leaf = getLeaf(pointer);
-      if (keyObject.equals(leaf.key())) {
+      if (keysEqual(keyObject, leaf.key())) {
         modifyIndex(parentPointer, pointers, keyByte, 0);
         return true;
       } else {
@@ -437,6 +442,11 @@ public abstract class ByteTrie<K, V> {
     protected int leafSize(Leaf<Long, Long> leaf) {
       return Long.BYTES * 2 + 1;
     }
+
+    @Override
+    protected boolean keysEqual(Long key1, Long key2) {
+      return Objects.equals(key1, key2);
+    }
   }
 
   public static class StringIndex extends ByteTrie<String, Long> {
@@ -471,6 +481,79 @@ public abstract class ByteTrie<K, V> {
     @Override
     protected int leafSize(Leaf<String, Long> leaf) {
       return Character.BYTES * leaf.key().length() + 4 + Long.BYTES + 1;
+    }
+
+    @Override
+    protected boolean keysEqual(String key1, String key2) {
+      return Objects.equals(key1, key2);
+    }
+  }
+
+  public static class MultiColumnIndex extends ByteTrie<Object[], Long> {
+
+    private final ImmutableList<DataType<?>> types;
+
+    public MultiColumnIndex(String fileName, ImmutableList<DataType<?>> types) throws IOException {
+      super(fileName);
+      this.types = types;
+    }
+
+    @Override
+    protected Leaf<Object[], Long> loadLeaf(long filePointer) throws IOException {
+      raf.seek(filePointer);
+      Object[] keys = new Object[types.size()];
+      for (int i = 0; i < types.size(); i++) {
+        keys[i] = Serializer.readColumn(types.get(i), raf);
+      }
+      return new Leaf<Object[], Long>(keys, raf.readLong());
+    }
+
+    @Override
+    protected void saveLeaf(long filePointer, Leaf<Object[], Long> leaf) throws IOException {
+      raf.seek(filePointer);
+      ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
+      DataOutputStream stream = new DataOutputStream(b);
+      serializeKey(leaf.key(), stream);
+      stream.writeLong(leaf.value());
+      raf.write(b.toByteArray());
+    }
+
+    private void serializeKey(Object[] key, DataOutputStream stream) throws IOException {
+      for (int i = 0; i < types.size(); i++) {
+        DataType<?> type = types.get(i);
+        Serializer.writeColumn(key[i], type, stream);
+      }
+    }
+
+    @Override
+    protected int leafSize(Leaf<Object[], Long> leaf) {
+      int size = Long.BYTES + types.size();
+      for (int i = 0; i < types.size(); i++) {
+        size += types.get(i).size(leaf.key()[i]);
+      }
+      return size;
+    }
+
+    @Override
+    protected byte[] toByteArray(Object[] key) {
+      ByteArrayOutputStream b = new ByteArrayOutputStream(256);
+      DataOutputStream stream = new DataOutputStream(b);
+      try {
+        serializeKey(key, stream);
+        return b.toByteArray();
+      } catch (IOException e) {
+        throw new RuntimeException(e); // Should not happen.
+      }
+    }
+
+    @Override
+    protected boolean keysEqual(Object[] key1, Object[] key2) {
+      for (int i = 0; i < types.size(); i++) {
+        if (!Objects.equals(key1[i], key2[i])) {
+          return false;
+        }
+      }
+      return true;
     }
   }
 }

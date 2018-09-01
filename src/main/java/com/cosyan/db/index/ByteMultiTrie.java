@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.index.ByteTrie.RuntimeIndexException;
@@ -109,7 +110,7 @@ public abstract class ByteMultiTrie<T> {
   public void close() throws IOException {
     raf.close();
   }
-  
+
   public void drop() throws IOException {
     trie.drop();
     close();
@@ -315,6 +316,11 @@ public abstract class ByteMultiTrie<T> {
     protected int leafSize(Leaf<Long, MultiLeaf> leaf) {
       return Long.BYTES * 3 + 1;
     }
+
+    @Override
+    protected boolean keysEqual(Long key1, Long key2) {
+      return Objects.equals(key1, key2);
+    }
   }
 
   private static class StringMultiLeafIndex extends ByteTrie<String, MultiLeaf> {
@@ -352,6 +358,11 @@ public abstract class ByteMultiTrie<T> {
     @Override
     protected int leafSize(Leaf<String, MultiLeaf> leaf) {
       return Character.BYTES * leaf.key().length() + 4 + Long.BYTES * 2 + 1;
+    }
+
+    @Override
+    protected boolean keysEqual(String key1, String key2) {
+      return Objects.equals(key1, key2);
     }
   }
 
