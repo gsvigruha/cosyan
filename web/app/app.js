@@ -22,6 +22,10 @@ angular.module('cosyan', [
         templateUrl: 'admin/users.html',
         controller: 'UsersCtrl',
       })
+      .when('/settings', {
+        templateUrl: 'admin/settings.html',
+        controller: 'SettingsCtrl',
+      })
       .when('/monitoring', {
         templateUrl: 'admin/monitoring.html',
         controller: 'MonitoringCtrl',
