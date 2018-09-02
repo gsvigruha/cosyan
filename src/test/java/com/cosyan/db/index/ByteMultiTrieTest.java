@@ -21,8 +21,8 @@ import java.util.LinkedList;
 
 import org.junit.Test;
 
-import com.cosyan.db.index.ByteMultiTrie.LongMultiIndex;
-import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
+import com.cosyan.db.index.MultiLeafTries.LongMultiIndex;
+import com.cosyan.db.index.MultiLeafTries.StringMultiIndex;
 
 public class ByteMultiTrieTest {
 

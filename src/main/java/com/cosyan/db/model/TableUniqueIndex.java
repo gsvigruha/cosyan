@@ -18,10 +18,10 @@ package com.cosyan.db.model;
 import java.io.IOException;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.index.ByteTrie.LongIndex;
-import com.cosyan.db.index.ByteTrie.StringIndex;
 import com.cosyan.db.index.IDIndex;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
+import com.cosyan.db.index.LongLeafTries.LongIndex;
+import com.cosyan.db.index.LongLeafTries.StringIndex;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.model.DataTypes.DataType;

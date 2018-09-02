@@ -24,7 +24,7 @@ import java.util.Set;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.cosyan.db.index.ByteTrie.LongIndex;
+import com.cosyan.db.index.LongLeafTries.LongIndex;
 
 public class ByteTrieLargeTest {
 

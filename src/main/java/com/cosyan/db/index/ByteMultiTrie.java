@@ -15,8 +15,6 @@
  */
 package com.cosyan.db.index;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,14 +26,11 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.index.ByteTrie.RuntimeIndexException;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
-import com.cosyan.db.io.Serializer;
-import com.cosyan.db.model.DataTypes;
 
 import lombok.Data;
 
@@ -48,7 +43,7 @@ public abstract class ByteMultiTrie<T> {
   private static final long NULL_VALUE = Long.MIN_VALUE;
 
   @Data
-  private static class MultiLeaf {
+  protected static class MultiLeaf {
     private final long firstIndex;
     private final long lastIndex;
   }
@@ -278,103 +273,5 @@ public abstract class ByteMultiTrie<T> {
         trieStat.getInMemNodes(),
         trieStat.getPendingNodes(),
         pendingNodes.size());
-  }
-
-  private static class LongMultiLeafIndex extends ByteTrie<Long, MultiLeaf> {
-
-    protected LongMultiLeafIndex(String fileName) throws IOException {
-      super(fileName + "#index");
-    }
-
-    @Override
-    protected byte[] toByteArray(Long key) {
-      ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-      buffer.putLong(key);
-      return buffer.array();
-    }
-
-    @Override
-    protected Leaf<Long, MultiLeaf> loadLeaf(long filePointer) throws IOException {
-      raf.seek(filePointer);
-      return new Leaf<Long, MultiLeaf>(
-          (Long) Serializer.readColumn(DataTypes.LongType, raf),
-          new MultiLeaf(raf.readLong(), raf.readLong()));
-    }
-
-    @Override
-    protected void saveLeaf(long filePointer, Leaf<Long, MultiLeaf> leaf) throws IOException {
-      raf.seek(filePointer);
-      ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
-      DataOutputStream stream = new DataOutputStream(b);
-      Serializer.writeColumn(leaf.key(), DataTypes.LongType, stream);
-      stream.writeLong(leaf.value().getFirstIndex());
-      stream.writeLong(leaf.value().getLastIndex());
-      raf.write(b.toByteArray());
-    }
-
-    @Override
-    protected int leafSize(Leaf<Long, MultiLeaf> leaf) {
-      return Long.BYTES * 3 + 1;
-    }
-
-    @Override
-    protected boolean keysEqual(Long key1, Long key2) {
-      return Objects.equals(key1, key2);
-    }
-  }
-
-  private static class StringMultiLeafIndex extends ByteTrie<String, MultiLeaf> {
-
-    protected StringMultiLeafIndex(String fileName) throws IOException {
-      super(fileName + "#index");
-    }
-
-    @Override
-    protected byte[] toByteArray(String key) {
-      ByteBuffer buffer = ByteBuffer.allocate(Character.BYTES * key.length());
-      buffer.asCharBuffer().put(key.toCharArray());
-      return buffer.array();
-    }
-
-    @Override
-    protected Leaf<String, MultiLeaf> loadLeaf(long filePointer) throws IOException {
-      raf.seek(filePointer);
-      return new Leaf<String, MultiLeaf>(
-          (String) Serializer.readColumn(DataTypes.StringType, raf),
-          new MultiLeaf(raf.readLong(), raf.readLong()));
-    }
-
-    @Override
-    protected void saveLeaf(long filePointer, Leaf<String, MultiLeaf> leaf) throws IOException {
-      raf.seek(filePointer);
-      ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
-      DataOutputStream stream = new DataOutputStream(b);
-      Serializer.writeColumn(leaf.key(), DataTypes.StringType, stream);
-      stream.writeLong(leaf.value().getFirstIndex());
-      stream.writeLong(leaf.value().getLastIndex());
-      raf.write(b.toByteArray());
-    }
-
-    @Override
-    protected int leafSize(Leaf<String, MultiLeaf> leaf) {
-      return Character.BYTES * leaf.key().length() + 4 + Long.BYTES * 2 + 1;
-    }
-
-    @Override
-    protected boolean keysEqual(String key1, String key2) {
-      return Objects.equals(key1, key2);
-    }
-  }
-
-  public static class LongMultiIndex extends ByteMultiTrie<Long> {
-    public LongMultiIndex(String fileName) throws IOException {
-      super(fileName + "#chain", new LongMultiLeafIndex(fileName));
-    }
-  }
-
-  public static class StringMultiIndex extends ByteMultiTrie<String> {
-    public StringMultiIndex(String fileName) throws IOException {
-      super(fileName + "#chain", new StringMultiLeafIndex(fileName));
-    }
   }
 }
