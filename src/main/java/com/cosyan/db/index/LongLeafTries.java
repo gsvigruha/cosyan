@@ -36,10 +36,10 @@ public class LongLeafTries {
 
     @Override
     protected void saveLeaf(long filePointer, Leaf<Long, V> leaf) throws IOException {
-      raf.seek(filePointer);
       ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
       DataOutputStream stream = new DataOutputStream(b);
       Serializer.writeColumn(leaf.key(), DataTypes.LongType, stream);
+      raf.seek(filePointer);
       leafType.write(stream, leaf.value());
       raf.write(b.toByteArray());
     }
@@ -76,10 +76,10 @@ public class LongLeafTries {
 
     @Override
     protected void saveLeaf(long filePointer, Leaf<String, V> leaf) throws IOException {
-      raf.seek(filePointer);
       ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
       DataOutputStream stream = new DataOutputStream(b);
       Serializer.writeColumn(leaf.key(), DataTypes.StringType, stream);
+      raf.seek(filePointer);
       leafType.write(stream, leaf.value());
       raf.write(b.toByteArray());
     }
@@ -116,10 +116,10 @@ public class LongLeafTries {
 
     @Override
     protected void saveLeaf(long filePointer, Leaf<Double, V> leaf) throws IOException {
-      raf.seek(filePointer);
       ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
       DataOutputStream stream = new DataOutputStream(b);
       Serializer.writeColumn(leaf.key(), DataTypes.DoubleType, stream);
+      raf.seek(filePointer);
       leafType.write(stream, leaf.value());
       raf.write(b.toByteArray());
     }
@@ -156,10 +156,10 @@ public class LongLeafTries {
 
     @Override
     protected void saveLeaf(long filePointer, Leaf<Object[], V> leaf) throws IOException {
-      raf.seek(filePointer);
       ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
       DataOutputStream stream = new DataOutputStream(b);
       serializeKey(leaf.key(), stream);
+      raf.seek(filePointer);
       leafType.write(stream, leaf.value());
       raf.write(b.toByteArray());
     }

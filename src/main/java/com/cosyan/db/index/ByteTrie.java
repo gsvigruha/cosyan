@@ -207,7 +207,7 @@ public abstract class ByteTrie<K, V> {
     leafNode = (Leaf<K, V>) trie.get(id);
     if (leafNode == null) {
       // Assume leaf node exists but not in memory.
-      if (id >= raf.length()) {
+      if (id >= stableFilePointer) {
         throw new RuntimeIndexException("Inconsistent state.");
       }
       leafNode = loadLeaf(id);
@@ -225,7 +225,7 @@ public abstract class ByteTrie<K, V> {
     if (indexNode == null) {
       long fileIndex = -id;
       // Index node exists but not in memory.
-      if (fileIndex >= raf.length()) {
+      if (fileIndex >= stableFilePointer) {
         throw new RuntimeIndexException("Inconsistent state.");
       }
       raf.seek(fileIndex);
@@ -248,9 +248,9 @@ public abstract class ByteTrie<K, V> {
   }
 
   private void saveIndex(long id, long[] indices) throws IOException {
-    raf.seek(-id);
     ByteBuffer bb = ByteBuffer.allocate(KEYS_SIZE * 8);
     bb.asLongBuffer().put(indices);
+    raf.seek(-id);
     raf.write(bb.array());
   }
 
