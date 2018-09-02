@@ -98,9 +98,9 @@ public class BasicColumn {
   }
 
   public void checkIndexType(Ident ident) throws ModelException {
-    if (type != DataTypes.StringType && type != DataTypes.LongType && type != DataTypes.IDType) {
+    if (type != DataTypes.StringType && type != DataTypes.LongType && type != DataTypes.DoubleType && type != DataTypes.IDType) {
       throw new ModelException("Unique indexes are only supported for " + DataTypes.StringType +
-          ", " + DataTypes.LongType + " and " + DataTypes.IDType + " types, not " + getType() + ".", ident);
+          ", " + DataTypes.LongType + " and " + DataTypes.DoubleType + "and" + DataTypes.IDType + " types, not " + getType() + ".", ident);
     }
   }
 

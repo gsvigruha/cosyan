@@ -20,6 +20,7 @@ import java.io.IOException;
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.index.IDIndex;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
+import com.cosyan.db.index.LongLeafTries.DoubleIndex;
 import com.cosyan.db.index.LongLeafTries.LongIndex;
 import com.cosyan.db.index.LongLeafTries.StringIndex;
 import com.cosyan.db.io.Indexes.IndexReader;
@@ -187,6 +188,75 @@ public abstract class TableUniqueIndex implements IndexReader, IndexWriter {
     @Override
     public DataType<?> keyDataType() {
       return DataTypes.StringType;
+    }
+  }
+
+  public static class DoubleTableIndex extends TableUniqueIndex {
+
+    private final DoubleIndex index;
+
+    public DoubleTableIndex(DoubleIndex index) {
+      this.index = index;
+    }
+
+    @Override
+    public void put(Object key, long fileIndex) throws IOException, IndexException {
+      index.put((Double) key, fileIndex);
+    }
+
+    @Override
+    public boolean delete(Object key) throws IOException {
+      return index.delete((Double) key);
+    }
+
+    @Override
+    public long[] get(Object key) throws IOException {
+      long filePointer = get0(key);
+      if (filePointer < 0) {
+        return new long[0];
+      } else {
+        return new long[] { filePointer };
+      }
+    }
+
+    @Override
+    public long get0(Object key) throws IOException {
+      Long filePointer = index.get((Double) key);
+      if (filePointer == null) {
+        return -1;
+      } else {
+        return filePointer;
+      }
+    }
+
+    @Override
+    public void commit() throws IOException {
+      index.commit();
+    }
+
+    @Override
+    public void rollback() {
+      index.rollback();
+    }
+
+    @Override
+    public boolean contains(Object key) throws IOException {
+      return index.get((Double) key) != null;
+    }
+
+    @Override
+    public ByteTrieStat stats() throws IOException {
+      return index.stats();
+    }
+
+    @Override
+    public void drop() throws IOException {
+      index.drop();
+    }
+
+    @Override
+    public DataType<?> keyDataType() {
+      return DataTypes.DoubleType;
     }
   }
 

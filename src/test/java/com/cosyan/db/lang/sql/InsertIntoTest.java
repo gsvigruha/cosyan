@@ -385,4 +385,17 @@ public class InsertIntoTest extends UnitTestBase {
     ErrorResult e1 = error("insert into t35 values ('201801');");
     assertError(RuleException.class, "Invalid timestamp '201801'.", e1);
   }
+
+  @Test
+  public void testDoubleIndex() throws ParseException {
+    execute("create table t36 (a float unique);");
+    execute("insert into t36 values (1.0), (2.0), (99999999.999);");
+
+    QueryResult r1 = query("select a from t36;");
+    assertHeader(new String[] { "a" }, r1);
+    assertValues(new Object[][] { { 1.0 }, { 2.0 }, { 99999999.999 } }, r1);
+
+    ErrorResult e1 = error("insert into t36 values (2.0);");
+    assertError(RuleException.class, "Key '2.0' already present in index.", e1);
+  }
 }

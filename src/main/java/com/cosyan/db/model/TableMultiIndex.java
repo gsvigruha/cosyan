@@ -19,6 +19,7 @@ import java.io.IOException;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
+import com.cosyan.db.index.MultiLeafTries.DoubleMultiIndex;
 import com.cosyan.db.index.MultiLeafTries.LongMultiIndex;
 import com.cosyan.db.index.MultiLeafTries.StringMultiIndex;
 import com.cosyan.db.io.Indexes.IndexReader;
@@ -165,7 +166,66 @@ public abstract class TableMultiIndex implements IndexReader, IndexWriter {
     public void drop() throws IOException {
       index.drop();
     }
-    
+
+    @Override
+    public DataType<?> keyDataType() {
+      return DataTypes.StringType;
+    }
+  }
+
+  public static class DoubleTableMultiIndex extends TableMultiIndex {
+
+    private DoubleMultiIndex index;
+
+    public DoubleTableMultiIndex(DoubleMultiIndex index) {
+      this.index = index;
+    }
+
+    @Override
+    public void put(Object key, long fileIndex) throws IOException, IndexException {
+      index.put((Double) key, fileIndex);
+    }
+
+    @Override
+    public boolean delete(Object key) throws IOException {
+      return index.delete((Double) key);
+    }
+
+    @Override
+    public boolean delete(Object key, long fileIndex) throws IOException {
+      return index.delete((Double) key, fileIndex);
+    }
+
+    @Override
+    public long[] get(Object key) throws IOException {
+      return index.get((Double) key);
+    }
+
+    @Override
+    public void commit() throws IOException {
+      index.commit();
+    }
+
+    @Override
+    public void rollback() {
+      index.rollback();
+    }
+
+    @Override
+    public boolean contains(Object key) throws IOException {
+      return index.get((Double) key).length > 0;
+    }
+
+    @Override
+    public ByteMultiTrieStat stats() throws IOException {
+      return index.stats();
+    }
+
+    @Override
+    public void drop() throws IOException {
+      index.drop();
+    }
+
     @Override
     public DataType<?> keyDataType() {
       return DataTypes.StringType;
