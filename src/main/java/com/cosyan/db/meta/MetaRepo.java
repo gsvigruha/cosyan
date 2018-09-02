@@ -37,8 +37,10 @@ import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.index.IDIndex;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
+import com.cosyan.db.index.LongLeafTries.DoubleIndex;
 import com.cosyan.db.index.LongLeafTries.LongIndex;
 import com.cosyan.db.index.LongLeafTries.StringIndex;
+import com.cosyan.db.index.MultiLeafTries.DoubleMultiIndex;
 import com.cosyan.db.index.MultiLeafTries.LongMultiIndex;
 import com.cosyan.db.index.MultiLeafTries.StringMultiIndex;
 import com.cosyan.db.io.Indexes.IndexReader;
@@ -65,9 +67,11 @@ import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMultiIndex;
+import com.cosyan.db.model.TableMultiIndex.DoubleTableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.LongTableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.StringTableMultiIndex;
 import com.cosyan.db.model.TableUniqueIndex;
+import com.cosyan.db.model.TableUniqueIndex.DoubleTableIndex;
 import com.cosyan.db.model.TableUniqueIndex.IDTableIndex;
 import com.cosyan.db.model.TableUniqueIndex.LongTableIndex;
 import com.cosyan.db.model.TableUniqueIndex.StringTableIndex;
@@ -379,6 +383,8 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
         uniqueIndexes.put(indexName, new StringTableIndex(new StringIndex(path)));
       } else if (column.getType() == DataTypes.LongType) {
         uniqueIndexes.put(indexName, new LongTableIndex(new LongIndex(path)));
+      } else if (column.getType() == DataTypes.DoubleType) {
+        uniqueIndexes.put(indexName, new DoubleTableIndex(new DoubleIndex(path)));
       } else if (column.getType() == DataTypes.IDType) {
         uniqueIndexes.put(indexName, new IDTableIndex(new IDIndex(path)));
       }
@@ -391,9 +397,10 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
     String indexName = table.fullName() + "." + column.getName();
     String path = config.indexDir() + File.separator + indexName;
     if (!multiIndexes.containsKey(indexName)) {
-
       if (column.getType() == DataTypes.StringType) {
         multiIndexes.put(indexName, new StringTableMultiIndex(new StringMultiIndex(path)));
+      } else if (column.getType() == DataTypes.DoubleType) {
+        multiIndexes.put(indexName, new DoubleTableMultiIndex(new DoubleMultiIndex(path)));
       } else if (column.getType() == DataTypes.LongType || column.getType() == DataTypes.IDType) {
         multiIndexes.put(indexName, new LongTableMultiIndex(new LongMultiIndex(path)));
       }
