@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 import org.junit.Test;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
+import com.cosyan.db.index.LongLeafTries.DoubleIndex;
 import com.cosyan.db.index.LongLeafTries.LongIndex;
 import com.cosyan.db.index.LongLeafTries.StringIndex;
 
@@ -244,6 +245,108 @@ public class ByteTrieTest {
   }
 
   @Test
+  public void testDoubleByteTrie() throws Exception {
+    Files.deleteIfExists(Paths.get("/tmp/doubleindex"));
+    DoubleIndex index = new DoubleIndex("/tmp/doubleindex");
+    assertEquals(null, index.get(1.0));
+    index.put(1.0, 10L);
+    index.commit();
+    assertEquals(10L, index.get(1.0));
+    index.put(2.0, 20L);
+    index.commit();
+    assertEquals(20L, index.get(2.0));
+    index.put(3.0, 30L);
+    index.commit();
+    assertEquals(30L, index.get(3.0));
+    index.put(999999999.0, 40L);
+    index.commit();
+    assertEquals(40L, index.get(999999999.0));
+    assertEquals(20L, index.get(2.0));
+    assertEquals(30L, index.get(3.0));
+    assertEquals(10L, index.get(1.0));
+    assertEquals(null, index.get(666.0));
+
+    index.cleanUp();
+    assertEquals(10L, index.get(1.0));
+    assertEquals(20L, index.get(2.0));
+    assertEquals(30L, index.get(3.0));
+    assertEquals(40L, index.get(999999999.0));
+    assertEquals(null, index.get(666.0));
+
+    index.put(100000.0, 50L);
+    assertEquals(50L, index.get(100000.0));
+
+    assertEquals(true, index.delete(3.0));
+    index.commit();
+    assertEquals(null, index.get(3.0));
+    assertEquals(false, index.delete(5.0));
+    index.commit();
+    assertEquals(true, index.delete(2.0));
+    index.commit();
+    assertEquals(null, index.get(2.0));
+
+    assertEquals(10L, index.get(1.0));
+    assertEquals(40L, index.get(999999999.0));
+    assertEquals(50L, index.get(100000.0));
+  }
+
+  @Test
+  public void testDoubleByteTrieCommitAndRollback() throws Exception {
+    Files.deleteIfExists(Paths.get("/tmp/doubleindex"));
+    DoubleIndex index = new DoubleIndex("/tmp/doubleindex");
+    assertEquals(null, index.get(1.0));
+    index.put(2.0, 10L);
+    index.put(10.0, 30L);
+    index.put(1.0, 20L);
+    assertEquals(10L, index.get(2.0));
+    assertEquals(30L, index.get(10.0));
+    assertEquals(20L, index.get(1.0));
+    index.commit();
+    assertEquals(10L, index.get(2.0));
+    assertEquals(20L, index.get(1.0));
+    assertEquals(30L, index.get(10.0));
+
+    index.put(16.0, 50L);
+    index.put(10000000.0, 40L);
+    assertEquals(10L, index.get(2.0));
+    assertEquals(20L, index.get(1.0));
+    assertEquals(30L, index.get(10.0));
+    assertEquals(40L, index.get(10000000.0));
+    assertEquals(50L, index.get(16.0));
+    index.rollback();
+
+    assertEquals(10L, index.get(2.0));
+    assertEquals(20L, index.get(1.0));
+    assertEquals(30L, index.get(10.0));
+    assertEquals(null, index.get(10000000.0));
+    assertEquals(null, index.get(16.0));
+
+    index.delete(1.0);
+    assertEquals(10L, index.get(2.0));
+    assertEquals(null, index.get(1.0));
+    assertEquals(30L, index.get(10.0));
+    index.commit();
+    assertEquals(10L, index.get(2.0));
+    assertEquals(null, index.get(1.0));
+    assertEquals(30L, index.get(10.0));
+
+    index.delete(2.0);
+    assertEquals(null, index.get(2.0));
+    assertEquals(30L, index.get(10.0));
+
+    index.rollback();
+    assertEquals(10L, index.get(2.0));
+    assertEquals(30L, index.get(10.0));
+
+    index.put(-200.0, 60L);
+    assertEquals(60L, index.get(-200.0));
+    index.delete(-200.0);
+    assertEquals(null, index.get(-200.0));
+    index.commit();
+    assertEquals(null, index.get(-200.0));
+  }
+
+  @Test
   public void testStringByteTrieDuplicateKeys() throws Exception {
     Files.deleteIfExists(Paths.get("/tmp/stringindex"));
     StringIndex index = new StringIndex("/tmp/stringindex");
@@ -266,6 +369,20 @@ public class ByteTrieTest {
     assertEquals(10L, index.get(1L));
     try {
       index.put(1L, 10L);
+      fail();
+    } catch (IndexException e) {
+    }
+  }
+
+  @Test
+  public void testDoubleByteTrieDuplicateKeys() throws Exception {
+    Files.deleteIfExists(Paths.get("/tmp/doubleindex"));
+    DoubleIndex index = new DoubleIndex("/tmp/doubleindex");
+    assertEquals(null, index.get(1.0));
+    index.put(1.0, 10L);
+    assertEquals(10L, index.get(1.0));
+    try {
+      index.put(1.0, 10L);
       fail();
     } catch (IndexException e) {
     }

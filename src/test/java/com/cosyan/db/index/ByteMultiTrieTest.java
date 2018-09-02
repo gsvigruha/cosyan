@@ -21,6 +21,7 @@ import java.util.LinkedList;
 
 import org.junit.Test;
 
+import com.cosyan.db.index.MultiLeafTries.DoubleMultiIndex;
 import com.cosyan.db.index.MultiLeafTries.LongMultiIndex;
 import com.cosyan.db.index.MultiLeafTries.StringMultiIndex;
 
@@ -81,6 +82,51 @@ public class ByteMultiTrieTest {
     index.commit();
 
     assertEquals(false, index.delete(30L));
+  }
+
+  @Test
+  public void testDoubleByteTrie() throws Exception {
+    Files.deleteIfExists(Paths.get("/tmp/doubleindex#chain"));
+    Files.deleteIfExists(Paths.get("/tmp/doubleindex#index"));
+    DoubleMultiIndex index = new DoubleMultiIndex("/tmp/doubleindex");
+    assertEquals(new long[0], index.get(10.0));
+    index.put(10.0, 100L);
+    assertEquals(new long[] { 100L }, index.get(10.0));
+    index.commit();
+    assertEquals(new long[] { 100L }, index.get(10.0));
+    LinkedList<Long> v10L = new LinkedList<>();
+    v10L.add(100L);
+    for (int i = 2; i < 100; i++) {
+      long value = i * 100;
+      index.put(10.0, value);
+      v10L.add(value);
+    }
+    assertEquals(v10L.stream().mapToLong(Long::longValue).toArray(), index.get(10.0));
+    index.commit();
+    assertEquals(v10L.stream().mapToLong(Long::longValue).toArray(), index.get(10.0));
+    index.put(20.0, 200L);
+    assertEquals(new long[] { 200L }, index.get(20.0));
+    index.rollback();
+    assertEquals(new long[0], index.get(20.0));
+
+    assertEquals(true, index.delete(10.0, 500L));
+    v10L.remove(500L);
+    assertEquals(v10L.stream().mapToLong(Long::longValue).toArray(), index.get(10.0));
+    index.commit();
+    assertEquals(v10L.stream().mapToLong(Long::longValue).toArray(), index.get(10.0));
+    assertEquals(false, index.delete(10.0, 500L));
+
+    index.delete(10.0, 1000L);
+    v10L.remove(1000L);
+    assertEquals(v10L.stream().mapToLong(Long::longValue).toArray(), index.get(10.0));
+    index.rollback();
+    assertEquals(98, index.get(10.0).length);
+
+    index.delete(10.0);
+    assertEquals(new long[0], index.get(10.0));
+    index.commit();
+
+    assertEquals(false, index.delete(30.0));
   }
 
   @Test
@@ -156,5 +202,20 @@ public class ByteMultiTrieTest {
       v10L.add(value);
     }
     assertEquals(v10L.stream().mapToLong(Long::longValue).toArray(), index.get("a"));
+  }
+
+  @Test
+  public void testDoubleByteTrieFrequentCommit() throws Exception {
+    Files.deleteIfExists(Paths.get("/tmp/doubleindex2#chain"));
+    Files.deleteIfExists(Paths.get("/tmp/doubleindex2#index"));
+    DoubleMultiIndex index = new DoubleMultiIndex("/tmp/doubleindex2");
+    LinkedList<Long> v10L = new LinkedList<>();
+    for (int i = 2; i < 100; i++) {
+      long value = i * 100;
+      index.put(10.0, value);
+      index.commit();
+      v10L.add(value);
+    }
+    assertEquals(v10L.stream().mapToLong(Long::longValue).toArray(), index.get(10.0));
   }
 }
