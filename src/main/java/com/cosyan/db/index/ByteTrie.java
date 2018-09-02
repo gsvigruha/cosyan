@@ -15,7 +15,6 @@
  */
 package com.cosyan.db.index;
 
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -26,13 +25,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
-import com.cosyan.db.io.Serializer;
-import com.cosyan.db.model.DataTypes;
-import com.cosyan.db.model.DataTypes.DataType;
-import com.google.common.collect.ImmutableList;
 
 /**
  * A prefix trie for indexing. Supports in memory caching to minimize file
@@ -113,7 +107,18 @@ public abstract class ByteTrie<K, V> {
     }
   }
 
+  public static abstract class LeafType<T> {
+
+    public abstract T read(RandomAccessFile raf) throws IOException;
+
+    public abstract void write(DataOutputStream stream, T value) throws IOException;
+
+    public abstract int size(T value);
+
+  }
+
   private final String fileName;
+  protected final LeafType<V> leafType;
   protected RandomAccessFile raf;
   private long filePointer;
   private long stableFilePointer;
@@ -121,8 +126,9 @@ public abstract class ByteTrie<K, V> {
   private final HashMap<Long, Node<K, V>> trie = new HashMap<>();
   private final LinkedHashMap<Long, Node<K, V>> pendingNodes = new LinkedHashMap<>();
 
-  protected ByteTrie(String fileName) throws IOException {
+  protected ByteTrie(String fileName, LeafType<V> leafType) throws IOException {
     this.fileName = fileName;
+    this.leafType = leafType;
     this.raf = new RandomAccessFile(fileName, "rw");
     if (!new File(fileName).exists() || raf.length() == 0) {
       saveIndex(0, new long[KEYS_SIZE]);
@@ -407,153 +413,5 @@ public abstract class ByteTrie<K, V> {
 
   public ByteTrieStat stats() throws IOException {
     return new ByteTrieStat(raf.length(), trie.size(), pendingNodes.size());
-  }
-
-  public static class LongIndex extends ByteTrie<Long, Long> {
-
-    public LongIndex(String fileName) throws IOException {
-      super(fileName);
-    }
-
-    @Override
-    protected byte[] toByteArray(Long key) {
-      ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-      buffer.putLong(key);
-      return buffer.array();
-    }
-
-    @Override
-    protected Leaf<Long, Long> loadLeaf(long filePointer) throws IOException {
-      raf.seek(filePointer);
-      return new Leaf<Long, Long>((Long) Serializer.readColumn(DataTypes.LongType, raf), raf.readLong());
-    }
-
-    @Override
-    protected void saveLeaf(long filePointer, Leaf<Long, Long> leaf) throws IOException {
-      raf.seek(filePointer);
-      ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
-      DataOutputStream stream = new DataOutputStream(b);
-      Serializer.writeColumn(leaf.key(), DataTypes.LongType, stream);
-      stream.writeLong(leaf.value());
-      raf.write(b.toByteArray());
-    }
-
-    @Override
-    protected int leafSize(Leaf<Long, Long> leaf) {
-      return Long.BYTES * 2 + 1;
-    }
-
-    @Override
-    protected boolean keysEqual(Long key1, Long key2) {
-      return Objects.equals(key1, key2);
-    }
-  }
-
-  public static class StringIndex extends ByteTrie<String, Long> {
-
-    public StringIndex(String fileName) throws IOException {
-      super(fileName);
-    }
-
-    @Override
-    protected byte[] toByteArray(String key) {
-      ByteBuffer buffer = ByteBuffer.allocate(Character.BYTES * key.length());
-      buffer.asCharBuffer().put(key.toCharArray());
-      return buffer.array();
-    }
-
-    @Override
-    protected Leaf<String, Long> loadLeaf(long filePointer) throws IOException {
-      raf.seek(filePointer);
-      return new Leaf<String, Long>((String) Serializer.readColumn(DataTypes.StringType, raf), raf.readLong());
-    }
-
-    @Override
-    protected void saveLeaf(long filePointer, Leaf<String, Long> leaf) throws IOException {
-      raf.seek(filePointer);
-      ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
-      DataOutputStream stream = new DataOutputStream(b);
-      Serializer.writeColumn(leaf.key(), DataTypes.StringType, stream);
-      stream.writeLong(leaf.value());
-      raf.write(b.toByteArray());
-    }
-
-    @Override
-    protected int leafSize(Leaf<String, Long> leaf) {
-      return Character.BYTES * leaf.key().length() + 4 + Long.BYTES + 1;
-    }
-
-    @Override
-    protected boolean keysEqual(String key1, String key2) {
-      return Objects.equals(key1, key2);
-    }
-  }
-
-  public static class MultiColumnIndex extends ByteTrie<Object[], Long> {
-
-    private final ImmutableList<DataType<?>> types;
-
-    public MultiColumnIndex(String fileName, ImmutableList<DataType<?>> types) throws IOException {
-      super(fileName);
-      this.types = types;
-    }
-
-    @Override
-    protected Leaf<Object[], Long> loadLeaf(long filePointer) throws IOException {
-      raf.seek(filePointer);
-      Object[] keys = new Object[types.size()];
-      for (int i = 0; i < types.size(); i++) {
-        keys[i] = Serializer.readColumn(types.get(i), raf);
-      }
-      return new Leaf<Object[], Long>(keys, raf.readLong());
-    }
-
-    @Override
-    protected void saveLeaf(long filePointer, Leaf<Object[], Long> leaf) throws IOException {
-      raf.seek(filePointer);
-      ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
-      DataOutputStream stream = new DataOutputStream(b);
-      serializeKey(leaf.key(), stream);
-      stream.writeLong(leaf.value());
-      raf.write(b.toByteArray());
-    }
-
-    private void serializeKey(Object[] key, DataOutputStream stream) throws IOException {
-      for (int i = 0; i < types.size(); i++) {
-        DataType<?> type = types.get(i);
-        Serializer.writeColumn(key[i], type, stream);
-      }
-    }
-
-    @Override
-    protected int leafSize(Leaf<Object[], Long> leaf) {
-      int size = Long.BYTES + types.size();
-      for (int i = 0; i < types.size(); i++) {
-        size += types.get(i).size(leaf.key()[i]);
-      }
-      return size;
-    }
-
-    @Override
-    protected byte[] toByteArray(Object[] key) {
-      ByteArrayOutputStream b = new ByteArrayOutputStream(256);
-      DataOutputStream stream = new DataOutputStream(b);
-      try {
-        serializeKey(key, stream);
-        return b.toByteArray();
-      } catch (IOException e) {
-        throw new RuntimeException(e); // Should not happen.
-      }
-    }
-
-    @Override
-    protected boolean keysEqual(Object[] key1, Object[] key2) {
-      for (int i = 0; i < types.size(); i++) {
-        if (!Objects.equals(key1[i], key2[i])) {
-          return false;
-        }
-      }
-      return true;
-    }
   }
 }

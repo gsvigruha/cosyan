@@ -33,14 +33,14 @@ import org.json.JSONObject;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.conf.Config;
-import com.cosyan.db.index.ByteMultiTrie.LongMultiIndex;
-import com.cosyan.db.index.ByteMultiTrie.StringMultiIndex;
 import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.index.ByteTrie.LongIndex;
-import com.cosyan.db.index.ByteTrie.StringIndex;
 import com.cosyan.db.index.IDIndex;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
+import com.cosyan.db.index.LongLeafTries.LongIndex;
+import com.cosyan.db.index.LongLeafTries.StringIndex;
+import com.cosyan.db.index.MultiLeafTries.LongMultiIndex;
+import com.cosyan.db.index.MultiLeafTries.StringMultiIndex;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.io.MetaSerializer;
