@@ -1,6 +1,6 @@
 # Cosyan DB
 
-Cosyan DB is an SQL based transactional RDBMS with sophisticated multi table constraint logic and language enhancements
+Cosyan DB is an SQL based transactional RDBMS with sophisticated **multi table constraint logic** and language enhancements
 building heavily on foreign keys.
 
 Users, contributors and constructive feedback is welcome! Please don't forget to **hit a star** if you like the project.
