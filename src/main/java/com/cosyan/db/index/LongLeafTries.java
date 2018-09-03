@@ -39,8 +39,8 @@ public class LongLeafTries {
       ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
       DataOutputStream stream = new DataOutputStream(b);
       Serializer.writeColumn(leaf.key(), DataTypes.LongType, stream);
-      raf.seek(filePointer);
       leafType.write(stream, leaf.value());
+      raf.seek(filePointer);
       raf.write(b.toByteArray());
     }
 
@@ -79,8 +79,8 @@ public class LongLeafTries {
       ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
       DataOutputStream stream = new DataOutputStream(b);
       Serializer.writeColumn(leaf.key(), DataTypes.StringType, stream);
-      raf.seek(filePointer);
       leafType.write(stream, leaf.value());
+      raf.seek(filePointer);
       raf.write(b.toByteArray());
     }
 
@@ -119,8 +119,8 @@ public class LongLeafTries {
       ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
       DataOutputStream stream = new DataOutputStream(b);
       Serializer.writeColumn(leaf.key(), DataTypes.DoubleType, stream);
-      raf.seek(filePointer);
       leafType.write(stream, leaf.value());
+      raf.seek(filePointer);
       raf.write(b.toByteArray());
     }
 
@@ -159,8 +159,8 @@ public class LongLeafTries {
       ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
       DataOutputStream stream = new DataOutputStream(b);
       serializeKey(leaf.key(), stream);
-      raf.seek(filePointer);
       leafType.write(stream, leaf.value());
+      raf.seek(filePointer);
       raf.write(b.toByteArray());
     }
 
