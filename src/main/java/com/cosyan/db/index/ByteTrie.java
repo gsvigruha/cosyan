@@ -137,37 +137,37 @@ public abstract class ByteTrie<K, V> {
     stableFilePointer = filePointer;
   }
 
-  public void close() throws IOException {
+  public synchronized void close() throws IOException {
     cleanUp();
     raf.close();
   }
 
-  public void cleanUp() {
+  public synchronized void cleanUp() {
     trie.clear();
   }
 
-  public void drop() throws IOException {
+  public synchronized void drop() throws IOException {
     close();
     new File(fileName).delete();
   }
 
-  public void reOpen() throws FileNotFoundException {
+  public synchronized void reOpen() throws FileNotFoundException {
     this.raf = new RandomAccessFile(fileName, "rw");
   }
 
-  public V get(K key) throws IOException {
+  public synchronized V get(K key) throws IOException {
     return get(getIndex(0L).keys(), toByteArray(key), 0, key);
   }
 
-  public void put(K key, V value) throws IOException, IndexException {
+  public synchronized void put(K key, V value) throws IOException, IndexException {
     put(0, getIndex(0L).keys(), toByteArray(key), 0, key, value);
   }
 
-  public boolean delete(K key) throws IOException {
+  public synchronized boolean delete(K key) throws IOException {
     return delete(0, getIndex(0L).keys(), toByteArray(key), 0, key);
   }
 
-  public void commit() throws IOException {
+  public synchronized void commit() throws IOException {
     for (Map.Entry<Long, Node<K, V>> node : pendingNodes.entrySet()) {
       if (node.getKey() <= 0) {
         saveIndex(node.getKey(), ((Index<K, V>) node.getValue()).keys());
@@ -184,7 +184,7 @@ public abstract class ByteTrie<K, V> {
     stableFilePointer = filePointer;
   }
 
-  public void rollback() {
+  public synchronized void rollback() {
     filePointer = stableFilePointer;
     pendingNodes.clear();
   }
@@ -207,7 +207,7 @@ public abstract class ByteTrie<K, V> {
     leafNode = (Leaf<K, V>) trie.get(id);
     if (leafNode == null) {
       // Assume leaf node exists but not in memory.
-      if (id >= raf.length()) {
+      if (id >= stableFilePointer) {
         throw new RuntimeIndexException("Inconsistent state.");
       }
       leafNode = loadLeaf(id);
@@ -225,7 +225,7 @@ public abstract class ByteTrie<K, V> {
     if (indexNode == null) {
       long fileIndex = -id;
       // Index node exists but not in memory.
-      if (fileIndex >= raf.length()) {
+      if (fileIndex >= stableFilePointer) {
         throw new RuntimeIndexException("Inconsistent state.");
       }
       raf.seek(fileIndex);
@@ -248,13 +248,13 @@ public abstract class ByteTrie<K, V> {
   }
 
   private void saveIndex(long id, long[] indices) throws IOException {
-    raf.seek(-id);
     ByteBuffer bb = ByteBuffer.allocate(KEYS_SIZE * 8);
     bb.asLongBuffer().put(indices);
+    raf.seek(-id);
     raf.write(bb.array());
   }
 
-  public void cleanUp(int limit) {
+  public synchronized void cleanUp(int limit) {
     Iterator<Map.Entry<Long, Node<K, V>>> iter = trie.entrySet().iterator();
     while (iter.hasNext()) {
       Map.Entry<Long, Node<K, V>> item = iter.next();
