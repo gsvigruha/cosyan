@@ -102,21 +102,21 @@ public abstract class ByteMultiTrie<T> {
     stableFilePointer = filePointer;
   }
 
-  public void close() throws IOException {
+  public synchronized void close() throws IOException {
     raf.close();
   }
 
-  public void drop() throws IOException {
+  public synchronized void drop() throws IOException {
     trie.drop();
     close();
     new File(fileName).delete();
   }
 
-  public void reOpen() throws FileNotFoundException {
+  public synchronized void reOpen() throws FileNotFoundException {
     this.raf = new RandomAccessFile(fileName, "rw");
   }
 
-  public void commit() throws IOException {
+  public synchronized void commit() throws IOException {
     trie.commit();
     for (Map.Entry<Long, PendingNode> node : pendingNodes.entrySet()) {
       saveNode(node.getKey(), node.getValue());
@@ -128,16 +128,7 @@ public abstract class ByteMultiTrie<T> {
     stableFilePointer = filePointer;
   }
 
-  private void saveNode(long filePointer, PendingNode node) throws IOException {
-    raf.seek(filePointer);
-    ByteBuffer bb = ByteBuffer.allocate(NODE_SIZE);
-    LongBuffer lb = bb.asLongBuffer();
-    lb.put(node.getNextPointer());
-    lb.put(node.getValues());
-    raf.write(bb.array());
-  }
-
-  public void rollback() {
+  public synchronized void rollback() {
     trie.rollback();
     filePointer = stableFilePointer;
     pendingNodes.clear();
@@ -158,7 +149,16 @@ public abstract class ByteMultiTrie<T> {
     return new ImmutableNode(nextPointer, values);
   }
 
-  public long[] get(T key) throws IOException {
+  private void saveNode(long filePointer, PendingNode node) throws IOException {
+    raf.seek(filePointer);
+    ByteBuffer bb = ByteBuffer.allocate(NODE_SIZE);
+    LongBuffer lb = bb.asLongBuffer();
+    lb.put(node.getNextPointer());
+    lb.put(node.getValues());
+    raf.write(bb.array());
+  }
+
+  public synchronized long[] get(T key) throws IOException {
     MultiLeaf leaf = trie.get(key);
     if (leaf == null) {
       return EMPTY;
@@ -178,7 +178,7 @@ public abstract class ByteMultiTrie<T> {
     return result.stream().mapToLong(Long::longValue).toArray();
   }
 
-  public void put(T key, long finalIndex) throws IOException, IndexException {
+  public synchronized void put(T key, long finalIndex) throws IOException, IndexException {
     MultiLeaf leaf = trie.get(key);
     if (leaf == null) {
       // Key doesn't exist.
@@ -232,11 +232,11 @@ public abstract class ByteMultiTrie<T> {
     }
   }
 
-  public boolean delete(T key) throws IOException {
+  public synchronized boolean delete(T key) throws IOException {
     return trie.delete(key);
   }
 
-  public boolean delete(T key, long valueToDelete) throws IOException {
+  public synchronized boolean delete(T key, long valueToDelete) throws IOException {
     MultiLeaf leaf = trie.get(key);
     if (leaf == null) {
       return false;
@@ -265,7 +265,7 @@ public abstract class ByteMultiTrie<T> {
     return false;
   }
 
-  public ByteMultiTrieStat stats() throws IOException {
+  public synchronized ByteMultiTrieStat stats() throws IOException {
     ByteTrieStat trieStat = trie.stats();
     return new ByteMultiTrieStat(
         trieStat.getIndexFileSize(),
