@@ -15,6 +15,7 @@
  */
 package com.cosyan.db.index;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -43,7 +44,7 @@ import com.cosyan.db.index.IndexStat.ByteTrieStat;
  *
  * @param <K, V> type of the index.
  */
-public abstract class ByteTrie<K, V> {
+public class ByteTrie<K, V> {
 
   /**
    * The keys array is addressed by a byte. The last slot is for elements matching
@@ -107,7 +108,20 @@ public abstract class ByteTrie<K, V> {
     }
   }
 
-  public static abstract class LeafType<T> {
+  public static abstract class KeyType<T> {
+
+    public abstract boolean keysEqual(T key1, T key2);
+
+    public abstract int size(T key);
+
+    public abstract T read(RandomAccessFile raf) throws IOException;
+
+    public abstract void write(DataOutputStream stream, T key) throws IOException;
+
+    public abstract byte[] toByteArray(T key);
+  }
+
+  public static abstract class ValueType<T> {
 
     public abstract T read(RandomAccessFile raf) throws IOException;
 
@@ -118,7 +132,9 @@ public abstract class ByteTrie<K, V> {
   }
 
   private final String fileName;
-  protected final LeafType<V> leafType;
+  protected final KeyType<K> keyType;
+  protected final ValueType<V> valueType;
+
   protected RandomAccessFile raf;
   private long filePointer;
   private long stableFilePointer;
@@ -126,9 +142,11 @@ public abstract class ByteTrie<K, V> {
   private final HashMap<Long, Node<K, V>> trie = new HashMap<>();
   private final LinkedHashMap<Long, Node<K, V>> pendingNodes = new LinkedHashMap<>();
 
-  protected ByteTrie(String fileName, LeafType<V> leafType) throws IOException {
+  protected ByteTrie(String fileName, KeyType<K> keyType, ValueType<V> leafType) throws IOException {
     this.fileName = fileName;
-    this.leafType = leafType;
+    this.keyType = keyType;
+    this.valueType = leafType;
+
     this.raf = new RandomAccessFile(fileName, "rw");
     if (!new File(fileName).exists() || raf.length() == 0) {
       saveIndex(0, new long[KEYS_SIZE]);
@@ -156,15 +174,15 @@ public abstract class ByteTrie<K, V> {
   }
 
   public synchronized V get(K key) throws IOException {
-    return get(getIndex(0L).keys(), toByteArray(key), 0, key);
+    return get(getIndex(0L).keys(), keyType.toByteArray(key), 0, key);
   }
 
   public synchronized void put(K key, V value) throws IOException, IndexException {
-    put(0, getIndex(0L).keys(), toByteArray(key), 0, key, value);
+    put(0, getIndex(0L).keys(), keyType.toByteArray(key), 0, key, value);
   }
 
   public synchronized boolean delete(K key) throws IOException {
-    return delete(0, getIndex(0L).keys(), toByteArray(key), 0, key);
+    return delete(0, getIndex(0L).keys(), keyType.toByteArray(key), 0, key);
   }
 
   public synchronized void commit() throws IOException {
@@ -189,15 +207,23 @@ public abstract class ByteTrie<K, V> {
     pendingNodes.clear();
   }
 
-  protected abstract Leaf<K, V> loadLeaf(long filePointer) throws IOException;
+  protected Leaf<K, V> loadLeaf(long filePointer) throws IOException {
+    raf.seek(filePointer);
+    return new Leaf<K, V>(keyType.read(raf), valueType.read(raf));
+  }
 
-  protected abstract void saveLeaf(long filePointer, Leaf<K, V> leaf) throws IOException;
+  protected void saveLeaf(long filePointer, Leaf<K, V> leaf) throws IOException {
+    ByteArrayOutputStream b = new ByteArrayOutputStream(leafSize(leaf));
+    DataOutputStream stream = new DataOutputStream(b);
+    keyType.write(stream, leaf.key());
+    valueType.write(stream, leaf.value());
+    raf.seek(filePointer);
+    raf.write(b.toByteArray());
+  }
 
-  protected abstract int leafSize(Leaf<K, V> leaf);
-
-  protected abstract byte[] toByteArray(K key);
-
-  protected abstract boolean keysEqual(K key1, K key2);
+  protected int leafSize(Leaf<K, V> leaf) {
+    return keyType.size(leaf.key()) + valueType.size(leaf.value());
+  }
 
   private Leaf<K, V> getLeaf(long id) throws IOException {
     Leaf<K, V> leafNode = (Leaf<K, V>) pendingNodes.get(id);
@@ -271,7 +297,7 @@ public abstract class ByteTrie<K, V> {
       long currentKey = pointers[256];
       if (currentKey > 0) {
         Leaf<K, V> leaf = getLeaf(currentKey);
-        if (keysEqual(keyObject, leaf.key())) {
+        if (keyType.keysEqual(keyObject, leaf.key())) {
           return leaf.value();
         } else {
           throw new RuntimeIndexException("Inconsistent state.");
@@ -292,7 +318,7 @@ public abstract class ByteTrie<K, V> {
     } else {
       // Pointer to leaf node.
       Leaf<K, V> leaf = getLeaf(pointer);
-      if (keysEqual(keyObject, leaf.key())) {
+      if (keyType.keysEqual(keyObject, leaf.key())) {
         return leaf.value();
       } else {
         // Search is over and not found.
@@ -339,7 +365,7 @@ public abstract class ByteTrie<K, V> {
     } else {
       // Pointer to leaf node.
       Leaf<K, V> leaf = getLeaf(pointer);
-      if (keysEqual(keyObject, leaf.key())) {
+      if (keyType.keysEqual(keyObject, leaf.key())) {
         // Already present, throw exception.
         throw new IndexException("Key '" + keyObject + "' already present in index.");
       } else {
@@ -347,7 +373,7 @@ public abstract class ByteTrie<K, V> {
         // Create a new index node.
         long indexPointer = -filePointer;
         long[] newIndex = new long[KEYS_SIZE];
-        byte[] existingKeyBytes = toByteArray(leaf.key());
+        byte[] existingKeyBytes = keyType.toByteArray(leaf.key());
         if (keyBytesIndex + 1 < existingKeyBytes.length) {
           // Push the existing key down the trie if has more bytes.
           newIndex[existingKeyBytes[keyBytesIndex + 1] - Byte.MIN_VALUE] = pointer;
@@ -379,7 +405,7 @@ public abstract class ByteTrie<K, V> {
       long currentKey = pointers[256];
       if (currentKey > 0) {
         Leaf<K, V> leaf = getLeaf(currentKey);
-        if (keysEqual(keyObject, leaf.key())) {
+        if (keyType.keysEqual(keyObject, leaf.key())) {
           modifyIndex(parentPointer, pointers, 256, 0);
           return true;
         } else {
@@ -401,7 +427,7 @@ public abstract class ByteTrie<K, V> {
     } else {
       // Pointer to leaf node.
       Leaf<K, V> leaf = getLeaf(pointer);
-      if (keysEqual(keyObject, leaf.key())) {
+      if (keyType.keysEqual(keyObject, leaf.key())) {
         modifyIndex(parentPointer, pointers, keyByte, 0);
         return true;
       } else {

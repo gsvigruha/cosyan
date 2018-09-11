@@ -23,7 +23,7 @@ import java.nio.file.Paths;
 import org.junit.Test;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.index.LongLeafTries.MultiColumnIndex;
+import com.cosyan.db.index.LeafTypes.MultiColumnIndex;
 import com.cosyan.db.model.DataTypes;
 import com.google.common.collect.ImmutableList;
 
