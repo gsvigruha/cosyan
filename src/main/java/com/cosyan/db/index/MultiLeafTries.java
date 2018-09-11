@@ -5,16 +5,12 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import com.cosyan.db.index.ByteMultiTrie.MultiLeaf;
-import com.cosyan.db.index.ByteTrie.LeafType;
-import com.cosyan.db.index.LongLeafTries.DoubleKeyIndex;
-import com.cosyan.db.index.LongLeafTries.LongKeyIndex;
-import com.cosyan.db.index.LongLeafTries.MultiColumnKeyIndex;
-import com.cosyan.db.index.LongLeafTries.StringKeyIndex;
+import com.cosyan.db.index.ByteTrie.ValueType;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.google.common.collect.ImmutableList;
 
 public class MultiLeafTries {
-  private static final LeafType<MultiLeaf> multiLeafType = new LeafType<MultiLeaf>() {
+  private static final ValueType<MultiLeaf> multiLeafValueType = new ValueType<MultiLeaf>() {
 
     @Override
     public MultiLeaf read(RandomAccessFile raf) throws IOException {
@@ -33,27 +29,27 @@ public class MultiLeafTries {
     }
   };
 
-  private static class LongMultiLeafIndex extends LongKeyIndex<MultiLeaf> {
+  private static class LongMultiLeafIndex extends ByteTrie<Long, MultiLeaf> {
     protected LongMultiLeafIndex(String fileName) throws IOException {
-      super(fileName + "#index", multiLeafType);
+      super(fileName + "#index", LeafTypes.longKeyType, multiLeafValueType);
     }
   }
 
-  private static class StringMultiLeafIndex extends StringKeyIndex<MultiLeaf> {
+  private static class StringMultiLeafIndex extends ByteTrie<String, MultiLeaf> {
     protected StringMultiLeafIndex(String fileName) throws IOException {
-      super(fileName + "#index", multiLeafType);
+      super(fileName + "#index", LeafTypes.stringKeyType, multiLeafValueType);
     }
   }
 
-  private static class DoubleMultiLeafIndex extends DoubleKeyIndex<MultiLeaf> {
+  private static class DoubleMultiLeafIndex extends ByteTrie<Double, MultiLeaf> {
     protected DoubleMultiLeafIndex(String fileName) throws IOException {
-      super(fileName + "#index", multiLeafType);
+      super(fileName + "#index", LeafTypes.doubleKeyType, multiLeafValueType);
     }
   }
 
-  private static class MultiColumnMultiLeafIndex extends MultiColumnKeyIndex<MultiLeaf> {
+  private static class MultiColumnMultiLeafIndex extends ByteTrie<Object[], MultiLeaf> {
     protected MultiColumnMultiLeafIndex(String fileName, ImmutableList<DataType<?>> types) throws IOException {
-      super(fileName + "#index", types, multiLeafType);
+      super(fileName + "#index", LeafTypes.multiKeyType(types), multiLeafValueType);
     }
   }
 
