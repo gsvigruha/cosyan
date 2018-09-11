@@ -139,8 +139,8 @@ public abstract class ByteMultiTrie<T> {
     if (pendingNode != null) {
       return pendingNode;
     }
-    raf.seek(id);
     ByteBuffer bb = ByteBuffer.allocate(NODE_SIZE);
+    raf.seek(id);
     raf.read(bb.array());
     LongBuffer lb = bb.asLongBuffer();
     long[] values = new long[POINTERS_PER_NODE];
@@ -150,11 +150,11 @@ public abstract class ByteMultiTrie<T> {
   }
 
   private void saveNode(long filePointer, PendingNode node) throws IOException {
-    raf.seek(filePointer);
     ByteBuffer bb = ByteBuffer.allocate(NODE_SIZE);
     LongBuffer lb = bb.asLongBuffer();
     lb.put(node.getNextPointer());
     lb.put(node.getValues());
+    raf.seek(filePointer);
     raf.write(bb.array());
   }
 

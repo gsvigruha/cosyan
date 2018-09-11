@@ -23,9 +23,9 @@ import java.nio.file.Paths;
 import org.junit.Test;
 
 import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.index.LongLeafTries.DoubleIndex;
-import com.cosyan.db.index.LongLeafTries.LongIndex;
-import com.cosyan.db.index.LongLeafTries.StringIndex;
+import com.cosyan.db.index.LeafTypes.DoubleIndex;
+import com.cosyan.db.index.LeafTypes.LongIndex;
+import com.cosyan.db.index.LeafTypes.StringIndex;
 
 public class ByteTrieTest {
 
