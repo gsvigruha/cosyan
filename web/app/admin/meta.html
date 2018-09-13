@@ -127,22 +127,26 @@
         <tr>
           <th>Name</th>
           <th>Expression</th>
-          <th>Action</th>
+          <th class="icon"></th>
+          <th class="icon"></th>
         </tr>
       </thead>
       <tbody>
         <tr ng-repeat="ref in activeTable.aggRefs">
           <td>{{ ref.name }}</td>
           <td>{{ ref.expr }}</td>
-          <td><span ng-click="dropAggRef(ref.name);" title="Discard"
-                  class="button enabled glyphicon glyphicon-trash"></span></td>
+          <td class="icon"><span ng-click="dropAggRef(ref.name);" title="Discard"
+              class="button enabled glyphicon glyphicon-trash"></span></td>
+          <td class="icon"><span ng-click="copyAggRef(ref);" title="Copy"
+              class="button enabled glyphicon glyphicon-copy"></span></td>
         </tr>
         <tr>
           <td><input ng-model="newAggRef.name" class="admin-input"></input></td>
           <td><textarea ng-model="newAggRef.expr" class="admin-input-wide" placeholder="select sum(x) as s_x from rev_fk"></textarea></td>
-          <td>
+          <td class="icon">
             <span ng-click="addAggRef();" title="Add" class="button enabled glyphicon glyphicon-plus"></span>
           </td>
+          <td class="icon"></td>
         </tr>
       </tbody>
     </table>
@@ -154,24 +158,30 @@
         <tr>
           <th>Name</th>
           <th>Expression</th>
-          <th>Action</th>
+          <th class="icon"></th>
+          <th class="icon"></th>
         </tr>
       </thead>
       <tbody>
         <tr ng-repeat="rule in activeTable.rules">
           <td>{{ rule.name }}</td>
           <td>{{ rule.expr }}</td>
-          <td>
+          <td class="icon">
             <span ng-click="dropConstraint(rule.name);" title="Discard"
                   class="button enabled glyphicon glyphicon-trash"></span>
+          </td>
+          <td class="icon">
+            <span ng-click="copyRule(rule);" title="Copy"
+                  class="button enabled glyphicon glyphicon-copy"></span>
           </td>
         </tr>
         <tr>
           <td><input ng-model="newRule.name" class="admin-input"></input></td>
           <td><textarea ng-model="newRule.expr" class="admin-input-wide" placeholder="x + fk.y > 0"></textarea></td>
-          <td>
+          <td class="icon">
             <span ng-click="addRule();" title="Add" class="button enabled glyphicon glyphicon-plus"></span>
           </td>
+          <td class="icon"></td>
         </tr>
       </tbody>
     </table>
