@@ -20,13 +20,13 @@ import java.io.IOException;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.Statements.GlobalStatement;
 import com.cosyan.db.meta.Grants.GrantException;
-import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaWriter;
 
 public class EntityMetaStatement extends GlobalStatement {
 
   @Override
-  public EntityMeta execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
+  public EntityMeta execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
     return new EntityMeta(metaRepo, authToken);
   }
 }

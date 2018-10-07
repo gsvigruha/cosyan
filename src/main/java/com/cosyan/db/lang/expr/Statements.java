@@ -21,10 +21,9 @@ import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MetaReader;
-import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
-import com.cosyan.db.meta.MetaRepoExecutor;
+import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 
@@ -44,10 +43,10 @@ public class Statements {
 
   public static abstract class AlterStatement extends MetaStatement {
 
-    public abstract MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken)
+    public abstract MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken)
         throws ModelException, GrantException, IOException;
 
-    public abstract Result executeData(MetaRepoExecutor metaRepo, Resources resources)
+    public abstract Result executeData(MetaWriter metaRepo, Resources resources)
         throws RuleException, IOException;
 
     public abstract void cancel();
@@ -55,7 +54,7 @@ public class Statements {
 
   public static abstract class GlobalStatement extends MetaStatement {
 
-    public abstract Result execute(MetaRepo metaRepo, AuthToken authToken)
+    public abstract Result execute(MetaWriter metaRepo, AuthToken authToken)
         throws ModelException, GrantException, IOException;
   }
 }

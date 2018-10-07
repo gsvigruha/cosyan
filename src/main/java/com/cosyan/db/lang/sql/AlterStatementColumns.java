@@ -23,10 +23,9 @@ import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.MaterializedTable;
-import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
-import com.cosyan.db.meta.MetaRepoExecutor;
+import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Ident;
@@ -48,7 +47,7 @@ public class AlterStatementColumns {
     private BasicColumn basicColumn;
 
     @Override
-    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException {
       tableWithOwner = table.resolve(authToken);
       MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
       basicColumn = tableMeta.createColumn(column);
@@ -56,7 +55,7 @@ public class AlterStatementColumns {
     }
 
     @Override
-    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
+    public Result executeData(MetaWriter metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(tableWithOwner.resourceId());
       tableMeta.addColumn(basicColumn);
       metaRepo.syncMeta(tableMeta);
@@ -77,7 +76,7 @@ public class AlterStatementColumns {
     private BasicColumn basicColumn;
 
     @Override
-    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException {
       MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
       basicColumn = tableMeta.column(column);
       tableMeta.checkDeleteColumn(column);
@@ -85,7 +84,7 @@ public class AlterStatementColumns {
     }
 
     @Override
-    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
+    public Result executeData(MetaWriter metaRepo, Resources resources) throws RuleException, IOException {
       basicColumn.setDeleted(true);
       return Result.META_OK;
     }
@@ -104,7 +103,7 @@ public class AlterStatementColumns {
     private BasicColumn originalColumn;
 
     @Override
-    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException {
       MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
       originalColumn = tableMeta.column(column.getName());
       if (originalColumn.getType() != column.getType()) {
@@ -127,7 +126,7 @@ public class AlterStatementColumns {
     }
 
     @Override
-    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
+    public Result executeData(MetaWriter metaRepo, Resources resources) throws RuleException, IOException {
       originalColumn.setNullable(column.isNullable());
       originalColumn.setImmutable(column.isImmutable());
       return Result.META_OK;

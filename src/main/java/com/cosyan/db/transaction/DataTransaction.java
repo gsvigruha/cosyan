@@ -30,6 +30,7 @@ import com.cosyan.db.lang.transaction.Result.TransactionResult;
 import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.Grants.GrantException;
+import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
@@ -49,10 +50,10 @@ public class DataTransaction extends Transaction {
     return statements;
   }
 
-  protected MetaResources collectResources(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
+  protected MetaResources collectResources(MetaReader metaReader, AuthToken authToken) throws ModelException {
     MetaResources metaResources = MetaResources.empty();
     for (Statement statement : statements) {
-      metaResources = metaResources.merge(statement.compile(metaRepo, authToken));
+      metaResources = metaResources.merge(statement.compile(metaReader, authToken));
     }
     return metaResources;
   }
@@ -76,21 +77,17 @@ public class DataTransaction extends Transaction {
   @Override
   public Result execute(MetaRepo metaRepo, Session session) {
     TransactionJournal journal = session.transactionJournal();
-    metaRepo.metaRepoReadLock();
+    MetaReader metaReader = metaRepo.metaRepoReadLock();
     MetaResources metaResources;
     try {
-      metaResources = collectResources(metaRepo, session.authToken());
-    } catch (ModelException e) {
+      metaResources = collectResources(metaReader, session.authToken());
+      for (TableMetaResource resource : metaResources.tables()) {
+        metaReader.checkAccess(resource, session.authToken());
+      }
+    } catch (ModelException | GrantException e) {
       return new ErrorResult(e);
     } finally {
-      metaRepo.metaRepoReadUnlock();
-    }
-    try {
-      for (TableMetaResource resource : metaResources.tables()) {
-        metaRepo.checkAccess(resource, session.authToken());
-      }
-    } catch (GrantException e) {
-      return new ErrorResult(e);
+      metaReader.metaRepoReadUnlock();
     }
     try {
       lock(metaResources, metaRepo);

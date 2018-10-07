@@ -24,7 +24,7 @@ import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.Method;
 import com.cosyan.db.meta.MaterializedTable;
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
@@ -108,7 +108,7 @@ public class EntityMeta extends Result {
 
   private final ImmutableList<Entity> entities;
 
-  public EntityMeta(MetaRepo metaRepo, AuthToken authToken) {
+  public EntityMeta(MetaWriter metaRepo, AuthToken authToken) {
     super(true);
     ImmutableList<MaterializedTable> tables = metaRepo.getTables(authToken)
         .stream()

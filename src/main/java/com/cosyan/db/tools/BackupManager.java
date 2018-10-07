@@ -27,7 +27,9 @@ import org.apache.commons.io.FileUtils;
 
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.logging.MetaJournal.DBException;
+import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaWriter;
 
 public class BackupManager {
 
@@ -53,9 +55,8 @@ public class BackupManager {
   }
 
   public void backup(String name) throws IOException {
-    metaRepo.metaRepoReadLock();
+    MetaReader metaReader = metaRepo.metaRepoReadLock();
     try {
-      metaRepo.writeTables();
       Files.createDirectories(Paths.get(config.backupDir()));
       ZipOutputStream stream = new ZipOutputStream(
           Files.newOutputStream(Paths.get(config.backupDir() + File.separator + name)));
@@ -69,12 +70,12 @@ public class BackupManager {
         stream.close();
       }
     } finally {
-      metaRepo.metaRepoReadUnlock();
+      metaReader.metaRepoReadUnlock();
     }
   }
 
   public void restore(String name) throws IOException, DBException {
-    metaRepo.metaRepoWriteLock();
+    MetaWriter metaWriter = metaRepo.metaRepoWriteLock();
     try {
       FileUtils.deleteDirectory(new File(config.tableDir()));
       FileUtils.deleteDirectory(new File(config.indexDir()));
@@ -95,9 +96,9 @@ public class BackupManager {
       } finally {
         stream.close();
       }
-      metaRepo.resetAndReadTables();
+      metaWriter.resetAndReadTables();
     } finally {
-      metaRepo.metaRepoWriteUnlock();
+      metaWriter.metaRepoWriteUnlock();
     }
   }
 }

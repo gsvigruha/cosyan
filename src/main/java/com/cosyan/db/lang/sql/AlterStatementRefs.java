@@ -26,9 +26,8 @@ import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MaterializedTable;
-import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.meta.MetaRepoExecutor;
+import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.References.AggRefTableMeta;
@@ -53,7 +52,7 @@ public class AlterStatementRefs {
     private AggRefTableMeta refTableMeta;
 
     @Override
-    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException {
       tableWithOwner = table.resolve(authToken);
       MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
       refTableMeta = tableMeta.createAggRef(ref, tableMeta.owner());
@@ -61,7 +60,7 @@ public class AlterStatementRefs {
     }
 
     @Override
-    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) {
+    public Result executeData(MetaWriter metaRepo, Resources resources) {
       MaterializedTable tableMeta = resources.meta(tableWithOwner.resourceId());
       tableMeta.addRef(new TableRef(
           ref.getName().getString(),
@@ -84,7 +83,7 @@ public class AlterStatementRefs {
     private final Ident ref;
 
     @Override
-    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
+    public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
       MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
       if (tableMeta.hasRef(ref.getString())) {
         tableMeta.dropRef(ref);
@@ -105,7 +104,7 @@ public class AlterStatementRefs {
     private FlatRefTableMeta refTableMeta;
 
     @Override
-    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException {
       tableWithOwner = table.resolve(authToken);
       MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
       refTableMeta = tableMeta.createFlatRef(ref);
@@ -113,7 +112,7 @@ public class AlterStatementRefs {
     }
 
     @Override
-    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) {
+    public Result executeData(MetaWriter metaRepo, Resources resources) {
       MaterializedTable tableMeta = resources.meta(tableWithOwner.resourceId());
       tableMeta.addRef(new TableRef(
           ref.getName().getString(),
@@ -136,7 +135,7 @@ public class AlterStatementRefs {
     private final Ident ref;
 
     @Override
-    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
+    public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
       MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
       if (tableMeta.hasRef(ref.getString())) {
         tableMeta.dropRef(ref);

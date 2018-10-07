@@ -27,12 +27,12 @@ import org.json.JSONObject;
 import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.ParamServlet;
-import com.cosyan.ui.SessionHandler;
 import com.cosyan.ui.ParamServlet.Servlet;
+import com.cosyan.ui.SessionHandler;
 
 @Servlet(path = "index", doc = "Looks up a key in an index and returns the corresponding values.")
 public class IndexServlet extends ParamServlet {
@@ -54,14 +54,13 @@ public class IndexServlet extends ParamServlet {
       String id = req.getParameter("index");
       String key = req.getParameter("key");
       try {
-        MetaRepo metaRepo = session.metaRepo();
-        metaRepo.metaRepoReadLock();
+        MetaReader metaReader = session.metaRepo().metaRepoReadLock();
         long[] pointers;
         try {
-          IndexReader index = metaRepo.getIndex(id);
+          IndexReader index = metaReader.getIndex(id);
           pointers = index.get(index.keyDataType().fromString(key));
         } finally {
-          metaRepo.metaRepoReadUnlock();
+          metaReader.metaRepoReadUnlock();
         }
         JSONObject result = new JSONObject();
         result.put("pointers", pointers);
