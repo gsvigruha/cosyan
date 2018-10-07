@@ -34,25 +34,22 @@ import com.cosyan.db.lang.expr.Literals.NullLiteral;
 import com.cosyan.db.lang.expr.Literals.StringLiteral;
 import com.cosyan.db.lang.expr.Statements.MetaStatement;
 import com.cosyan.db.lang.expr.Statements.Statement;
-import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ConstraintDefinition;
-import com.cosyan.db.lang.expr.TableDefinition.FlatRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.PrimaryKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.TableColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.ViewDefinition;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAddColumn;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableAlterColumn;
 import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableDropColumn;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddForeignKey;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddRule;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableDropConstraint;
-import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableAddAggRef;
-import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableAddFlatRef;
-import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableDropAggRef;
-import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableDropFlatRef;
+import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableAddView;
+import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableDropView;
 import com.cosyan.db.lang.sql.CSVStatements.CSVExport;
 import com.cosyan.db.lang.sql.CSVStatements.CSVImport;
 import com.cosyan.db.lang.sql.CreateStatement.CreateIndex;
@@ -354,22 +351,13 @@ public class Parser implements IParser {
     }
   }
 
-  private AggRefDefinition parseAggRef(PeekingIterator<Token> tokens) throws ParserException {
-    assertNext(tokens, Tokens.AGGREF);
+  private ViewDefinition parseView(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.VIEW);
     Ident ident = parseIdent(tokens);
     assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
-    Select select = parseSelect(tokens);
+    Select select = parseAggRefSelect(tokens);
     assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-    return new AggRefDefinition(ident, select);
-  }
-
-  private FlatRefDefinition parseFlatRef(PeekingIterator<Token> tokens) throws ParserException {
-    assertNext(tokens, Tokens.FLATREF);
-    Ident ident = parseIdent(tokens);
-    assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
-    ImmutableList<Expression> exprs = parseExpressions(tokens);
-    assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-    return new FlatRefDefinition(ident, exprs);
+    return new ViewDefinition(ident, select);
   }
 
   private MetaStatement parseDrop(PeekingIterator<Token> tokens) throws ParserException {
@@ -409,10 +397,8 @@ public class Parser implements IParser {
     TableWithOwnerDefinition table = parseTableWithOwner(tokens);
     if (tokens.peek().is(Tokens.ADD)) {
       tokens.next();
-      if (tokens.peek().is(Tokens.AGGREF)) {
-        return new AlterTableAddAggRef(table, parseAggRef(tokens));
-      } else if (tokens.peek().is(Tokens.FLATREF)) {
-        return new AlterTableAddFlatRef(table, parseFlatRef(tokens));
+      if (tokens.peek().is(Tokens.VIEW)) {
+        return new AlterTableAddView(table, parseView(tokens));
       } else if (tokens.peek().is(Tokens.CONSTRAINT)) {
         ConstraintDefinition constraint = parseConstraint(tokens);
         if (constraint instanceof ForeignKeyDefinition) {
@@ -434,14 +420,10 @@ public class Parser implements IParser {
         tokens.next();
         Ident constraint = parseIdent(tokens);
         return new AlterTableDropConstraint(table, constraint);
-      } else if (tokens.peek().is(Tokens.AGGREF)) {
+      } else if (tokens.peek().is(Tokens.VIEW)) {
         tokens.next();
         Ident constraint = parseIdent(tokens);
-        return new AlterTableDropAggRef(table, constraint);
-      } else if (tokens.peek().is(Tokens.FLATREF)) {
-        tokens.next();
-        Ident constraint = parseIdent(tokens);
-        return new AlterTableDropFlatRef(table, constraint);
+        return new AlterTableDropView(table, constraint);
       } else {
         Ident columnName = parseIdent(tokens);
         return new AlterTableDropColumn(table, columnName);
@@ -669,6 +651,22 @@ public class Parser implements IParser {
     }
     assertPeek(tokens, String.valueOf(Tokens.COMMA_COLON), String.valueOf(Tokens.PARENT_CLOSED));
     return new Select(columns, table, where, groupBy, having, orderBy, distinct, limit);
+  }
+
+  public Select parseAggRefSelect(PeekingIterator<Token> tokens) throws ParserException {
+    assertNext(tokens, Tokens.SELECT);
+    ImmutableList<Expression> columns = parseExprs(tokens, true, Tokens.FROM);
+    tokens.next();
+    Table table = parseTable(tokens);
+    Optional<Expression> where;
+    if (tokens.peek().is(Tokens.WHERE)) {
+      tokens.next();
+      where = Optional.of(parseExpression(tokens, 0));
+    } else {
+      where = Optional.empty();
+    }
+    assertPeek(tokens, String.valueOf(Tokens.COMMA_COLON), String.valueOf(Tokens.PARENT_CLOSED));
+    return new Select(columns, table, where, Optional.empty(), Optional.empty(), Optional.empty(), /* distinct= */false, Optional.empty());
   }
 
   private Expression parsePrimary(PeekingIterator<Token> tokens) throws ParserException {

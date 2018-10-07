@@ -344,7 +344,7 @@ public class SelectStatement extends Statement {
 
     @Override
     public ExposedTableMeta compile(TableProvider tableProvider, String owner) throws ModelException {
-      return (ExposedTableMeta) tableProvider.tableMeta(TableWithOwner.of(ident, owner));
+      return tableProvider.tableMeta(TableWithOwner.of(ident, owner));
     }
 
     @Override

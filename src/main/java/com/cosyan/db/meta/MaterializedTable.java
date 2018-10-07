@@ -31,11 +31,10 @@ import com.cosyan.db.io.RAFBufferedInputStream;
 import com.cosyan.db.io.SeekableInputStream;
 import com.cosyan.db.io.SeekableOutputStream;
 import com.cosyan.db.io.SeekableOutputStream.RAFSeekableOutputStream;
-import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
-import com.cosyan.db.lang.expr.TableDefinition.FlatRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.ViewDefinition;
 import com.cosyan.db.lang.sql.SelectStatement;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.lang.sql.SelectStatement.Select.TableColumns;
@@ -59,6 +58,7 @@ import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.References.FlatRefTableMeta;
+import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SeekableTableMeta;
@@ -349,30 +349,28 @@ public class MaterializedTable {
     columns.add(column);
   }
 
-  public AggRefTableMeta createAggRef(AggRefDefinition ref, String owner) throws ModelException {
+  public TableMeta createView(ViewDefinition ref, String owner) throws ModelException {
     checkName(ref.getName());
     ExposedTableMeta srcTableMeta = ref.getSelect().getTable().compile(reader(), owner);
-    ExposedTableMeta derivedTable;
-    if (ref.getSelect().getWhere().isPresent()) {
-      ColumnMeta whereColumn = ref.getSelect().getWhere().get().compileColumn(srcTableMeta);
-      derivedTable = new FilteredTableMeta(srcTableMeta, whereColumn);
+    if (srcTableMeta instanceof ReferencedMultiTableMeta) {
+      ExposedTableMeta derivedTable;
+      if (ref.getSelect().getWhere().isPresent()) {
+        ColumnMeta whereColumn = ref.getSelect().getWhere().get().compileColumn(srcTableMeta);
+        derivedTable = new FilteredTableMeta(srcTableMeta, whereColumn);
+      } else {
+        derivedTable = srcTableMeta;
+      }
+      GlobalAggrTableMeta aggrTable = new GlobalAggrTableMeta(
+          new KeyValueTableMeta(
+              derivedTable,
+              TableMeta.wholeTableKeys));
+      // Columns have aggregations, recompile with an AggrTable.
+      TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
+      return new AggRefTableMeta(aggrTable, tableColumns.getColumns());
     } else {
-      derivedTable = srcTableMeta;
+      TableColumns columns = Select.tableColumns(srcTableMeta, ref.getSelect().getColumns());
+      return new FlatRefTableMeta(srcTableMeta, columns.getColumns());
     }
-    GlobalAggrTableMeta aggrTable = new GlobalAggrTableMeta(
-        new KeyValueTableMeta(
-            derivedTable,
-            TableMeta.wholeTableKeys));
-    // Columns have aggregations, recompile with an AggrTable.
-    TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
-    return new AggRefTableMeta(aggrTable, tableColumns.getColumns());
-  }
-
-  public FlatRefTableMeta createFlatRef(FlatRefDefinition ref) throws ModelException {
-    checkName(ref.getName());
-    SeekableTableMeta tableMeta = reader();
-    TableColumns columns = Select.tableColumns(tableMeta, ref.getExprs());
-    return new FlatRefTableMeta(tableMeta, columns.getColumns());
   }
 
   public void addRef(TableRef ref) {

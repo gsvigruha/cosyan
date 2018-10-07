@@ -202,7 +202,7 @@ public class References {
     }
 
     @Override
-    public TableMeta tableMeta(TableWithOwner table) throws ModelException {
+    public ExposedTableMeta tableMeta(TableWithOwner table) throws ModelException {
       if (foreignKey.getRefTable().reverseForeignKeys().containsKey(table.getTable().getString())) {
         return new ReferencedMultiTableMeta(this,
             foreignKey.getRefTable().reverseForeignKey(table.getTable()));

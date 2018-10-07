@@ -101,7 +101,7 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
   }
 
   @Override
-  public TableMeta tableMeta(TableWithOwner table) throws ModelException {
+  public ExposedTableMeta tableMeta(TableWithOwner table) throws ModelException {
     if (tableName().equals(table.getTable().getString())) {
       return this;
     } else if (tableMeta.hasReverseForeignKey(table.getTable().getString())) {
