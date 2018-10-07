@@ -22,8 +22,8 @@ import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.Grants.GrantToken;
-import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.Ident;
 
@@ -41,7 +41,7 @@ public class GrantStatement {
     private final boolean withGrantOption;
 
     @Override
-    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException {
+    public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException {
       TableWithOwner tableWithOwner = table.resolve(authToken);
       if (!tableWithOwner.getTable().getString().equals("*") && tableWithOwner.getOwner().equals("*")) {
         throw new ModelException(String.format("Wrong table '%s'. If the table name is '*', the owner also has to be '*'.", tableWithOwner), tableWithOwner.getTable());

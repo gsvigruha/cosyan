@@ -24,11 +24,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.ParamServlet;
-import com.cosyan.ui.SessionHandler;
 import com.cosyan.ui.ParamServlet.Servlet;
+import com.cosyan.ui.SessionHandler;
 
 @Servlet(path = "users", doc = "Returns the list of uses and their grants.")
 public class UsersServlet extends ParamServlet {
@@ -46,13 +46,12 @@ public class UsersServlet extends ParamServlet {
       throws ServletException, IOException {
     try {
       Session session = sessionHandler.session(req.getParameter("token"));
-      MetaRepo metaRepo = session.metaRepo();
-      metaRepo.metaRepoReadLock();
+      MetaReader metaReader = session.metaRepo().metaRepoReadLock();
       try {
+        resp.getWriter().println(metaReader.collectUsers());
         resp.setStatus(HttpStatus.OK_200);
-        resp.getWriter().println(metaRepo.collectUsers());
       } finally {
-        metaRepo.metaRepoReadUnlock();
+        metaReader.metaRepoReadUnlock();
       }
     } catch (Exception e) {
       JSONObject error = new JSONObject();

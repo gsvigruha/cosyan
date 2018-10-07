@@ -28,6 +28,7 @@ import com.cosyan.db.logging.TransactionJournal;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.session.Session;
 
 public class GlobalTransaction extends Transaction {
@@ -42,11 +43,11 @@ public class GlobalTransaction extends Transaction {
   @Override
   public Result execute(MetaRepo metaRepo, Session session) {
     TransactionJournal journal = session.transactionJournal();
-    metaRepo.metaRepoWriteLock();
+    MetaWriter metaWriter = metaRepo.metaRepoWriteLock();
     try {
       try {
         journal.start(trxNumber);
-        Result result = globalStatement.execute(metaRepo, session.authToken());
+        Result result = globalStatement.execute(metaWriter, session.authToken());
         metaRepo.writeTables();
         return result;
       } catch (ModelException | GrantException e) {
@@ -69,7 +70,7 @@ public class GlobalTransaction extends Transaction {
       }
       return new CrashResult(e);
     } finally {
-      metaRepo.metaRepoWriteUnlock();
+      metaWriter.metaRepoWriteUnlock();
     }
   }
 

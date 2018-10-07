@@ -30,12 +30,12 @@ import org.json.JSONObject;
 
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.TableStat;
 import com.cosyan.db.session.Session;
 import com.cosyan.ui.ParamServlet;
-import com.cosyan.ui.SessionHandler;
 import com.cosyan.ui.ParamServlet.Servlet;
+import com.cosyan.ui.SessionHandler;
 
 @Servlet(path = "monitoring", doc = "Returns system monitoring info.")
 public class MonitoringServlet extends ParamServlet {
@@ -54,8 +54,7 @@ public class MonitoringServlet extends ParamServlet {
     try {
       String token = req.getParameter("token");
       Session session = sessionHandler.session(token);
-      MetaRepo metaRepo = session.metaRepo();
-      metaRepo.metaRepoReadLock();
+      MetaReader metaReader = session.metaRepo().metaRepoReadLock();
       try {
         JSONObject obj = new JSONObject();
         OperatingSystemMXBean operatingSystemMXBean = ManagementFactory.getOperatingSystemMXBean();
@@ -67,7 +66,7 @@ public class MonitoringServlet extends ParamServlet {
         obj.put("maxMemory", Runtime.getRuntime().maxMemory());
         {
           JSONArray tables = new JSONArray();
-          for (Entry<String, TableStat> entry : metaRepo.tableStats().entrySet()) {
+          for (Entry<String, TableStat> entry : metaReader.tableStats().entrySet()) {
             JSONObject table = new JSONObject();
             table.put("name", entry.getKey());
             table.put("fileSize", entry.getValue().getFileSize());
@@ -77,7 +76,7 @@ public class MonitoringServlet extends ParamServlet {
         }
         {
           JSONArray uniqueIndexes = new JSONArray();
-          for (Entry<String, ByteTrieStat> entry : metaRepo.uniqueIndexStats().entrySet()) {
+          for (Entry<String, ByteTrieStat> entry : metaReader.uniqueIndexStats().entrySet()) {
             JSONObject index = new JSONObject();
             index.put("name", entry.getKey());
             index.put("indexFileSize", entry.getValue().getIndexFileSize());
@@ -89,7 +88,7 @@ public class MonitoringServlet extends ParamServlet {
         }
         {
           JSONArray multiIndexes = new JSONArray();
-          for (Entry<String, ByteMultiTrieStat> entry : metaRepo.multiIndexStats().entrySet()) {
+          for (Entry<String, ByteMultiTrieStat> entry : metaReader.multiIndexStats().entrySet()) {
             JSONObject index = new JSONObject();
             index.put("name", entry.getKey());
             index.put("trieFileSize", entry.getValue().getTrieFileSize());
@@ -104,7 +103,7 @@ public class MonitoringServlet extends ParamServlet {
         resp.setStatus(HttpStatus.OK_200);
         resp.getWriter().println(obj);
       } finally {
-        metaRepo.metaRepoReadUnlock();
+        metaReader.metaRepoReadUnlock();
       }
     } catch (Exception e) {
       JSONObject error = new JSONObject();

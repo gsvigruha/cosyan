@@ -57,6 +57,7 @@ import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.Grants.GrantToken;
 import com.cosyan.db.meta.Grants.Method;
+import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
@@ -87,7 +88,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 
-public class MetaRepo implements MetaRepoExecutor, MetaReader {
+public class MetaRepo {
 
   private final Config config;
   private final HashMap<String, Map<String, MaterializedTable>> tables;
@@ -163,12 +164,6 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
         Charset.defaultCharset());
   }
 
-  public void resetAndReadTables() throws DBException {
-    this.uniqueIndexes.clear();
-    this.multiIndexes.clear();
-    readTables();
-  }
-
   public void readTables() throws DBException {
     Map<String, Map<String, MaterializedTable>> newTables;
     try {
@@ -199,42 +194,32 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
     }
   }
 
-  @Override
-  public ExposedTableMeta tableMeta(TableWithOwner table) throws ModelException {
-    return table(table).reader();
-  }
-
-  @Override
-  public TableProvider tableProvider(Ident ident, String owner) throws ModelException {
-    if (tables.containsKey(ident.getString())) {
-      // Check first is ident is an existing owner.
-      Map<String, MaterializedTable> userTables = tables.get(ident.getString());
-      return new TableProvider() {
-        private SeekableTableMeta reader(Ident ident2) throws ModelException {
-          if (!userTables.containsKey(ident2.getString())) {
-            throw new ModelException(String.format("Table '%s.%s' does not exist.", ident, ident2), ident2);
+  private void syncIndex(MaterializedTable tableMeta) throws IOException {
+    for (BasicColumn column : tableMeta.allColumns()) {
+      if (column.isIndexed()) {
+        if (column.isDeleted()) {
+          if (column.isUnique()) {
+            dropUniqueIndex(tableMeta, column);
+          } else {
+            dropMultiIndex(tableMeta, column);
           }
-          return userTables.get(ident2.getString()).reader();
+        } else {
+          registerIndex(tableMeta, column);
         }
-
-        @Override
-        public TableProvider tableProvider(Ident ident2, String owner) throws ModelException {
-          return reader(ident2);
-        }
-
-        @Override
-        public TableMeta tableMeta(TableWithOwner table) throws ModelException {
-          return reader(table.getTable());
-        }
-      };
-    } else if (tables.containsKey(owner)) {
-      // Otherwise check if it matches a table owned by the current user (owner).
-      Map<String, MaterializedTable> userTables = tables.get(owner);
-      if (userTables.containsKey(ident.getString())) {
-        return userTables.get(ident.getString()).reader();
       }
     }
-    throw new ModelException(String.format("Table '%s' does not exist.", ident), ident);
+  }
+
+  private IndexWriter registerIndex(MaterializedTable tableMeta, BasicColumn column)
+      throws IOException {
+    IndexWriter index;
+    if (column.isUnique()) {
+      index = registerUniqueIndex(tableMeta, column);
+    } else {
+      index = registerMultiIndex(tableMeta, column);
+    }
+    column.setIndexed(true);
+    return index;
   }
 
   @VisibleForTesting
@@ -244,16 +229,19 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
     return tables.get(owner).get(name);
   }
 
-  @Override
-  public MaterializedTable table(TableWithOwner table) throws ModelException {
-    if (!tables.containsKey(table.getOwner())) {
-      throw new ModelException(String.format("Table '%s' does not exist.", table), table.getTable());
+  @VisibleForTesting
+  public boolean hasTable(String tableName, String owner) {
+    if (!tables.containsKey(owner)) {
+      return false;
     }
-    Map<String, MaterializedTable> userTables = tables.get(table.getOwner());
-    if (!userTables.containsKey(table.getTable().getString())) {
-      throw new ModelException(String.format("Table '%s' does not exist.", table), table.getTable());
-    }
-    return userTables.get(table.getTable().getString());
+    return tables.get(owner).containsKey(tableName);
+  }
+
+  private List<MaterializedTable> getTables(AuthToken authToken) {
+    return allTables()
+        .stream()
+        .filter(t -> grants.hasAccess(t, authToken))
+        .collect(Collectors.toList());
   }
 
   public ImmutableMap<String, IndexReader> collectIndexReaders(MaterializedTable table) {
@@ -319,61 +307,6 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
     return builder.build();
   }
 
-  public void syncIndex(MaterializedTable tableMeta) throws IOException {
-    for (BasicColumn column : tableMeta.allColumns()) {
-      if (column.isIndexed()) {
-        if (column.isDeleted()) {
-          if (column.isUnique()) {
-            dropUniqueIndex(tableMeta, column);
-          } else {
-            dropMultiIndex(tableMeta, column);
-          }
-        } else {
-          registerIndex(tableMeta, column);
-        }
-      }
-    }
-  }
-
-  @Override
-  public void syncMeta(MaterializedTable tableMeta) {
-    for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
-      foreignKey.getRefTable().addReverseForeignKey(foreignKey.createReverse());
-    }
-    for (BooleanRule rule : tableMeta.rules().values()) {
-      rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */true);
-    }
-  }
-
-  public void registerTable(MaterializedTable tableMeta) throws IOException {
-    syncIndex(tableMeta);
-    syncMeta(tableMeta);
-    if (!tables.containsKey(tableMeta.owner())) {
-      tables.put(tableMeta.owner(), new HashMap<>());
-    }
-    tables.get(tableMeta.owner()).put(tableMeta.tableName(), tableMeta);
-    lockManager.registerLock(tableMeta);
-  }
-
-  public void dropTable(MaterializedTable tableMeta, AuthToken authToken) throws IOException, GrantException {
-    grants.checkOwner(tableMeta, authToken);
-    tables.get(tableMeta.owner()).remove(tableMeta.tableName());
-    tableMeta.drop();
-    for (BasicColumn column : tableMeta.allColumns()) {
-      if (column.isIndexed()) {
-        dropIndex(tableMeta, column, authToken);
-      }
-    }
-    lockManager.removeLock(tableMeta);
-  }
-
-  public boolean hasTable(String tableName, String owner) {
-    if (!tables.containsKey(owner)) {
-      return false;
-    }
-    return tables.get(owner).containsKey(tableName);
-  }
-
   private TableUniqueIndex registerUniqueIndex(MaterializedTable table, BasicColumn column)
       throws IOException {
     String indexName = table.fullName() + "." + column.getName();
@@ -408,30 +341,6 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
     return multiIndexes.get(indexName);
   }
 
-  @Override
-  public IndexWriter registerIndex(MaterializedTable tableMeta, BasicColumn column)
-      throws IOException {
-    IndexWriter index;
-    if (column.isUnique()) {
-      index = registerUniqueIndex(tableMeta, column);
-    } else {
-      index = registerMultiIndex(tableMeta, column);
-    }
-    column.setIndexed(true);
-    return index;
-  }
-
-  public void dropIndex(MaterializedTable tableMeta, BasicColumn column, AuthToken authToken)
-      throws IOException, GrantException {
-    grants.checkOwner(tableMeta, authToken);
-    if (column.isUnique()) {
-      dropUniqueIndex(tableMeta, column);
-    } else {
-      dropMultiIndex(tableMeta, column);
-    }
-    column.setIndexed(false);
-  }
-
   private void dropUniqueIndex(MaterializedTable table, BasicColumn column) throws IOException {
     String indexName = table.fullName() + "." + column.getName();
     if (!uniqueIndexes.containsKey(indexName)) {
@@ -450,20 +359,19 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
     index.drop();
   }
 
-  public void createGrant(GrantToken grant, AuthToken authToken) throws GrantException {
-    grants.createGrant(grant, authToken);
-  }
-
-  public void createUser(String username, String password, AuthToken authToken) throws GrantException {
-    grants.createUser(username, password, authToken);
-  }
-
-  public void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
+  private void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
     grants.checkAccess(resource, authToken);
   }
 
-  public boolean hasAccess(MaterializedTable tableMeta, AuthToken authToken, Method method) {
-    return grants.hasAccess(tableMeta, authToken, method);
+  private MaterializedTable table(TableWithOwner table) throws ModelException {
+    if (!tables.containsKey(table.getOwner())) {
+      throw new ModelException(String.format("Table '%s' does not exist.", table), table.getTable());
+    }
+    Map<String, MaterializedTable> userTables = tables.get(table.getOwner());
+    if (!userTables.containsKey(table.getTable().getString())) {
+      throw new ModelException(String.format("Table '%s' does not exist.", table), table.getTable());
+    }
+    return userTables.get(table.getTable().getString());
   }
 
   public Resources resources(MetaResources metaResources, AuthToken authToken) throws IOException {
@@ -501,13 +409,6 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
       }
     }
     return new Resources(readers.build(), writers.build(), metas.build());
-  }
-
-  public List<MaterializedTable> getTables(AuthToken authToken) {
-    return allTables()
-        .stream()
-        .filter(t -> grants.hasAccess(t, authToken))
-        .collect(Collectors.toList());
   }
 
   public static class ModelException extends Exception {
@@ -561,20 +462,219 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
     }
   }
 
-  public void metaRepoReadLock() {
+  public MetaReader metaRepoReadLock() {
     lockManager.metaRepoReadLock();
+    return new MetaReader() {
+
+      @Override
+      public MaterializedTable table(TableWithOwner table) throws ModelException {
+        return MetaRepo.this.table(table);
+      }
+
+      @Override
+      public ExposedTableMeta tableMeta(TableWithOwner table) throws ModelException {
+        return table(table).reader();
+      }
+
+      @Override
+      public TableProvider tableProvider(Ident ident, String owner) throws ModelException {
+        if (tables.containsKey(ident.getString())) {
+          // Check first is ident is an existing owner.
+          Map<String, MaterializedTable> userTables = tables.get(ident.getString());
+          return new TableProvider() {
+            private SeekableTableMeta reader(Ident ident2) throws ModelException {
+              if (!userTables.containsKey(ident2.getString())) {
+                throw new ModelException(String.format("Table '%s.%s' does not exist.", ident, ident2), ident2);
+              }
+              return userTables.get(ident2.getString()).reader();
+            }
+
+            @Override
+            public TableProvider tableProvider(Ident ident2, String owner) throws ModelException {
+              return reader(ident2);
+            }
+
+            @Override
+            public TableMeta tableMeta(TableWithOwner table) throws ModelException {
+              return reader(table.getTable());
+            }
+          };
+        } else if (tables.containsKey(owner)) {
+          // Otherwise check if it matches a table owned by the current user (owner).
+          Map<String, MaterializedTable> userTables = tables.get(owner);
+          if (userTables.containsKey(ident.getString())) {
+            return userTables.get(ident.getString()).reader();
+          }
+        }
+        throw new ModelException(String.format("Table '%s' does not exist.", ident), ident);
+      }
+
+      @Override
+      public ImmutableMap<String, TableStat> tableStats() throws IOException {
+        return Util.<String, MaterializedTable, TableStat>mapValuesIOException(tablesWithNames(), MaterializedTable::stat);
+      }
+
+      @Override
+      public ImmutableMap<String, ByteTrieStat> uniqueIndexStats() throws IOException {
+        return Util.<String, TableUniqueIndex, ByteTrieStat>mapValuesIOException(uniqueIndexes, TableUniqueIndex::stats);
+      }
+
+      @Override
+      public ImmutableMap<String, ByteMultiTrieStat> multiIndexStats() throws IOException {
+        return Util.<String, TableMultiIndex, ByteMultiTrieStat>mapValuesIOException(multiIndexes, TableMultiIndex::stats);
+      }
+
+      @Override
+      public IndexReader getIndex(String name) throws RuleException {
+        if (uniqueIndexes.containsKey(name)) {
+          return uniqueIndexes.get(name);
+        } else if (multiIndexes.containsKey(name)) {
+          return multiIndexes.get(name);
+        } else {
+          throw new RuleException(String.format("Invalid index '%s'.", name));
+        }
+      }
+
+      @Override
+      public JSONArray collectUsers() {
+        return grants.toJSON();
+      }
+
+      @Override
+      public List<MaterializedTable> getTables(AuthToken authToken) {
+        return MetaRepo.this.getTables(authToken);
+      }
+
+      @Override
+      public void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
+        MetaRepo.this.checkAccess(resource, authToken);
+      }
+
+      @Override
+      public void metaRepoReadUnlock() {
+        lockManager.metaRepoReadUnlock();
+      }
+    };
   }
 
-  public void metaRepoWriteLock() {
+  public MetaWriter metaRepoWriteLock() {
     lockManager.metaRepoWriteLock();
-  }
+    return new MetaWriter() {
 
-  public void metaRepoReadUnlock() {
-    lockManager.metaRepoReadUnlock();
-  }
+      @Override
+      public MaterializedTable table(TableWithOwner table) throws ModelException {
+        return MetaRepo.this.table(table);
+      }
 
-  public void metaRepoWriteUnlock() {
-    lockManager.metaRepoWriteUnlock();
+      @Override
+      public void syncMeta(MaterializedTable tableMeta) {
+        for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
+          foreignKey.getRefTable().addReverseForeignKey(foreignKey.createReverse());
+        }
+        for (BooleanRule rule : tableMeta.rules().values()) {
+          rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */true);
+        }
+      }
+
+      @Override
+      public IndexWriter registerIndex(MaterializedTable tableMeta, BasicColumn column)
+          throws IOException {
+        return MetaRepo.this.registerIndex(tableMeta, column);
+      }
+
+      @Override
+      public void syncIndex(MaterializedTable tableMeta) throws IOException {
+        MetaRepo.this.syncIndex(tableMeta);
+      }
+
+      @Override
+      public void registerTable(MaterializedTable tableMeta) throws IOException {
+        syncIndex(tableMeta);
+        syncMeta(tableMeta);
+        if (!tables.containsKey(tableMeta.owner())) {
+          tables.put(tableMeta.owner(), new HashMap<>());
+        }
+        tables.get(tableMeta.owner()).put(tableMeta.tableName(), tableMeta);
+        lockManager.registerLock(tableMeta);
+      }
+
+      @Override
+      public void dropIndex(MaterializedTable tableMeta, BasicColumn column, AuthToken authToken)
+          throws IOException, GrantException {
+        grants.checkOwner(tableMeta, authToken);
+        if (column.isUnique()) {
+          dropUniqueIndex(tableMeta, column);
+        } else {
+          dropMultiIndex(tableMeta, column);
+        }
+        column.setIndexed(false);
+      }
+
+      @Override
+      public void dropTable(MaterializedTable tableMeta, AuthToken authToken) throws IOException, GrantException {
+        grants.checkOwner(tableMeta, authToken);
+        tables.get(tableMeta.owner()).remove(tableMeta.tableName());
+        tableMeta.drop();
+        for (BasicColumn column : tableMeta.allColumns()) {
+          if (column.isIndexed()) {
+            dropIndex(tableMeta, column, authToken);
+          }
+        }
+        lockManager.removeLock(tableMeta);
+      }
+
+      @Override
+      public int maxRefIndex() {
+        return allTables().stream().mapToInt(t -> t.refs().values().stream().mapToInt(r -> r.getIndex()).max().orElse(0)).max().orElse(0);
+      }
+
+      @Override
+      public Config config() {
+        return config;
+      }
+
+      @Override
+      public boolean hasTable(String tableName, String owner) {
+        return MetaRepo.this.hasTable(tableName, owner);
+      }
+
+      @Override
+      public List<MaterializedTable> getTables(AuthToken authToken) {
+        return MetaRepo.this.getTables(authToken);
+      }
+
+      @Override
+      public void createGrant(GrantToken grant, AuthToken authToken) throws GrantException {
+        grants.createGrant(grant, authToken);
+      }
+
+      @Override
+      public void createUser(String username, String password, AuthToken authToken) throws GrantException {
+        grants.createUser(username, password, authToken);
+      }
+
+      @Override
+      public void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
+        MetaRepo.this.checkAccess(resource, authToken);
+      }
+
+      @Override
+      public boolean hasAccess(MaterializedTable tableMeta, AuthToken authToken, Method method) {
+        return grants.hasAccess(tableMeta, authToken, method);
+      }
+
+      @Override
+      public void resetAndReadTables() throws DBException {
+        uniqueIndexes.clear();
+        multiIndexes.clear();
+        readTables();
+      }
+
+      @Override
+      public void metaRepoWriteUnlock() {
+        lockManager.metaRepoWriteUnlock();
+      }
+    };
   }
 
   public boolean tryLock(MetaResources metaResources) {
@@ -583,36 +683,5 @@ public class MetaRepo implements MetaRepoExecutor, MetaReader {
 
   public void unlock(MetaResources metaResources) {
     lockManager.unlock(metaResources);
-  }
-
-  public ImmutableMap<String, TableStat> tableStats() throws IOException {
-    return Util.<String, MaterializedTable, TableStat>mapValuesIOException(tablesWithNames(), MaterializedTable::stat);
-  }
-
-  public ImmutableMap<String, ByteTrieStat> uniqueIndexStats() throws IOException {
-    return Util.<String, TableUniqueIndex, ByteTrieStat>mapValuesIOException(uniqueIndexes, TableUniqueIndex::stats);
-  }
-
-  public ImmutableMap<String, ByteMultiTrieStat> multiIndexStats() throws IOException {
-    return Util.<String, TableMultiIndex, ByteMultiTrieStat>mapValuesIOException(multiIndexes, TableMultiIndex::stats);
-  }
-
-  public JSONArray collectUsers() {
-    return grants.toJSON();
-  }
-
-  public IndexReader getIndex(String name) throws RuleException {
-    if (uniqueIndexes.containsKey(name)) {
-      return uniqueIndexes.get(name);
-    } else if (multiIndexes.containsKey(name)) {
-      return multiIndexes.get(name);
-    } else {
-      throw new RuleException(String.format("Invalid index '%s'.", name));
-    }
-  }
-
-  @Override
-  public int maxRefIndex() {
-    return allTables().stream().mapToInt(t -> t.refs().values().stream().mapToInt(r -> r.getIndex()).max().orElse(0)).max().orElse(0);
   }
 }

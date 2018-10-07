@@ -30,6 +30,7 @@ import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
 import com.cosyan.db.meta.Grants.GrantException;
+import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.session.IParser.ParserException;
 import com.cosyan.db.transaction.MetaResources.Resource;
@@ -44,12 +45,17 @@ public class MetaResourcesTest extends UnitTestBase {
       throws ModelException, ParserException, GrantException, IOException, ConfigException {
     DataTransaction transaction = transactionHandler
         .begin(parser.parseStatements(lexer.tokenize(sql)), metaRepo.config());
-    Iterable<Resource> ress = transaction.collectResources(metaRepo, token).all();
-    Map<String, Resource> map = new HashMap<>();
-    for (Resource res : ress) {
-      map.put(res.getResourceId(), res);
+    MetaReader metaReader = metaRepo.metaRepoReadLock();
+    try {
+      Iterable<Resource> ress = transaction.collectResources(metaReader, token).all();
+      Map<String, Resource> map = new HashMap<>();
+      for (Resource res : ress) {
+        map.put(res.getResourceId(), res);
+      }
+      return map;
+    } finally {
+      metaReader.metaRepoReadUnlock();
     }
-    return map;
   }
 
   @Test

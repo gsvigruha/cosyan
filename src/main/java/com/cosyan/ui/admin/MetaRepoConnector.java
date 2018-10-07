@@ -21,7 +21,7 @@ import org.json.JSONObject;
 import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.conf.Config.ConfigException;
 import com.cosyan.db.meta.MaterializedTable;
-import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.MetaReader;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
@@ -42,71 +42,75 @@ public class MetaRepoConnector {
 
   public JSONObject tables(String userToken) throws ModelException, NoSessionExpression, AuthException, ConfigException {
     Session session = sessionHandler.session(userToken);
-    MetaRepo metaRepo = session.metaRepo();
-    JSONObject list = new JSONObject();
-    for (MaterializedTable tableMeta : metaRepo.getTables(session.authToken())) {
-      JSONObject tableObj = new JSONObject();
-      tableObj.put("name", tableMeta.fullName());
-      JSONArray columns = new JSONArray();
-      for (BasicColumn column : tableMeta.columns().values()) {
-        JSONObject columnObj = new JSONObject();
-        columnObj.put("name", column.getName());
-        columnObj.put("type", column.getType().getName());
-        columnObj.put("nullable", column.isNullable());
-        columnObj.put("unique", column.isUnique());
-        columnObj.put("indexed", column.isIndexed());
-        columnObj.put("immutable", column.isImmutable());
-        columns.put(columnObj);
-      }
-      tableObj.put("columns", columns);
+    MetaReader metaReader = session.metaRepo().metaRepoReadLock();
+    try {
+      JSONObject list = new JSONObject();
+      for (MaterializedTable tableMeta : metaReader.getTables(session.authToken())) {
+        JSONObject tableObj = new JSONObject();
+        tableObj.put("name", tableMeta.fullName());
+        JSONArray columns = new JSONArray();
+        for (BasicColumn column : tableMeta.columns().values()) {
+          JSONObject columnObj = new JSONObject();
+          columnObj.put("name", column.getName());
+          columnObj.put("type", column.getType().getName());
+          columnObj.put("nullable", column.isNullable());
+          columnObj.put("unique", column.isUnique());
+          columnObj.put("indexed", column.isIndexed());
+          columnObj.put("immutable", column.isImmutable());
+          columns.put(columnObj);
+        }
+        tableObj.put("columns", columns);
 
-      if (tableMeta.primaryKey().isPresent()) {
-        tableObj.put("primaryKeys", tableMeta.primaryKey().get().getName().getString());
-      }
+        if (tableMeta.primaryKey().isPresent()) {
+          tableObj.put("primaryKeys", tableMeta.primaryKey().get().getName().getString());
+        }
 
-      JSONArray foreignKeys = new JSONArray();
-      for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
-        JSONObject fkObj = new JSONObject();
-        fkObj.put("name", foreignKey.getName());
-        fkObj.put("column", foreignKey.getColumn().getName());
-        fkObj.put("revName", foreignKey.getRevName());
-        fkObj.put("refTable", foreignKey.getRefTable().fullName());
-        fkObj.put("refColumn", foreignKey.getRefColumn().getName());
-        foreignKeys.put(fkObj);
-      }
-      tableObj.put("foreignKeys", foreignKeys);
+        JSONArray foreignKeys = new JSONArray();
+        for (ForeignKey foreignKey : tableMeta.foreignKeys().values()) {
+          JSONObject fkObj = new JSONObject();
+          fkObj.put("name", foreignKey.getName());
+          fkObj.put("column", foreignKey.getColumn().getName());
+          fkObj.put("revName", foreignKey.getRevName());
+          fkObj.put("refTable", foreignKey.getRefTable().fullName());
+          fkObj.put("refColumn", foreignKey.getRefColumn().getName());
+          foreignKeys.put(fkObj);
+        }
+        tableObj.put("foreignKeys", foreignKeys);
 
-      JSONArray reverseForeignKeys = new JSONArray();
-      for (ReverseForeignKey reverseForeignKey : tableMeta.reverseForeignKeys().values()) {
-        JSONObject fkObj = new JSONObject();
-        fkObj.put("name", reverseForeignKey.getName());
-        fkObj.put("revName", reverseForeignKey.getRevName());
-        fkObj.put("refTable", reverseForeignKey.getRefTable().fullName());
-        fkObj.put("refColumn", reverseForeignKey.getRefColumn().getName());
-        reverseForeignKeys.put(fkObj);
-      }
-      tableObj.put("reverseForeignKeys", reverseForeignKeys);
+        JSONArray reverseForeignKeys = new JSONArray();
+        for (ReverseForeignKey reverseForeignKey : tableMeta.reverseForeignKeys().values()) {
+          JSONObject fkObj = new JSONObject();
+          fkObj.put("name", reverseForeignKey.getName());
+          fkObj.put("revName", reverseForeignKey.getRevName());
+          fkObj.put("refTable", reverseForeignKey.getRefTable().fullName());
+          fkObj.put("refColumn", reverseForeignKey.getRefColumn().getName());
+          reverseForeignKeys.put(fkObj);
+        }
+        tableObj.put("reverseForeignKeys", reverseForeignKeys);
 
-      JSONArray aggrefs = new JSONArray();
-      for (TableRef aggref : tableMeta.refs().values()) {
-        JSONObject aggrefsObj = new JSONObject();
-        aggrefsObj.put("name", aggref.getName());
-        aggrefsObj.put("expr", aggref.getExpr());
-        aggrefs.put(aggrefsObj);
+        JSONArray aggrefs = new JSONArray();
+        for (TableRef aggref : tableMeta.refs().values()) {
+          JSONObject aggrefsObj = new JSONObject();
+          aggrefsObj.put("name", aggref.getName());
+          aggrefsObj.put("expr", aggref.getExpr());
+          aggrefs.put(aggrefsObj);
+        }
+        tableObj.put("aggRefs", aggrefs);
+
+        JSONArray rules = new JSONArray();
+        for (BooleanRule rule : tableMeta.rules().values()) {
+          JSONObject ruleObj = new JSONObject();
+          ruleObj.put("name", rule.getName());
+          ruleObj.put("expr", rule.getExpr().print());
+          rules.put(ruleObj);
+        }
+        tableObj.put("rules", rules);
+
+        list.put(tableMeta.fullName(), tableObj);
       }
-      tableObj.put("aggRefs", aggrefs);
-      
-      JSONArray rules = new JSONArray();
-      for (BooleanRule rule : tableMeta.rules().values()) {
-        JSONObject ruleObj = new JSONObject();
-        ruleObj.put("name", rule.getName());
-        ruleObj.put("expr", rule.getExpr().print());
-        rules.put(ruleObj);
-      }
-      tableObj.put("rules", rules);
-      
-      list.put(tableMeta.fullName(), tableObj);
+      return list;
+    } finally {
+      metaReader.metaRepoReadUnlock();
     }
-    return list;
   }
 }

@@ -35,10 +35,9 @@ import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.TableColumnDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.MaterializedTable;
-import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
-import com.cosyan.db.meta.MetaRepoExecutor;
+import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
@@ -68,7 +67,7 @@ public class CreateStatement {
     private final Optional<Expression> partitioning;
 
     @Override
-    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
+    public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException {
       if (metaRepo.hasTable(name.getString(), authToken.username())) {
         throw new ModelException(String.format("Table '%s.%s' already exists.", authToken.username(), name), name);
       }
@@ -143,7 +142,7 @@ public class CreateStatement {
     }
 
     private void addConstraints(
-        MetaRepo metaRepo,
+        MetaWriter metaRepo,
         MaterializedTable tableMeta,
         List<ConstraintDefinition> constraints,
         AuthToken authToken)
@@ -191,7 +190,7 @@ public class CreateStatement {
     private IndexWriter indexWriter;
 
     @Override
-    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException {
       tableWithOwner = tableColumn.getTable().resolve(authToken);
       MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
       basicColumn = tableMeta.column(tableColumn.getColumn());
@@ -201,7 +200,7 @@ public class CreateStatement {
     }
 
     @Override
-    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
+    public Result executeData(MetaWriter metaRepo, Resources resources) throws RuleException, IOException {
       writer = resources.writer(tableWithOwner.resourceId());
       writer.buildIndex(tableColumn.getColumn().getString(), indexWriter);
       return Result.META_OK;

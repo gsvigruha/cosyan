@@ -28,10 +28,9 @@ import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MaterializedTable;
-import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
-import com.cosyan.db.meta.MetaRepoExecutor;
+import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
@@ -56,7 +55,7 @@ public class AlterStatementConstraints {
     private IndexWriter indexWriter;
 
     @Override
-    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException, IOException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException {
       tableWithOwner = table.resolve(authToken);
       MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
       TableWithOwner refTableWithOwner = constraint.getRefTable().resolve(authToken);
@@ -67,7 +66,7 @@ public class AlterStatementConstraints {
     }
 
     @Override
-    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
+    public Result executeData(MetaWriter metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(tableWithOwner.resourceId());
       writer = resources.writer(tableWithOwner.resourceId());
       writer.checkForeignKey(foreignKey, resources);
@@ -95,7 +94,7 @@ public class AlterStatementConstraints {
     private TableWriter writer;
 
     @Override
-    public MetaResources executeMeta(MetaRepo metaRepo, AuthToken authToken) throws ModelException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException {
       tableWithOwner = table.resolve(authToken);
       MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
       rule = tableMeta.createRule(constraint);
@@ -103,7 +102,7 @@ public class AlterStatementConstraints {
     }
 
     @Override
-    public Result executeData(MetaRepoExecutor metaRepo, Resources resources) throws RuleException, IOException {
+    public Result executeData(MetaWriter metaRepo, Resources resources) throws RuleException, IOException {
       MaterializedTable tableMeta = resources.meta(tableWithOwner.resourceId());
       writer = resources.writer(tableWithOwner.resourceId());
       writer.checkRule(rule, resources);
@@ -125,7 +124,7 @@ public class AlterStatementConstraints {
     private final Ident constraint;
 
     @Override
-    public Result execute(MetaRepo metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
+    public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
       MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
       if (tableMeta.hasRule(constraint.getString())) {
         tableMeta.dropRule(constraint.getString());
