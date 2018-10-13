@@ -16,6 +16,7 @@
 package com.cosyan.db.model;
 
 import com.cosyan.db.meta.MaterializedTable;
+import com.google.common.collect.ImmutableList;
 
 import lombok.Data;
 
@@ -84,5 +85,12 @@ public class Keys {
     public ForeignKey getReverse() {
       return refTable.foreignKeys().get(revName);
     }
+  }
+
+  @Data
+  public static class GroupByKey {
+    private final String name;
+    private final MaterializedTable table;
+    private final ImmutableList<ColumnMeta> columns;
   }
 }

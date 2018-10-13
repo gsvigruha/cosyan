@@ -21,10 +21,13 @@ import com.cosyan.db.index.ByteTrie.IndexException;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.MultiLeafTries.DoubleMultiIndex;
 import com.cosyan.db.index.MultiLeafTries.LongMultiIndex;
+import com.cosyan.db.index.MultiLeafTries.MultiColumnMultiIndex;
 import com.cosyan.db.index.MultiLeafTries.StringMultiIndex;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.Keys.GroupByKey;
+import com.cosyan.db.transaction.Resources;
 
 public abstract class TableMultiIndex implements IndexReader, IndexWriter {
   public abstract void put(Object key, long fileIndex) throws IOException, IndexException;
@@ -214,6 +217,75 @@ public abstract class TableMultiIndex implements IndexReader, IndexWriter {
     @Override
     public boolean contains(Object key) throws IOException {
       return index.get((Double) key).length > 0;
+    }
+
+    @Override
+    public ByteMultiTrieStat stats() throws IOException {
+      return index.stats();
+    }
+
+    @Override
+    public void drop() throws IOException {
+      index.drop();
+    }
+
+    @Override
+    public DataType<?> keyDataType() {
+      return DataTypes.StringType;
+    }
+  }
+
+  public static class MultiColumnTableMultiIndex extends TableMultiIndex {
+
+    private final GroupByKey groupByKey;
+    private final MultiColumnMultiIndex index;
+
+    public MultiColumnTableMultiIndex(GroupByKey groupByKey, MultiColumnMultiIndex index) {
+      this.groupByKey = groupByKey;
+      this.index = index;
+    }
+
+    public Object[] resolveKey(Object[] values, Resources resources) throws IOException {
+      Object[] key = new Object[groupByKey.getColumns().size()];
+      for (int i = 0; i < groupByKey.getColumns().size(); i++) {
+        key[i] = groupByKey.getColumns().get(i).value(values, resources, TableContext.EMPTY);
+      }
+      return key;
+    }
+
+    @Override
+    public void put(Object key, long fileIndex) throws IOException, IndexException {
+      index.put((Object[]) key, fileIndex);
+    }
+
+    @Override
+    public boolean delete(Object key) throws IOException {
+      return index.delete((Object[]) key);
+    }
+
+    @Override
+    public boolean delete(Object key, long fileIndex) throws IOException {
+      return index.delete((Object[]) key, fileIndex);
+    }
+
+    @Override
+    public long[] get(Object key) throws IOException {
+      return index.get((Object[]) key);
+    }
+
+    @Override
+    public void commit() throws IOException {
+      index.commit();
+    }
+
+    @Override
+    public void rollback() {
+      index.rollback();
+    }
+
+    @Override
+    public boolean contains(Object key) throws IOException {
+      return index.get((Object[]) key).length > 0;
     }
 
     @Override

@@ -51,6 +51,7 @@ import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.TableContext;
 import com.cosyan.db.model.TableMultiIndex;
+import com.cosyan.db.model.TableMultiIndex.MultiColumnTableMultiIndex;
 import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.base.Predicates;
@@ -68,6 +69,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   private final ImmutableList<BasicColumn> activeColumns;
   private final ImmutableMap<String, TableUniqueIndex> uniqueIndexes;
   private final ImmutableMap<String, TableMultiIndex> multiIndexes;
+  private final ImmutableMap<String, MultiColumnTableMultiIndex> extraIndexes;
   private final ImmutableMultimap<String, IndexReader> foreignIndexes;
   private final ImmutableMultimap<String, IndexReader> reversedForeignIndexes;
   private final ImmutableMap<String, BooleanRule> rules;
@@ -89,6 +91,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       ImmutableList<BasicColumn> allColumns,
       ImmutableMap<String, TableUniqueIndex> uniqueIndexes,
       ImmutableMap<String, TableMultiIndex> multiIndexes,
+      ImmutableMap<String, MultiColumnTableMultiIndex> extraIndexes,
       ImmutableMultimap<String, IndexReader> foreignIndexes,
       ImmutableMultimap<String, IndexReader> reversedForeignIndexes,
       ImmutableMap<String, BooleanRule> rules,
@@ -106,6 +109,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     this.activeColumns = allColumns.stream().filter(c -> !c.isDeleted()).collect(ImmutableList.toImmutableList());
     this.uniqueIndexes = uniqueIndexes;
     this.multiIndexes = multiIndexes;
+    this.extraIndexes = extraIndexes;
     this.foreignIndexes = foreignIndexes;
     this.reversedForeignIndexes = reversedForeignIndexes;
     this.rules = rules;
@@ -163,6 +167,13 @@ public class TableWriter extends SeekableTableReader implements TableIO {
             }
           }
         }
+      }
+    }
+    for (MultiColumnTableMultiIndex index : extraIndexes.values()) {
+      try {
+        index.put(index.resolveKey(values, resources), fileIndex);
+      } catch (IndexException e) {
+        throw new RuleException(e);
       }
     }
     byte[] data = Serializer.serialize(values, allColumns);
@@ -223,6 +234,13 @@ public class TableWriter extends SeekableTableReader implements TableIO {
         index.invalidate();
       }
     }
+    for (TableMultiIndex index : extraIndexes.values()) {
+      try {
+        index.commit();
+      } catch (IOException e) {
+        index.invalidate();
+      }
+    }
   }
 
   public void rollback() {
@@ -269,6 +287,9 @@ public class TableWriter extends SeekableTableReader implements TableIO {
           }
         }
       }
+    }
+    for (MultiColumnTableMultiIndex index : extraIndexes.values()) {
+      index.delete(index.resolveKey(record.getValues(), resources), record.getFilePointer());
     }
     if (checkReverseRuleDependencies) {
       RuleDependencyReader ruleDependencyReader = new RuleDependencyReader(resources, reverseRules);

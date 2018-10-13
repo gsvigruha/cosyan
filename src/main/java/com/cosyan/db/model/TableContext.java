@@ -29,8 +29,12 @@ public class TableContext {
 
   private final ImmutableMap<String, Object[]> parentValues;
 
-  public TableContext(ImmutableMap<String, Object[]> parentValues) {
+  private TableContext(ImmutableMap<String, Object[]> parentValues) {
     this.parentValues = parentValues;
+  }
+
+  public boolean has(String key) {
+	  return parentValues.containsKey(key);
   }
 
   public Object[] values(String key) {

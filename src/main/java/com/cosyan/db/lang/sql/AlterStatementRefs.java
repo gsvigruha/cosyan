@@ -49,10 +49,11 @@ public class AlterStatementRefs {
     private TableMeta refTableMeta;
 
     @Override
-    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
       tableWithOwner = table.resolve(authToken);
       MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
       refTableMeta = tableMeta.createView(ref, tableMeta.owner());
+      metaRepo.syncIndex(tableMeta);
       return MetaResources.tableMeta(tableMeta);
     }
 
