@@ -247,7 +247,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t15 (a integer, constraint fk_a foreign key (a) references t14);");
     execute("insert into t14 values ('x');");
     execute("insert into t15 values (0);");
-    execute("alter table t14 add aggref s (select count(1) as c from rev_fk_a);");
+    execute("alter table t14 add view s (select count(1) as c from rev_fk_a);");
     QueryResult result = query("select a, b, s.c from t14;");
     assertHeader(new String[] { "a", "b", "c" }, result);
     assertValues(new Object[][] { { 0L, "x", 1L } }, result);
@@ -329,7 +329,7 @@ public class AlterStatementTest extends UnitTestBase {
   public void testAlterTableAddConstraintRefRuleWithData() throws Exception {
     execute("create table t22 (a integer, constraint pk_a primary key (a));");
     execute("create table t23 (a integer, b integer, constraint fk_a foreign key (a) references t22);");
-    execute("alter table t22 add aggref s (select sum(b) as b from rev_fk_a);");
+    execute("alter table t22 add view s (select sum(b) as b from rev_fk_a);");
 
     execute("insert into t22 values (1);");
     execute("insert into t23 values (1, 2), (1, 2);");
@@ -351,7 +351,7 @@ public class AlterStatementTest extends UnitTestBase {
   public void testAlterTableAddConstraintRefRuleWithBadData() throws Exception {
     execute("create table t24 (a integer, constraint pk_a primary key (a));");
     execute("create table t25 (a integer, b integer, constraint fk_a foreign key (a) references t24);");
-    execute("alter table t24 add aggref s (select sum(b) as b from rev_fk_a);");
+    execute("alter table t24 add view s (select sum(b) as b from rev_fk_a);");
 
     execute("insert into t24 values (1);");
     execute("insert into t25 values (1, 2), (1, 2), (1, 2);");
@@ -453,7 +453,7 @@ public class AlterStatementTest extends UnitTestBase {
       assertNotNull(metaRepo.table("admin", "t33").foreignKeys().get("fk_a"));
     }
 
-    execute("alter table t32 add aggref s (select count(1) as cnt from rev_fk_a);");
+    execute("alter table t32 add view s (select count(1) as cnt from rev_fk_a);");
     {
       ErrorResult result = error("alter table t33 drop constraint fk_a;");
       assertEquals(
@@ -468,21 +468,21 @@ public class AlterStatementTest extends UnitTestBase {
   public void testAlterTableDropAggRef() throws Exception {
     execute("create table t34 (a id, b varchar);");
     execute("create table t35 (a integer, constraint fk_a foreign key (a) references t34);");
-    execute("alter table t34 add aggref s (select count(1) as cnt from rev_fk_a);");
+    execute("alter table t34 add view s (select count(1) as cnt from rev_fk_a);");
     execute("alter table t34 add constraint c check(s.cnt < 5);");
 
     MaterializedTable t34 = metaRepo.table("admin", "t34");
 
     assertEquals("s", t34.refs().get("s").getName());
 
-    ErrorResult result = error("alter table t34 drop aggref s;");
+    ErrorResult result = error("alter table t34 drop view s;");
     assertEquals(
-        "[28, 29]: Cannot drop ref 's', check 'c [(s.cnt < 5)]' fails.\n[1, 2]: Column 's' not found in table 'admin.t34'.",
+        "[26, 27]: Cannot drop ref 's', check 'c [(s.cnt < 5)]' fails.\n[1, 2]: Column 's' not found in table 'admin.t34'.",
         result.getError().getMessage());
     assertNotNull(metaRepo.table("admin", "t34").refs().get("s"));
 
     execute("alter table t34 drop constraint c;");
-    execute("alter table t34 drop aggref s;");
+    execute("alter table t34 drop view s;");
     assertNull(metaRepo.table("admin", "t34").refs().get("s"));
   }
 
@@ -491,7 +491,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t36 (c integer, a integer, constraint pk_a primary key (a));");
     execute("create table t37 (b integer, a integer, constraint fk1 foreign key (a) references t36);");
     execute("create table t38 (a integer, constraint fk2 foreign key (a) references t36);");
-    execute("alter table t38 add aggref s (select sum(b) as s from fk2.rev_fk1);");
+    execute("alter table t38 add view s (select sum(b) as s from fk2.rev_fk1);");
 
     execute("insert into t36 values (null, 1), (null, 2), (null, 3);");
     execute("insert into t37 values (2, 1), (2, 1), (5, 2);");
@@ -508,7 +508,7 @@ public class AlterStatementTest extends UnitTestBase {
   public void testAlterTableAggRefBackRef() throws Exception {
     execute("create table t39 (a integer, b integer, constraint pk_a primary key (a));");
     execute("create table t40 (a integer, b integer, constraint fk_a foreign key (a) references t39);");
-    execute("alter table t39 add aggref s (select sum(b) as s from rev_fk_a where fk_a.b = b);");
+    execute("alter table t39 add view s (select sum(b) as s from rev_fk_a where fk_a.b = b);");
 
     execute("insert into t39 values (1, 1), (2, 2);");
     execute("insert into t40 values (1, 1), (1, 2), (2, 1), (2, 3);");
@@ -525,8 +525,8 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t41 (a integer, constraint pk_a primary key (a));");
     execute("create table t42 (a integer, b integer, constraint fk1 foreign key (a) references t41);");
     execute("create table t43 (a integer, constraint fk2 foreign key (a) references t41);");
-    execute("alter table t41 add aggref s (select sum(b) as s from rev_fk1);");
-    execute("alter table t43 add aggref s (select sum(fk1.s.s) as s from fk2.rev_fk1);");
+    execute("alter table t41 add view s (select sum(b) as s from rev_fk1);");
+    execute("alter table t43 add view s (select sum(fk1.s.s) as s from fk2.rev_fk1);");
 
     execute("insert into t41 values (1), (2), (3);");
     execute("insert into t42 values (1, 2), (1, 2), (2, 5);");
@@ -544,7 +544,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t44 (a varchar, d integer, constraint pk_a primary key (a));");
     execute("create table t45 (a varchar, b integer, constraint fk1 foreign key (a) references t44);");
     execute("create table t46 (a varchar, c integer, constraint fk2 foreign key (a) references t44);");
-    execute("alter table t46 add aggref s (select sum(b * parent.c) as s from fk2.rev_fk1);");
+    execute("alter table t46 add view s (select sum(b * parent.c) as s from fk2.rev_fk1);");
 
     execute("insert into t44 values ('x', 100), ('y', 200), ('z', 300);");
     execute("insert into t45 values ('x', 2), ('x', 2), ('y', 5);");
@@ -556,7 +556,7 @@ public class AlterStatementTest extends UnitTestBase {
       assertValues(new Object[][] { { "x", 40L }, { "y", 100L }, { "z", null } }, result);
     }
 
-    execute("alter table t44 add aggref s (select sum(b) as s from rev_fk1 where parent.d = 100);");
+    execute("alter table t44 add view s (select sum(b) as s from rev_fk1 where parent.d = 100);");
     {
       QueryResult result = query("select a, s.s from t44;");
       assertHeader(new String[] { "a", "s" }, result);
@@ -577,7 +577,7 @@ public class AlterStatementTest extends UnitTestBase {
   public void testAlterTableAggRefAggrColumnName() throws Exception {
     execute("create table t49 (a integer, constraint pk_a primary key (a));");
     execute("create table t50 (a integer, b integer, constraint fk1 foreign key (a) references t49);");
-    execute("alter table t49 add aggref s (select sum(b) as sum from rev_fk1);");
+    execute("alter table t49 add view s (select sum(b) as sum from rev_fk1);");
 
     execute("insert into t49 values (1);");
     execute("insert into t50 values (1, 2), (1, 2);");
@@ -603,7 +603,7 @@ public class AlterStatementTest extends UnitTestBase {
   public void testAlterTableAggRefParentOnSameTable() throws Exception {
     execute("create table t51 (a varchar, constraint pk_a primary key (a));");
     execute("create table t52 (b integer, a varchar, constraint fk1 foreign key (a) references t51);");
-    execute("alter table t52 add aggref s (select count(1) as c from fk1.rev_fk1 where b < parent.b);");
+    execute("alter table t52 add view s (select count(1) as c from fk1.rev_fk1 where b < parent.b);");
 
     execute("insert into t51 values ('x'), ('y');");
     execute("insert into t52 values (1, 'x'), (2, 'x'), (3, 'x'), (1, 'y'), (2, 'y');");
@@ -619,7 +619,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t53 (a integer, constraint pk_a primary key (a));");
     execute("create table t54 (b integer, a integer, constraint fk1 foreign key (a) references t53);");
     execute("create table t55 (c integer, a integer, constraint fk2 foreign key (a) references t53);");
-    execute("alter table t55 add aggref s (select sum(b) as s from fk2.rev_fk1);");
+    execute("alter table t55 add view s (select sum(b) as s from fk2.rev_fk1);");
     execute("alter table t55 add constraint c_1 check(s.s < c);");
 
     execute("insert into t53 values (1);");
@@ -636,7 +636,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t57 (a integer, constraint fk_a foreign key (a) references t56);");
     execute("insert into t56 values (10);");
     execute("insert into t57 values (0);");
-    execute("alter table t57 add flatref r (fk_a.b + 1 as c);");
+    execute("alter table t57 add view r (select fk_a.b + 1 as c from t57);");
     QueryResult result = query("select r.c from t57;");
     assertHeader(new String[] { "c" }, result);
     assertValues(new Object[][] { { 11L } }, result);
@@ -646,8 +646,8 @@ public class AlterStatementTest extends UnitTestBase {
   public void testAlterTableFlatRefWithAggRef() throws Exception {
     execute("create table t58 (a id, b integer);");
     execute("create table t59 (a integer, constraint fk_a foreign key (a) references t58);");
-    execute("alter table t59 add flatref f1 (fk_a.b + 1 as x);");
-    execute("alter table t58 add aggref s (select sum(f1.x) as sx from rev_fk_a);");
+    execute("alter table t59 add view f1 (select fk_a.b + 1 as x from t59);");
+    execute("alter table t58 add view s (select sum(f1.x) as sx from rev_fk_a);");
 
     execute("insert into t58 values (10);");
     execute("insert into t59 values (0), (0);");
@@ -661,6 +661,21 @@ public class AlterStatementTest extends UnitTestBase {
       QueryResult result = query("select a, f1.* from t59;");
       assertHeader(new String[] { "a", "x" }, result);
       assertValues(new Object[][] { { 0L, 11L }, { 0L, 11L } }, result);
+    }
+  }
+
+  @Test
+  public void testAlterTableAggView() throws Exception {
+    execute("create table t60 (a integer, b integer);");
+    execute("alter table t60 add view s (select a, sum(b) as sb from t60 group by a);");
+
+    execute("insert into t60 values (0, 10), (0, 10), (1, 15);");
+
+    {
+      QueryResult result = query("select s.a, s.sb from t60;");
+      System.out.println(result.prettyPrint());
+      assertHeader(new String[] { "a", "sb" }, result);
+      assertValues(new Object[][] { { 0L, 20L }, { 0L, 20L }, { 1L, 15L } }, result);
     }
   }
 }

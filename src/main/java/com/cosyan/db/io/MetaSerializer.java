@@ -31,11 +31,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.cosyan.db.conf.Config;
-import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
-import com.cosyan.db.lang.expr.TableDefinition.FlatRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.ViewDefinition;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -107,7 +106,6 @@ public class MetaSerializer {
     obj.put("name", ref.getName());
     obj.put("expr", ref.getExpr() + ";");
     obj.put("index", ref.getIndex());
-    obj.put("aggr", ref.isAggr());
     return obj;
   }
 
@@ -189,23 +187,14 @@ public class MetaSerializer {
 
   public void loadRef(MaterializedTable table, JSONObject refObj)
       throws JSONException, IOException, ModelException, ParserException {
-    boolean aggr = refObj.getBoolean("aggr");
     String name = refObj.getString("name");
     String expr = refObj.getString("expr");
     TableMeta refTableMeta;
-    if (aggr) {
-      AggRefDefinition ref = new AggRefDefinition(
-          new Ident(name),
-          parser.parseSelect(lexer.tokenizeExpression(expr)));
-      refTableMeta = table.createAggRef(ref, table.owner());
-    } else {
-      FlatRefDefinition ref = new FlatRefDefinition(
-          new Ident(name),
-          parser.parseExpressions(lexer.tokenizeExpression(expr)));
-      refTableMeta = table.createFlatRef(ref);
-    }
-    table.addRef(new TableRef(
-        name, expr, refObj.getInt("index"), aggr, refTableMeta));
+    ViewDefinition ref = new ViewDefinition(
+        new Ident(name),
+        parser.parseSelect(lexer.tokenizeExpression(expr)));
+    refTableMeta = table.createView(ref, table.owner());
+    table.addRef(new TableRef(name, expr, refObj.getInt("index"), refTableMeta));
   }
 
   public void loadRules(MaterializedTable table, JSONObject obj)

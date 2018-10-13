@@ -267,7 +267,7 @@ public class SelectStatement extends Statement {
       }
     }
 
-    private KeyValueTableMeta keyValueTable(
+    public static KeyValueTableMeta keyValueTable(
         ExposedTableMeta sourceTable,
         ImmutableList<Expression> groupBy) throws ModelException {
       ImmutableMap.Builder<String, ColumnMeta> keyColumnsBuilder = ImmutableMap.builder();
@@ -280,9 +280,7 @@ public class SelectStatement extends Statement {
         keyColumnsBuilder.put(name, keyColumn);
       }
       ImmutableMap<String, ColumnMeta> keyColumns = keyColumnsBuilder.build();
-      return new KeyValueTableMeta(
-          sourceTable,
-          keyColumns);
+      return new KeyValueTableMeta(sourceTable, keyColumns);
     }
 
     private ImmutableList<OrderColumn> orderColumns(
@@ -344,7 +342,7 @@ public class SelectStatement extends Statement {
 
     @Override
     public ExposedTableMeta compile(TableProvider tableProvider, String owner) throws ModelException {
-      return (ExposedTableMeta) tableProvider.tableMeta(TableWithOwner.of(ident, owner));
+      return tableProvider.tableMeta(TableWithOwner.of(ident, owner));
     }
 
     @Override

@@ -86,9 +86,7 @@ public class Tokens {
 
   public static String KEY = "key";
 
-  public static String AGGREF = "aggref";
-
-  public static String FLATREF = "flatref";
+  public static String VIEW = "view";
 
   public static String PARENT = "parent";
 

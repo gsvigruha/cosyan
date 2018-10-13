@@ -29,6 +29,7 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
+import com.cosyan.db.model.AggrTables.KeyValueAggrTableMeta;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Keys.ForeignKey;
@@ -202,7 +203,7 @@ public class References {
     }
 
     @Override
-    public TableMeta tableMeta(TableWithOwner table) throws ModelException {
+    public ExposedTableMeta tableMeta(TableWithOwner table) throws ModelException {
       if (foreignKey.getRefTable().reverseForeignKeys().containsKey(table.getTable().getString())) {
         return new ReferencedMultiTableMeta(this,
             foreignKey.getRefTable().reverseForeignKey(table.getTable()));
@@ -360,6 +361,50 @@ public class References {
   @EqualsAndHashCode(callSuper = true)
   public static class FlatRefTableMeta extends TableMeta {
     private final ExposedTableMeta sourceTable;
+    private final ImmutableMap<String, ColumnMeta> columns;
+
+    @Override
+    protected IndexColumn getColumn(Ident ident) throws ModelException {
+      ColumnMeta column = columns.get(ident.getString());
+      if (column == null) {
+        return null;
+      }
+      return new IndexColumn(sourceTable, indexOf(columns.keySet(), ident), column.getType(), column.tableDependencies());
+    }
+
+    @Override
+    protected TableMeta getRefTable(Ident ident) throws ModelException {
+      // Cannot reference any further tables from a ref, only access its fields.
+      return null;
+    }
+
+    @Override
+    public MetaResources readResources() {
+      return sourceTable.readResources().merge(DerivedTables.resourcesFromColumns(columns.values()));
+    }
+
+    @Override
+    public ImmutableList<String> columnNames() {
+      return columns.keySet().asList();
+    }
+
+    @Override
+    public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
+        throws IOException {
+      Object[] values = sourceTable.values(sourceValues, resources, context);
+      Object[] newValues = new Object[columns.size()];
+      int i = 0;
+      for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
+        newValues[i++] = entry.getValue().value(values, resources, context);
+      }
+      return newValues;
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class AggViewTableMeta extends TableMeta {
+    private final KeyValueAggrTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
 
     @Override

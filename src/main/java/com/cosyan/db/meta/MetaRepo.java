@@ -65,7 +65,6 @@ import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SeekableTableMeta;
-import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.DoubleTableMultiIndex;
@@ -495,7 +494,7 @@ public class MetaRepo {
             }
 
             @Override
-            public TableMeta tableMeta(TableWithOwner table) throws ModelException {
+            public ExposedTableMeta tableMeta(TableWithOwner table) throws ModelException {
               return reader(table.getTable());
             }
           };
