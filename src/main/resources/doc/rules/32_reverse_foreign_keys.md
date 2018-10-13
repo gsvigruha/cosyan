@@ -35,11 +35,11 @@ create table transaction (
   constraint product foreign key (product_id) references product(id) reverse transactions);
 ```
 
-We can use the `aggref` keyword to define an aggregated view of a one to many connection. This
+We can use the `view` keyword to define an aggregated view of a one to many connection. This
 subtable and its columns can be referred similarly to foreign keys via its name.
 <!-- RUN -->
 ```
-alter table product add aggref stats (
+alter table product add view stats (
   select count(1) as cnt, sum(price) as sum_price from transactions);
 ```
 
@@ -48,7 +48,7 @@ E.g. `sum_price` here refers to the total price of all transactions of all produ
 product_type.
 <!-- RUN -->
 ```
-alter table product_type add aggref stats (
+alter table product_type add view stats (
   select sum(stats.cnt) as cnt, sum(stats.sum_price) as sum_price from products);
 ```
 
@@ -76,7 +76,7 @@ insert into transaction values (1, 300.0), (1, 300.0), (2, 300.0);
 ```
 
 We can query the aggregated view of one to many connections simply by using the name of the
-`aggref` table.
+`view` table.
 <!-- TEST -->
 ```
 select name, stats.cnt, stats.sum_price from product_type;
@@ -112,10 +112,10 @@ insert into transaction values (2, 50.0);
 Referencing constraint check product_type.c_cnt failed.
 ```
 
-The `parent` keyword can be used to refer to the source table in an `aggref`. 
+The `parent` keyword can be used to refer to the source table in an aggregated `view`. 
 <!-- RUN -->
 ```
-alter table product add aggref truck_stats (
+alter table product add view truck_stats (
   select count(1) as cnt, sum(price) as sum_price from transactions where parent.name = 'truck');
 ```
 

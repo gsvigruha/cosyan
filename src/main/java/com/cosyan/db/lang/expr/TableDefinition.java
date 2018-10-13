@@ -24,7 +24,6 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.google.common.collect.ImmutableList;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.SeekableTableMeta;
@@ -85,16 +84,9 @@ public class TableDefinition {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class AggRefDefinition extends Node {
+  public static class ViewDefinition extends Node {
     private final Ident name;
     private final Select select;
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class FlatRefDefinition extends Node {
-    private final Ident name;
-    private final ImmutableList<Expression> exprs;
   }
 
   @Data

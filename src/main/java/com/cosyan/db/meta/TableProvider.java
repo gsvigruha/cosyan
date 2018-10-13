@@ -20,7 +20,7 @@ import java.util.Optional;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.TableMeta;
+import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 
 public interface TableProvider {
 
@@ -63,7 +63,7 @@ public interface TableProvider {
     }
   }
 
-  public TableMeta tableMeta(TableWithOwner table) throws ModelException;
+  public ExposedTableMeta tableMeta(TableWithOwner table) throws ModelException;
 
   public TableProvider tableProvider(Ident ident, String owner) throws ModelException;
 

@@ -20,9 +20,8 @@ import java.io.IOException;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.expr.Statements.AlterStatement;
 import com.cosyan.db.lang.expr.Statements.GlobalStatement;
-import com.cosyan.db.lang.expr.TableDefinition.AggRefDefinition;
-import com.cosyan.db.lang.expr.TableDefinition.FlatRefDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.ViewDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MaterializedTable;
@@ -30,12 +29,10 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.References.AggRefTableMeta;
-import com.cosyan.db.model.References.FlatRefTableMeta;
+import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableRef;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
-import com.google.common.base.Joiner;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -44,18 +41,19 @@ public class AlterStatementRefs {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class AlterTableAddAggRef extends AlterStatement {
+  public static class AlterTableAddView extends AlterStatement {
     private final TableWithOwnerDefinition table;
-    private final AggRefDefinition ref;
+    private final ViewDefinition ref;
 
     private TableWithOwner tableWithOwner;
-    private AggRefTableMeta refTableMeta;
+    private TableMeta refTableMeta;
 
     @Override
-    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
       tableWithOwner = table.resolve(authToken);
       MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
-      refTableMeta = tableMeta.createAggRef(ref, tableMeta.owner());
+      refTableMeta = tableMeta.createView(ref, tableMeta.owner());
+      metaRepo.syncIndex(tableMeta);
       return MetaResources.tableMeta(tableMeta);
     }
 
@@ -66,7 +64,6 @@ public class AlterStatementRefs {
           ref.getName().getString(),
           ref.getSelect().print(),
           metaRepo.maxRefIndex() + 1,
-          /* aggr = */ true,
           refTableMeta));
       return Result.META_OK;
     }
@@ -78,7 +75,7 @@ public class AlterStatementRefs {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class AlterTableDropAggRef extends GlobalStatement {
+  public static class AlterTableDropView extends GlobalStatement {
     private final TableWithOwnerDefinition table;
     private final Ident ref;
 
@@ -89,58 +86,6 @@ public class AlterStatementRefs {
         tableMeta.dropRef(ref);
       } else {
         throw new ModelException(String.format("Aggref '%s' not found in table '%s'.", ref, table), ref);
-      }
-      return Result.META_OK;
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class AlterTableAddFlatRef extends AlterStatement {
-    private final TableWithOwnerDefinition table;
-    private final FlatRefDefinition ref;
-
-    private TableWithOwner tableWithOwner;
-    private FlatRefTableMeta refTableMeta;
-
-    @Override
-    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException {
-      tableWithOwner = table.resolve(authToken);
-      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
-      refTableMeta = tableMeta.createFlatRef(ref);
-      return MetaResources.tableMeta(tableMeta);
-    }
-
-    @Override
-    public Result executeData(MetaWriter metaRepo, Resources resources) {
-      MaterializedTable tableMeta = resources.meta(tableWithOwner.resourceId());
-      tableMeta.addRef(new TableRef(
-          ref.getName().getString(),
-          Joiner.on(", ").join(ref.getExprs().stream().map(c -> c.print()).iterator()),
-          metaRepo.maxRefIndex() + 1,
-          /* aggr = */ false,
-          refTableMeta));
-      return Result.META_OK;
-    }
-
-    @Override
-    public void cancel() {
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class AlterTableDropFlatRef extends GlobalStatement {
-    private final TableWithOwnerDefinition table;
-    private final Ident ref;
-
-    @Override
-    public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
-      MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
-      if (tableMeta.hasRef(ref.getString())) {
-        tableMeta.dropRef(ref);
-      } else {
-        throw new ModelException(String.format("Flatref '%s' not found in table '%s'.", ref, table), ref);
       }
       return Result.META_OK;
     }

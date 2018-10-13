@@ -96,7 +96,7 @@ public class GrantsTest extends UnitTestBase {
   public void testAccessToRef() throws AuthException {
     execute("create table t7 (a varchar, constraint pk_a primary key (a));");
     execute("create table t8 (a varchar, b integer, constraint fk_a foreign key (a) references t7(a));");
-    execute("alter table t7 add aggref s (select sum(b) as sb from rev_fk_a);");
+    execute("alter table t7 add view s (select sum(b) as sb from rev_fk_a);");
     execute("insert into t7 values ('x');");
     execute("insert into t8 values ('x', 1);");
     execute("create user u6 identified by 'abc';");
@@ -182,7 +182,7 @@ public class GrantsTest extends UnitTestBase {
     // TODO fk
     execute("create table t12 (a varchar, constraint pk_a primary key (a));");
     execute("create table t13 (a varchar, constraint fk_a foreign key (a) references t12);");
-    ErrorResult e9 = (ErrorResult) u13.execute("alter table admin.t12 add aggref s (select count(1) from rev_fk_a);");
+    ErrorResult e9 = (ErrorResult) u13.execute("alter table admin.t12 add view s (select count(1) from rev_fk_a);");
     assertEquals("User 'u13' has no INSERT right on 'admin.t12'.", e9.getError().getMessage());
 
   }

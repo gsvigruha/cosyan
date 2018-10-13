@@ -65,9 +65,9 @@ public class MetaSerializerTest extends UnitTestBase {
   public void testRef() throws ModelException {
     execute("create table t3 (a varchar, constraint pk_a primary key (a));");
     execute("create table t4 (b varchar, c integer, constraint fk_a foreign key (b) references t3);");
-    execute("alter table t3 add aggref s (select sum(c) from rev_fk_a);");
+    execute("alter table t3 add view s (select sum(c) from rev_fk_a);");
     TableRef ref = metaRepo.table("admin", "t3").refs().get("s");
-    assertEquals("{\"name\":\"s\",\"index\":1,\"expr\":\"select sum(c) from rev_fk_a ;\",\"aggr\":true}",
+    assertEquals("{\"name\":\"s\",\"index\":1,\"expr\":\"select sum(c) from rev_fk_a ;\"}",
         serializer.toJSON(ref).toString());
   }
 

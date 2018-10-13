@@ -154,7 +154,7 @@ public class RestartDBTest {
     dbApi.newAdminSession().execute("create table t8("
         + "a integer,"
         + "constraint fk_a1 foreign key (a) references t7(a));");
-    dbApi.newAdminSession().execute("alter table t7 add aggref s (select sum(a) as sa from rev_fk_a1);");
+    dbApi.newAdminSession().execute("alter table t7 add view s (select sum(a) as sa from rev_fk_a1);");
     dbApi.newAdminSession().execute("alter table t7 add constraint c_1 check(s.sa < 10);");
 
     MaterializedTable t7 = dbApi.getMetaRepo().table("admin", "t7");
@@ -316,8 +316,8 @@ public class RestartDBTest {
     dbApi.newAdminSession().execute("create table t18(a id);");
     dbApi.newAdminSession().execute("create table t17 (a id, b integer, constraint fk1 foreign key (b) references t18);");
     dbApi.newAdminSession().execute("create table t16 (a integer, constraint fk2 foreign key (a) references t17);");
-    dbApi.newAdminSession().execute("alter table t17 add aggref s (select count(1) as c from rev_fk2);");
-    dbApi.newAdminSession().execute("alter table t18 add aggref s (select sum(s.c) as s from rev_fk1);");
+    dbApi.newAdminSession().execute("alter table t17 add view s (select count(1) as c from rev_fk2);");
+    dbApi.newAdminSession().execute("alter table t18 add view s (select sum(s.c) as s from rev_fk1);");
 
     {
       MaterializedTable t18 = dbApi.getMetaRepo().table("admin", "t18");
@@ -336,17 +336,17 @@ public class RestartDBTest {
     DBApi dbApi = new DBApi(config);
     dbApi.newAdminSession().execute("create table t19(a id, b integer);");
     dbApi.newAdminSession().execute("create table t20 (a id, b integer, constraint fk1 foreign key (b) references t19);");
-    dbApi.newAdminSession().execute("alter table t20 add flatref s (fk1.b + 1 as x, fk1.b + 2 as y);");
+    dbApi.newAdminSession().execute("alter table t20 add view s (select fk1.b + 1 as x, fk1.b + 2 as y from t20);");
 
     {
       MaterializedTable t20 = dbApi.getMetaRepo().table("admin", "t20");
-      assertEquals("(fk1.b + 1) as x, (fk1.b + 2) as y", t20.refs().get("s").getExpr());
+      assertEquals("select (fk1.b + 1) as x, (fk1.b + 2) as y from t20 ", t20.refs().get("s").getExpr());
     }
 
     dbApi = new DBApi(config);
     {
       MaterializedTable t20 = dbApi.getMetaRepo().table("admin", "t20");
-      assertEquals("(fk1.b + 1) as x, (fk1.b + 2) as y;", t20.refs().get("s").getExpr());
+      assertEquals("select (fk1.b + 1) as x, (fk1.b + 2) as y from t20 ;", t20.refs().get("s").getExpr());
     }
   }
 }

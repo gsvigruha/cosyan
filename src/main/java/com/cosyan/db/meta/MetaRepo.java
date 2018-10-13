@@ -42,6 +42,7 @@ import com.cosyan.db.index.LeafTypes.LongIndex;
 import com.cosyan.db.index.LeafTypes.StringIndex;
 import com.cosyan.db.index.MultiLeafTries.DoubleMultiIndex;
 import com.cosyan.db.index.MultiLeafTries.LongMultiIndex;
+import com.cosyan.db.index.MultiLeafTries.MultiColumnMultiIndex;
 import com.cosyan.db.index.MultiLeafTries.StringMultiIndex;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.Indexes.IndexWriter;
@@ -62,14 +63,15 @@ import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
+import com.cosyan.db.model.Keys.GroupByKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SeekableTableMeta;
-import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.DoubleTableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.LongTableMultiIndex;
+import com.cosyan.db.model.TableMultiIndex.MultiColumnTableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.StringTableMultiIndex;
 import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.model.TableUniqueIndex.DoubleTableIndex;
@@ -85,6 +87,7 @@ import com.cosyan.db.transaction.Resources;
 import com.cosyan.db.util.Util;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 
@@ -94,6 +97,7 @@ public class MetaRepo {
   private final HashMap<String, Map<String, MaterializedTable>> tables;
   private final HashMap<String, TableUniqueIndex> uniqueIndexes;
   private final HashMap<String, TableMultiIndex> multiIndexes;
+  private final HashMap<String, MultiColumnTableMultiIndex> extraIndexes;
   private final Grants grants;
 
   private final LockManager lockManager;
@@ -112,6 +116,7 @@ public class MetaRepo {
     this.tables = new HashMap<>();
     this.uniqueIndexes = new HashMap<>();
     this.multiIndexes = new HashMap<>();
+    this.extraIndexes = new HashMap<>();
     this.grants = grants;
 
     Files.createDirectories(Paths.get(config.tableDir()));
@@ -208,6 +213,9 @@ public class MetaRepo {
         }
       }
     }
+    for (GroupByKey groupByKey : tableMeta.extraIndexes().values()) {
+      registerIndex(groupByKey);
+    }
   }
 
   private IndexWriter registerIndex(MaterializedTable tableMeta, BasicColumn column)
@@ -220,6 +228,18 @@ public class MetaRepo {
     }
     column.setIndexed(true);
     return index;
+  }
+
+  private IndexWriter registerIndex(GroupByKey groupByKey) throws IOException {
+    String indexName = groupByKey.getTable().fullName() + "." + groupByKey.getName();
+    String path = config.indexDir() + File.separator + indexName;
+    if (!extraIndexes.containsKey(indexName)) {
+      extraIndexes.put(indexName, new MultiColumnTableMultiIndex(
+          groupByKey,
+          new MultiColumnMultiIndex(
+              path, groupByKey.getColumns().stream().map(c -> c.getType()).collect(ImmutableList.toImmutableList()))));
+    }
+    return extraIndexes.get(indexName);
   }
 
   @VisibleForTesting
@@ -256,6 +276,10 @@ public class MetaRepo {
         }
       }
     }
+    for (GroupByKey groupByKey : table.extraIndexes().values()) {
+      String indexName = table.fullName() + "." + groupByKey.getName();
+      builder.put(groupByKey.getName(), extraIndexes.get(indexName));
+    }
     return builder.build();
   }
 
@@ -279,6 +303,15 @@ public class MetaRepo {
       if (column.isIndexed() && !column.isUnique()) {
         builder.put(column.getName(), multiIndexes.get(indexName));
       }
+    }
+    return builder.build();
+  }
+
+  public ImmutableMap<String, MultiColumnTableMultiIndex> collectExtraIndexes(MaterializedTable table) {
+    ImmutableMap.Builder<String, MultiColumnTableMultiIndex> builder = ImmutableMap.builder();
+    for (GroupByKey groupByKey : table.extraIndexes().values()) {
+      String indexName = table.fullName() + "." + groupByKey.getName();
+      builder.put(groupByKey.getName(), extraIndexes.get(indexName));
     }
     return builder.build();
   }
@@ -389,6 +422,7 @@ public class MetaRepo {
             tableMeta.allColumns(),
             collectUniqueIndexes(tableMeta),
             collectMultiIndexes(tableMeta),
+            collectExtraIndexes(tableMeta),
             resource.isForeignIndexes() ? collectForeignIndexes(tableMeta) : ImmutableMultimap.of(),
             resource.isReverseForeignIndexes() ? collectReverseForeignIndexes(tableMeta) : ImmutableMultimap.of(),
             ImmutableMap.copyOf(tableMeta.rules()),
@@ -495,7 +529,7 @@ public class MetaRepo {
             }
 
             @Override
-            public TableMeta tableMeta(TableWithOwner table) throws ModelException {
+            public ExposedTableMeta tableMeta(TableWithOwner table) throws ModelException {
               return reader(table.getTable());
             }
           };
@@ -580,6 +614,11 @@ public class MetaRepo {
       public IndexWriter registerIndex(MaterializedTable tableMeta, BasicColumn column)
           throws IOException {
         return MetaRepo.this.registerIndex(tableMeta, column);
+      }
+
+      @Override
+      public IndexWriter registerIndex(GroupByKey groupByKey) throws IOException {
+        return MetaRepo.this.registerIndex(groupByKey);
       }
 
       @Override
