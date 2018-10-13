@@ -355,7 +355,7 @@ public class Parser implements IParser {
     assertNext(tokens, Tokens.VIEW);
     Ident ident = parseIdent(tokens);
     assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
-    Select select = parseAggRefSelect(tokens);
+    Select select = parseViewSelect(tokens);
     assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
     return new ViewDefinition(ident, select);
   }
@@ -653,7 +653,7 @@ public class Parser implements IParser {
     return new Select(columns, table, where, groupBy, having, orderBy, distinct, limit);
   }
 
-  public Select parseAggRefSelect(PeekingIterator<Token> tokens) throws ParserException {
+  public Select parseViewSelect(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.SELECT);
     ImmutableList<Expression> columns = parseExprs(tokens, true, Tokens.FROM);
     tokens.next();
@@ -665,8 +665,17 @@ public class Parser implements IParser {
     } else {
       where = Optional.empty();
     }
+    Optional<ImmutableList<Expression>> groupBy;
+    if (tokens.peek().is(Tokens.GROUP)) {
+      tokens.next();
+      assertNext(tokens, Tokens.BY);
+      groupBy = Optional.of(parseExprs(tokens, true, String.valueOf(Tokens.COMMA_COLON),
+          String.valueOf(Tokens.PARENT_CLOSED), Tokens.HAVING, Tokens.ORDER, Tokens.LIMIT));
+    } else {
+      groupBy = Optional.empty();
+    }
     assertPeek(tokens, String.valueOf(Tokens.COMMA_COLON), String.valueOf(Tokens.PARENT_CLOSED));
-    return new Select(columns, table, where, Optional.empty(), Optional.empty(), Optional.empty(), /* distinct= */false, Optional.empty());
+    return new Select(columns, table, where, groupBy, Optional.empty(), Optional.empty(), /* distinct= */false, Optional.empty());
   }
 
   private Expression parsePrimary(PeekingIterator<Token> tokens) throws ParserException {

@@ -663,4 +663,19 @@ public class AlterStatementTest extends UnitTestBase {
       assertValues(new Object[][] { { 0L, 11L }, { 0L, 11L } }, result);
     }
   }
+
+  @Test
+  public void testAlterTableAggView() throws Exception {
+    execute("create table t60 (a integer, b integer);");
+    execute("alter table t60 add view s (select a, sum(b) as sb from t60 group by a);");
+
+    execute("insert into t60 values (0, 10), (0, 10), (1, 15);");
+
+    {
+      QueryResult result = query("select s.a, s.sb from t60;");
+      System.out.println(result.prettyPrint());
+      assertHeader(new String[] { "a", "sb" }, result);
+      assertValues(new Object[][] { { 0L, 20L }, { 0L, 20L }, { 1L, 15L } }, result);
+    }
+  }
 }

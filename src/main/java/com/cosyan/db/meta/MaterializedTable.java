@@ -45,6 +45,7 @@ import com.cosyan.db.meta.Dependencies.TableDependency;
 import com.cosyan.db.meta.Dependencies.TransitiveTableDependency;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
+import com.cosyan.db.model.AggrTables.KeyValueAggrTableMeta;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
@@ -57,6 +58,7 @@ import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.References.AggRefTableMeta;
+import com.cosyan.db.model.References.AggViewTableMeta;
 import com.cosyan.db.model.References.FlatRefTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.Rule;
@@ -353,6 +355,9 @@ public class MaterializedTable {
     checkName(ref.getName());
     ExposedTableMeta srcTableMeta = ref.getSelect().getTable().compile(reader(), owner);
     if (srcTableMeta instanceof ReferencedMultiTableMeta) {
+      if (ref.getSelect().getGroupBy().isPresent()) {
+        throw new ModelException("Group by clause is not allowed here.", ref.getSelect().getGroupBy().get().asList().get(0));
+      }
       ExposedTableMeta derivedTable;
       if (ref.getSelect().getWhere().isPresent()) {
         ColumnMeta whereColumn = ref.getSelect().getWhere().get().compileColumn(srcTableMeta);
@@ -368,8 +373,22 @@ public class MaterializedTable {
       TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
       return new AggRefTableMeta(aggrTable, tableColumns.getColumns());
     } else {
-      TableColumns columns = Select.tableColumns(srcTableMeta, ref.getSelect().getColumns());
-      return new FlatRefTableMeta(srcTableMeta, columns.getColumns());
+      if (ref.getSelect().getGroupBy().isPresent()) {
+        ExposedTableMeta derivedTable;
+        if (ref.getSelect().getWhere().isPresent()) {
+          ColumnMeta whereColumn = ref.getSelect().getWhere().get().compileColumn(srcTableMeta);
+          derivedTable = new FilteredTableMeta(srcTableMeta, whereColumn);
+        } else {
+          derivedTable = srcTableMeta;
+        }
+        KeyValueTableMeta intermediateTable = Select.keyValueTable(derivedTable, ref.getSelect().getGroupBy().get());
+        KeyValueAggrTableMeta aggrTable = new KeyValueAggrTableMeta(intermediateTable);
+        TableColumns columns = Select.tableColumns(aggrTable, ref.getSelect().getColumns());
+        return new AggViewTableMeta(aggrTable, columns.getColumns());
+      } else {
+        TableColumns columns = Select.tableColumns(srcTableMeta, ref.getSelect().getColumns());
+        return new FlatRefTableMeta(srcTableMeta, columns.getColumns());
+      }
     }
   }
 
