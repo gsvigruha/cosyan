@@ -491,12 +491,8 @@ public class References {
       if (column == null) {
         return null;
       }
-<<<<<<< HEAD
-      return new IndexColumn(sourceTable, indexOf(columns.keySet(), ident), column.getType(), column.tableDependencies());
-=======
       return new IndexColumn(sourceTable, indexOf(columns.keySet(), ident), column.getType(),
           column.tableDependencies());
->>>>>>> 906815fb98d138255c0d21259e03fc32f4604a31
     }
 
     @Override
@@ -518,15 +514,6 @@ public class References {
     @Override
     public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
         throws IOException {
-<<<<<<< HEAD
-      Object[] values = sourceTable.values(sourceValues, resources, context);
-      Object[] newValues = new Object[columns.size()];
-      int i = 0;
-      for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-        newValues[i++] = entry.getValue().value(values, resources, context);
-      }
-      return newValues;
-=======
       IterableTableReader reader = sourceTable.reader(resources, TableContext.withParent(sourceValues));
       Object[] aggrValues = reader.next();
       reader.close();
@@ -536,7 +523,6 @@ public class References {
         values[i++] = entry.getValue().value(aggrValues, resources, context);
       }
       return values;
->>>>>>> 906815fb98d138255c0d21259e03fc32f4604a31
     }
   }
 
