@@ -53,7 +53,7 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
     execute("create table t3 (a varchar, constraint pk_a primary key (a));");
     execute("create table t4 (a varchar, b integer, "
         + "constraint fk_a foreign key (a) references t3(a));");
-    execute("alter table t3 add aggref s (select sum(b) as sb from rev_fk_a);");
+    execute("alter table t3 add view s (select sum(b) as sb from rev_fk_a);");
     execute("alter table t3 add constraint c_1 check (s.sb <= 10);");
 
     for (int i = 0; i < N1; i++) {
@@ -123,7 +123,7 @@ public class InsertStatementWithRulesPerformanceTest extends UnitTestBase {
     execute("create table t9 (a varchar, constraint pk_a primary key (a));");
     execute("create table t10 (a varchar, b integer, "
         + "constraint fk_a foreign key (a) references t9(a));");
-    execute("alter table t9 add aggref s (select sum(b) as sb from rev_fk_a);");
+    execute("alter table t9 add view s (select sum(b) as sb from rev_fk_a);");
     execute("alter table t9 add constraint c_1 check (s.sb <= 1000);");
 
     int N1_2 = N1 / 100;
