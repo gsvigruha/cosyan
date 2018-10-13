@@ -52,7 +52,6 @@ task dbCore(type: JavaCompile) {
       'com/cosyan/ui/**/*.java'])
   classpath = configurations.compile
   destinationDir = file('build/classes/dbCore')
-  dependencyCacheDir = file('build/dependency-cache')
 }
 
 task execute(type:JavaExec) {
