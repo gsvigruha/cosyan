@@ -673,7 +673,6 @@ public class AlterStatementTest extends UnitTestBase {
 
     {
       QueryResult result = query("select s.a, s.sb from t60;");
-      System.out.println(result.prettyPrint());
       assertHeader(new String[] { "a", "sb" }, result);
       assertValues(new Object[][] { { 0L, 20L }, { 0L, 20L }, { 1L, 15L } }, result);
     }

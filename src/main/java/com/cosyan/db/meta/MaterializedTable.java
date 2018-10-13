@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.conf.Config;
@@ -54,6 +55,7 @@ import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
+import com.cosyan.db.model.Keys.GroupByKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
@@ -61,6 +63,7 @@ import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.References.AggViewTableMeta;
 import com.cosyan.db.model.References.FlatRefTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
+import com.cosyan.db.model.References.SelfAggrTableMeta;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SeekableTableMeta;
@@ -92,18 +95,14 @@ public class MaterializedTable {
   private final Map<String, ForeignKey> foreignKeys;
   private final Map<String, ReverseForeignKey> reverseForeignKeys;
   private final Map<String, TableRef> refs;
+  private final Map<String, GroupByKey> extraIndexes;
   private TableDependencies ruleDependencies;
   private ReverseRuleDependencies reverseRuleDependencies;
   private Optional<ColumnMeta> partitioning;
   private SeekableInputStream fileReader;
 
-  public MaterializedTable(
-      Config config,
-      String tableName,
-      String owner,
-      Iterable<BasicColumn> columns,
-      Optional<PrimaryKey> primaryKey,
-      Type type) throws IOException, ModelException {
+  public MaterializedTable(Config config, String tableName, String owner, Iterable<BasicColumn> columns,
+      Optional<PrimaryKey> primaryKey, Type type) throws IOException, ModelException {
     this.config = config;
     this.tableName = tableName;
     this.owner = owner;
@@ -116,6 +115,7 @@ public class MaterializedTable {
     this.foreignKeys = new HashMap<>();
     this.reverseForeignKeys = new HashMap<>();
     this.refs = new HashMap<>();
+    this.extraIndexes = new HashMap<>();
     this.ruleDependencies = new TableDependencies();
     this.reverseRuleDependencies = new ReverseRuleDependencies();
     this.partitioning = Optional.empty();
@@ -245,15 +245,16 @@ public class MaterializedTable {
     return Collections.unmodifiableMap(refs);
   }
 
+  public Map<String, GroupByKey> extraIndexes() {
+    return Collections.unmodifiableMap(extraIndexes);
+  }
+
   public void checkName(Ident ident) throws ModelException {
     String name = ident.getString();
-    if (columnNames().contains(name)
-        || foreignKeys.containsKey(name)
-        || reverseForeignKeys.containsKey(name)
+    if (columnNames().contains(name) || foreignKeys.containsKey(name) || reverseForeignKeys.containsKey(name)
         || refs.containsKey(name)) {
-      throw new ModelException(
-          String.format("Duplicate column, foreign key, reversed foreign key or ref name in '%s': '%s'.", tableName, name),
-          ident);
+      throw new ModelException(String.format(
+          "Duplicate column, foreign key, reversed foreign key or ref name in '%s': '%s'.", tableName, name), ident);
     }
   }
 
@@ -292,8 +293,7 @@ public class MaterializedTable {
 
     if (foreignKeyDefinition.getRefColumn().isPresent()
         && !foreignKeyDefinition.getRefColumn().get().getString().equals(refColumn.getName())) {
-      throw new ModelException(
-          "Foreign key reference column has to be the primary key column of the referenced table.",
+      throw new ModelException("Foreign key reference column has to be the primary key column of the referenced table.",
           foreignKeyDefinition.getRefColumn().get());
     }
     if (keyColumn.getType() != refColumn.getType()
@@ -304,13 +304,8 @@ public class MaterializedTable {
           foreignKeyDefinition.getName());
     }
     assert refColumn.isUnique() && !refColumn.isNullable();
-    return new ForeignKey(
-        foreignKeyDefinition.getName().getString(),
-        foreignKeyDefinition.getRevName().getString(),
-        this,
-        keyColumn,
-        refTable,
-        refColumn);
+    return new ForeignKey(foreignKeyDefinition.getName().getString(), foreignKeyDefinition.getRevName().getString(),
+        this, keyColumn, refTable, refColumn);
   }
 
   public void addForeignKey(ForeignKey foreignKey) {
@@ -328,19 +323,13 @@ public class MaterializedTable {
 
   public BasicColumn createColumn(ColumnDefinition columnDefiniton) throws ModelException {
     checkName(columnDefiniton.getName());
-    BasicColumn column = new BasicColumn(
-        allColumns().size(),
-        columnDefiniton.getName(),
-        columnDefiniton.getType(),
-        columnDefiniton.isNullable(),
-        columnDefiniton.isUnique(),
-        columnDefiniton.isImmutable());
+    BasicColumn column = new BasicColumn(allColumns().size(), columnDefiniton.getName(), columnDefiniton.getType(),
+        columnDefiniton.isNullable(), columnDefiniton.isUnique(), columnDefiniton.isImmutable());
 
     assert column.getIndex() == columns.size();
     if (!column.isNullable()) {
-      throw new ModelException(
-          String.format("Cannot add column '%s', new columns on a non empty table have to be nullable.",
-              column.getName()),
+      throw new ModelException(String
+          .format("Cannot add column '%s', new columns on a non empty table have to be nullable.", column.getName()),
           columnDefiniton.getName());
     }
     return column;
@@ -356,7 +345,8 @@ public class MaterializedTable {
     ExposedTableMeta srcTableMeta = ref.getSelect().getTable().compile(reader(), owner);
     if (srcTableMeta instanceof ReferencedMultiTableMeta) {
       if (ref.getSelect().getGroupBy().isPresent()) {
-        throw new ModelException("Group by clause is not allowed here.", ref.getSelect().getGroupBy().get().asList().get(0));
+        throw new ModelException("Group by clause is not allowed here.",
+            ref.getSelect().getGroupBy().get().asList().get(0));
       }
       ExposedTableMeta derivedTable;
       if (ref.getSelect().getWhere().isPresent()) {
@@ -366,34 +356,41 @@ public class MaterializedTable {
         derivedTable = srcTableMeta;
       }
       GlobalAggrTableMeta aggrTable = new GlobalAggrTableMeta(
-          new KeyValueTableMeta(
-              derivedTable,
-              TableMeta.wholeTableKeys));
+          new KeyValueTableMeta(derivedTable, TableMeta.wholeTableKeys));
       // Columns have aggregations, recompile with an AggrTable.
       TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
       return new AggRefTableMeta(aggrTable, tableColumns.getColumns());
-    } else {
+    } else if (srcTableMeta instanceof SeekableTableMeta) {
+      SeekableTableMeta seekableTableMeta = (SeekableTableMeta) srcTableMeta;
       if (ref.getSelect().getGroupBy().isPresent()) {
+        GroupByKey groupByKey = new GroupByKey(
+            "#" + ref.getSelect().getGroupBy().get().stream().map(c -> c.print()).collect(Collectors.joining("#")),
+            seekableTableMeta.tableMeta(),
+            Select.keyValueTable(seekableTableMeta, ref.getSelect().getGroupBy().get()).getKeyColumns().values().asList());
+        SelfAggrTableMeta selfAggrTableMeta = new SelfAggrTableMeta(seekableTableMeta, groupByKey);
         ExposedTableMeta derivedTable;
         if (ref.getSelect().getWhere().isPresent()) {
           ColumnMeta whereColumn = ref.getSelect().getWhere().get().compileColumn(srcTableMeta);
-          derivedTable = new FilteredTableMeta(srcTableMeta, whereColumn);
+          derivedTable = new FilteredTableMeta(selfAggrTableMeta, whereColumn);
         } else {
-          derivedTable = srcTableMeta;
+          derivedTable = selfAggrTableMeta;
         }
         KeyValueTableMeta intermediateTable = Select.keyValueTable(derivedTable, ref.getSelect().getGroupBy().get());
         KeyValueAggrTableMeta aggrTable = new KeyValueAggrTableMeta(intermediateTable);
         TableColumns columns = Select.tableColumns(aggrTable, ref.getSelect().getColumns());
+        seekableTableMeta.tableMeta().extraIndexes.put(groupByKey.getName(), groupByKey);
         return new AggViewTableMeta(aggrTable, columns.getColumns());
       } else {
         TableColumns columns = Select.tableColumns(srcTableMeta, ref.getSelect().getColumns());
         return new FlatRefTableMeta(srcTableMeta, columns.getColumns());
       }
+    } else {
+      throw new ModelException(String.format("Unsupported table '%s' for view.", ref.getSelect().getTable().print()), ref.getName());
     }
   }
 
   public void addRef(TableRef ref) {
-    assertName(ref.getName());
+    assertName(ref.getName());    
     refs.put(ref.getName(), ref);
   }
 
@@ -435,24 +432,24 @@ public class MaterializedTable {
       try {
         ref.reCompile(this);
       } catch (ModelException e) {
-        throw new ModelException(String.format(
-            "Cannot drop foreign key '%s', aggref '%s' fails.\n%s", ident, ref, e.getMessage()), ident);
+        throw new ModelException(
+            String.format("Cannot drop foreign key '%s', aggref '%s' fails.\n%s", ident, ref, e.getMessage()), ident);
       }
     }
     for (Rule rule : rules().values()) {
       try {
         rule.reCompile(reader());
       } catch (ModelException e) {
-        throw new ModelException(String.format(
-            "Cannot drop foreign key '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
+        throw new ModelException(
+            String.format("Cannot drop foreign key '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
       }
     }
     for (Rule rule : reverseRuleDependencies().allRules()) {
       try {
         rule.reCompile(rule.getTable());
       } catch (ModelException e) {
-        throw new ModelException(String.format(
-            "Cannot drop foreign '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
+        throw new ModelException(
+            String.format("Cannot drop foreign '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
       }
     }
   }
@@ -464,16 +461,16 @@ public class MaterializedTable {
       try {
         rule.reCompile(reader());
       } catch (ModelException e) {
-        throw new ModelException(String.format(
-            "Cannot drop ref '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
+        throw new ModelException(
+            String.format("Cannot drop ref '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
       }
     }
     for (Rule rule : reverseRuleDependencies().allRules()) {
       try {
         rule.reCompile(rule.getTable());
       } catch (ModelException e) {
-        throw new ModelException(String.format(
-            "Cannot drop ref '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
+        throw new ModelException(
+            String.format("Cannot drop ref '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
       }
     }
   }
@@ -575,30 +572,31 @@ public class MaterializedTable {
     try {
       for (ForeignKey foreignKey : foreignKeys().values()) {
         if (foreignKey.getColumn().getName().equals(basicColumn.getName())) {
-          throw new ModelException(String.format(
-              "Cannot drop column '%s', it is used by foreign key '%s'.", column, foreignKey), column);
+          throw new ModelException(
+              String.format("Cannot drop column '%s', it is used by foreign key '%s'.", column, foreignKey), column);
         }
       }
       for (ReverseForeignKey foreignKey : reverseForeignKeys().values()) {
         if (foreignKey.getColumn().getName().equals(basicColumn.getName())) {
-          throw new ModelException(String.format(
-              "Cannot drop column '%s', it is used by reverse foreign key '%s'.", column, foreignKey), column);
+          throw new ModelException(
+              String.format("Cannot drop column '%s', it is used by reverse foreign key '%s'.", column, foreignKey),
+              column);
         }
       }
       for (Rule rule : rules().values()) {
         try {
           rule.reCompile(reader());
         } catch (ModelException e) {
-          throw new ModelException(String.format(
-              "Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()), column);
+          throw new ModelException(
+              String.format("Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()), column);
         }
       }
       for (Rule rule : reverseRuleDependencies().allRules()) {
         try {
           rule.reCompile(rule.getTable());
         } catch (ModelException e) {
-          throw new ModelException(String.format(
-              "Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()), column);
+          throw new ModelException(
+              String.format("Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()), column);
         }
       }
     } finally {

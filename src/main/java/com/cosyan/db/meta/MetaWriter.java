@@ -28,11 +28,14 @@ import com.cosyan.db.meta.Grants.Method;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.BasicColumn;
+import com.cosyan.db.model.Keys.GroupByKey;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 
 public interface MetaWriter {
 
   IndexWriter registerIndex(MaterializedTable meta, BasicColumn basicColumn) throws IOException;
+
+  IndexWriter registerIndex(GroupByKey groupByKey) throws IOException;
 
   void syncMeta(MaterializedTable tableMeta);
 
