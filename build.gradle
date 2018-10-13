@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-  provided "org.projectlombok:lombok:1.16.16"
+  compileOnly "org.projectlombok:lombok:1.18.2"
   compile "com.google.guava:guava:23.0"
   compile "com.google.code.findbugs:jsr305:3.0.2"
   compile "org.apache.commons:commons-csv:1.4"
@@ -26,6 +26,7 @@ dependencies {
   compile "net.agkn:hll:1.6.0"
   compile "com.atlassian.commonmark:commonmark:0.11.0"
 
+  apt "org.projectlombok:lombok:1.18.2"
   testCompile "junit:junit:4.12"
 }
 
