@@ -18,6 +18,7 @@ package com.cosyan.db.io;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.cosyan.db.io.Indexes.IndexReader;
@@ -28,8 +29,8 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.TableContext;
-import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
+import com.cosyan.db.model.TableUniqueIndex;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -113,7 +114,7 @@ public abstract class TableReader implements TableIO {
 
     private final SeekableRecordReader reader;
     private final SeekableInputStream fileReader;
-    private final ImmutableMap<String, IndexReader> indexes;
+    private final Map<String, IndexReader> indexes;
     private final String fileName;
     private final ImmutableList<BasicColumn> columns;
 
@@ -122,7 +123,7 @@ public abstract class TableReader implements TableIO {
 
     public MaterializedTableReader(MaterializedTable tableMeta, String fileName,
         SeekableInputStream fileReader, ImmutableList<BasicColumn> columns,
-        ImmutableMap<String, IndexReader> indexes) throws IOException {
+        Map<String, IndexReader> indexes) throws IOException {
       super(tableMeta);
       this.indexes = indexes;
       this.fileReader = fileReader;

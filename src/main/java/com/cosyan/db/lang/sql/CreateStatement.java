@@ -34,6 +34,7 @@ import com.cosyan.db.lang.expr.TableDefinition.PrimaryKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.TableColumnDefinition;
 import com.cosyan.db.lang.transaction.Result;
+import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
@@ -67,7 +68,7 @@ public class CreateStatement {
     private final Optional<Expression> partitioning;
 
     @Override
-    public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException {
+    public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException, GrantException {
       if (metaRepo.hasTable(name.getString(), authToken.username())) {
         throw new ModelException(String.format("Table '%s.%s' already exists.", authToken.username(), name), name);
       }
@@ -146,7 +147,7 @@ public class CreateStatement {
         MaterializedTable tableMeta,
         List<ConstraintDefinition> constraints,
         AuthToken authToken)
-        throws ModelException {
+        throws ModelException, IOException, GrantException {
       List<RuleDefinition> ruleDefinitions = Lists.newArrayList();
       List<ForeignKeyDefinition> foreignKeyDefinitions = Lists.newArrayList();
       for (ConstraintDefinition constraint : constraints) {
@@ -165,7 +166,7 @@ public class CreateStatement {
 
       for (ForeignKeyDefinition foreignKeyDefinition : foreignKeyDefinitions) {
         TableWithOwner refTableWithOwner = foreignKeyDefinition.getRefTable().resolve(authToken);
-        MaterializedTable refTable = metaRepo.table(refTableWithOwner);
+        MaterializedTable refTable = metaRepo.table(refTableWithOwner, authToken);
         ForeignKey foreignKey = tableMeta.createForeignKey(foreignKeyDefinition, refTable);
         foreignKey.getColumn().setIndexed(true);
         tableMeta.addForeignKey(foreignKey);
@@ -190,12 +191,12 @@ public class CreateStatement {
     private IndexWriter indexWriter;
 
     @Override
-    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException, GrantException {
       tableWithOwner = tableColumn.getTable().resolve(authToken);
-      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
+      MaterializedTable tableMeta = metaRepo.table(tableWithOwner, authToken);
       basicColumn = tableMeta.column(tableColumn.getColumn());
       basicColumn.checkIndexType(tableColumn.getColumn());
-      indexWriter = metaRepo.registerIndex(tableMeta, basicColumn);
+      indexWriter = tableMeta.registerIndex(basicColumn);
       return MetaResources.tableMeta(tableMeta);
     }
 

@@ -15,6 +15,8 @@
  */
 package com.cosyan.db.model;
 
+import java.io.IOException;
+
 import com.cosyan.db.lang.expr.TableDefinition.ViewDefinition;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
@@ -38,7 +40,7 @@ public class TableRef {
     return name + " [" + expr + "]";
   }
 
-  public void reCompile(MaterializedTable tableMeta) throws ModelException {
+  public void reCompile(MaterializedTable tableMeta) throws ModelException, IOException {
     Parser parser = new Parser();
     Lexer lexer = new Lexer();
     try {

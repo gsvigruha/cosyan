@@ -67,9 +67,9 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   private final SeekableRecordReader reader;
   private final ImmutableList<BasicColumn> allColumns;
   private final ImmutableList<BasicColumn> activeColumns;
-  private final ImmutableMap<String, TableUniqueIndex> uniqueIndexes;
-  private final ImmutableMap<String, TableMultiIndex> multiIndexes;
-  private final ImmutableMap<String, MultiColumnTableMultiIndex> extraIndexes;
+  private final Map<String, TableUniqueIndex> uniqueIndexes;
+  private final Map<String, TableMultiIndex> multiIndexes;
+  private final Map<String, MultiColumnTableMultiIndex> extraIndexes;
   private final ImmutableMultimap<String, IndexReader> foreignIndexes;
   private final ImmutableMultimap<String, IndexReader> reversedForeignIndexes;
   private final ImmutableMap<String, BooleanRule> rules;
@@ -89,9 +89,9 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       SeekableOutputStream fileWriter,
       SeekableInputStream fileReader,
       ImmutableList<BasicColumn> allColumns,
-      ImmutableMap<String, TableUniqueIndex> uniqueIndexes,
-      ImmutableMap<String, TableMultiIndex> multiIndexes,
-      ImmutableMap<String, MultiColumnTableMultiIndex> extraIndexes,
+      Map<String, TableUniqueIndex> uniqueIndexes,
+      Map<String, TableMultiIndex> multiIndexes,
+      Map<String, MultiColumnTableMultiIndex> extraIndexes,
       ImmutableMultimap<String, IndexReader> foreignIndexes,
       ImmutableMultimap<String, IndexReader> reversedForeignIndexes,
       ImmutableMap<String, BooleanRule> rules,

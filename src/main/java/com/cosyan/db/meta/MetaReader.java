@@ -42,11 +42,11 @@ public interface MetaReader extends TableProvider {
 
   ImmutableMap<String, ByteMultiTrieStat> multiIndexStats() throws IOException;
 
-  IndexReader getIndex(String name) throws RuleException;
-
   JSONArray collectUsers();
 
   List<MaterializedTable> getTables(AuthToken authToken);
 
   void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException;
+
+  IndexReader getIndex(String id) throws RuleException;
 }

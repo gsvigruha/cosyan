@@ -20,22 +20,15 @@ import java.util.List;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.conf.Config;
-import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.logging.MetaJournal.DBException;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.Grants.GrantToken;
 import com.cosyan.db.meta.Grants.Method;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
-import com.cosyan.db.model.BasicColumn;
-import com.cosyan.db.model.Keys.GroupByKey;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 
 public interface MetaWriter {
-
-  IndexWriter registerIndex(MaterializedTable meta, BasicColumn basicColumn) throws IOException;
-
-  IndexWriter registerIndex(GroupByKey groupByKey) throws IOException;
 
   void syncMeta(MaterializedTable tableMeta);
 
@@ -43,15 +36,11 @@ public interface MetaWriter {
 
   void metaRepoWriteUnlock();
 
-  void syncIndex(MaterializedTable tableMeta) throws IOException;
-
   void registerTable(MaterializedTable tableMeta) throws IOException;
 
   void dropTable(MaterializedTable tableMeta, AuthToken authToken) throws IOException, GrantException;
 
-  void dropIndex(MaterializedTable tableMeta, BasicColumn column, AuthToken authToken) throws IOException, GrantException;
-
-  MaterializedTable table(TableWithOwner table) throws ModelException;
+  MaterializedTable table(TableWithOwner table, AuthToken authToken) throws ModelException, GrantException;
 
   Config config();
 

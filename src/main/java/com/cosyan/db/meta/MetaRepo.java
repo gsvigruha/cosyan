@@ -34,18 +34,9 @@ import org.json.JSONObject;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.conf.Config;
 import com.cosyan.db.index.ByteTrie.IndexException;
-import com.cosyan.db.index.IDIndex;
 import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
-import com.cosyan.db.index.LeafTypes.DoubleIndex;
-import com.cosyan.db.index.LeafTypes.LongIndex;
-import com.cosyan.db.index.LeafTypes.StringIndex;
-import com.cosyan.db.index.MultiLeafTries.DoubleMultiIndex;
-import com.cosyan.db.index.MultiLeafTries.LongMultiIndex;
-import com.cosyan.db.index.MultiLeafTries.MultiColumnMultiIndex;
-import com.cosyan.db.index.MultiLeafTries.StringMultiIndex;
 import com.cosyan.db.io.Indexes.IndexReader;
-import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.io.MetaSerializer;
 import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
@@ -59,25 +50,14 @@ import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.Grants.GrantToken;
 import com.cosyan.db.meta.Grants.Method;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
-import com.cosyan.db.model.BasicColumn;
-import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
-import com.cosyan.db.model.Keys.GroupByKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMultiIndex;
-import com.cosyan.db.model.TableMultiIndex.DoubleTableMultiIndex;
-import com.cosyan.db.model.TableMultiIndex.LongTableMultiIndex;
-import com.cosyan.db.model.TableMultiIndex.MultiColumnTableMultiIndex;
-import com.cosyan.db.model.TableMultiIndex.StringTableMultiIndex;
 import com.cosyan.db.model.TableUniqueIndex;
-import com.cosyan.db.model.TableUniqueIndex.DoubleTableIndex;
-import com.cosyan.db.model.TableUniqueIndex.IDTableIndex;
-import com.cosyan.db.model.TableUniqueIndex.LongTableIndex;
-import com.cosyan.db.model.TableUniqueIndex.StringTableIndex;
 import com.cosyan.db.session.ILexer;
 import com.cosyan.db.session.IParser;
 import com.cosyan.db.session.IParser.ParserException;
@@ -94,9 +74,6 @@ public class MetaRepo {
 
   private final Config config;
   private final HashMap<String, Map<String, MaterializedTable>> tables;
-  private final HashMap<String, TableUniqueIndex> uniqueIndexes;
-  private final HashMap<String, TableMultiIndex> multiIndexes;
-  private final HashMap<String, MultiColumnTableMultiIndex> extraIndexes;
   private final Grants grants;
 
   private final LockManager lockManager;
@@ -113,9 +90,6 @@ public class MetaRepo {
     this.lockManager = lockManager;
     this.metaSerializer = new MetaSerializer(lexer, parser);
     this.tables = new HashMap<>();
-    this.uniqueIndexes = new HashMap<>();
-    this.multiIndexes = new HashMap<>();
-    this.extraIndexes = new HashMap<>();
     this.grants = grants;
 
     Files.createDirectories(Paths.get(config.tableDir()));
@@ -191,52 +165,11 @@ public class MetaRepo {
     lockManager.syncLocks(allTables());
     try {
       for (MaterializedTable table : allTables()) {
-        syncIndex(table);
+        table.syncIndex();
       }
     } catch (IOException e) {
       throw new DBException(e);
     }
-  }
-
-  private void syncIndex(MaterializedTable tableMeta) throws IOException {
-    for (BasicColumn column : tableMeta.allColumns()) {
-      if (column.isIndexed()) {
-        if (column.isDeleted()) {
-          if (column.isUnique()) {
-            dropUniqueIndex(tableMeta, column);
-          } else {
-            dropMultiIndex(tableMeta, column);
-          }
-        } else {
-          registerIndex(tableMeta, column);
-        }
-      }
-    }
-    for (GroupByKey groupByKey : tableMeta.extraIndexes().values()) {
-      registerIndex(groupByKey);
-    }
-  }
-
-  private IndexWriter registerIndex(MaterializedTable tableMeta, BasicColumn column)
-      throws IOException {
-    IndexWriter index;
-    if (column.isUnique()) {
-      index = registerUniqueIndex(tableMeta, column);
-    } else {
-      index = registerMultiIndex(tableMeta, column);
-    }
-    column.setIndexed(true);
-    return index;
-  }
-
-  private IndexWriter registerIndex(GroupByKey groupByKey) throws IOException {
-    String indexName = groupByKey.getTable().fullName() + "." + groupByKey.getName();
-    String path = config.indexDir() + File.separator + indexName;
-    if (!extraIndexes.containsKey(indexName)) {
-      extraIndexes.put(indexName, new MultiColumnTableMultiIndex(
-          groupByKey, new MultiColumnMultiIndex(path, groupByKey.columnTypes())));
-    }
-    return extraIndexes.get(indexName);
   }
 
   @VisibleForTesting
@@ -261,64 +194,12 @@ public class MetaRepo {
         .collect(Collectors.toList());
   }
 
-  public ImmutableMap<String, IndexReader> collectIndexReaders(MaterializedTable table) {
-    ImmutableMap.Builder<String, IndexReader> builder = ImmutableMap.builder();
-    for (BasicColumn column : table.columns().values()) {
-      if (column.isIndexed()) {
-        String indexName = table.fullName() + "." + column.getName();
-        if (column.isUnique()) {
-          builder.put(column.getName(), uniqueIndexes.get(indexName));
-        } else {
-          builder.put(column.getName(), multiIndexes.get(indexName));
-        }
-      }
-    }
-    for (GroupByKey groupByKey : table.extraIndexes().values()) {
-      String indexName = table.fullName() + "." + groupByKey.getName();
-      builder.put(groupByKey.getName(), extraIndexes.get(indexName));
-    }
-    return builder.build();
-  }
-
-  @VisibleForTesting
-  public ImmutableMap<String, TableUniqueIndex> collectUniqueIndexes(MaterializedTable table) {
-    ImmutableMap.Builder<String, TableUniqueIndex> builder = ImmutableMap.builder();
-    for (BasicColumn column : table.columns().values()) {
-      String indexName = table.fullName() + "." + column.getName();
-      if (column.isIndexed() && column.isUnique()) {
-        builder.put(column.getName(), uniqueIndexes.get(indexName));
-      }
-    }
-    return builder.build();
-  }
-
-  @VisibleForTesting
-  public ImmutableMap<String, TableMultiIndex> collectMultiIndexes(MaterializedTable table) {
-    ImmutableMap.Builder<String, TableMultiIndex> builder = ImmutableMap.builder();
-    for (BasicColumn column : table.columns().values()) {
-      String indexName = table.fullName() + "." + column.getName();
-      if (column.isIndexed() && !column.isUnique()) {
-        builder.put(column.getName(), multiIndexes.get(indexName));
-      }
-    }
-    return builder.build();
-  }
-
-  public ImmutableMap<String, MultiColumnTableMultiIndex> collectExtraIndexes(MaterializedTable table) {
-    ImmutableMap.Builder<String, MultiColumnTableMultiIndex> builder = ImmutableMap.builder();
-    for (GroupByKey groupByKey : table.extraIndexes().values()) {
-      String indexName = table.fullName() + "." + groupByKey.getName();
-      builder.put(groupByKey.getName(), extraIndexes.get(indexName));
-    }
-    return builder.build();
-  }
-
   public ImmutableMultimap<String, IndexReader> collectForeignIndexes(MaterializedTable table) {
     ImmutableMultimap.Builder<String, IndexReader> builder = ImmutableMultimap.builder();
     for (ForeignKey foreignKey : table.foreignKeys().values()) {
       builder.put(
           foreignKey.getColumn().getName(),
-          uniqueIndexes.get(foreignKey.getRefTable().fullName() + "." + foreignKey.getRefColumn().getName()));
+          foreignKey.getRefTable().uniqueIndexes().get(foreignKey.getRefColumn().getName()));
     }
     return builder.build();
   }
@@ -326,67 +207,17 @@ public class MetaRepo {
   public ImmutableMultimap<String, IndexReader> collectReverseForeignIndexes(MaterializedTable table) {
     ImmutableMultimap.Builder<String, IndexReader> builder = ImmutableMultimap.builder();
     for (ReverseForeignKey reverseForeignKey : table.reverseForeignKeys().values()) {
-      String indexName = reverseForeignKey.getRefTable().fullName() + "."
-          + reverseForeignKey.getRefColumn().getName();
       if (reverseForeignKey.getRefColumn().isUnique()) {
-        builder.put(reverseForeignKey.getColumn().getName(), uniqueIndexes.get(indexName));
+        builder.put(
+            reverseForeignKey.getColumn().getName(),
+            reverseForeignKey.getRefTable().uniqueIndexes().get(reverseForeignKey.getRefColumn().getName()));
       } else {
-        builder.put(reverseForeignKey.getColumn().getName(), multiIndexes.get(indexName));
+        builder.put(
+            reverseForeignKey.getColumn().getName(),
+            reverseForeignKey.getRefTable().multiIndexes().get(reverseForeignKey.getRefColumn().getName()));
       }
     }
     return builder.build();
-  }
-
-  private TableUniqueIndex registerUniqueIndex(MaterializedTable table, BasicColumn column)
-      throws IOException {
-    String indexName = table.fullName() + "." + column.getName();
-    String path = config.indexDir() + File.separator + indexName;
-    if (!uniqueIndexes.containsKey(indexName)) {
-      if (column.getType() == DataTypes.StringType) {
-        uniqueIndexes.put(indexName, new StringTableIndex(new StringIndex(path)));
-      } else if (column.getType() == DataTypes.LongType) {
-        uniqueIndexes.put(indexName, new LongTableIndex(new LongIndex(path)));
-      } else if (column.getType() == DataTypes.DoubleType) {
-        uniqueIndexes.put(indexName, new DoubleTableIndex(new DoubleIndex(path)));
-      } else if (column.getType() == DataTypes.IDType) {
-        uniqueIndexes.put(indexName, new IDTableIndex(new IDIndex(path)));
-      }
-    }
-    return uniqueIndexes.get(indexName);
-  }
-
-  private TableMultiIndex registerMultiIndex(MaterializedTable table, BasicColumn column)
-      throws IOException {
-    String indexName = table.fullName() + "." + column.getName();
-    String path = config.indexDir() + File.separator + indexName;
-    if (!multiIndexes.containsKey(indexName)) {
-      if (column.getType() == DataTypes.StringType) {
-        multiIndexes.put(indexName, new StringTableMultiIndex(new StringMultiIndex(path)));
-      } else if (column.getType() == DataTypes.DoubleType) {
-        multiIndexes.put(indexName, new DoubleTableMultiIndex(new DoubleMultiIndex(path)));
-      } else if (column.getType() == DataTypes.LongType || column.getType() == DataTypes.IDType) {
-        multiIndexes.put(indexName, new LongTableMultiIndex(new LongMultiIndex(path)));
-      }
-    }
-    return multiIndexes.get(indexName);
-  }
-
-  private void dropUniqueIndex(MaterializedTable table, BasicColumn column) throws IOException {
-    String indexName = table.fullName() + "." + column.getName();
-    if (!uniqueIndexes.containsKey(indexName)) {
-      return;
-    }
-    TableUniqueIndex index = uniqueIndexes.remove(indexName);
-    index.drop();
-  }
-
-  private void dropMultiIndex(MaterializedTable table, BasicColumn column) throws IOException {
-    String indexName = table.fullName() + "." + column.getName();
-    if (!multiIndexes.containsKey(indexName)) {
-      return;
-    }
-    TableMultiIndex index = multiIndexes.remove(indexName);
-    index.drop();
   }
 
   private void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
@@ -417,9 +248,9 @@ public class MetaRepo {
             tableMeta.fileWriter(),
             tableMeta.fileReader(),
             tableMeta.allColumns(),
-            collectUniqueIndexes(tableMeta),
-            collectMultiIndexes(tableMeta),
-            collectExtraIndexes(tableMeta),
+            tableMeta.uniqueIndexes(),
+            tableMeta.multiIndexes(),
+            tableMeta.extraIndexes(),
             resource.isForeignIndexes() ? collectForeignIndexes(tableMeta) : ImmutableMultimap.of(),
             resource.isReverseForeignIndexes() ? collectReverseForeignIndexes(tableMeta) : ImmutableMultimap.of(),
             ImmutableMap.copyOf(tableMeta.rules()),
@@ -432,7 +263,7 @@ public class MetaRepo {
             tableMeta.fileName(),
             tableMeta.fileReader(),
             tableMeta.allColumns(),
-            collectIndexReaders(tableMeta)));
+            tableMeta.allIndexReaders()));
       }
       if (resource.isMeta()) {
         MaterializedTable tableMeta = resource.getTableMeta();
@@ -547,23 +378,24 @@ public class MetaRepo {
 
       @Override
       public ImmutableMap<String, ByteTrieStat> uniqueIndexStats() throws IOException {
-        return Util.<String, TableUniqueIndex, ByteTrieStat>mapValuesIOException(uniqueIndexes, TableUniqueIndex::stats);
+        ImmutableMap.Builder<String, ByteTrieStat> builder = ImmutableMap.builder();
+        for (MaterializedTable table : allTables()) {
+          for (Map.Entry<String, TableUniqueIndex> index : table.uniqueIndexes().entrySet()) {
+            builder.put(table.fullName() + "." + index.getKey(), index.getValue().stats());
+          }
+        }
+        return builder.build();
       }
 
       @Override
       public ImmutableMap<String, ByteMultiTrieStat> multiIndexStats() throws IOException {
-        return Util.<String, TableMultiIndex, ByteMultiTrieStat>mapValuesIOException(multiIndexes, TableMultiIndex::stats);
-      }
-
-      @Override
-      public IndexReader getIndex(String name) throws RuleException {
-        if (uniqueIndexes.containsKey(name)) {
-          return uniqueIndexes.get(name);
-        } else if (multiIndexes.containsKey(name)) {
-          return multiIndexes.get(name);
-        } else {
-          throw new RuleException(String.format("Invalid index '%s'.", name));
+        ImmutableMap.Builder<String, ByteMultiTrieStat> builder = ImmutableMap.builder();
+        for (MaterializedTable table : allTables()) {
+          for (Map.Entry<String, TableMultiIndex> index : table.multiIndexes().entrySet()) {
+            builder.put(table.fullName() + "." + index.getKey(), index.getValue().stats());
+          }
         }
+        return builder.build();
       }
 
       @Override
@@ -585,6 +417,12 @@ public class MetaRepo {
       public void metaRepoReadUnlock() {
         lockManager.metaRepoReadUnlock();
       }
+
+      @Override
+      public IndexReader getIndex(String id) throws RuleException {
+        String[] ids = id.split(".");
+        return tables.get(ids[0]).get(ids[1]).getIndex(ids[2]);
+      }
     };
   }
 
@@ -593,8 +431,10 @@ public class MetaRepo {
     return new MetaWriter() {
 
       @Override
-      public MaterializedTable table(TableWithOwner table) throws ModelException {
-        return MetaRepo.this.table(table);
+      public MaterializedTable table(TableWithOwner table, AuthToken authToken) throws ModelException, GrantException {
+        MaterializedTable tableMeta = MetaRepo.this.table(table);
+        grants.checkOwner(tableMeta, authToken);
+        return tableMeta;
       }
 
       @Override
@@ -608,24 +448,8 @@ public class MetaRepo {
       }
 
       @Override
-      public IndexWriter registerIndex(MaterializedTable tableMeta, BasicColumn column)
-          throws IOException {
-        return MetaRepo.this.registerIndex(tableMeta, column);
-      }
-
-      @Override
-      public IndexWriter registerIndex(GroupByKey groupByKey) throws IOException {
-        return MetaRepo.this.registerIndex(groupByKey);
-      }
-
-      @Override
-      public void syncIndex(MaterializedTable tableMeta) throws IOException {
-        MetaRepo.this.syncIndex(tableMeta);
-      }
-
-      @Override
       public void registerTable(MaterializedTable tableMeta) throws IOException {
-        syncIndex(tableMeta);
+        tableMeta.syncIndex();
         syncMeta(tableMeta);
         if (!tables.containsKey(tableMeta.owner())) {
           tables.put(tableMeta.owner(), new HashMap<>());
@@ -635,27 +459,10 @@ public class MetaRepo {
       }
 
       @Override
-      public void dropIndex(MaterializedTable tableMeta, BasicColumn column, AuthToken authToken)
-          throws IOException, GrantException {
-        grants.checkOwner(tableMeta, authToken);
-        if (column.isUnique()) {
-          dropUniqueIndex(tableMeta, column);
-        } else {
-          dropMultiIndex(tableMeta, column);
-        }
-        column.setIndexed(false);
-      }
-
-      @Override
       public void dropTable(MaterializedTable tableMeta, AuthToken authToken) throws IOException, GrantException {
         grants.checkOwner(tableMeta, authToken);
         tables.get(tableMeta.owner()).remove(tableMeta.tableName());
         tableMeta.drop();
-        for (BasicColumn column : tableMeta.allColumns()) {
-          if (column.isIndexed()) {
-            dropIndex(tableMeta, column, authToken);
-          }
-        }
         lockManager.removeLock(tableMeta);
       }
 
@@ -701,8 +508,6 @@ public class MetaRepo {
 
       @Override
       public void resetAndReadTables() throws DBException {
-        uniqueIndexes.clear();
-        multiIndexes.clear();
         readTables();
       }
 

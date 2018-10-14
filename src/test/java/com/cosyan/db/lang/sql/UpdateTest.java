@@ -115,10 +115,10 @@ public class UpdateTest extends UnitTestBase {
     execute("insert into t6 values ('y');");
     execute("insert into t7 values ('123', 'x');");
 
-    TableUniqueIndex t6a = metaRepo.collectUniqueIndexes(metaRepo.table("admin", "t6")).get("a");
+    TableUniqueIndex t6a = metaRepo.table("admin", "t6").uniqueIndexes().get("a");
     assertEquals(0L, t6a.get("x")[0]);
     assertEquals(16L, t6a.get("y")[0]);
-    TableMultiIndex t7b = metaRepo.collectMultiIndexes(metaRepo.table("admin", "t7")).get("b");
+    TableMultiIndex t7b = metaRepo.table("admin", "t7").multiIndexes().get("b");
     org.junit.Assert.assertArrayEquals(new long[] { 0L }, t7b.get("x"));
     assertEquals(false, t7b.contains("y"));
 
@@ -153,9 +153,9 @@ public class UpdateTest extends UnitTestBase {
     QueryResult r1 = query("select a, fk_a.a as a2, fk_a.b as b2 from t10;");
     assertHeader(new String[] { "a", "a2", "b2" }, r1);
     assertValues(new Object[][] { { 1L, 1L, 1L } }, r1);
-    TableUniqueIndex t9a = metaRepo.collectUniqueIndexes(metaRepo.table("admin", "t9")).get("a");
+    TableUniqueIndex t9a = metaRepo.table("admin", "t9").uniqueIndexes().get("a");
     assertEquals(0L, t9a.get0(1L));
-    TableMultiIndex t10a = metaRepo.collectMultiIndexes(metaRepo.table("admin", "t10")).get("a");
+    TableMultiIndex t10a = metaRepo.table("admin", "t10").multiIndexes().get("a");
     assertEquals(0L, t10a.get(1L)[0]);
 
     execute("update t9 set b = 2;");
@@ -404,7 +404,7 @@ public class UpdateTest extends UnitTestBase {
     execute("create table t31 (a id, b varchar);");
     execute("insert into t31 values ('x'), ('y');");
 
-    TableUniqueIndex index = (TableUniqueIndex) metaRepo.collectIndexReaders(metaRepo.table("admin", "t31")).get("a");
+    TableUniqueIndex index = metaRepo.table("admin", "t31").uniqueIndexes().get("a");
     assertEquals(0L, index.get0(0L));
 
     execute("update t31 set b = 'z' where a = 0;");

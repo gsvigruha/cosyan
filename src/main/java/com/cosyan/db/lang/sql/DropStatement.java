@@ -46,7 +46,7 @@ public class DropStatement {
     @Override
     public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException, GrantException {
       tableWithOwner = table.resolve(authToken);
-      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
+      MaterializedTable tableMeta = metaRepo.table(tableWithOwner, authToken);
       if (!tableMeta.foreignKeys().isEmpty()) {
         ForeignKey foreignKey = tableMeta.foreignKeys().values().iterator().next();
         throw new ModelException(String.format("Cannot drop table '%s', has foreign key '%s'.",
@@ -77,13 +77,13 @@ public class DropStatement {
     @Override
     public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException, GrantException {
       tableWithOwner = tableColumn.getTable().resolve(authToken);
-      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
+      MaterializedTable tableMeta = metaRepo.table(tableWithOwner, authToken);
       basicColumn = tableMeta.column(tableColumn.getColumn());
       if (basicColumn.isUnique()) {
         throw new ModelException(String.format("Cannot drop index '%s.%s', column is unique.",
             tableMeta.fullName(), basicColumn.getName()), tableColumn.getColumn());
       }
-      metaRepo.dropIndex(tableMeta, basicColumn, authToken);
+      tableMeta.dropIndex(basicColumn);
       return Result.META_OK;
     }
   }

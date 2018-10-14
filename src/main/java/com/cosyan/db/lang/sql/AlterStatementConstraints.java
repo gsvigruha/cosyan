@@ -55,13 +55,13 @@ public class AlterStatementConstraints {
     private IndexWriter indexWriter;
 
     @Override
-    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException, GrantException {
       tableWithOwner = table.resolve(authToken);
-      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
+      MaterializedTable tableMeta = metaRepo.table(tableWithOwner, authToken);
       TableWithOwner refTableWithOwner = constraint.getRefTable().resolve(authToken);
-      MaterializedTable refTable = metaRepo.table(refTableWithOwner);
+      MaterializedTable refTable = metaRepo.table(refTableWithOwner, authToken);
       foreignKey = tableMeta.createForeignKey(constraint, refTable);
-      indexWriter = metaRepo.registerIndex(tableMeta, foreignKey.getColumn());
+      indexWriter = tableMeta.registerIndex(foreignKey.getColumn());
       return MetaResources.tableMeta(tableMeta).merge(MetaResources.tableMeta(refTable));
     }
 
@@ -94,9 +94,9 @@ public class AlterStatementConstraints {
     private TableWriter writer;
 
     @Override
-    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException {
       tableWithOwner = table.resolve(authToken);
-      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
+      MaterializedTable tableMeta = metaRepo.table(tableWithOwner, authToken);
       rule = tableMeta.createRule(constraint);
       return MetaResources.tableMeta(tableMeta).merge(rule.getColumn().readResources());
     }
@@ -125,7 +125,7 @@ public class AlterStatementConstraints {
 
     @Override
     public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
-      MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
+      MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken), authToken);
       if (tableMeta.hasRule(constraint.getString())) {
         tableMeta.dropRule(constraint.getString());
       } else if (tableMeta.hasForeignKey(constraint.getString())) {
