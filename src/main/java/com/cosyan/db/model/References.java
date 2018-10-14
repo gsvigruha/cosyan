@@ -246,8 +246,7 @@ public class References {
 
     @Override
     public ImmutableList<Ref> foreignKeyChain() {
-      return ImmutableList.<Ref>builder().addAll(parent.foreignKeyChain()).add(reverseForeignKey)
-          .build();
+      return ImmutableList.<Ref>builder().addAll(parent.foreignKeyChain()).add(reverseForeignKey).build();
     }
 
     @Override
@@ -366,8 +365,7 @@ public class References {
 
     @Override
     public ImmutableList<Ref> foreignKeyChain() {
-      return ImmutableList.<Ref>builder().addAll(parent.foreignKeyChain()).add(groupByKey)
-          .build();
+      return ImmutableList.<Ref>builder().addAll(parent.foreignKeyChain()).add(groupByKey).build();
     }
 
     @Override
@@ -409,12 +407,7 @@ public class References {
       IterableTableReader reader = sourceTable.reader(resources, TableContext.withParent(sourceValues));
       Object[] aggrValues = reader.next();
       reader.close();
-      Object[] values = new Object[columns.size()];
-      int i = 0;
-      for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-        values[i++] = entry.getValue().value(aggrValues, resources, context);
-      }
-      return values;
+      return mapValues(aggrValues, resources, context, columns);
     }
   }
 
@@ -448,13 +441,7 @@ public class References {
     @Override
     public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
         throws IOException {
-      Object[] values = sourceTable.values(sourceValues, resources, context);
-      Object[] newValues = new Object[columns.size()];
-      int i = 0;
-      for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-        newValues[i++] = entry.getValue().value(values, resources, context);
-      }
-      return newValues;
+      return mapValues(sourceTable.values(sourceValues, resources, context), resources, context, columns);
     }
   }
 
@@ -491,12 +478,7 @@ public class References {
       IterableTableReader reader = sourceTable.reader(resources, TableContext.withParent(sourceValues));
       Object[] aggrValues = reader.next();
       reader.close();
-      Object[] values = new Object[columns.size()];
-      int i = 0;
-      for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-        values[i++] = entry.getValue().value(aggrValues, resources, context);
-      }
-      return values;
+      return mapValues(aggrValues, resources, context, columns);
     }
   }
 

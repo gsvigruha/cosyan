@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.TreeMap;
 
 import com.cosyan.db.io.Indexes.IndexReader;
@@ -116,16 +115,7 @@ public class DerivedTables {
 
         @Override
         public Object[] next() throws IOException {
-          Object[] sourceValues = sourceReader.next();
-          if (sourceValues == null) {
-            return null;
-          }
-          Object[] values = new Object[columns.size()];
-          int i = 0;
-          for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-            values[i++] = entry.getValue().value(sourceValues, resources, context);
-          }
-          return values;
+          return mapValues(sourceReader.next(), resources, context, columns);
         }
       };
     }
@@ -172,6 +162,7 @@ public class DerivedTables {
       return sourceTable.readResources().merge(resourcesFromColumn(whereColumn));
     }
 
+    @Override
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       return new DerivedIterableTableReader(sourceTable.reader(resources, context)) {
 
@@ -331,6 +322,7 @@ public class DerivedTables {
       return sourceTable.readResources();
     }
 
+    @Override
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       return new DerivedIterableTableReader(sourceTable.reader(resources, context)) {
 
