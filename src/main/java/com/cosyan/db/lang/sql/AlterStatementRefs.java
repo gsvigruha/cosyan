@@ -51,9 +51,8 @@ public class AlterStatementRefs {
     @Override
     public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
       tableWithOwner = table.resolve(authToken);
-      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
+      MaterializedTable tableMeta = metaRepo.table(tableWithOwner, authToken);
       refTableMeta = tableMeta.createView(ref, tableMeta.owner());
-      metaRepo.syncIndex(tableMeta);
       return MetaResources.tableMeta(tableMeta);
     }
 
@@ -81,7 +80,7 @@ public class AlterStatementRefs {
 
     @Override
     public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
-      MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
+      MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken), authToken);
       if (tableMeta.hasRef(ref.getString())) {
         tableMeta.dropRef(ref);
       } else {

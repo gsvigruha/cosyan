@@ -27,6 +27,16 @@ import java.util.stream.Collectors;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.conf.Config;
+import com.cosyan.db.index.IDIndex;
+import com.cosyan.db.index.LeafTypes.DoubleIndex;
+import com.cosyan.db.index.LeafTypes.LongIndex;
+import com.cosyan.db.index.LeafTypes.StringIndex;
+import com.cosyan.db.index.MultiLeafTries.DoubleMultiIndex;
+import com.cosyan.db.index.MultiLeafTries.LongMultiIndex;
+import com.cosyan.db.index.MultiLeafTries.MultiColumnMultiIndex;
+import com.cosyan.db.index.MultiLeafTries.StringMultiIndex;
+import com.cosyan.db.io.Indexes.IndexReader;
+import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.io.MemoryBufferedSeekableFileStream;
 import com.cosyan.db.io.RAFBufferedInputStream;
 import com.cosyan.db.io.SeekableInputStream;
@@ -46,6 +56,7 @@ import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.Dependencies.TableDependency;
 import com.cosyan.db.meta.Dependencies.TransitiveTableDependency;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.AggrTables.KeyValueAggrTableMeta;
 import com.cosyan.db.model.BasicColumn;
@@ -63,14 +74,24 @@ import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.References.AggViewTableMeta;
 import com.cosyan.db.model.References.FlatRefTableMeta;
-import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.References.GroupByFilterTableMeta;
+import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
+import com.cosyan.db.model.TableMultiIndex;
+import com.cosyan.db.model.TableMultiIndex.DoubleTableMultiIndex;
+import com.cosyan.db.model.TableMultiIndex.LongTableMultiIndex;
+import com.cosyan.db.model.TableMultiIndex.MultiColumnTableMultiIndex;
+import com.cosyan.db.model.TableMultiIndex.StringTableMultiIndex;
 import com.cosyan.db.model.TableRef;
+import com.cosyan.db.model.TableUniqueIndex;
+import com.cosyan.db.model.TableUniqueIndex.DoubleTableIndex;
+import com.cosyan.db.model.TableUniqueIndex.IDTableIndex;
+import com.cosyan.db.model.TableUniqueIndex.LongTableIndex;
+import com.cosyan.db.model.TableUniqueIndex.StringTableIndex;
 import com.cosyan.db.model.stat.TableStats;
 import com.cosyan.db.transaction.MetaResources;
 import com.google.common.collect.ImmutableList;
@@ -96,7 +117,9 @@ public class MaterializedTable {
   private final Map<String, ForeignKey> foreignKeys;
   private final Map<String, ReverseForeignKey> reverseForeignKeys;
   private final Map<String, TableRef> refs;
-  private final Map<String, GroupByKey> extraIndexes;
+  private final HashMap<String, TableUniqueIndex> uniqueIndexes;
+  private final HashMap<String, TableMultiIndex> multiIndexes;
+  private final HashMap<String, MultiColumnTableMultiIndex> extraIndexes;
   private TableDependencies ruleDependencies;
   private ReverseRuleDependencies reverseRuleDependencies;
   private Optional<ColumnMeta> partitioning;
@@ -116,6 +139,8 @@ public class MaterializedTable {
     this.foreignKeys = new HashMap<>();
     this.reverseForeignKeys = new HashMap<>();
     this.refs = new HashMap<>();
+    this.uniqueIndexes = new HashMap<>();
+    this.multiIndexes = new HashMap<>();
     this.extraIndexes = new HashMap<>();
     this.ruleDependencies = new TableDependencies();
     this.reverseRuleDependencies = new ReverseRuleDependencies();
@@ -246,8 +271,20 @@ public class MaterializedTable {
     return Collections.unmodifiableMap(refs);
   }
 
-  public Map<String, GroupByKey> extraIndexes() {
+  public Map<String, TableUniqueIndex> uniqueIndexes() {
+    return Collections.unmodifiableMap(uniqueIndexes);
+  }
+
+  public Map<String, TableMultiIndex> multiIndexes() {
+    return Collections.unmodifiableMap(multiIndexes);
+  }
+
+  public Map<String, MultiColumnTableMultiIndex> extraIndexes() {
     return Collections.unmodifiableMap(extraIndexes);
+  }
+
+  public Map<String, IndexReader> allIndexReaders() {
+    return ImmutableMap.<String, IndexReader>builder().putAll(uniqueIndexes).putAll(multiIndexes).putAll(extraIndexes).build();
   }
 
   public void checkName(Ident ident) throws ModelException {
@@ -341,7 +378,7 @@ public class MaterializedTable {
     columns.add(column);
   }
 
-  public TableMeta createView(ViewDefinition ref, String owner) throws ModelException {
+  public TableMeta createView(ViewDefinition ref, String owner) throws ModelException, IOException {
     checkName(ref.getName());
     ExposedTableMeta srcTableMeta = ref.getSelect().getTable().compile(reader(), owner);
     if (srcTableMeta instanceof ReferencedMultiTableMeta) {
@@ -380,7 +417,7 @@ public class MaterializedTable {
         KeyValueTableMeta intermediateTable = new KeyValueTableMeta(derivedTable, groupByKey.getColumns());
         KeyValueAggrTableMeta aggrTable = new KeyValueAggrTableMeta(intermediateTable);
         TableColumns columns = Select.tableColumns(aggrTable, ref.getSelect().getColumns());
-        seekableTableMeta.tableMeta().extraIndexes.put(groupByKey.getName(), groupByKey);
+        seekableTableMeta.tableMeta().registerIndex(groupByKey);
         return new AggViewTableMeta(aggrTable, columns.getColumns());
       } else {
         TableColumns columns = Select.tableColumns(srcTableMeta, ref.getSelect().getColumns());
@@ -426,7 +463,7 @@ public class MaterializedTable {
     rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */false);
   }
 
-  public void dropForeignKey(Ident ident, AuthToken authToken) throws ModelException {
+  public void dropForeignKey(Ident ident, AuthToken authToken) throws ModelException, IOException {
     assert foreignKeys.containsKey(ident.getString());
     ForeignKey fk = foreignKeys.remove(ident.getString());
     fk.getRefTable().reverseForeignKeys.remove(fk.getRevName());
@@ -473,6 +510,114 @@ public class MaterializedTable {
       } catch (ModelException e) {
         throw new ModelException(
             String.format("Cannot drop ref '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
+      }
+    }
+  }
+
+  public TableUniqueIndex registerUniqueIndex(BasicColumn column) throws IOException {
+    String indexName = column.getName();
+    String path = config.indexDir() + File.separator + fullName() + "." + indexName;
+    if (!uniqueIndexes.containsKey(indexName)) {
+      if (column.getType() == DataTypes.StringType) {
+        uniqueIndexes.put(indexName, new StringTableIndex(new StringIndex(path)));
+      } else if (column.getType() == DataTypes.LongType) {
+        uniqueIndexes.put(indexName, new LongTableIndex(new LongIndex(path)));
+      } else if (column.getType() == DataTypes.DoubleType) {
+        uniqueIndexes.put(indexName, new DoubleTableIndex(new DoubleIndex(path)));
+      } else if (column.getType() == DataTypes.IDType) {
+        uniqueIndexes.put(indexName, new IDTableIndex(new IDIndex(path)));
+      }
+    }
+    return uniqueIndexes.get(indexName);
+  }
+
+  public TableMultiIndex registerMultiIndex(BasicColumn column) throws IOException {
+    String indexName = column.getName();
+    String path = config.indexDir() + File.separator + fullName() + "." + indexName;
+    if (!multiIndexes.containsKey(indexName)) {
+      if (column.getType() == DataTypes.StringType) {
+        multiIndexes.put(indexName, new StringTableMultiIndex(new StringMultiIndex(path)));
+      } else if (column.getType() == DataTypes.DoubleType) {
+        multiIndexes.put(indexName, new DoubleTableMultiIndex(new DoubleMultiIndex(path)));
+      } else if (column.getType() == DataTypes.LongType || column.getType() == DataTypes.IDType) {
+        multiIndexes.put(indexName, new LongTableMultiIndex(new LongMultiIndex(path)));
+      }
+    }
+    return multiIndexes.get(indexName);
+  }
+
+  public IndexWriter registerIndex(BasicColumn column)
+      throws IOException {
+    IndexWriter index;
+    if (column.isUnique()) {
+      index = registerUniqueIndex(column);
+    } else {
+      index = registerMultiIndex(column);
+    }
+    column.setIndexed(true);
+    return index;
+  }
+
+  public IndexWriter registerIndex(GroupByKey groupByKey) throws IOException {
+    assert groupByKey.getTable() == this;
+    String indexName = groupByKey.getName();
+    String path = config.indexDir() + File.separator + fullName() + "." + indexName;
+    if (!extraIndexes.containsKey(indexName)) {
+      extraIndexes.put(indexName, new MultiColumnTableMultiIndex(
+          groupByKey, new MultiColumnMultiIndex(path, groupByKey.columnTypes())));
+    }
+    return extraIndexes.get(indexName);
+  }
+
+  public IndexReader getIndex(String name) throws RuleException {
+    if (uniqueIndexes.containsKey(name)) {
+      return uniqueIndexes.get(name);
+    } else if (multiIndexes.containsKey(name)) {
+      return multiIndexes.get(name);
+    } else {
+      throw new RuleException(String.format("Invalid index '%s'.", name));
+    }
+  }
+
+  public void dropUniqueIndex(BasicColumn column) throws IOException {
+    String indexName = column.getName();
+    if (!uniqueIndexes.containsKey(indexName)) {
+      return;
+    }
+    TableUniqueIndex index = uniqueIndexes.remove(indexName);
+    index.drop();
+  }
+
+  public void dropMultiIndex(BasicColumn column) throws IOException {
+    String indexName = column.getName();
+    if (!multiIndexes.containsKey(indexName)) {
+      return;
+    }
+    TableMultiIndex index = multiIndexes.remove(indexName);
+    index.drop();
+  }
+
+  public void dropIndex(BasicColumn column) throws IOException {
+    if (column.isUnique()) {
+      dropUniqueIndex(column);
+    } else {
+      dropMultiIndex(column);
+    }
+    column.setIndexed(false);
+  }
+
+  public void syncIndex() throws IOException {
+    for (BasicColumn column : allColumns()) {
+      if (column.isIndexed()) {
+        if (column.isDeleted()) {
+          if (column.isUnique()) {
+            dropUniqueIndex(column);
+          } else {
+            dropMultiIndex(column);
+          }
+        } else {
+          registerIndex(column);
+        }
       }
     }
   }
@@ -607,6 +752,11 @@ public class MaterializedTable {
   }
 
   public void drop() throws IOException {
+    for (BasicColumn column : allColumns()) {
+      if (column.isIndexed()) {
+        dropIndex(column);
+      }
+    }
     raf.close();
     new File(fileName()).delete();
   }

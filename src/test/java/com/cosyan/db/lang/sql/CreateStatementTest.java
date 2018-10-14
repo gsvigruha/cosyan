@@ -110,7 +110,7 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateIndex() throws Exception {
     execute("create table t7 (a varchar);");
     execute("create index t7.a;");
-    assertEquals(1, metaRepo.collectMultiIndexes(metaRepo.table("admin", "t7")).size());
+    assertEquals(1, metaRepo.table("admin", "t7").multiIndexes().size());
   }
 
   @Test
@@ -246,7 +246,7 @@ public class CreateStatementTest extends UnitTestBase {
     execute("create index t26.a;");
     MaterializedTable t26 = metaRepo.table("admin", "t26");
     assertTrue(t26.column(new Ident("a")).isIndexed());
-    TableMultiIndex index = metaRepo.collectMultiIndexes(t26).get("a");
+    TableMultiIndex index = t26.multiIndexes().get("a");
     assertArrayEquals(new long[] { 0L, 32L }, index.get("x"));
     assertArrayEquals(new long[] { 16L }, index.get("y"));
   }
@@ -295,6 +295,6 @@ public class CreateStatementTest extends UnitTestBase {
     assertError(ModelException.class, "[13, 16]: Table 'admin.t29' does not exist.", e);
 
     execute("create index u2.t29.a;");
-    assertEquals(1, metaRepo.collectMultiIndexes(metaRepo.table("u2", "t29")).size());
+    assertEquals(1, metaRepo.table("u2", "t29").multiIndexes().size());
   }
 }

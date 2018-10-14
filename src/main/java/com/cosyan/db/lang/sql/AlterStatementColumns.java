@@ -22,6 +22,7 @@ import com.cosyan.db.lang.expr.Statements.AlterStatement;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.transaction.Result;
+import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
@@ -47,9 +48,9 @@ public class AlterStatementColumns {
     private BasicColumn basicColumn;
 
     @Override
-    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException {
       tableWithOwner = table.resolve(authToken);
-      MaterializedTable tableMeta = metaRepo.table(tableWithOwner);
+      MaterializedTable tableMeta = metaRepo.table(tableWithOwner, authToken);
       basicColumn = tableMeta.createColumn(column);
       return MetaResources.tableMeta(tableMeta);
     }
@@ -76,8 +77,8 @@ public class AlterStatementColumns {
     private BasicColumn basicColumn;
 
     @Override
-    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException {
-      MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException {
+      MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken), authToken);
       basicColumn = tableMeta.column(column);
       tableMeta.checkDeleteColumn(column);
       return MetaResources.tableMeta(tableMeta);
@@ -103,8 +104,8 @@ public class AlterStatementColumns {
     private BasicColumn originalColumn;
 
     @Override
-    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException {
-      MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken));
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException {
+      MaterializedTable tableMeta = metaRepo.table(table.resolve(authToken), authToken);
       originalColumn = tableMeta.column(column.getName());
       if (originalColumn.getType() != column.getType()) {
         throw new ModelException(

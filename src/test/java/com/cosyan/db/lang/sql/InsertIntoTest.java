@@ -124,10 +124,10 @@ public class InsertIntoTest extends UnitTestBase {
       assertHeader(new String[] { "a", "b" }, result);
       assertValues(new Object[][] { { "123", "x" }, { "456", "x" } }, result);
     }
-    TableUniqueIndex t9a = metaRepo.collectUniqueIndexes(metaRepo.table("admin", "t9")).get("a");
+    TableUniqueIndex t9a = metaRepo.table("admin", "t9").uniqueIndexes().get("a");
     assertEquals(0L, t9a.get("x")[0]);
     assertEquals(16L, t9a.get("y")[0]);
-    TableMultiIndex t10b = metaRepo.collectMultiIndexes(metaRepo.table("admin", "t10")).get("b");
+    TableMultiIndex t10b = metaRepo.table("admin", "t10").multiIndexes().get("b");
     org.junit.Assert.assertArrayEquals(new long[] { 0L, 27L }, t10b.get("x"));
   }
 

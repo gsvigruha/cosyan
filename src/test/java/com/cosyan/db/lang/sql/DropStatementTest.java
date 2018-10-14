@@ -61,9 +61,9 @@ public class DropStatementTest extends UnitTestBase {
   public void testDropIndex() throws Exception {
     execute("create table t5 (a varchar);");
     execute("create index t5.a;");
-    assertEquals(1, metaRepo.collectMultiIndexes(metaRepo.table("admin", "t5")).size());
+    assertEquals(1, metaRepo.table("admin", "t5").multiIndexes().size());
     execute("drop index t5.a;");
-    assertEquals(0, metaRepo.collectMultiIndexes(metaRepo.table("admin", "t5")).size());
+    assertEquals(0, metaRepo.table("admin", "t5").multiIndexes().size());
   }
 
   @Test

@@ -77,7 +77,7 @@ public class RestartDBTest {
     assertEquals(1, tableMeta.columns().size());
     assertEquals(1, tableMeta.rules().size());
     assertEquals(true, tableMeta.primaryKey().isPresent());
-    assertTrue(dbApi.getMetaRepo().collectUniqueIndexes(tableMeta).containsKey("a"));
+    assertTrue(tableMeta.uniqueIndexes().containsKey("a"));
 
     dbApi = new DBApi(config);
     MaterializedTable newTableMeta = dbApi.getMetaRepo().table("admin", "t1");
@@ -86,7 +86,7 @@ public class RestartDBTest {
     assertEquals(tableMeta.primaryKey(), newTableMeta.primaryKey());
     assertEquals(tableMeta.foreignKeys(), newTableMeta.foreignKeys());
     assertEquals(tableMeta.reverseForeignKeys(), newTableMeta.reverseForeignKeys());
-    assertTrue(dbApi.getMetaRepo().collectUniqueIndexes(newTableMeta).containsKey("a"));
+    assertTrue(newTableMeta.uniqueIndexes().containsKey("a"));
   }
 
   @Test
@@ -274,7 +274,7 @@ public class RestartDBTest {
     dbApi.newAdminSession().execute("create index t14.a;");
     {
       MaterializedTable t14 = dbApi.getMetaRepo().table("admin", "t14");
-      IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t14).get("a");
+      IndexReader index = t14.allIndexReaders().get("a");
       assertArrayEquals(new long[] { 0L }, index.get(1L));
       assertArrayEquals(new long[] { 18L }, index.get(2L));
     }
@@ -282,7 +282,7 @@ public class RestartDBTest {
     dbApi = new DBApi(config);
     {
       MaterializedTable t14 = dbApi.getMetaRepo().table("admin", "t14");
-      IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t14).get("a");
+      IndexReader index = t14.allIndexReaders().get("a");
       assertArrayEquals(new long[] { 0L }, index.get(1L));
       assertArrayEquals(new long[] { 18L }, index.get(2L));
     }
@@ -296,7 +296,7 @@ public class RestartDBTest {
     dbApi.newAdminSession().execute("insert into t15 values ('y');");
     {
       MaterializedTable t15 = dbApi.getMetaRepo().table("admin", "t15");
-      IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t15).get("a");
+      IndexReader index = t15.allIndexReaders().get("a");
       assertArrayEquals(new long[] { 0L }, index.get(0L));
       assertArrayEquals(new long[] { 25L }, index.get(1L));
     }
@@ -304,7 +304,7 @@ public class RestartDBTest {
     dbApi = new DBApi(config);
     {
       MaterializedTable t15 = dbApi.getMetaRepo().table("admin", "t15");
-      IndexReader index = dbApi.getMetaRepo().collectIndexReaders(t15).get("a");
+      IndexReader index = t15.allIndexReaders().get("a");
       assertArrayEquals(new long[] { 0L }, index.get(0L));
       assertArrayEquals(new long[] { 25L }, index.get(1L));
     }

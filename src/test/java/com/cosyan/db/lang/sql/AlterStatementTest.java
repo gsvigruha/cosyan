@@ -280,7 +280,7 @@ public class AlterStatementTest extends UnitTestBase {
     assertEquals("a", rfk.getRefColumn().getName());
 
     assertTrue(t17.column(new Ident("a")).isIndexed());
-    TableMultiIndex index = metaRepo.collectMultiIndexes(t17).get("a");
+    TableMultiIndex index = t17.multiIndexes().get("a");
     assertArrayEquals(new long[] { 18L }, index.get(0L));
     assertArrayEquals(new long[] { 0L, 36L }, index.get(1L));
   }
@@ -313,7 +313,7 @@ public class AlterStatementTest extends UnitTestBase {
     MaterializedTable t19 = metaRepo.table("admin", "t19");
     assertEquals(0, t19.reverseForeignKeys().size());
     assertFalse(t20.column(new Ident("a")).isIndexed());
-    assertEquals(0, metaRepo.collectIndexReaders(t20).size());
+    assertEquals(0, t20.allIndexReaders().size());
   }
 
   @Test
@@ -393,7 +393,7 @@ public class AlterStatementTest extends UnitTestBase {
     assertEquals("a", rfk.getRefColumn().getName());
 
     assertTrue(t27.column(new Ident("a")).isIndexed());
-    TableMultiIndex index = metaRepo.collectMultiIndexes(t27).get("a");
+    TableMultiIndex index = t27.multiIndexes().get("a");
     assertArrayEquals(new long[] { 25L }, index.get(0L));
     assertArrayEquals(new long[] { 0L }, index.get(1L));
   }
