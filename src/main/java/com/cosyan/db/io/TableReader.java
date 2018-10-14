@@ -187,7 +187,7 @@ public abstract class TableReader implements TableIO {
     protected final ColumnMeta whereColumn;
     private final Resources resources;
 
-    protected long[] positions;
+    private long[] positions;
     private int pointer;
     private boolean cancelled;
 
@@ -210,7 +210,7 @@ public abstract class TableReader implements TableIO {
     @Override
     public Record read() throws IOException {
       if (positions == null) {
-        readPositions();
+        positions = readPositions();
         pointer = 0;
       }
       Record record = RecordReader.EMPTY;
@@ -233,7 +233,7 @@ public abstract class TableReader implements TableIO {
       return record;
     }
 
-    protected abstract void readPositions() throws IOException;
+    protected abstract long[] readPositions() throws IOException;
 
     @Override
     public void close() throws IOException {

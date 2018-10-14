@@ -740,4 +740,17 @@ public class AlterStatementTest extends UnitTestBase {
       assertError(RuleException.class, "Referencing constraint check t64.c_1 failed.", e);
     }
   }
+
+  @Test
+  public void testAlterTableRefAggView() throws Exception {
+    execute("create table t65 (a integer, b integer, constraint pk_b primary key (b));");
+    execute("alter table t65 add view s (select a, count(1) as cnt from t65 group by a);");
+    execute("create table t66 (b integer, constraint fk_b foreign key (b) references t65(b));");
+
+    execute("insert into t65 values (1, 1), (1, 2);");
+    execute("insert into t66 values (1), (2);");
+
+    QueryResult result = query("select b, fk_b.s.a, fk_b.s.cnt from t66;");
+    assertValues(new Object[][] {{ 1L, 1L, 2L }, { 2L, 1L, 2L }}, result);
+  }
 }

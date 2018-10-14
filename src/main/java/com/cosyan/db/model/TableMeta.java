@@ -83,6 +83,15 @@ public abstract class TableMeta implements CompiledObject {
     return keys.asList().indexOf(ident.getString());
   }
 
+  protected IndexColumn shiftColumn(TableMeta sourceTable, ImmutableMap<String, ColumnMeta> columns, Ident ident)
+      throws ModelException {
+    ColumnMeta column = columns.get(ident.getString());
+    if (column == null) {
+      return null;
+    }
+    return new IndexColumn(sourceTable, indexOf(columns.keySet(), ident), column.getType(), column.tableDependencies());
+  }
+
   public static abstract class IterableTableMeta extends TableMeta {
 
     public abstract IterableTableReader reader(Resources resources, TableContext context) throws IOException;

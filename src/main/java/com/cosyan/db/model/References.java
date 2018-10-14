@@ -79,6 +79,13 @@ public class References {
     public TableMeta parent();
   }
 
+  public static IndexColumn columnWithDep(BasicColumn column, ReferencedTable table) {
+    if (column == null) {
+      return null;
+    }
+    return new IndexColumn((TableMeta) table, column.getIndex(), column.getType(), TableDependencies.of(table));
+  }
+
   public static TableMeta getRefTable(ReferencedTable parent, String tableName, Ident key,
       Map<String, ForeignKey> foreignKeys, Map<String, ReverseForeignKey> reverseForeignKeys,
       Map<String, TableRef> refs) throws ModelException {
@@ -169,13 +176,7 @@ public class References {
 
     @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
-      BasicColumn column = foreignKey.getRefTable().column(ident);
-      if (column == null) {
-        return null;
-      }
-      TableDependencies deps = new TableDependencies();
-      deps.addTableDependency(this);
-      return new IndexColumn(this, column.getIndex(), column.getType(), deps);
+      return columnWithDep(foreignKey.getRefTable().column(ident), this);
     }
 
     @Override
@@ -251,20 +252,12 @@ public class References {
 
     @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
-      BasicColumn column = reverseForeignKey.getRefTable().column(ident);
-      if (column == null) {
-        return null;
-      }
-      TableDependencies deps = new TableDependencies();
-      deps.addTableDependency(this);
-      return new IndexColumn(this, column.getIndex(), column.getType(), deps);
+      return columnWithDep(reverseForeignKey.getRefTable().column(ident), this);
     }
 
     @Override
     public TableDependencies tableDependencies() {
-      TableDependencies deps = new TableDependencies();
-      deps.addTableDependency(this);
-      return deps;
+      return TableDependencies.of(this);
     }
 
     @Override
@@ -292,8 +285,8 @@ public class References {
           ColumnMeta.TRUE_COLUMN, resources) {
 
         @Override
-        protected void readPositions() throws IOException {
-          positions = index.get(key);
+        protected long[] readPositions() throws IOException {
+          return index.get(key);
         }
       };
     }
@@ -318,40 +311,32 @@ public class References {
   @EqualsAndHashCode(callSuper = true)
   public static class GroupByFilterTableMeta extends ExposedTableMeta implements ReferencedTable {
 
-    private final SeekableTableMeta tableMeta;
+    private final SeekableTableMeta parent;
     private final GroupByKey groupByKey;
 
-    public GroupByFilterTableMeta(SeekableTableMeta tableMeta, GroupByKey groupByKey) {
-      this.tableMeta = tableMeta;
+    public GroupByFilterTableMeta(SeekableTableMeta parent, GroupByKey groupByKey) {
+      this.parent = parent;
       this.groupByKey = groupByKey;
     }
 
     @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
-      BasicColumn column = tableMeta.tableMeta().column(ident);
-      if (column == null) {
-        return null;
-      }
-      TableDependencies deps = new TableDependencies();
-      deps.addTableDependency(this);
-      return new IndexColumn(this, column.getIndex(), column.getType(), deps);
+      return columnWithDep(parent.tableMeta().column(ident), this);
     }
 
     @Override
     public TableDependencies tableDependencies() {
-      TableDependencies deps = new TableDependencies();
-      deps.addTableDependency(this);
-      return deps;
+      return TableDependencies.of(this);
     }
 
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
-      return tableMeta.getRefTable(ident);
+      return parent.getRefTable(ident);
     }
 
     @Override
     public MetaResources readResources() {
-      return tableMeta.readResources();
+      return parent.readResources();
     }
 
     @Override
@@ -359,35 +344,35 @@ public class References {
       Object[] sourceValues = context.values(TableContext.PARENT);
       Object[] key = groupByKey.resolveKey(sourceValues, resources, context);
       final IndexReader index = resources.getIndex(groupByKey);
-      return new MultiFilteredTableReader(resources.reader(tableMeta.fullName()),
+      return new MultiFilteredTableReader(resources.reader(parent.fullName()),
           ColumnMeta.TRUE_COLUMN, resources) {
 
         @Override
-        protected void readPositions() throws IOException {
-          positions = index.get(key);
+        protected long[] readPositions() throws IOException {
+          return index.get(key);
         }
       };
     }
 
     @Override
     public ImmutableList<String> columnNames() {
-      return tableMeta.columnNames();
+      return parent.columnNames();
     }
 
     @Override
     public ImmutableList<DataType<?>> columnTypes() {
-      return tableMeta.columnTypes();
+      return parent.columnTypes();
     }
 
     @Override
     public ImmutableList<Ref> foreignKeyChain() {
-      return ImmutableList.<Ref>builder().addAll(tableMeta.foreignKeyChain()).add(groupByKey)
+      return ImmutableList.<Ref>builder().addAll(parent.foreignKeyChain()).add(groupByKey)
           .build();
     }
 
     @Override
     public TableMeta parent() {
-      return tableMeta.parent();
+      return parent.parent();
     }
   }
 
@@ -399,12 +384,7 @@ public class References {
 
     @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
-      ColumnMeta column = columns.get(ident.getString());
-      if (column == null) {
-        return null;
-      }
-      return new IndexColumn(sourceTable, indexOf(columns.keySet(), ident), column.getType(),
-          column.tableDependencies());
+      return shiftColumn(sourceTable, columns, ident);
     }
 
     @Override
@@ -446,12 +426,7 @@ public class References {
 
     @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
-      ColumnMeta column = columns.get(ident.getString());
-      if (column == null) {
-        return null;
-      }
-      return new IndexColumn(sourceTable, indexOf(columns.keySet(), ident), column.getType(),
-          column.tableDependencies());
+      return shiftColumn(sourceTable, columns, ident);
     }
 
     @Override
@@ -491,12 +466,7 @@ public class References {
 
     @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
-      ColumnMeta column = columns.get(ident.getString());
-      if (column == null) {
-        return null;
-      }
-      return new IndexColumn(sourceTable, indexOf(columns.keySet(), ident), column.getType(),
-          column.tableDependencies());
+      return shiftColumn(sourceTable, columns, ident);
     }
 
     @Override
