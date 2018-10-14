@@ -16,6 +16,7 @@
 package com.cosyan.db.model;
 
 import java.io.IOException;
+import java.util.Map;
 
 import javax.annotation.Nullable;
 
@@ -81,6 +82,27 @@ public abstract class TableMeta implements CompiledObject {
 
   protected int indexOf(ImmutableSet<String> keys, Ident ident) {
     return keys.asList().indexOf(ident.getString());
+  }
+
+  protected IndexColumn shiftColumn(TableMeta sourceTable, ImmutableMap<String, ColumnMeta> columns, Ident ident)
+      throws ModelException {
+    ColumnMeta column = columns.get(ident.getString());
+    if (column == null) {
+      return null;
+    }
+    return new IndexColumn(sourceTable, indexOf(columns.keySet(), ident), column.getType(), column.tableDependencies());
+  }
+
+  protected Object[] mapValues(Object[] sourceValues, Resources resources, TableContext context, ImmutableMap<String, ColumnMeta> columns) throws IOException {
+    if (sourceValues == null) {
+      return null;
+    }
+    Object[] newValues = new Object[columns.size()];
+    int i = 0;
+    for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
+      newValues[i++] = entry.getValue().value(sourceValues, resources, context);
+    }
+    return newValues;
   }
 
   public static abstract class IterableTableMeta extends TableMeta {

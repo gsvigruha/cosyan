@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.TreeMap;
 
 import com.cosyan.db.io.Indexes.IndexReader;
@@ -95,11 +94,7 @@ public class DerivedTables {
 
     @Override
     public IndexColumn getColumn(Ident ident) throws ModelException {
-      ColumnMeta column = columns.get(ident.getString());
-      if (column == null) {
-        return null;
-      }
-      return IndexColumn.of(this, column, indexOf(columns.keySet(), ident));
+      return shiftColumn(sourceTable, columns, ident);
     }
 
     @Override
@@ -120,16 +115,7 @@ public class DerivedTables {
 
         @Override
         public Object[] next() throws IOException {
-          Object[] sourceValues = sourceReader.next();
-          if (sourceValues == null) {
-            return null;
-          }
-          Object[] values = new Object[columns.size()];
-          int i = 0;
-          for (Map.Entry<String, ? extends ColumnMeta> entry : columns.entrySet()) {
-            values[i++] = entry.getValue().value(sourceValues, resources, context);
-          }
-          return values;
+          return mapValues(sourceReader.next(), resources, context, columns);
         }
       };
     }
@@ -176,6 +162,7 @@ public class DerivedTables {
       return sourceTable.readResources().merge(resourcesFromColumn(whereColumn));
     }
 
+    @Override
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       return new DerivedIterableTableReader(sourceTable.reader(resources, context)) {
 
@@ -243,9 +230,9 @@ public class DerivedTables {
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       return new MultiFilteredTableReader(resources.reader(sourceTable.fullName()), whereColumn, resources) {
         @Override
-        protected void readPositions() throws IOException {
+        protected long[] readPositions() throws IOException {
           IndexReader index = resources.getIndex(sourceTable.fullName(), clause.getIdent().getString());
-          positions = index.get(clause.getValue());
+          return index.get(clause.getValue());
         }
       };
     }
@@ -335,6 +322,7 @@ public class DerivedTables {
       return sourceTable.readResources();
     }
 
+    @Override
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       return new DerivedIterableTableReader(sourceTable.reader(resources, context)) {
 

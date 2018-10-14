@@ -48,7 +48,7 @@ public class Dependencies {
       this.ref = ref;
     }
 
-    public void merge(TableDependency other) {
+    private void merge(TableDependency other) {
       assert this.ref == other.ref;
       for (Map.Entry<String, TableDependency> entry : other.deps.entrySet()) {
         if (this.deps.containsKey(entry.getKey())) {
@@ -101,6 +101,12 @@ public class Dependencies {
         actDeps = actDeps.get(foreignKey.getName()).deps;
       }
       actDeps.putAll(tableDependencies.getDeps());
+    }
+
+    public static TableDependencies of(ReferencedTable table) {
+      TableDependencies deps = new TableDependencies();
+      deps.addTableDependency(table);
+      return deps;
     }
 
     public void addTableDependency(ReferencedTable table) {

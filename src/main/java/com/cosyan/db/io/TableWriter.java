@@ -444,9 +444,9 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       VariableEquals clause) {
     return new MultiFilteredTableReader(this, whereColumn, resources) {
       @Override
-      protected void readPositions() throws IOException {
+      protected long[] readPositions() throws IOException {
         IndexReader index = resources.getIndex(tableMeta.fullName(), clause.getIdent().getString());
-        positions = index.get(clause.getValue());
+        return index.get(clause.getValue());
       }
     };
   }
