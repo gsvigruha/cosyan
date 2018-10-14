@@ -253,6 +253,9 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     for (TableMultiIndex index : multiIndexes.values()) {
       index.rollback();
     }
+    for (TableMultiIndex index : extraIndexes.values()) {
+      index.rollback();
+    }
   }
 
   public void close() throws IOException {
@@ -399,16 +402,20 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   public IndexReader getIndex(String name) {
     if (uniqueIndexes.containsKey(name)) {
       return uniqueIndexes.get(name);
-    } else {
+    } else if (multiIndexes.containsKey(name)) {
       return multiIndexes.get(name);
+    } else {
+      return extraIndexes.get(name);
     }
   }
 
   public IndexWriter getIndexWriter(String name) {
     if (uniqueIndexes.containsKey(name)) {
       return uniqueIndexes.get(name);
-    } else {
+    } else if (multiIndexes.containsKey(name)) {
       return multiIndexes.get(name);
+    } else {
+      return extraIndexes.get(name);
     }
   }
 

@@ -18,7 +18,6 @@ package com.cosyan.db.io;
 import java.io.IOException;
 import java.util.Collection;
 
-import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.meta.Dependencies.ReverseRuleDependencies;
@@ -47,10 +46,7 @@ public class RuleDependencyReader {
       throws IOException, RuleException {
     for (ReverseRuleDependency dep : collection) {
       Ref ref = dep.getKey();
-      Object[] newSourceValues = record.getValues();
-      Object key = newSourceValues[ref.getColumn().getIndex()];
-      IndexReader index = resources.getIndex(ref);
-      long[] pointers = index.get(key);
+      long[] pointers = ref.resolve(record.getValues(), resources);
       for (long pointer : pointers) {
         for (BooleanRule rule : dep.rules()) {
           if (!rule.check(resources, pointer)) {

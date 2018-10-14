@@ -15,8 +15,14 @@
  */
 package com.cosyan.db.model;
 
+import java.io.IOException;
+
+import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.meta.MaterializedTable;
+import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 
 import lombok.Data;
 
@@ -32,17 +38,13 @@ public class Keys {
 
     String getName();
 
-    String getRevName();
-
     MaterializedTable getTable();
-
-    BasicColumn getColumn();
 
     MaterializedTable getRefTable();
 
-    BasicColumn getRefColumn();
-
     Ref getReverse();
+
+    public long[] resolve(Object[] values, Resources resources) throws IOException;
   }
 
   @Data
@@ -66,6 +68,13 @@ public class Keys {
     public ReverseForeignKey getReverse() {
       return refTable.reverseForeignKeys().get(revName);
     }
+
+    @Override
+    public long[] resolve(Object[] values, Resources resources) throws IOException {
+      Object key = values[getColumn().getIndex()];
+      IndexReader index = resources.getIndex(this);
+      return index.get(key);
+    }
   }
 
   @Data
@@ -85,12 +94,49 @@ public class Keys {
     public ForeignKey getReverse() {
       return refTable.foreignKeys().get(revName);
     }
+
+    @Override
+    public long[] resolve(Object[] values, Resources resources) throws IOException {
+      Object key = values[getColumn().getIndex()];
+      IndexReader index = resources.getIndex(this);
+      return index.get(key);
+    }
   }
 
   @Data
-  public static class GroupByKey {
+  public static class GroupByKey implements Ref {
     private final String name;
     private final MaterializedTable table;
-    private final ImmutableList<ColumnMeta> columns;
+    private final ImmutableMap<String, ColumnMeta> columns;
+
+    public ImmutableList<DataType<?>> columnTypes() {
+      return getColumns().values().stream().map(c -> c.getType()).collect(ImmutableList.toImmutableList());
+    }
+
+    public Object[] resolveKey(Object[] values, Resources resources, TableContext context) throws IOException {
+      ImmutableList<ColumnMeta> columnList = columns.values().asList();
+      Object[] key = new Object[columns.size()];
+      for (int i = 0; i < key.length; i++) {
+        key[i] = columnList.get(i).value(values, resources, context);
+      }
+      return key;
+    }
+
+    @Override
+    public long[] resolve(Object[] values, Resources resources) throws IOException {
+      Object[] key = resolveKey(values, resources, TableContext.EMPTY);
+      IndexReader index = resources.getIndex(this);
+      return index.get(key);
+    }
+
+    @Override
+    public MaterializedTable getRefTable() {
+      return table;
+    }
+
+    @Override
+    public Ref getReverse() {
+      return this;
+    }
   }
 }

@@ -23,8 +23,9 @@ import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.meta.MaterializedTable;
+import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.GroupByKey;
-import com.cosyan.db.model.Keys.Ref;
+import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.TableUniqueIndex;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -93,7 +94,11 @@ public class Resources {
     return writers.get(table).getIndexWriter(column);
   }
 
-  public IndexReader getIndex(Ref foreignKey) {
+  public IndexReader getIndex(ForeignKey foreignKey) {
+    return Preconditions.checkNotNull(getIndex(foreignKey.getRefTable().fullName(), foreignKey.getRefColumn().getName()));
+  }
+
+  public IndexReader getIndex(ReverseForeignKey foreignKey) {
     return Preconditions.checkNotNull(getIndex(foreignKey.getRefTable().fullName(), foreignKey.getRefColumn().getName()));
   }
 

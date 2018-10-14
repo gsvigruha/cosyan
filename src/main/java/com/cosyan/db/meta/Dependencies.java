@@ -23,9 +23,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.cosyan.db.model.Keys.Ref;
-import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.References.ReferencedRefTableMeta;
-import com.cosyan.db.model.References.ReferencedSimpleTableMeta;
+import com.cosyan.db.model.References.ReferencedTable;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.google.common.collect.ImmutableMap;
@@ -104,19 +103,9 @@ public class Dependencies {
       actDeps.putAll(tableDependencies.getDeps());
     }
 
-    public void addTableDependency(ReferencedSimpleTableMeta table) {
+    public void addTableDependency(ReferencedTable table) {
       Map<String, TableDependency> actDeps = deps;
       for (Ref foreignKey : table.foreignKeyChain()) {
-        if (!actDeps.containsKey(foreignKey.getName())) {
-          actDeps.put(foreignKey.getName(), new TableDependency(foreignKey));
-        }
-        actDeps = actDeps.get(foreignKey.getName()).deps;
-      }
-    }
-
-    public void addTableDependency(ReferencedMultiTableMeta tableMeta) {
-      Map<String, TableDependency> actDeps = deps;
-      for (Ref foreignKey : tableMeta.foreignKeyChain()) {
         if (!actDeps.containsKey(foreignKey.getName())) {
           actDeps.put(foreignKey.getName(), new TableDependency(foreignKey));
         }
@@ -176,7 +165,6 @@ public class Dependencies {
         allTables(tables, dep.deps);
       }
     }
-
   }
 
   public static class ReverseRuleDependency implements TransitiveTableDependency {

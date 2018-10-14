@@ -32,6 +32,7 @@ import com.cosyan.db.io.RAFBufferedInputStream;
 import com.cosyan.db.io.SeekableInputStream;
 import com.cosyan.db.io.SeekableOutputStream;
 import com.cosyan.db.io.SeekableOutputStream.RAFSeekableOutputStream;
+import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
@@ -63,7 +64,7 @@ import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.References.AggViewTableMeta;
 import com.cosyan.db.model.References.FlatRefTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
-import com.cosyan.db.model.References.SelfAggrTableMeta;
+import com.cosyan.db.model.References.GroupByFilterTableMeta;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SeekableTableMeta;
@@ -363,11 +364,12 @@ public class MaterializedTable {
     } else if (srcTableMeta instanceof SeekableTableMeta) {
       SeekableTableMeta seekableTableMeta = (SeekableTableMeta) srcTableMeta;
       if (ref.getSelect().getGroupBy().isPresent()) {
+        ImmutableList<Expression> groupBy = ref.getSelect().getGroupBy().get();
         GroupByKey groupByKey = new GroupByKey(
-            "#" + ref.getSelect().getGroupBy().get().stream().map(c -> c.print()).collect(Collectors.joining("#")),
+            "#" + groupBy.stream().map(c -> c.print()).collect(Collectors.joining("#")),
             seekableTableMeta.tableMeta(),
-            Select.keyValueTable(seekableTableMeta, ref.getSelect().getGroupBy().get()).getKeyColumns().values().asList());
-        SelfAggrTableMeta selfAggrTableMeta = new SelfAggrTableMeta(seekableTableMeta, groupByKey);
+            Select.groupByColumns(seekableTableMeta, groupBy));
+        GroupByFilterTableMeta selfAggrTableMeta = new GroupByFilterTableMeta(seekableTableMeta, groupByKey);
         ExposedTableMeta derivedTable;
         if (ref.getSelect().getWhere().isPresent()) {
           ColumnMeta whereColumn = ref.getSelect().getWhere().get().compileColumn(srcTableMeta);
@@ -375,7 +377,7 @@ public class MaterializedTable {
         } else {
           derivedTable = selfAggrTableMeta;
         }
-        KeyValueTableMeta intermediateTable = Select.keyValueTable(derivedTable, ref.getSelect().getGroupBy().get());
+        KeyValueTableMeta intermediateTable = new KeyValueTableMeta(derivedTable, groupByKey.getColumns());
         KeyValueAggrTableMeta aggrTable = new KeyValueAggrTableMeta(intermediateTable);
         TableColumns columns = Select.tableColumns(aggrTable, ref.getSelect().getColumns());
         seekableTableMeta.tableMeta().extraIndexes.put(groupByKey.getName(), groupByKey);
