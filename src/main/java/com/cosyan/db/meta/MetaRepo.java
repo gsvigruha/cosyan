@@ -87,7 +87,6 @@ import com.cosyan.db.transaction.Resources;
 import com.cosyan.db.util.Util;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 
@@ -235,9 +234,7 @@ public class MetaRepo {
     String path = config.indexDir() + File.separator + indexName;
     if (!extraIndexes.containsKey(indexName)) {
       extraIndexes.put(indexName, new MultiColumnTableMultiIndex(
-          groupByKey,
-          new MultiColumnMultiIndex(
-              path, groupByKey.getColumns().stream().map(c -> c.getType()).collect(ImmutableList.toImmutableList()))));
+          groupByKey, new MultiColumnMultiIndex(path, groupByKey.columnTypes())));
     }
     return extraIndexes.get(indexName);
   }

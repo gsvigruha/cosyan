@@ -316,35 +316,37 @@ public class References {
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class SelfAggrTableMeta extends ExposedTableMeta implements ReferencedTable {
+  public static class GroupByFilterTableMeta extends ExposedTableMeta implements ReferencedTable {
 
     private final SeekableTableMeta tableMeta;
     private final GroupByKey groupByKey;
 
-    public SelfAggrTableMeta(SeekableTableMeta tableMeta, GroupByKey groupByKey) {
+    public GroupByFilterTableMeta(SeekableTableMeta tableMeta, GroupByKey groupByKey) {
       this.tableMeta = tableMeta;
       this.groupByKey = groupByKey;
     }
 
     @Override
-    public ImmutableList<Ref> foreignKeyChain() {
-      return tableMeta.foreignKeyChain();
-    }
-
-    @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
-      return tableMeta.getColumn(ident);
+      BasicColumn column = tableMeta.tableMeta().column(ident);
+      if (column == null) {
+        return null;
+      }
+      TableDependencies deps = new TableDependencies();
+      deps.addTableDependency(this);
+      return new IndexColumn(this, column.getIndex(), column.getType(), deps);
     }
 
     @Override
     public TableDependencies tableDependencies() {
-      return new TableDependencies();
+      TableDependencies deps = new TableDependencies();
+      deps.addTableDependency(this);
+      return deps;
     }
 
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
-      // Cannot reference any further tables from a self aggregated table, only access its fields.
-      return null;
+      return tableMeta.getRefTable(ident);
     }
 
     @Override
@@ -355,11 +357,7 @@ public class References {
     @Override
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       Object[] sourceValues = context.values(TableContext.PARENT);
-      Object[] key = new Object[groupByKey.getColumns().size()];
-      for (int i = 0; i < groupByKey.getColumns().size(); i++) {
-        ColumnMeta columnMeta = groupByKey.getColumns().get(i);
-        key[i] = columnMeta.value(sourceValues, resources, context);
-      }
+      Object[] key = groupByKey.resolveKey(sourceValues, resources, context);
       final IndexReader index = resources.getIndex(groupByKey);
       return new MultiFilteredTableReader(resources.reader(tableMeta.fullName()),
           ColumnMeta.TRUE_COLUMN, resources) {
@@ -382,8 +380,14 @@ public class References {
     }
 
     @Override
+    public ImmutableList<Ref> foreignKeyChain() {
+      return ImmutableList.<Ref>builder().addAll(tableMeta.foreignKeyChain()).add(groupByKey)
+          .build();
+    }
+
+    @Override
     public TableMeta parent() {
-      return tableMeta;
+      return tableMeta.parent();
     }
   }
 

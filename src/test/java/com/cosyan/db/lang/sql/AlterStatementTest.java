@@ -677,4 +677,67 @@ public class AlterStatementTest extends UnitTestBase {
       assertValues(new Object[][] { { 0L, 20L }, { 0L, 20L }, { 1L, 15L } }, result);
     }
   }
+
+  @Test
+  public void testAlterTableAggViewMultipleClauses() throws Exception {
+    execute("create table t61 (a integer, b integer, c integer);");
+    execute("alter table t61 add view s (select x, y, count(1) as cnt from t61 group by a + b as x, c * 2 as y);");
+
+    execute("insert into t61 values (5, 5, 1), (10, 0, 1), (5, 15, 1), (15, 5, 2);");
+
+    {
+      QueryResult result = query("select a, b, c, s.x, s.y, s.cnt from t61;");
+      assertValues(new Object[][] {
+        { 5L, 5L, 1L, 10L, 2L, 2L },
+        { 10L, 0L, 1L, 10L, 2L, 2L },
+        { 5L, 15L, 1L, 20L, 2L, 1L },
+        { 15L, 5L, 2L, 20L, 4L, 1L }}, result);
+    }
+  }
+
+  @Test
+  public void testAlterTableAggViewRefs() throws Exception {
+    execute("create table t62 (a integer, b integer, constraint pk_b primary key (b));");
+    execute("create table t63 (b integer, c integer, constraint fk_b foreign key (b) references t62(b));");
+    execute("alter table t63 add view s (select c, sum(fk_b.a) as sa from t63 group by c);");
+
+    execute("insert into t62 values (4, 2), (6, 3);");
+    execute("insert into t63 values (2, 1), (3, 1), (2, 2);");
+
+    {
+      QueryResult result = query("select c, s.c as c2, s.sa from t63;");
+      assertValues(new Object[][] {
+        { 1L, 1L, 10L },
+        { 1L, 1L, 10L },
+        { 2L, 2L, 4L} }, result);
+    }
+  }
+
+  @Test
+  public void testAlterTableAggViewRules() throws Exception {
+    execute("create table t64 (a integer, b integer, c integer);");
+    execute("alter table t64 add view s (select sum(b) as sb from t64 group by a);");
+    execute("alter table t64 add constraint c_1 check(s.sb <= c);");
+
+    execute("insert into t64 values (1, 5, 10), (1, 5, 10);");
+
+    {
+      QueryResult result = query("select count(1) from t64;");
+      assertValues(new Object[][] { { 2L } }, result);
+    }
+    {
+      // This record fails.
+      ErrorResult e = error("insert into t64 values (1, 5, 10);");
+      assertError(RuleException.class, "Constraint check c_1 failed.", e);
+    }
+    {
+      QueryResult result = query("select count(1) from t64;");
+      assertValues(new Object[][] { { 2L } }, result);
+    }
+    {
+      // Another record fails.
+      ErrorResult e = error("insert into t64 values (1, 5, 20);");
+      assertError(RuleException.class, "Referencing constraint check t64.c_1 failed.", e);
+    }
+  }
 }
