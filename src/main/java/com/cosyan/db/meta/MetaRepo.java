@@ -420,7 +420,7 @@ public class MetaRepo {
 
       @Override
       public IndexReader getIndex(String id) throws RuleException {
-        String[] ids = id.split(".");
+        String[] ids = id.split("\\.");
         return tables.get(ids[0]).get(ids[1]).getIndex(ids[2]);
       }
     };
