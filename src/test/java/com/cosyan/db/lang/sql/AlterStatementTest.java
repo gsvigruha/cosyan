@@ -753,4 +753,18 @@ public class AlterStatementTest extends UnitTestBase {
     QueryResult result = query("select b, fk_b.s.a, fk_b.s.cnt from t66;");
     assertValues(new Object[][] {{ 1L, 1L, 2L }, { 2L, 1L, 2L }}, result);
   }
+
+  @Test
+  public void testAlterTableAggViewWhere() throws Exception {
+    execute("create table t67 (a integer, b integer);");
+    execute("alter table t67 add view s (select a, sum(b) as sb from t67 where b > 0 group by a);");
+
+    execute("insert into t67 values (0, 10), (0, 10), (0, -5);");
+
+    {
+      QueryResult result = query("select s.a, s.sb from t67;");
+      assertHeader(new String[] { "a", "sb" }, result);
+      assertValues(new Object[][] { { 0L, 20L }, { 0L, 20L }, { 0L, 20L } }, result);
+    }
+  }
 }
