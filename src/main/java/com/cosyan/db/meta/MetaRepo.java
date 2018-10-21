@@ -74,6 +74,7 @@ public class MetaRepo {
 
   private final Config config;
   private final HashMap<String, Map<String, MaterializedTable>> tables;
+  private final HashMap<String, Map<String, View>> views;
   private final Grants grants;
 
   private final LockManager lockManager;
@@ -90,6 +91,7 @@ public class MetaRepo {
     this.lockManager = lockManager;
     this.metaSerializer = new MetaSerializer(lexer, parser);
     this.tables = new HashMap<>();
+    this.views = new HashMap<>();
     this.grants = grants;
 
     Files.createDirectories(Paths.get(config.tableDir()));
@@ -177,6 +179,38 @@ public class MetaRepo {
     assert tables.containsKey(owner) : String.format("User '%s' does not exist.", owner);
     assert tables.get(owner).containsKey(name) : String.format("Table '%s.%s' does not exist.", owner, name);
     return tables.get(owner).get(name);
+  }
+
+  public TableProvider tableProvider(Ident ident, String owner) throws ModelException {
+    if (tables.containsKey(ident.getString())) {
+      // Check first is ident is an existing owner.
+      Map<String, MaterializedTable> userTables = tables.get(ident.getString());
+      return new TableProvider() {
+        private SeekableTableMeta reader(Ident ident2) throws ModelException {
+          if (!userTables.containsKey(ident2.getString())) {
+            throw new ModelException(String.format("Table '%s.%s' does not exist.", ident, ident2), ident2);
+          }
+          return userTables.get(ident2.getString()).reader();
+        }
+
+        @Override
+        public TableProvider tableProvider(Ident ident2, String owner) throws ModelException {
+          return reader(ident2);
+        }
+
+        @Override
+        public ExposedTableMeta tableMeta(TableWithOwner table) throws ModelException {
+          return reader(table.getTable());
+        }
+      };
+    } else if (tables.containsKey(owner)) {
+      // Otherwise check if it matches a table owned by the current user (owner).
+      Map<String, MaterializedTable> userTables = tables.get(owner);
+      if (userTables.containsKey(ident.getString())) {
+        return userTables.get(ident.getString()).reader();
+      }
+    }
+    throw new ModelException(String.format("Table '%s' does not exist.", ident), ident);
   }
 
   @VisibleForTesting
@@ -340,35 +374,7 @@ public class MetaRepo {
 
       @Override
       public TableProvider tableProvider(Ident ident, String owner) throws ModelException {
-        if (tables.containsKey(ident.getString())) {
-          // Check first is ident is an existing owner.
-          Map<String, MaterializedTable> userTables = tables.get(ident.getString());
-          return new TableProvider() {
-            private SeekableTableMeta reader(Ident ident2) throws ModelException {
-              if (!userTables.containsKey(ident2.getString())) {
-                throw new ModelException(String.format("Table '%s.%s' does not exist.", ident, ident2), ident2);
-              }
-              return userTables.get(ident2.getString()).reader();
-            }
-
-            @Override
-            public TableProvider tableProvider(Ident ident2, String owner) throws ModelException {
-              return reader(ident2);
-            }
-
-            @Override
-            public ExposedTableMeta tableMeta(TableWithOwner table) throws ModelException {
-              return reader(table.getTable());
-            }
-          };
-        } else if (tables.containsKey(owner)) {
-          // Otherwise check if it matches a table owned by the current user (owner).
-          Map<String, MaterializedTable> userTables = tables.get(owner);
-          if (userTables.containsKey(ident.getString())) {
-            return userTables.get(ident.getString()).reader();
-          }
-        }
-        throw new ModelException(String.format("Table '%s' does not exist.", ident), ident);
+        return MetaRepo.this.tableProvider(ident, owner);
       }
 
       @Override
@@ -447,6 +453,12 @@ public class MetaRepo {
         }
       }
 
+      private void syncMeta(View view) {
+        for (BooleanRule rule : view.rules().values()) {
+          rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */true);
+        }
+      }
+
       @Override
       public void registerTable(MaterializedTable tableMeta) throws IOException {
         tableMeta.syncIndex();
@@ -456,6 +468,16 @@ public class MetaRepo {
         }
         tables.get(tableMeta.owner()).put(tableMeta.tableName(), tableMeta);
         lockManager.registerLock(tableMeta);
+      }
+
+      @Override
+      public void registerView(View view) {
+        view.syncIndex();
+        syncMeta(view);
+        if (!views.containsKey(view.owner())) {
+          views.put(view.owner(), new HashMap<>());
+        }
+        views.get(view.owner()).put(view.name(), view);
       }
 
       @Override
@@ -514,6 +536,16 @@ public class MetaRepo {
       @Override
       public void metaRepoWriteUnlock() {
         lockManager.metaRepoWriteUnlock();
+      }
+
+      @Override
+      public ExposedTableMeta tableMeta(TableWithOwner table) throws ModelException {
+        return MetaRepo.this.table(table).reader();
+      }
+
+      @Override
+      public TableProvider tableProvider(Ident ident, String owner) throws ModelException {
+        return MetaRepo.this.tableProvider(ident, owner);
       }
     };
   }

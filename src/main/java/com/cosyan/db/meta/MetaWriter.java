@@ -25,10 +25,9 @@ import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.Grants.GrantToken;
 import com.cosyan.db.meta.Grants.Method;
 import com.cosyan.db.meta.MetaRepo.ModelException;
-import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 
-public interface MetaWriter {
+public interface MetaWriter extends TableProvider {
 
   void syncMeta(MaterializedTable tableMeta);
 
@@ -37,6 +36,8 @@ public interface MetaWriter {
   void metaRepoWriteUnlock();
 
   void registerTable(MaterializedTable tableMeta) throws IOException;
+
+  void registerView(View view);
 
   void dropTable(MaterializedTable tableMeta, AuthToken authToken) throws IOException, GrantException;
 
@@ -57,4 +58,5 @@ public interface MetaWriter {
   List<MaterializedTable> getTables(AuthToken authToken);
 
   void resetAndReadTables() throws DBException;
+
 }

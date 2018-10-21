@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.conf.Config;
@@ -42,14 +41,10 @@ import com.cosyan.db.io.RAFBufferedInputStream;
 import com.cosyan.db.io.SeekableInputStream;
 import com.cosyan.db.io.SeekableOutputStream;
 import com.cosyan.db.io.SeekableOutputStream.RAFSeekableOutputStream;
-import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ViewDefinition;
-import com.cosyan.db.lang.sql.SelectStatement;
-import com.cosyan.db.lang.sql.SelectStatement.Select;
-import com.cosyan.db.lang.sql.SelectStatement.Select.TableColumns;
 import com.cosyan.db.meta.Dependencies.ReverseRuleDependencies;
 import com.cosyan.db.meta.Dependencies.ReverseRuleDependency;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
@@ -57,30 +52,20 @@ import com.cosyan.db.meta.Dependencies.TableDependency;
 import com.cosyan.db.meta.Dependencies.TransitiveTableDependency;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
-import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
-import com.cosyan.db.model.AggrTables.KeyValueAggrTableMeta;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
-import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.GroupByKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
-import com.cosyan.db.model.References.AggRefTableMeta;
-import com.cosyan.db.model.References.AggViewTableMeta;
-import com.cosyan.db.model.References.FlatRefTableMeta;
-import com.cosyan.db.model.References.GroupByFilterTableMeta;
-import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta;
-import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.DoubleTableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.LongTableMultiIndex;
@@ -300,6 +285,11 @@ public class MaterializedTable {
     assert !columnNames().contains(name) && !foreignKeys.containsKey(name) && !reverseForeignKeys.containsKey(name);
   }
 
+  public TableMeta createView(ViewDefinition ref, String owner) throws ModelException, IOException {
+    checkName(ref.getName());
+    return View.createView(ref, reader(), owner);
+  }
+
   public void insert(long insertedLines) {
     stats.insert(insertedLines);
   }
@@ -376,56 +366,6 @@ public class MaterializedTable {
   public void addColumn(BasicColumn column) {
     assertName(column.getName());
     columns.add(column);
-  }
-
-  public TableMeta createView(ViewDefinition ref, String owner) throws ModelException, IOException {
-    checkName(ref.getName());
-    ExposedTableMeta srcTableMeta = ref.getSelect().getTable().compile(reader(), owner);
-    if (srcTableMeta instanceof ReferencedMultiTableMeta) {
-      if (ref.getSelect().getGroupBy().isPresent()) {
-        throw new ModelException("Group by clause is not allowed here.",
-            ref.getSelect().getGroupBy().get().asList().get(0));
-      }
-      ExposedTableMeta derivedTable;
-      if (ref.getSelect().getWhere().isPresent()) {
-        ColumnMeta whereColumn = ref.getSelect().getWhere().get().compileColumn(srcTableMeta);
-        derivedTable = new FilteredTableMeta(srcTableMeta, whereColumn);
-      } else {
-        derivedTable = srcTableMeta;
-      }
-      GlobalAggrTableMeta aggrTable = new GlobalAggrTableMeta(
-          new KeyValueTableMeta(derivedTable, TableMeta.wholeTableKeys));
-      // Columns have aggregations, recompile with an AggrTable.
-      TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
-      return new AggRefTableMeta(aggrTable, tableColumns.getColumns());
-    } else if (srcTableMeta instanceof SeekableTableMeta) {
-      SeekableTableMeta seekableTableMeta = (SeekableTableMeta) srcTableMeta;
-      if (ref.getSelect().getGroupBy().isPresent()) {
-        ImmutableList<Expression> groupBy = ref.getSelect().getGroupBy().get();
-        GroupByKey groupByKey = new GroupByKey(
-            "#" + groupBy.stream().map(c -> c.print()).collect(Collectors.joining("#")),
-            seekableTableMeta.tableMeta(),
-            Select.groupByColumns(seekableTableMeta, groupBy));
-        GroupByFilterTableMeta selfAggrTableMeta = new GroupByFilterTableMeta(seekableTableMeta, groupByKey);
-        ExposedTableMeta derivedTable;
-        if (ref.getSelect().getWhere().isPresent()) {
-          ColumnMeta whereColumn = ref.getSelect().getWhere().get().compileColumn(srcTableMeta);
-          derivedTable = new FilteredTableMeta(selfAggrTableMeta, whereColumn);
-        } else {
-          derivedTable = selfAggrTableMeta;
-        }
-        KeyValueTableMeta intermediateTable = new KeyValueTableMeta(derivedTable, groupByKey.getColumns());
-        KeyValueAggrTableMeta aggrTable = new KeyValueAggrTableMeta(intermediateTable);
-        TableColumns columns = Select.tableColumns(aggrTable, ref.getSelect().getColumns());
-        seekableTableMeta.tableMeta().registerIndex(groupByKey);
-        return new AggViewTableMeta(aggrTable, columns.getColumns());
-      } else {
-        TableColumns columns = Select.tableColumns(srcTableMeta, ref.getSelect().getColumns());
-        return new FlatRefTableMeta(srcTableMeta, columns.getColumns());
-      }
-    } else {
-      throw new ModelException(String.format("Unsupported table '%s' for view.", ref.getSelect().getTable().print()), ref.getName());
-    }
   }
 
   public void addRef(TableRef ref) {

@@ -54,6 +54,7 @@ import com.cosyan.db.lang.sql.CSVStatements.CSVExport;
 import com.cosyan.db.lang.sql.CSVStatements.CSVImport;
 import com.cosyan.db.lang.sql.CreateStatement.CreateIndex;
 import com.cosyan.db.lang.sql.CreateStatement.CreateTable;
+import com.cosyan.db.lang.sql.CreateStatement.CreateView;
 import com.cosyan.db.lang.sql.DeleteStatement.Delete;
 import com.cosyan.db.lang.sql.DropStatement.DropIndex;
 import com.cosyan.db.lang.sql.DropStatement.DropTable;
@@ -309,7 +310,7 @@ public class Parser implements IParser {
       tokens.next();
       type = MaterializedTable.Type.LOOKUP;
     }
-    assertPeek(tokens, Tokens.TABLE, Tokens.INDEX, Tokens.USER);
+    assertPeek(tokens, Tokens.TABLE, Tokens.VIEW, Tokens.INDEX, Tokens.USER);
     if (tokens.peek().is(Tokens.TABLE)) {
       tokens.next();
       Ident ident = parseIdent(tokens);
@@ -341,23 +342,31 @@ public class Parser implements IParser {
     } else if (tokens.peek().is(Tokens.INDEX)) {
       assertNext(tokens, Tokens.INDEX);
       return new CreateIndex(parseTableColumn(tokens));
-    } else {
+    } else if (tokens.peek().is(Tokens.USER)) {
       assertNext(tokens, Tokens.USER);
       Ident username = parseIdent(tokens);
       assertNext(tokens, Tokens.IDENTIFIED);
       assertNext(tokens, Tokens.BY);
       StringLiteral password = parseStringLiteral(tokens);
       return new CreateUser(username, password);
+    } else {
+      assertNext(tokens, Tokens.VIEW);
+      return new CreateView(parseView(tokens));
     }
   }
 
   private ViewDefinition parseView(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.VIEW);
     Ident ident = parseIdent(tokens);
-    assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
-    Select select = parseViewSelect(tokens);
-    assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
-    return new ViewDefinition(ident, select);
+    if (tokens.peek().is(Tokens.AS)) {
+      tokens.next();
+      return new ViewDefinition(ident, parseViewSelect(tokens));
+    } else {
+      assertNext(tokens, String.valueOf(Tokens.PARENT_OPEN));
+      Select select = parseViewSelect(tokens);
+      assertNext(tokens, String.valueOf(Tokens.PARENT_CLOSED));
+      return new ViewDefinition(ident, select);
+    }
   }
 
   private MetaStatement parseDrop(PeekingIterator<Token> tokens) throws ParserException {

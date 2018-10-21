@@ -33,6 +33,7 @@ import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.PrimaryKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.TableColumnDefinition;
+import com.cosyan.db.lang.expr.TableDefinition.ViewDefinition;
 import com.cosyan.db.lang.transaction.Result;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MaterializedTable;
@@ -40,6 +41,7 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
+import com.cosyan.db.meta.View;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
@@ -47,6 +49,7 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -210,6 +213,24 @@ public class CreateStatement {
     @Override
     public void cancel() {
       writer.cancel();
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class CreateView extends GlobalStatement {
+
+    private final ViewDefinition viewDefinition;
+
+    @Override
+    public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
+      TableMeta tableMeta = View.createView(viewDefinition, metaRepo, authToken.token());
+      View view = new View(
+          viewDefinition.getName().getString(),
+          authToken.username(),
+          tableMeta);
+      metaRepo.registerView(view);
+      return Result.META_OK;
     }
   }
 }
