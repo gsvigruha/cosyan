@@ -28,8 +28,6 @@ import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.TableProvider;
-import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
-import com.cosyan.db.model.AggrTables.KeyValueAggrTableMeta;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Keys.ForeignKey;
@@ -340,17 +338,21 @@ public class References {
 
     @Override
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
-      Object[] sourceValues = context.values(TableContext.PARENT);
-      Object[] key = groupByKey.resolveKey(sourceValues, resources, context);
-      final IndexReader index = resources.getIndex(groupByKey);
-      return new MultiFilteredTableReader(resources.reader(parent.fullName()),
-          ColumnMeta.TRUE_COLUMN, resources) {
+      if (context.has(TableContext.PARENT)) {
+        Object[] sourceValues = context.values(TableContext.PARENT);
+        Object[] key = groupByKey.resolveKey(sourceValues, resources, context);
+        final IndexReader index = resources.getIndex(groupByKey);
+        return new MultiFilteredTableReader(resources.reader(parent.fullName()),
+            ColumnMeta.TRUE_COLUMN, resources) {
 
-        @Override
-        protected long[] readPositions() throws IOException {
-          return index.get(key);
-        }
-      };
+          @Override
+          protected long[] readPositions() throws IOException {
+            return index.get(key);
+          }
+        };
+      } else {
+        return parent.reader(resources, context);
+      }
     }
 
     @Override
@@ -377,7 +379,7 @@ public class References {
   @Data
   @EqualsAndHashCode(callSuper = true)
   public static class AggRefTableMeta extends TableMeta {
-    private final GlobalAggrTableMeta sourceTable;
+    private final IterableTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
 
     @Override
@@ -442,43 +444,6 @@ public class References {
     public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
         throws IOException {
       return mapValues(sourceTable.values(sourceValues, resources, context), resources, context, columns);
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class AggViewTableMeta extends TableMeta {
-    private final KeyValueAggrTableMeta sourceTable;
-    private final ImmutableMap<String, ColumnMeta> columns;
-
-    @Override
-    protected IndexColumn getColumn(Ident ident) throws ModelException {
-      return shiftColumn(sourceTable, columns, ident);
-    }
-
-    @Override
-    protected TableMeta getRefTable(Ident ident) throws ModelException {
-      // Cannot reference any further tables from a ref, only access its fields.
-      return null;
-    }
-
-    @Override
-    public MetaResources readResources() {
-      return sourceTable.readResources().merge(DerivedTables.resourcesFromColumns(columns.values()));
-    }
-
-    @Override
-    public ImmutableList<String> columnNames() {
-      return columns.keySet().asList();
-    }
-
-    @Override
-    public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
-        throws IOException {
-      IterableTableReader reader = sourceTable.reader(resources, TableContext.withParent(sourceValues));
-      Object[] aggrValues = reader.next();
-      reader.close();
-      return mapValues(aggrValues, resources, context, columns);
     }
   }
 

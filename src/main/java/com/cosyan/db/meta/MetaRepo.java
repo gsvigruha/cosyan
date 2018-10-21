@@ -181,6 +181,13 @@ public class MetaRepo {
     return tables.get(owner).get(name);
   }
 
+  @VisibleForTesting
+  public View view(String owner, String name) throws ModelException {
+    assert views.containsKey(owner) : String.format("User '%s' does not exist.", owner);
+    assert views.get(owner).containsKey(name) : String.format("View '%s.%s' does not exist.", owner, name);
+    return views.get(owner).get(name);
+  }
+
   public TableProvider tableProvider(Ident ident, String owner) throws ModelException {
     if (tables.containsKey(ident.getString())) {
       // Check first is ident is an existing owner.
@@ -267,6 +274,21 @@ public class MetaRepo {
       throw new ModelException(String.format("Table '%s' does not exist.", table), table.getTable());
     }
     return userTables.get(table.getTable().getString());
+  }
+
+  private ExposedTableMeta tableOrView(TableWithOwner table) throws ModelException {
+    try {
+      return table(table).reader();
+    } catch (ModelException e) {
+      if (!views.containsKey(table.getOwner())) {
+        throw new ModelException(String.format("Table or view '%s' does not exist.", table), table.getTable());
+      }
+      Map<String, View> userTables = views.get(table.getOwner());
+      if (!userTables.containsKey(table.getTable().getString())) {
+        throw new ModelException(String.format("Table or view '%s' does not exist.", table), table.getTable());
+      }
+      return userTables.get(table.getTable().getString()).table(); 
+    }
   }
 
   public Resources resources(MetaResources metaResources, AuthToken authToken) throws IOException {
@@ -369,7 +391,7 @@ public class MetaRepo {
 
       @Override
       public ExposedTableMeta tableMeta(TableWithOwner table) throws ModelException {
-        return table(table).reader();
+        return MetaRepo.this.tableOrView(table);
       }
 
       @Override
@@ -472,7 +494,6 @@ public class MetaRepo {
 
       @Override
       public void registerView(View view) {
-        view.syncIndex();
         syncMeta(view);
         if (!views.containsKey(view.owner())) {
           views.put(view.owner(), new HashMap<>());

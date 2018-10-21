@@ -49,7 +49,7 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Rule.BooleanRule;
-import com.cosyan.db.model.TableMeta;
+import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -73,7 +73,7 @@ public class CreateStatement {
     @Override
     public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException, GrantException {
       if (metaRepo.hasTable(name.getString(), authToken.username())) {
-        throw new ModelException(String.format("Table '%s.%s' already exists.", authToken.username(), name), name);
+        throw new ModelException(String.format("Table or view '%s.%s' already exists.", authToken.username(), name), name);
       }
 
       Optional<PrimaryKeyDefinition> primaryKeyDefinition = Optional.empty();
@@ -194,7 +194,8 @@ public class CreateStatement {
     private IndexWriter indexWriter;
 
     @Override
-    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException, GrantException {
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken)
+        throws ModelException, IOException, GrantException {
       tableWithOwner = tableColumn.getTable().resolve(authToken);
       MaterializedTable tableMeta = metaRepo.table(tableWithOwner, authToken);
       basicColumn = tableMeta.column(tableColumn.getColumn());
@@ -224,7 +225,12 @@ public class CreateStatement {
 
     @Override
     public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {
-      TableMeta tableMeta = View.createView(viewDefinition, metaRepo, authToken.token());
+      Ident name = viewDefinition.getName();
+      if (metaRepo.hasTable(name.getString(), authToken.username())) {
+        throw new ModelException(String.format("Table or view '%s.%s' already exists.", authToken.username(), name), name);
+      }
+      ExposedTableMeta tableMeta = View.createView(viewDefinition, metaRepo, authToken.username());
+
       View view = new View(
           viewDefinition.getName().getString(),
           authToken.username(),

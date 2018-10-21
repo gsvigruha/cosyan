@@ -214,7 +214,7 @@ public class SelectStatementTest extends UnitTestBase {
     u1.execute("insert into t25 values ('x');");
 
     ErrorResult e1 = error("select * from t25;");
-    assertError(ModelException.class, "[14, 17]: Table 'admin.t25' does not exist.", e1);
+    assertError(ModelException.class, "[14, 17]: Table or view 'admin.t25' does not exist.", e1);
 
     ErrorResult e2 = error("select * from u1.bad;");
     assertError(ModelException.class, "[17, 20]: Table 'u1.bad' does not exist.", e2);

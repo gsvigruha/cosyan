@@ -45,6 +45,8 @@ import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ViewDefinition;
+import com.cosyan.db.lang.sql.SelectStatement;
+import com.cosyan.db.lang.sql.SelectStatement.Select.TableColumns;
 import com.cosyan.db.meta.Dependencies.ReverseRuleDependencies;
 import com.cosyan.db.meta.Dependencies.ReverseRuleDependency;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
@@ -52,20 +54,26 @@ import com.cosyan.db.meta.Dependencies.TableDependency;
 import com.cosyan.db.meta.Dependencies.TransitiveTableDependency;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
+import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.GroupByKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
+import com.cosyan.db.model.References.AggRefTableMeta;
+import com.cosyan.db.model.References.ReferencedMultiTableMeta;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta;
+import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.DoubleTableMultiIndex;
 import com.cosyan.db.model.TableMultiIndex.LongTableMultiIndex;
@@ -287,7 +295,28 @@ public class MaterializedTable {
 
   public TableMeta createView(ViewDefinition ref, String owner) throws ModelException, IOException {
     checkName(ref.getName());
-    return View.createView(ref, reader(), owner);
+    TableMeta tableMeta = ref.getSelect().getTable().compile(reader(), owner);
+    if (tableMeta instanceof ReferencedMultiTableMeta) {
+      ReferencedMultiTableMeta srcTableMeta = (ReferencedMultiTableMeta) tableMeta;
+      if (ref.getSelect().getGroupBy().isPresent()) {
+        throw new ModelException("Group by clause is not allowed here.",
+            ref.getSelect().getGroupBy().get().asList().get(0));
+      }
+      ExposedTableMeta derivedTable;
+      if (ref.getSelect().getWhere().isPresent()) {
+        ColumnMeta whereColumn = ref.getSelect().getWhere().get().compileColumn(srcTableMeta);
+        derivedTable = new FilteredTableMeta(srcTableMeta, whereColumn);
+      } else {
+        derivedTable = srcTableMeta;
+      }
+      GlobalAggrTableMeta aggrTable = new GlobalAggrTableMeta(
+          new KeyValueTableMeta(derivedTable, TableMeta.wholeTableKeys));
+      // Columns have aggregations, recompile with an AggrTable.
+      TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
+      return new AggRefTableMeta(aggrTable, tableColumns.getColumns());
+    } else {
+      return View.createRefView(ref, reader(), owner);
+    }
   }
 
   public void insert(long insertedLines) {

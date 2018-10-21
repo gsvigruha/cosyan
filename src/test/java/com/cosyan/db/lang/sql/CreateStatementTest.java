@@ -103,7 +103,7 @@ public class CreateStatementTest extends UnitTestBase {
   public void testCreateTableAlreadyExists() throws Exception {
     execute("create table t6 (a varchar);");
     ErrorResult error = error("create table t6 (a varchar);");
-    assertEquals("[13, 15]: Table 'admin.t6' already exists.", error.getError().getMessage());
+    assertEquals("[13, 15]: Table or view 'admin.t6' already exists.", error.getError().getMessage());
   }
 
   @Test

@@ -356,7 +356,6 @@ public class Parser implements IParser {
   }
 
   private ViewDefinition parseView(PeekingIterator<Token> tokens) throws ParserException {
-    assertNext(tokens, Tokens.VIEW);
     Ident ident = parseIdent(tokens);
     if (tokens.peek().is(Tokens.AS)) {
       tokens.next();
@@ -407,6 +406,7 @@ public class Parser implements IParser {
     if (tokens.peek().is(Tokens.ADD)) {
       tokens.next();
       if (tokens.peek().is(Tokens.VIEW)) {
+        assertNext(tokens, Tokens.VIEW);
         return new AlterTableAddView(table, parseView(tokens));
       } else if (tokens.peek().is(Tokens.CONSTRAINT)) {
         ConstraintDefinition constraint = parseConstraint(tokens);
