@@ -53,6 +53,6 @@ public class BackupManagerTest extends UnitTestBase {
 
     query("select * from t1;");
     ErrorResult e = error("select * from t2;");
-    assertError(ModelException.class, "[14, 16]: Table 'admin.t2' does not exist.", e);
+    assertError(ModelException.class, "[14, 16]: Table or view 'admin.t2' does not exist.", e);
   }
 }

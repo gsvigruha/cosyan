@@ -44,7 +44,7 @@ public class DropStatementTest extends UnitTestBase {
 
     execute("drop table t2;");
     ErrorResult e = error("select * from t2;");
-    assertEquals("[14, 16]: Table 'admin.t2' does not exist.", e.getError().getMessage());
+    assertEquals("[14, 16]: Table or view 'admin.t2' does not exist.", e.getError().getMessage());
   }
 
   @Test

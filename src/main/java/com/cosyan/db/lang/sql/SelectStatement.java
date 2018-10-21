@@ -189,13 +189,12 @@ public class SelectStatement extends Statement {
     @Data
     public static class TableColumns {
       private final ImmutableMap<String, ColumnMeta> columns;
-      private final ImmutableList<TableMeta> tables;
+      private final IterableTableMeta table;
     }
 
     public static TableColumns tableColumns(
-        TableMeta sourceTable,
+        IterableTableMeta sourceTable,
         ImmutableList<Expression> columns) throws NotAggrTableException, ModelException {
-      ImmutableList.Builder<TableMeta> tables = ImmutableList.builder();
       LinkedHashMap<String, ColumnMeta> tableColumns = new LinkedHashMap<>();
       int i = 0;
       for (Expression expr : columns) {
@@ -223,7 +222,7 @@ public class SelectStatement extends Statement {
           }
         }
       }
-      return new TableColumns(ImmutableMap.copyOf(tableColumns), tables.build());
+      return new TableColumns(ImmutableMap.copyOf(tableColumns), sourceTable);
     }
 
     private static void addColumn(
