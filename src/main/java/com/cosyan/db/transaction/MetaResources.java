@@ -104,7 +104,7 @@ public class MetaResources {
     return tables.values();
   }
 
-  public static MetaResources readTable(MaterializedTable tableMeta) {
+  public static MetaResources readTable(DBObject tableMeta) {
     return new MetaResources(ImmutableMap.of(
         tableMeta.fullName(),
         new TableMetaResource(

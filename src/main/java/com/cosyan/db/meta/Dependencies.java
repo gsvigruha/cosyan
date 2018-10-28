@@ -35,7 +35,7 @@ public class Dependencies {
 
   public static interface TransitiveTableDependency {
 
-    MaterializedTable table();
+    DBObject table();
 
     Iterable<? extends TransitiveTableDependency> childDeps();
 
@@ -74,7 +74,7 @@ public class Dependencies {
     }
 
     @Override
-    public MaterializedTable table() {
+    public DBObject table() {
       return ref.getRefTable();
     }
 
@@ -185,7 +185,7 @@ public class Dependencies {
     }
 
     @Override
-    public MaterializedTable table() {
+    public DBObject table() {
       return key.getRefTable();
     }
 
@@ -228,7 +228,7 @@ public class Dependencies {
     }
 
     public void addRule(BooleanViewRule rule) {
-      //assert rule.getView().fullName().equals(key.getRefTable().fullName());
+      assert rule.getView().fullName().equals(key.getRefTable().fullName());
       BooleanViewRule existingRule = viewRules.get(rule.getName());
       if (existingRule == null) {
         viewRules.put(rule.getName(), rule);
