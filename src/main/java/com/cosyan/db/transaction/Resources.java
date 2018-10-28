@@ -22,7 +22,7 @@ import com.cosyan.db.io.Indexes.IndexWriter;
 import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
-import com.cosyan.db.meta.MaterializedTable;
+import com.cosyan.db.meta.DBObject;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.GroupByKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
@@ -35,12 +35,12 @@ public class Resources {
 
   private final ImmutableMap<String, SeekableTableReader> readers;
   private final ImmutableMap<String, TableWriter> writers;
-  private final ImmutableMap<String, MaterializedTable> metas;
+  private final ImmutableMap<String, DBObject> metas;
 
   public Resources(
       ImmutableMap<String, SeekableTableReader> readers,
       ImmutableMap<String, TableWriter> writers,
-      ImmutableMap<String, MaterializedTable> metas) {
+      ImmutableMap<String, DBObject> metas) {
     assert Sets.intersection(readers.keySet(), writers.keySet()).isEmpty();
     this.readers = readers;
     this.writers = writers;
@@ -63,7 +63,7 @@ public class Resources {
     return Preconditions.checkNotNull(writers.get(table));
   }
 
-  public MaterializedTable meta(String table) {
+  public DBObject meta(String table) {
     assert metas.containsKey(table) : String.format("Invalid table %s.", table);
     return Preconditions.checkNotNull(metas.get(table));
   }
@@ -78,7 +78,7 @@ public class Resources {
   }
 
   public IterableTableReader createIterableReader(String table) throws IOException {
-    return Preconditions.checkNotNull(reader(table).iterableReader());
+    return Preconditions.checkNotNull(reader(table).iterableReader(this));
   }
 
   public TableUniqueIndex getPrimaryKeyIndex(String table) {

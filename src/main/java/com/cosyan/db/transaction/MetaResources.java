@@ -18,7 +18,9 @@ package com.cosyan.db.transaction;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.cosyan.db.meta.DBObject;
 import com.cosyan.db.meta.MaterializedTable;
+import com.cosyan.db.meta.View;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.util.Util;
 import com.google.common.collect.ImmutableCollection;
@@ -43,7 +45,7 @@ public class MetaResources {
 
   @Data
   public static class TableMetaResource {
-    private final MaterializedTable tableMeta;
+    private final DBObject object;
     private final boolean select;
     private final boolean insert;
     private final boolean delete;
@@ -53,9 +55,9 @@ public class MetaResources {
     private final boolean meta;
 
     public TableMetaResource merge(TableMetaResource other) {
-      assert (this.tableMeta == other.tableMeta);
+      assert (this.object == other.object);
       return new TableMetaResource(
-          this.tableMeta,
+          this.object,
           this.select || other.select,
           this.insert || other.insert,
           this.delete || other.delete,
@@ -71,10 +73,10 @@ public class MetaResources {
 
     public ImmutableMap<String, Resource> resources() {
       Map<String, Resource> builder = new HashMap<>();
-      String fullName = tableMeta.fullName();
+      String fullName = object.fullName();
       builder.put(fullName, new Resource(fullName, write()));
       if (reverseForeignIndexes) {
-        for (ReverseForeignKey foreignKey : tableMeta.reverseForeignKeys().values()) {
+        for (ReverseForeignKey foreignKey : ((MaterializedTable) object).reverseForeignKeys().values()) {
           String refTableName = foreignKey.getRefTable().fullName();
           builder.put(refTableName, new Resource(refTableName, /* write= */false));
         }
@@ -174,6 +176,20 @@ public class MetaResources {
             /* update= */true,
             /* foreignIndexes= */true,
             /* reverseForeignIndexes= */true,
+            /* meta= */true)));
+  }
+
+  public static MetaResources viewMeta(View view) {
+    return new MetaResources(ImmutableMap.of(
+        view.fullName(),
+        new TableMetaResource(
+            view,
+            /* select= */true,
+            /* insert= */false,
+            /* delete= */false,
+            /* update= */false,
+            /* foreignIndexes= */false,
+            /* reverseForeignIndexes= */false,
             /* meta= */true)));
   }
 

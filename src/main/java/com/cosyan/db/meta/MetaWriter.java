@@ -31,6 +31,8 @@ public interface MetaWriter extends TableProvider {
 
   void syncMeta(MaterializedTable tableMeta);
 
+  void syncMeta(View view);
+
   int maxRefIndex();
 
   void metaRepoWriteUnlock();
@@ -42,6 +44,8 @@ public interface MetaWriter extends TableProvider {
   void dropTable(MaterializedTable tableMeta, AuthToken authToken) throws IOException, GrantException;
 
   MaterializedTable table(TableWithOwner table, AuthToken authToken) throws ModelException, GrantException;
+
+  View view(TableWithOwner tableWithOwner, AuthToken authToken) throws ModelException, GrantException;
 
   Config config();
 

@@ -141,7 +141,7 @@ public class AlterStatementTest extends UnitTestBase {
     execute("create table t7 (a varchar);");
     {
       ErrorResult result = error("alter table t7 add a varchar;");
-      assertEquals("[19, 20]: Duplicate column, foreign key, reversed foreign key or ref name in 't7': 'a'.",
+      assertEquals("[19, 20]: Duplicate name in 't7': 'a'.",
           result.getError().getMessage());
     }
     assertEquals(1, metaRepo.table("admin", "t7").columns().size());

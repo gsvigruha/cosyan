@@ -19,6 +19,7 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.cosyan.db.io.Indexes.IndexReader;
@@ -26,8 +27,12 @@ import com.cosyan.db.io.RecordProvider.Record;
 import com.cosyan.db.io.RecordProvider.RecordReader;
 import com.cosyan.db.io.RecordProvider.SeekableRecordReader;
 import com.cosyan.db.meta.MaterializedTable;
+import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.View;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
+import com.cosyan.db.model.Keys.PrimaryKey;
+import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.TableContext;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableUniqueIndex;
@@ -89,11 +94,7 @@ public abstract class TableReader implements TableIO {
 
   public static abstract class SeekableTableReader implements TableIO {
 
-    protected final MaterializedTable tableMeta;
-
-    public SeekableTableReader(MaterializedTable tableMeta) {
-      this.tableMeta = tableMeta;
-    }
+    protected boolean cancelled = false;
 
     public abstract void close() throws IOException;
 
@@ -101,13 +102,29 @@ public abstract class TableReader implements TableIO {
 
     public abstract Record get(Object key, Resources resources) throws IOException;
 
-    public abstract IterableTableReader iterableReader() throws IOException;
+    public abstract IterableTableReader iterableReader(Resources resources) throws IOException;
 
-    public TableUniqueIndex getPrimaryKeyIndex() {
-      return (TableUniqueIndex) getIndex(tableMeta.primaryKey().get().getColumn().getName());
-    }
+    public abstract TableUniqueIndex getPrimaryKeyIndex();
 
     public abstract IndexReader getIndex(String name);
+
+    public void checkRule(Rule rule, Resources resources) throws IOException, RuleException {
+      IterableTableReader reader = iterableReader(resources);
+      Object[] values;
+      try {
+        while ((values = reader.next()) != null && !cancelled) {
+          if (!rule.check(resources, values)) {
+            throw new RuleException(String.format("Constraint check %s failed.", rule.getName()));
+          }
+        }
+      } finally {
+        reader.close();
+      }
+    }
+
+    public void cancel() {
+      cancelled = true;
+    }
   }
 
   public static class MaterializedTableReader extends SeekableTableReader {
@@ -117,6 +134,7 @@ public abstract class TableReader implements TableIO {
     private final Map<String, IndexReader> indexes;
     private final String fileName;
     private final ImmutableList<BasicColumn> columns;
+    private final Optional<PrimaryKey> primaryKey;
 
     private Object cachedKey;
     private Record cachedRecord;
@@ -124,12 +142,17 @@ public abstract class TableReader implements TableIO {
     public MaterializedTableReader(MaterializedTable tableMeta, String fileName,
         SeekableInputStream fileReader, ImmutableList<BasicColumn> columns,
         Map<String, IndexReader> indexes) throws IOException {
-      super(tableMeta);
       this.indexes = indexes;
       this.fileReader = fileReader;
       this.reader = new SeekableRecordReader(columns, fileReader);
       this.fileName = fileName;
       this.columns = columns;
+      this.primaryKey = tableMeta.primaryKey();
+    }
+
+    @Override
+    public TableUniqueIndex getPrimaryKeyIndex() {
+      return (TableUniqueIndex) getIndex(primaryKey.get().getColumn().getName());
     }
 
     @Override
@@ -148,7 +171,7 @@ public abstract class TableReader implements TableIO {
       if (cachedKey != null && cachedKey.equals(key)) {
         return cachedRecord;
       }
-      TableUniqueIndex index = resources.getPrimaryKeyIndex(tableMeta.fullName());
+      TableUniqueIndex index = getPrimaryKeyIndex();
       long filePointer = index.get0(key);
       Record record = get(filePointer);
       cachedKey = key;
@@ -157,9 +180,8 @@ public abstract class TableReader implements TableIO {
     }
 
     @Override
-    public IterableTableReader iterableReader() throws IOException {
-      RecordReader reader = new RecordReader(columns,
-          new BufferedInputStream(new FileInputStream(fileName)));
+    public IterableTableReader iterableReader(Resources resources) throws IOException {
+      RecordReader reader = recordReader();
       return new IterableTableReader() {
 
         @Override
@@ -177,6 +199,54 @@ public abstract class TableReader implements TableIO {
     @Override
     public IndexReader getIndex(String name) {
       return indexes.get(name);
+    }
+
+    protected RecordReader recordReader() throws IOException {
+      return new RecordReader(columns, new BufferedInputStream(new FileInputStream(fileName)));
+    }
+  }
+
+  public static class ViewReader extends SeekableTableReader {
+
+    private final View view;
+
+    public ViewReader(View view) {
+      this.view = view;
+    }
+
+    @Override
+    public void close() throws IOException {
+      // TODO Auto-generated method stub
+      
+    }
+
+    @Override
+    public Record get(long position) throws IOException {
+      // TODO Auto-generated method stub
+      return null;
+    }
+
+    @Override
+    public Record get(Object key, Resources resources) throws IOException {
+      // TODO Auto-generated method stub
+      return null;
+    }
+
+    @Override
+    public IterableTableReader iterableReader(Resources resources) throws IOException {
+      return view.table().reader(resources, TableContext.EMPTY);
+    }
+
+    @Override
+    public TableUniqueIndex getPrimaryKeyIndex() {
+      // TODO Auto-generated method stub
+      return null;
+    }
+
+    @Override
+    public IndexReader getIndex(String name) {
+      // TODO Auto-generated method stub
+      return null;
     }
   }
 

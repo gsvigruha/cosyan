@@ -49,6 +49,7 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -230,11 +231,13 @@ public class CreateStatement {
         throw new ModelException(String.format("Table or view '%s.%s' already exists.", authToken.username(), name), name);
       }
       ExposedTableMeta tableMeta = View.createView(viewDefinition, metaRepo, authToken.username());
+      TableMeta refTableMeta = View.createRefView(viewDefinition, metaRepo, authToken.username());
 
       View view = new View(
           viewDefinition.getName().getString(),
           authToken.username(),
-          tableMeta);
+          tableMeta,
+          refTableMeta);
       metaRepo.registerView(view);
       return Result.META_OK;
     }

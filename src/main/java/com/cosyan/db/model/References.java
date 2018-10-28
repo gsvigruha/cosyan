@@ -179,7 +179,7 @@ public class References {
 
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
-      return References.getRefTable(this, foreignKey.getRefTable().tableName(), ident,
+      return References.getRefTable(this, foreignKey.getRefTable().name(), ident,
           foreignKey.getRefTable().foreignKeys(), foreignKey.getRefTable().reverseForeignKeys(),
           foreignKey.getRefTable().refs());
     }
@@ -262,7 +262,7 @@ public class References {
       if (ident.is(Tokens.PARENT)) {
         return new ParentTableMeta(foreignKeyChain().get(0).getTable().reader());
       }
-      return References.getRefTable(this, reverseForeignKey.getTable().tableName(), ident,
+      return References.getRefTable(this, reverseForeignKey.getTable().name(), ident,
           reverseForeignKey.getRefTable().foreignKeys(),
           reverseForeignKey.getRefTable().reverseForeignKeys(),
           reverseForeignKey.getRefTable().refs());

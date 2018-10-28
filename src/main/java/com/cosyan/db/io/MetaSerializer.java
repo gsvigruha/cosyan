@@ -64,7 +64,7 @@ public class MetaSerializer {
 
   public JSONObject toJSON(MaterializedTable table) {
     JSONObject obj = new JSONObject();
-    obj.put("name", table.tableName());
+    obj.put("name", table.name());
     obj.put("owner", table.owner());
     obj.put("type", table.type().name());
     if (table.primaryKey().isPresent()) {
@@ -97,7 +97,7 @@ public class MetaSerializer {
     obj.put("rev_name", foreignKey.getRevName());
     obj.put("column", foreignKey.getColumn().getName());
     obj.put("ref_table_owner", foreignKey.getRefTable().owner());
-    obj.put("ref_table_name", foreignKey.getRefTable().tableName());
+    obj.put("ref_table_name", foreignKey.getRefTable().name());
     return obj;
   }
 

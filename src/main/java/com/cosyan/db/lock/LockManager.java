@@ -25,6 +25,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
+import com.cosyan.db.meta.DBObject;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.MetaResources.Resource;
@@ -86,8 +87,8 @@ public class LockManager {
     }
   }
 
-  public synchronized void registerLock(MaterializedTable table) {
-    lockMap.put(table.fullName(), new ReentrantReadWriteLock());
+  public synchronized void registerLock(DBObject object) {
+    lockMap.put(object.fullName(), new ReentrantReadWriteLock());
   }
 
   public synchronized void removeLock(MaterializedTable table) {

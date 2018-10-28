@@ -81,8 +81,6 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   private final Set<Long> recordsToDelete = new LinkedHashSet<>();
   private final TreeMap<Long, byte[]> recordsToInsert = new TreeMap<>();
 
-  private boolean cancelled = false;
-
   public TableWriter(
       MaterializedTable tableMeta,
       String fileName,
@@ -97,7 +95,6 @@ public class TableWriter extends SeekableTableReader implements TableIO {
       ImmutableMap<String, BooleanRule> rules,
       ReverseRuleDependencies reverseRules,
       Optional<PrimaryKey> primaryKey) throws IOException {
-    super(tableMeta);
     this.tableMeta = tableMeta;
     this.fileName = fileName;
     this.writer = fileWriter;
@@ -260,10 +257,6 @@ public class TableWriter extends SeekableTableReader implements TableIO {
 
   public void close() throws IOException {
     writer.close();
-  }
-
-  public void cancel() {
-    this.cancelled = true;
   }
 
   private void delete(Record record, Resources resources, Predicate<Integer> checkReversedForeignIndex,
@@ -432,7 +425,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     return get(filePointer);
   }
 
-  private RecordReader recordReader() throws IOException {
+  protected RecordReader recordReader() throws IOException {
     @SuppressWarnings("resource") // RecordReader closes SequenceInputStream.
     InputStream rafReader = new SequenceInputStream(
         new BufferedInputStream(new FileInputStream(fileName)),
@@ -452,7 +445,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
   }
 
   @Override
-  public IterableTableReader iterableReader() throws IOException {
+  public IterableTableReader iterableReader(Resources resources) throws IOException {
     RecordReader reader = recordReader();
     return new IterableTableReader() {
 
@@ -504,20 +497,6 @@ public class TableWriter extends SeekableTableReader implements TableIO {
                   foreignKey.getColumn().getName(),
                   foreignKey.getRefTable().fullName(),
                   foreignKey.getRefColumn().getName()));
-        }
-      }
-    } finally {
-      reader.close();
-    }
-  }
-
-  public void checkRule(BooleanRule rule, Resources resources) throws IOException, RuleException {
-    RecordReader reader = recordReader();
-    Record record;
-    try {
-      while ((record = reader.read()) != RecordReader.EMPTY && !cancelled) {
-        if (!rule.check(resources, record.getFilePointer())) {
-          throw new RuleException(String.format("Constraint check %s failed.", rule.getName()));
         }
       }
     } finally {

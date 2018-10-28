@@ -48,6 +48,7 @@ import com.cosyan.db.lang.sql.AlterStatementColumns.AlterTableDropColumn;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddForeignKey;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableAddRule;
 import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterTableDropConstraint;
+import com.cosyan.db.lang.sql.AlterStatementConstraints.AlterViewAddRule;
 import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableAddView;
 import com.cosyan.db.lang.sql.AlterStatementRefs.AlterTableDropView;
 import com.cosyan.db.lang.sql.CSVStatements.CSVExport;
@@ -401,49 +402,63 @@ public class Parser implements IParser {
 
   private MetaStatement parseAlter(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.ALTER);
-    assertNext(tokens, Tokens.TABLE);
-    TableWithOwnerDefinition table = parseTableWithOwner(tokens);
-    if (tokens.peek().is(Tokens.ADD)) {
-      tokens.next();
-      if (tokens.peek().is(Tokens.VIEW)) {
-        assertNext(tokens, Tokens.VIEW);
-        return new AlterTableAddView(table, parseView(tokens));
-      } else if (tokens.peek().is(Tokens.CONSTRAINT)) {
-        ConstraintDefinition constraint = parseConstraint(tokens);
-        if (constraint instanceof ForeignKeyDefinition) {
-          return new AlterTableAddForeignKey(table, (ForeignKeyDefinition) constraint);
-        } else if (constraint instanceof RuleDefinition) {
-          return new AlterTableAddRule(table, (RuleDefinition) constraint);
-        } else {
-          throw new ParserException(
-              String.format("Expected foreign key or rule definition, got '%s'.", constraint),
-              constraint.getName().getLoc());
-        }
+    if (tokens.peek().is(Tokens.VIEW)) {
+      assertNext(tokens, Tokens.VIEW);
+      TableWithOwnerDefinition view = parseTableWithOwner(tokens);
+      assertNext(tokens, Tokens.ADD);
+      ConstraintDefinition constraint = parseConstraint(tokens);
+      if (constraint instanceof RuleDefinition) {
+        return new AlterViewAddRule(view, (RuleDefinition) constraint);
       } else {
-        ColumnDefinition column = parseColumnDefinition(tokens);
-        return new AlterTableAddColumn(table, column);
+        throw new ParserException(
+            String.format("Expected rule definition, got '%s'.", constraint),
+            constraint.getName().getLoc());
       }
-    } else if (tokens.peek().is(Tokens.DROP)) {
-      tokens.next();
-      if (tokens.peek().is(Tokens.CONSTRAINT)) {
-        tokens.next();
-        Ident constraint = parseIdent(tokens);
-        return new AlterTableDropConstraint(table, constraint);
-      } else if (tokens.peek().is(Tokens.VIEW)) {
-        tokens.next();
-        Ident constraint = parseIdent(tokens);
-        return new AlterTableDropView(table, constraint);
-      } else {
-        Ident columnName = parseIdent(tokens);
-        return new AlterTableDropColumn(table, columnName);
-      }
-    } else if (tokens.peek().is(Tokens.ALTER) || tokens.peek().is(Tokens.MODIFY)) {
-      tokens.next();
-      ColumnDefinition column = parseColumnDefinition(tokens);
-      return new AlterTableAlterColumn(table, column);
     } else {
-      Token token = tokens.peek();
-      throw new ParserException("Unsupported alter operation '" + token + "'.", token);
+      assertNext(tokens, Tokens.TABLE);
+      TableWithOwnerDefinition table = parseTableWithOwner(tokens);
+      if (tokens.peek().is(Tokens.ADD)) {
+        tokens.next();
+        if (tokens.peek().is(Tokens.VIEW)) {
+          assertNext(tokens, Tokens.VIEW);
+          return new AlterTableAddView(table, parseView(tokens));
+        } else if (tokens.peek().is(Tokens.CONSTRAINT)) {
+          ConstraintDefinition constraint = parseConstraint(tokens);
+          if (constraint instanceof ForeignKeyDefinition) {
+            return new AlterTableAddForeignKey(table, (ForeignKeyDefinition) constraint);
+          } else if (constraint instanceof RuleDefinition) {
+            return new AlterTableAddRule(table, (RuleDefinition) constraint);
+          } else {
+            throw new ParserException(
+                String.format("Expected foreign key or rule definition, got '%s'.", constraint),
+                constraint.getName().getLoc());
+          }
+        } else {
+          ColumnDefinition column = parseColumnDefinition(tokens);
+          return new AlterTableAddColumn(table, column);
+        }
+      } else if (tokens.peek().is(Tokens.DROP)) {
+        tokens.next();
+        if (tokens.peek().is(Tokens.CONSTRAINT)) {
+          tokens.next();
+          Ident constraint = parseIdent(tokens);
+          return new AlterTableDropConstraint(table, constraint);
+        } else if (tokens.peek().is(Tokens.VIEW)) {
+          tokens.next();
+          Ident constraint = parseIdent(tokens);
+          return new AlterTableDropView(table, constraint);
+        } else {
+          Ident columnName = parseIdent(tokens);
+          return new AlterTableDropColumn(table, columnName);
+        }
+      } else if (tokens.peek().is(Tokens.ALTER) || tokens.peek().is(Tokens.MODIFY)) {
+        tokens.next();
+        ColumnDefinition column = parseColumnDefinition(tokens);
+        return new AlterTableAlterColumn(table, column);
+      } else {
+        Token token = tokens.peek();
+        throw new ParserException("Unsupported alter operation '" + token + "'.", token);
+      }
     }
   }
 
