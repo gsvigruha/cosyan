@@ -24,7 +24,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
 
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
@@ -265,38 +268,44 @@ public class MetaRepo {
     grants.checkAccess(resource, authToken);
   }
 
+  @Nullable
+  private MaterializedTable tableOrNull(TableWithOwner table) {
+    return Optional.ofNullable(tables.get(table.getOwner()))
+        .map(t -> Optional.ofNullable(t.get(table.getTable().getString()))).orElse(Optional.empty()).orElse(null);
+  }
+
+  @Nullable
+  private View viewOrNull(TableWithOwner table) {
+    return Optional.ofNullable(views.get(table.getOwner()))
+        .map(t -> Optional.ofNullable(t.get(table.getTable().getString()))).orElse(Optional.empty()).orElse(null);
+  }
+
   private MaterializedTable table(TableWithOwner table) throws ModelException {
-    if (!tables.containsKey(table.getOwner())) {
+    MaterializedTable tableMeta = tableOrNull(table);
+    if (tableMeta == null) {
       throw new ModelException(String.format("Table '%s' does not exist.", table), table.getTable());
     }
-    Map<String, MaterializedTable> userTables = tables.get(table.getOwner());
-    if (!userTables.containsKey(table.getTable().getString())) {
-      throw new ModelException(String.format("Table '%s' does not exist.", table), table.getTable());
-    }
-    return userTables.get(table.getTable().getString());
+    return tableMeta;
   }
 
   private View view(TableWithOwner table) throws ModelException {
-    if (!views.containsKey(table.getOwner())) {
+    View view = viewOrNull(table);
+    if (view == null) {
       throw new ModelException(String.format("View '%s' does not exist.", table), table.getTable());
     }
-    Map<String, View> userTables = views.get(table.getOwner());
-    if (!userTables.containsKey(table.getTable().getString())) {
-      throw new ModelException(String.format("View '%s' does not exist.", table), table.getTable());
-    }
-    return userTables.get(table.getTable().getString());
+    return view;
   }
 
   private ExposedTableMeta tableOrView(TableWithOwner ident) throws ModelException {
-    try {
-      return table(ident).reader();
-    } catch (ModelException e) {
-      try {
-        return view(ident).table();
-      } catch (ModelException e2) {
-        throw new ModelException(String.format("Table or view '%s' does not exist.", ident), ident.getTable());
-      }
+    MaterializedTable table = tableOrNull(ident);
+    if (table != null) {
+      return table.reader();
     }
+    View view = viewOrNull(ident);
+    if (view != null) {
+      return view.table();
+    }
+    throw new ModelException(String.format("Table or view '%s' does not exist.", ident), ident.getTable());
   }
 
   public Resources resources(MetaResources metaResources, AuthToken authToken) throws IOException {

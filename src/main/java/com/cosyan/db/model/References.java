@@ -376,9 +376,15 @@ public class References {
     }
   }
 
+  public static interface ReferencingTable {
+
+    public Object[] values(Object[] key, Resources resources) throws IOException;
+
+  }
+
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class AggRefTableMeta extends TableMeta {
+  public static class AggRefTableMeta extends TableMeta implements ReferencingTable {
     private final IterableTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
 
@@ -411,11 +417,16 @@ public class References {
       reader.close();
       return mapValues(aggrValues, resources, context, columns);
     }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      return values(key, resources, TableContext.EMPTY);
+    }
   }
 
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class FlatRefTableMeta extends TableMeta {
+  public static class FlatRefTableMeta extends TableMeta implements ReferencingTable {
     private final ExposedTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
 
@@ -444,6 +455,11 @@ public class References {
     public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
         throws IOException {
       return mapValues(sourceTable.values(sourceValues, resources, context), resources, context, columns);
+    }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      return values(key, resources, TableContext.EMPTY);
     }
   }
 

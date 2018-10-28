@@ -178,8 +178,7 @@ public class TableWriter extends SeekableTableReader implements TableIO {
     actFileIndex += data.length;
     for (Map.Entry<String, BooleanRule> rule : rules.entrySet()) {
       if (!rule.getValue().check(resources, fileIndex)) {
-        throw new RuleException(
-            "Constraint check " + rule.getKey() + " failed.");
+        throw new RuleException("Constraint check " + rule.getKey() + " failed.");
       }
     }
     if (checkReferencingRules) {

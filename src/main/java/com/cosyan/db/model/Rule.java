@@ -137,7 +137,7 @@ public abstract class Rule {
 
     @Override
     public boolean check(Resources resources, Object[] sourceValues) throws IOException {
-      Object[] values = view.refTable().values(sourceValues, resources, TableContext.EMPTY);
+      Object[] values = view.refTable().values(sourceValues, resources);
       Object check = column.value(values, resources, TableContext.EMPTY);
       if (check == null) {
         return nullIsTrue;

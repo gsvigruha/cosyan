@@ -39,6 +39,7 @@ import com.cosyan.db.model.Keys.GroupByKey;
 import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.References.FlatRefTableMeta;
 import com.cosyan.db.model.References.GroupByFilterTableMeta;
+import com.cosyan.db.model.References.ReferencingTable;
 import com.cosyan.db.model.Rule.BooleanViewRule;
 import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta;
@@ -48,10 +49,10 @@ import com.google.common.collect.ImmutableList;
 public class View extends DBObject {
 
   private final ExposedTableMeta tableMeta;
-  private final TableMeta refTableMeta;
+  private final ReferencingTable refTableMeta;
   private final Map<String, BooleanViewRule> rules;
 
-  public View(String name, String owner, ExposedTableMeta tableMeta, TableMeta refTableMeta) {
+  public View(String name, String owner, ExposedTableMeta tableMeta, ReferencingTable refTableMeta) {
     super(name, owner);
     this.tableMeta = tableMeta;
     this.refTableMeta = refTableMeta;
@@ -62,7 +63,7 @@ public class View extends DBObject {
     return tableMeta;
   }
 
-  public TableMeta refTable() {
+  public ReferencingTable refTable() {
     return refTableMeta;
   }
 
