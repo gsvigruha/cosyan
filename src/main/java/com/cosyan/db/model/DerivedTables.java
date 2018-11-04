@@ -124,6 +124,11 @@ public class DerivedTables {
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
     }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      return mapValues(sourceTable.values(key, resources), resources, TableContext.EMPTY, columns);
+    }
   }
 
   /**
@@ -186,6 +191,16 @@ public class DerivedTables {
     }
 
     @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      Object[] values = sourceTable.values(key, resources);
+      if ((boolean) whereColumn.value(values, resources, TableContext.EMPTY)) {
+        return values;
+      } else {
+        return null;
+      }
+    }
+
+    @Override
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
     }
@@ -241,6 +256,16 @@ public class DerivedTables {
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
     }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      Object[] values = sourceTable.values(key, resources);
+      if ((boolean) whereColumn.value(values, resources, TableContext.EMPTY)) {
+        return values;
+      } else {
+        return null;
+      }
+    }
   }
 
   /**
@@ -275,6 +300,11 @@ public class DerivedTables {
     @Override
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       return sourceTable.reader(resources, context);
+    }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      throw new UnsupportedOperationException();
     }
 
     @Override
@@ -385,6 +415,11 @@ public class DerivedTables {
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
     }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      return sourceTable.values(key, resources);
+    }
   }
 
   /**
@@ -457,6 +492,11 @@ public class DerivedTables {
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
     }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      throw new UnsupportedOperationException();
+    }
   }
 
   /**
@@ -510,6 +550,11 @@ public class DerivedTables {
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
     }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      return sourceTable.values(key, resources);
+    }
   }
 
   @Data
@@ -547,6 +592,11 @@ public class DerivedTables {
     @Override
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
+    }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      return sourceTable.values(key, resources);
     }
   }
 
@@ -609,6 +659,11 @@ public class DerivedTables {
     @Override
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
+    }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      return sourceTable.values(key, resources);
     }
   }
 }

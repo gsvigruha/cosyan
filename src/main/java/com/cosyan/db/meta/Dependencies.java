@@ -27,6 +27,7 @@ import com.cosyan.db.model.References.ReferencedRefTableMeta;
 import com.cosyan.db.model.References.ReferencedTable;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.Rule.BooleanViewRule;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 
@@ -34,7 +35,7 @@ public class Dependencies {
 
   public static interface TransitiveTableDependency {
 
-    MaterializedTable table();
+    DBObject table();
 
     Iterable<? extends TransitiveTableDependency> childDeps();
 
@@ -73,7 +74,7 @@ public class Dependencies {
     }
 
     @Override
-    public MaterializedTable table() {
+    public DBObject table() {
       return ref.getRefTable();
     }
 
@@ -130,7 +131,7 @@ public class Dependencies {
       return this;
     }
 
-    public void forAllReverseRuleDependencies(BooleanRule rule, boolean add) {
+    public void forAllReverseRuleDependencies(Rule rule, boolean add) {
       for (TableDependency tableDependency : deps.values()) {
         LinkedList<Ref> reverseForeignKeyChain = new LinkedList<>();
         forAllReverseRuleDependencies(tableDependency, reverseForeignKeyChain, rule, add);
@@ -140,7 +141,7 @@ public class Dependencies {
     private void forAllReverseRuleDependencies(
         TableDependency tableDependency,
         LinkedList<Ref> reverseForeignKeyChain,
-        BooleanRule rule,
+        Rule rule,
         boolean add) {
       Ref reverseRef = tableDependency.ref().getReverse();
       reverseForeignKeyChain.addFirst(reverseRef);
@@ -177,13 +178,14 @@ public class Dependencies {
     private final Ref key;
     private final Map<String, ReverseRuleDependency> deps = new HashMap<>();
     private final Map<String, BooleanRule> rules = new HashMap<>();
+    private final Map<String, BooleanViewRule> viewRules = new HashMap<>();
 
     public ReverseRuleDependency(Ref key) {
       this.key = key;
     }
 
     @Override
-    public MaterializedTable table() {
+    public DBObject table() {
       return key.getRefTable();
     }
 
@@ -203,6 +205,10 @@ public class Dependencies {
       return rules.values();
     }
 
+    public Collection<BooleanViewRule> viewRules() {
+      return viewRules.values();
+    }
+
     public Map<String, ReverseRuleDependency> getDeps() {
       return deps;
     }
@@ -212,10 +218,20 @@ public class Dependencies {
     }
 
     public void addRule(BooleanRule rule) {
-      assert rule.getTable().fullName().equals(key.getRefTable().fullName());
+      assert rule.getTable().fullName().equals(key.getRefTable().fullName()) : String.format("%s != %s", rule.getTable().fullName(), key.getRefTable().fullName());
       BooleanRule existingRule = rules.get(rule.getName());
       if (existingRule == null) {
         rules.put(rule.getName(), rule);
+      } else {
+        assert existingRule == rule;
+      }
+    }
+
+    public void addRule(BooleanViewRule rule) {
+      assert rule.getView().fullName().equals(key.getRefTable().fullName());
+      BooleanViewRule existingRule = viewRules.get(rule.getName());
+      if (existingRule == null) {
+        viewRules.put(rule.getName(), rule);
       } else {
         assert existingRule == rule;
       }
@@ -227,12 +243,19 @@ public class Dependencies {
       assert existingRule == rule;
       rules.remove(rule.getName());
     }
+
+    public void removeRule(BooleanViewRule rule) {
+      assert rule.getView().fullName().equals(key.getRefTable().fullName());
+      BooleanViewRule existingRule = viewRules.get(rule.getName());
+      assert existingRule == rule;
+      viewRules.remove(rule.getName());
+    }
   }
 
   public static class ReverseRuleDependencies {
     private final Map<String, ReverseRuleDependency> deps = new HashMap<>();
 
-    void addReverseRuleDependency(Iterable<Ref> foreignKeyChain, BooleanRule rule) {
+    void addReverseRuleDependency(Iterable<Ref> foreignKeyChain, Rule rule) {
       Map<String, ReverseRuleDependency> actDeps = deps;
       ReverseRuleDependency reverseDep = null;
       for (Ref foreignKey : foreignKeyChain) {
@@ -242,17 +265,25 @@ public class Dependencies {
         reverseDep = actDeps.get(foreignKey.getName());
         actDeps = reverseDep.getDeps();
       }
-      reverseDep.addRule(rule);
+      if (rule instanceof BooleanRule) {
+        reverseDep.addRule((BooleanRule) rule);
+      } else {
+        reverseDep.addRule((BooleanViewRule) rule);
+      }
     }
 
-    void removeReverseRuleDependency(Iterable<Ref> foreignKeyChain, BooleanRule rule) {
+    void removeReverseRuleDependency(Iterable<Ref> foreignKeyChain, Rule rule) {
       Map<String, ReverseRuleDependency> actDeps = deps;
       ReverseRuleDependency reverseDep = null;
       for (Ref foreignKey : foreignKeyChain) {
         reverseDep = actDeps.get(foreignKey.getName());
         actDeps = reverseDep.getDeps();
       }
-      reverseDep.removeRule(rule);
+      if (rule instanceof BooleanRule) {
+        reverseDep.removeRule((BooleanRule) rule);
+      } else {
+        reverseDep.removeRule((BooleanViewRule) rule);
+      }
     }
 
     public ImmutableMap<String, ReverseRuleDependency> getDeps() {

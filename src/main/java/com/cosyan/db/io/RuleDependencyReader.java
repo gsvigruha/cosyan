@@ -25,6 +25,7 @@ import com.cosyan.db.meta.Dependencies.ReverseRuleDependency;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.Rule.BooleanViewRule;
 import com.cosyan.db.transaction.Resources;
 
 public class RuleDependencyReader {
@@ -55,8 +56,17 @@ public class RuleDependencyReader {
                     rule.getTable().tableName(), rule.name()));
           }
         }
-        SeekableTableReader reader = resources.reader(ref.getRefTable().fullName());
-        checkReferencingRules(dep.getDeps().values(), reader.get(pointer));
+        if (!dep.getDeps().isEmpty()) {
+          SeekableTableReader reader = resources.reader(ref.getRefTable().fullName());
+          checkReferencingRules(dep.getDeps().values(), reader.get(pointer));
+        }
+      }
+      for (BooleanViewRule rule : dep.viewRules()) {
+        if (!rule.check(resources, record.getValues())) {
+          throw new RuleException(
+              String.format("Referencing constraint check %s.%s failed.",
+                  rule.getView().name(), rule.name()));
+        }
       }
     }
   }

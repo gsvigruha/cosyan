@@ -67,15 +67,15 @@ public class Grants {
       return withGrantOption;
     }
 
-    private boolean tableMatches(MaterializedTable tableMeta) {
-      return (owner.equals("*") || owner.equals(tableMeta.owner())) && (table.equals("*") || table.equals(tableMeta.tableName()));
+    private boolean tableMatches(DBObject object) {
+      return (owner.equals("*") || owner.equals(object.owner())) && (table.equals("*") || table.equals(object.name()));
     }
 
-    public boolean hasAccess(Method method, MaterializedTable tableMeta, AuthToken authToken) {
+    public boolean hasAccess(Method method, DBObject object, AuthToken authToken) {
       return authToken.isAdmin()
           || (authToken.username().equals(username)
               && (method == this.method || this.method == Method.ALL)
-              && tableMatches(tableMeta));
+              && tableMatches(object));
     }
 
     public boolean providesGrantTo(GrantToken proposedGrantToken) {
@@ -184,18 +184,18 @@ public class Grants {
   }
 
   private void checkAccess(
-      Collection<GrantToken> grants, MaterializedTable tableMeta, Method method, AuthToken authToken)
+      Collection<GrantToken> grants, DBObject object, Method method, AuthToken authToken)
       throws GrantException {
-    if (!hasAccess(grants, tableMeta, method, authToken)) {
+    if (!hasAccess(grants, object, method, authToken)) {
       throw new GrantException(
-          String.format("User '%s' has no %s right on '%s'.", authToken.username(), method, tableMeta.fullName()));
+          String.format("User '%s' has no %s right on '%s'.", authToken.username(), method, object.fullName()));
     }
   }
 
   private boolean hasAccess(
-      Collection<GrantToken> grants, MaterializedTable tableMeta, Method method, AuthToken authToken) {
+      Collection<GrantToken> grants, DBObject object, Method method, AuthToken authToken) {
     for (GrantToken grant : grants) {
-      if (grant.hasAccess(method, tableMeta, authToken)) {
+      if (grant.hasAccess(method, object, authToken)) {
         return true;
       }
     }
@@ -203,24 +203,24 @@ public class Grants {
   }
 
   public void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
-    MaterializedTable tableMeta = resource.getTableMeta();
-    if (authToken.isAdmin() || authToken.username().equals(resource.getTableMeta().owner())) {
+    DBObject object = resource.getObject();
+    if (authToken.isAdmin() || authToken.username().equals(resource.getObject().owner())) {
       return;
     }
     Collection<GrantToken> grants = userGrants.get(authToken.username());
     if (resource.write()) {
       if (resource.isInsert()) {
-        checkAccess(grants, tableMeta, Method.INSERT, authToken);
+        checkAccess(grants, object, Method.INSERT, authToken);
       }
       if (resource.isDelete()) {
-        checkAccess(grants, tableMeta, Method.DELETE, authToken);
+        checkAccess(grants, object, Method.DELETE, authToken);
       }
       if (resource.isUpdate()) {
-        checkAccess(grants, tableMeta, Method.UPDATE, authToken);
+        checkAccess(grants, object, Method.UPDATE, authToken);
       }
     } else {
       if (resource.isSelect()) {
-        checkAccess(grants, tableMeta, Method.SELECT, authToken);
+        checkAccess(grants, object, Method.SELECT, authToken);
       }
     }
   }
@@ -241,12 +241,12 @@ public class Grants {
     return hasAccess(grants, tableMeta, method, authToken);
   }
 
-  public void checkOwner(MaterializedTable tableMeta, AuthToken authToken) throws GrantException {
-    if (authToken.isAdmin() || authToken.username().equals(tableMeta.owner())) {
+  public void checkOwner(DBObject object, AuthToken authToken) throws GrantException {
+    if (authToken.isAdmin() || authToken.username().equals(object.owner())) {
       return;
     }
     throw new GrantException(String.format("User '%s' has no ownership right on '%s'.",
-        authToken.username(), tableMeta.fullName()));
+        authToken.username(), object.fullName()));
   }
 
   public static class GrantException extends Exception {

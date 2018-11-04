@@ -48,6 +48,11 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
   }
 
   @Override
+  public Object[] values(Object[] key, Resources resources) throws IOException {
+    return key;
+  }
+
+  @Override
   public ImmutableList<String> columnNames() {
     return tableMeta.columnNames();
   }
@@ -71,7 +76,7 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
   public TableMeta getRefTable(Ident ident) throws ModelException {
     return References.getRefTable(
         this,
-        tableMeta.tableName(),
+        tableMeta.name(),
         ident,
         tableMeta.foreignKeys(),
         tableMeta.reverseForeignKeys(),
@@ -84,7 +89,7 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
   }
 
   public String tableName() {
-    return tableMeta.tableName();
+    return tableMeta.name();
   }
 
   public String fullName() {
@@ -139,5 +144,10 @@ public class SeekableTableMeta extends ExposedTableMeta implements ReferencedTab
   @Override
   public TableDependencies tableDependencies() {
     return new TableDependencies();
+  }
+
+  @Override
+  public Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException {
+    return sourceValues;
   }
 }

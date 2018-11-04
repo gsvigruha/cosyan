@@ -240,5 +240,10 @@ public class JoinTables {
       deps.addToThis(joinTable.tableDependencies());
       return deps;
     }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      throw new UnsupportedOperationException();
+    }
   }
 }

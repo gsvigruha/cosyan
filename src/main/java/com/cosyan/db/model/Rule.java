@@ -24,6 +24,7 @@ import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.View;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.session.IParser.ParserException;
 import com.cosyan.db.transaction.Resources;
@@ -32,18 +33,16 @@ import lombok.Data;
 
 @Data
 @Immutable
-public class Rule {
+public abstract class Rule {
 
   private final String name;
   private final Expression expr;
   protected final boolean nullIsTrue;
-  protected final transient SeekableTableMeta table;
   protected final transient ColumnMeta column;
   private final transient TableDependencies deps;
 
   public Rule(
       String name,
-      SeekableTableMeta table,
       ColumnMeta column,
       Expression expr,
       boolean nullIsTrue,
@@ -52,7 +51,6 @@ public class Rule {
     this.column = column;
     this.expr = expr;
     this.deps = deps;
-    this.table = table;
     this.nullIsTrue = nullIsTrue;
   }
 
@@ -68,11 +66,11 @@ public class Rule {
     return column.getType();
   }
 
-  public void reCompile(SeekableTableMeta tableMeta) throws ModelException {
+  public void reCompile() throws ModelException {
     Parser parser = new Parser();
     Lexer lexer = new Lexer();
     try {
-      parser.parseExpression(lexer.tokenizeExpression(expr.print())).compileColumn(tableMeta);
+      parser.parseExpression(lexer.tokenizeExpression(expr.print())).compileColumn(tableMeta());
     } catch (ParserException e) {
       throw new RuntimeException(e); // This should not happen.
     }
@@ -83,20 +81,29 @@ public class Rule {
     return name + " [" + expr.print() + "]";
   }
 
-  public BooleanRule toBooleanRule() {
-    return new BooleanRule(name, table, column, expr, nullIsTrue, deps);
-  }
+  public abstract TableMeta tableMeta();
+
+  public abstract boolean check(Resources resources, Object[] values) throws IOException;
 
   public static class BooleanRule extends Rule {
+
+    private final transient SeekableTableMeta table;
+
     public BooleanRule(String name, SeekableTableMeta table, ColumnMeta column, Expression expr,
         boolean nullIsTrue, TableDependencies deps) {
-      super(name, table, column, expr, nullIsTrue, deps);
+      super(name, column, expr, nullIsTrue, deps);
       assert column.getType() == DataTypes.BoolType;
+      this.table = table;
     }
 
     public boolean check(Resources resources, long fileIndex) throws IOException {
       Object[] values = table.get(resources, fileIndex).getValues();
-      Object check = column.value(values, resources, TableContext.EMPTY);
+      return check(resources, values);
+    }
+
+    @Override
+    public boolean check(Resources resources, Object[] sourceValues) throws IOException {
+      Object check = column.value(sourceValues, resources, TableContext.EMPTY);
       if (check == null) {
         return nullIsTrue;
       }
@@ -105,6 +112,50 @@ public class Rule {
 
     public String print(Resources resources, long fileIndex) throws IOException {
       return getExpr().print();
+    }
+
+    public SeekableTableMeta getTable() {
+      return table;
+    }
+
+    @Override
+    public TableMeta tableMeta() {
+      return table;
+    }
+  }
+
+  public static class BooleanViewRule extends Rule {
+
+    private final transient View view;
+
+    public BooleanViewRule(String name, View view, ColumnMeta column, Expression expr,
+        boolean nullIsTrue, TableDependencies deps) {
+      super(name, column, expr, nullIsTrue, deps);
+      assert column.getType() == DataTypes.BoolType;
+      this.view = view;
+    }
+
+    @Override
+    public boolean check(Resources resources, Object[] sourceValues) throws IOException {
+      Object[] values = view.table().values(sourceValues, resources);
+      Object check = column.value(values, resources, TableContext.EMPTY);
+      if (check == null) {
+        return nullIsTrue;
+      }
+      return (boolean) check;
+    }
+
+    public String print(Resources resources, Object[] sourceValues) throws IOException {
+      return getExpr().print();
+    }
+
+    public View getView() {
+      return view;
+    }
+
+    @Override
+    public TableMeta tableMeta() {
+      return view.table();
     }
   }
 }

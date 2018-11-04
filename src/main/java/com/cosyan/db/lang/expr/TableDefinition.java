@@ -19,13 +19,15 @@ import java.util.Optional;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
-import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
+import com.cosyan.db.meta.View;
 import com.cosyan.db.model.ColumnMeta;
+import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.Rule;
+import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.Rule.BooleanViewRule;
 import com.cosyan.db.model.SeekableTableMeta;
 
 import lombok.Data;
@@ -58,10 +60,24 @@ public class TableDefinition {
       return name + " [" + expr.print() + "]";
     }
 
-    public Rule compile(MaterializedTable tableMeta) throws ModelException {
-      SeekableTableMeta table = tableMeta.reader();
+    public BooleanRule compile(SeekableTableMeta table) throws ModelException {
       ColumnMeta column = expr.compileColumn(table);
-      return new Rule(name.getString(), table, column, expr, nullIsTrue, column.tableDependencies());
+      if (column.getType() != DataTypes.BoolType) {
+        throw new ModelException(
+            String.format("Constraint check expression has to return a 'boolean': '%s'.", expr.print()),
+            getName());
+      }
+      return new BooleanRule(name.getString(), table, column, expr, nullIsTrue, column.tableDependencies());
+    }
+
+    public BooleanViewRule compile(View view) throws ModelException {
+      ColumnMeta column = expr.compileColumn(view.table());
+      if (column.getType() != DataTypes.BoolType) {
+        throw new ModelException(
+            String.format("Constraint check expression has to return a 'boolean': '%s'.", expr.print()),
+            getName());
+      }
+      return new BooleanViewRule(name.getString(), view, column, expr, nullIsTrue, column.tableDependencies());
     }
   }
 

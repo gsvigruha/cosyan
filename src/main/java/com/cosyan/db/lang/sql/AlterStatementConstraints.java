@@ -19,6 +19,8 @@ import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.io.Indexes.IndexWriter;
+import com.cosyan.db.io.TableReader.IterableTableReader;
+import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Statements.AlterStatement;
 import com.cosyan.db.lang.expr.Statements.GlobalStatement;
@@ -32,9 +34,12 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
+import com.cosyan.db.meta.View;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.Rule.BooleanViewRule;
+import com.cosyan.db.model.TableContext;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 
@@ -67,7 +72,7 @@ public class AlterStatementConstraints {
 
     @Override
     public Result executeData(MetaWriter metaRepo, Resources resources) throws RuleException, IOException {
-      MaterializedTable tableMeta = resources.meta(tableWithOwner.resourceId());
+      MaterializedTable tableMeta = (MaterializedTable) resources.meta(tableWithOwner.resourceId());
       writer = resources.writer(tableWithOwner.resourceId());
       writer.checkForeignKey(foreignKey, resources);
       String colName = foreignKey.getColumn().getName();
@@ -103,7 +108,7 @@ public class AlterStatementConstraints {
 
     @Override
     public Result executeData(MetaWriter metaRepo, Resources resources) throws RuleException, IOException {
-      MaterializedTable tableMeta = resources.meta(tableWithOwner.resourceId());
+      MaterializedTable tableMeta = (MaterializedTable) resources.meta(tableWithOwner.resourceId());
       writer = resources.writer(tableWithOwner.resourceId());
       writer.checkRule(rule, resources);
       tableMeta.addRule(rule);
@@ -114,6 +119,41 @@ public class AlterStatementConstraints {
     @Override
     public void cancel() {
       writer.cancel();
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class AlterViewAddRule extends AlterStatement {
+    private final TableWithOwnerDefinition table;
+    private final RuleDefinition constraint;
+
+    private TableWithOwner tableWithOwner;
+    private View view;
+    private BooleanViewRule rule;
+    private SeekableTableReader reader;
+
+    @Override
+    public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException {
+      tableWithOwner = table.resolve(authToken);
+      view = metaRepo.view(tableWithOwner, authToken);
+      rule = view.createRule(constraint);
+      return MetaResources.viewMeta(view).merge(rule.getColumn().readResources());
+    }
+
+    @Override
+    public Result executeData(MetaWriter metaRepo, Resources resources) throws RuleException, IOException {
+      View view = (View) resources.meta(tableWithOwner.resourceId());
+      IterableTableReader reader = view.table().reader(resources, TableContext.EMPTY);
+      SeekableTableReader.checkRule(rule, reader, resources);
+      view.addRule(rule);
+      metaRepo.syncMeta(view);
+      return Result.META_OK;
+    }
+
+    @Override
+    public void cancel() {
+      reader.cancel();
     }
   }
 

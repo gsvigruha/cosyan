@@ -54,8 +54,6 @@ public abstract class TableMeta implements CompiledObject {
 
   public abstract ImmutableList<String> columnNames();
 
-  public abstract Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException;
-
   public TableMeta table(Ident ident) throws ModelException {
     TableMeta table = getRefTable(ident);
     if (table == null) {
@@ -84,7 +82,7 @@ public abstract class TableMeta implements CompiledObject {
     return keys.asList().indexOf(ident.getString());
   }
 
-  protected IndexColumn shiftColumn(TableMeta sourceTable, ImmutableMap<String, ColumnMeta> columns, Ident ident)
+  protected IndexColumn shiftColumn(IterableTableMeta sourceTable, ImmutableMap<String, ColumnMeta> columns, Ident ident)
       throws ModelException {
     ColumnMeta column = columns.get(ident.getString());
     if (column == null) {
@@ -105,16 +103,13 @@ public abstract class TableMeta implements CompiledObject {
     return newValues;
   }
 
+  public abstract Object[] values(Object[] key, Resources resources) throws IOException;
+
   public static abstract class IterableTableMeta extends TableMeta {
 
     public abstract IterableTableReader reader(Resources resources, TableContext context) throws IOException;
 
     public abstract TableDependencies tableDependencies();
-
-    // Iterable tables cannot override this function.
-    public final Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException {
-      return sourceValues;
-    }
   }
 
   public static abstract class ExposedTableMeta extends IterableTableMeta {

@@ -20,6 +20,8 @@ import java.io.IOException;
 import com.cosyan.db.meta.Dependencies.TableDependencies;
 import com.cosyan.db.model.BuiltinFunctions.TypedAggrFunction;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.References.ReferencedTable;
+import com.cosyan.db.model.TableMeta.IterableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 
@@ -39,34 +41,41 @@ public abstract class ColumnMeta implements CompiledObject {
   public abstract MetaResources readResources();
 
   public static class IndexColumn extends ColumnMeta {
-    private final TableMeta sourceTable;
+    private final MetaResources metaResources;
     private final int index;
     private final TableDependencies tableDependencies;
 
-    public static IndexColumn of(TableMeta sourceTable, ColumnMeta parentColumn, int index) {
+    public static IndexColumn of(IterableTableMeta sourceTable, ColumnMeta parentColumn, int index) {
       return new IndexColumn(sourceTable, index, parentColumn.getType(), parentColumn.tableDependencies());
     }
 
-    public IndexColumn(TableMeta sourceTable, int index, DataType<?> type, TableDependencies tableDependencies) {
+    protected IndexColumn(MetaResources metaResources, int index, DataType<?> type, TableDependencies tableDependencies) {
       super(type);
-      this.sourceTable = sourceTable;
+      this.metaResources = metaResources;
+      this.index = index;
+      this.tableDependencies = tableDependencies;
+    }
+
+    public IndexColumn(IterableTableMeta sourceTable, int index, DataType<?> type, TableDependencies tableDependencies) {
+      super(type);
+      this.metaResources = sourceTable.readResources();
       this.index = index;
       this.tableDependencies = tableDependencies;
     }
 
     @Override
     public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
-      return sourceTable.values(values, resources, context)[index];
+      return values[index];
     }
 
     @Override
     public String print(Object[] values, Resources resources, TableContext context) throws IOException {
-      return String.valueOf(sourceTable.values(values, resources, context)[index]);
+      return String.valueOf(values[index]);
     }
 
     @Override
     public MetaResources readResources() {
-      return sourceTable.readResources();
+      return metaResources;
     }
 
     @Override
@@ -78,8 +87,33 @@ public abstract class ColumnMeta implements CompiledObject {
       return index;
     }
 
-    public IndexColumn shift(TableMeta sourceTable, int shift) {
+    public IndexColumn shift(IterableTableMeta sourceTable, int shift) {
       return new IndexColumn(sourceTable, index + shift, type, tableDependencies);
+    }
+  }
+
+  public static class ReferencedIndexColumn extends IndexColumn {
+    private final ReferencedTable referencedTable;
+    private final int index;
+
+    public static ReferencedIndexColumn of(ReferencedTable sourceTable, ColumnMeta parentColumn, int index) {
+      return new ReferencedIndexColumn(sourceTable, index, parentColumn.getType(), parentColumn.tableDependencies());
+    }
+
+    public ReferencedIndexColumn(ReferencedTable referencedTable, int index, DataType<?> type, TableDependencies tableDependencies) {
+      super(referencedTable.readResources(), index, type, tableDependencies);
+      this.referencedTable = referencedTable;
+      this.index = index;
+    }
+
+    @Override
+    public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
+      return referencedTable.values(values, resources, context)[index];
+    }
+
+    @Override
+    public String print(Object[] values, Resources resources, TableContext context) throws IOException {
+      return String.valueOf(referencedTable.values(values, resources, context)[index]);
     }
   }
 
@@ -113,15 +147,15 @@ public abstract class ColumnMeta implements CompiledObject {
 
   public static class AggrColumn extends DerivedColumn {
 
-    private final AggrTables sourceTable;
+    private final AggrTables aggrTable;
     private final int index;
     private final ColumnMeta baseColumn;
     private final TypedAggrFunction<?> function;
 
-    public AggrColumn(AggrTables sourceTable, DataType<?> type, ColumnMeta baseColumn, int index,
+    public AggrColumn(AggrTables aggrTable, DataType<?> type, ColumnMeta baseColumn, int index,
         TypedAggrFunction<?> function) {
       super(type);
-      this.sourceTable = sourceTable;
+      this.aggrTable = aggrTable;
       this.baseColumn = baseColumn;
       this.index = index;
       this.function = function;
@@ -129,12 +163,12 @@ public abstract class ColumnMeta implements CompiledObject {
 
     @Override
     public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
-      return sourceTable.values(values, resources, context)[index];
+      return values[index];
     }
 
     @Override
     public String print(Object[] values, Resources resources, TableContext context) throws IOException {
-      return String.valueOf(sourceTable.values(values, resources, context)[index]);
+      return String.valueOf(values[index]);
     }
 
     public Object getInnerValue(Object[] values, Resources resources, TableContext context) throws IOException {
@@ -154,7 +188,7 @@ public abstract class ColumnMeta implements CompiledObject {
     public TableDependencies tableDependencies() {
       TableDependencies deps = new TableDependencies();
       deps.addToThis(baseColumn.tableDependencies());
-      deps.addToThis(sourceTable.tableDependencies());
+      deps.addToThis(aggrTable.tableDependencies());
       return deps;
     }
   }

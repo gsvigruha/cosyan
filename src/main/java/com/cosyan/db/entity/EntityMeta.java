@@ -129,7 +129,7 @@ public class EntityMeta extends Result {
             foreignKey.getName(),
             foreignKey.getColumn().getType(),
             foreignKey.getColumn().getName(),
-            foreignKey.getRefTable().tableName()));
+            foreignKey.getRefTable().name()));
       }
       ImmutableList.Builder<ReverseForeignKey> reverseForeignKeys = ImmutableList.builder();
       for (com.cosyan.db.model.Keys.ReverseForeignKey reverseForeignKey : table.reverseForeignKeys().values()) {
@@ -137,7 +137,7 @@ public class EntityMeta extends Result {
             reverseForeignKey.getName(),
             reverseForeignKey.getColumn().getType(),
             reverseForeignKey.getRefColumn().getName(),
-            reverseForeignKey.getRefTable().tableName()));
+            reverseForeignKey.getRefTable().name()));
       }
       entities.add(new Entity(
           table.fullName(),

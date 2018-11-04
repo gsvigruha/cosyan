@@ -18,7 +18,9 @@ package com.cosyan.db.model;
 import java.io.IOException;
 
 import com.cosyan.db.io.Indexes.IndexReader;
+import com.cosyan.db.meta.DBObject;
 import com.cosyan.db.meta.MaterializedTable;
+import com.cosyan.db.meta.View;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.transaction.Resources;
 import com.google.common.collect.ImmutableList;
@@ -40,7 +42,7 @@ public class Keys {
 
     MaterializedTable getTable();
 
-    MaterializedTable getRefTable();
+    DBObject getRefTable();
 
     Ref getReverse();
 
@@ -107,6 +109,7 @@ public class Keys {
   public static class GroupByKey implements Ref {
     private final String name;
     private final MaterializedTable table;
+    private final View refView;
     private final ImmutableMap<String, ColumnMeta> columns;
 
     public ImmutableList<DataType<?>> columnTypes() {
@@ -130,8 +133,8 @@ public class Keys {
     }
 
     @Override
-    public MaterializedTable getRefTable() {
-      return table;
+    public DBObject getRefTable() {
+      return refView.dbObject();
     }
 
     @Override

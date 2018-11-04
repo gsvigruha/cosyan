@@ -41,6 +41,8 @@ import com.cosyan.db.io.RAFBufferedInputStream;
 import com.cosyan.db.io.SeekableInputStream;
 import com.cosyan.db.io.SeekableOutputStream;
 import com.cosyan.db.io.SeekableOutputStream.RAFSeekableOutputStream;
+import com.cosyan.db.io.TableReader.MaterializedTableReader;
+import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.lang.expr.TableDefinition.ColumnDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ForeignKeyDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
@@ -91,15 +93,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
-public class MaterializedTable {
+public class MaterializedTable extends DBObject {
 
   public static enum Type {
     LOG, LOOKUP
   }
 
   private final Config config;
-  private final String tableName;
-  private final String owner;
   private final Type type;
   private final RandomAccessFile raf;
   private final TableStats stats;
@@ -120,9 +120,8 @@ public class MaterializedTable {
 
   public MaterializedTable(Config config, String tableName, String owner, Iterable<BasicColumn> columns,
       Optional<PrimaryKey> primaryKey, Type type) throws IOException, ModelException {
+    super(tableName, owner);
     this.config = config;
-    this.tableName = tableName;
-    this.owner = owner;
     this.type = type;
     this.raf = new RandomAccessFile(fileName(), "rw");
     this.stats = new TableStats(config, tableName);
@@ -155,18 +154,6 @@ public class MaterializedTable {
 
   public Type type() {
     return type;
-  }
-
-  public String tableName() {
-    return tableName;
-  }
-
-  public String owner() {
-    return owner;
-  }
-
-  public String fullName() {
-    return owner + "." + tableName;
   }
 
   public RandomAccessFile raf() {
@@ -282,10 +269,12 @@ public class MaterializedTable {
 
   public void checkName(Ident ident) throws ModelException {
     String name = ident.getString();
-    if (columnNames().contains(name) || foreignKeys.containsKey(name) || reverseForeignKeys.containsKey(name)
-        || refs.containsKey(name)) {
-      throw new ModelException(String.format(
-          "Duplicate column, foreign key, reversed foreign key or ref name in '%s': '%s'.", tableName, name), ident);
+    if (columnNames().contains(name)
+        || foreignKeys.containsKey(name)
+        || reverseForeignKeys.containsKey(name)
+        || refs.containsKey(name)
+        || rules.containsKey(name)) {
+      throw new ModelException(String.format("Duplicate name in '%s': '%s'.", name(), name), ident);
     }
   }
 
@@ -295,6 +284,7 @@ public class MaterializedTable {
 
   public TableMeta createView(ViewDefinition ref, String owner) throws ModelException, IOException {
     checkName(ref.getName());
+    View view = new View(ref.getName().getString(), this, owner);
     TableMeta tableMeta = ref.getSelect().getTable().compile(reader(), owner);
     if (tableMeta instanceof ReferencedMultiTableMeta) {
       ReferencedMultiTableMeta srcTableMeta = (ReferencedMultiTableMeta) tableMeta;
@@ -314,8 +304,11 @@ public class MaterializedTable {
       // Columns have aggregations, recompile with an AggrTable.
       TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
       return new AggRefTableMeta(aggrTable, tableColumns.getColumns());
+    } else if (tableMeta instanceof SeekableTableMeta) {
+      return View.createView(ref, view, reader(), owner);
     } else {
-      return View.createRefView(ref, reader(), owner);
+      //return View.createRefView(ref, reader(), owner);
+      throw new ModelException("Invalid table type.", ref.getName());
     }
   }
 
@@ -404,13 +397,7 @@ public class MaterializedTable {
 
   public BooleanRule createRule(RuleDefinition ruleDefinition) throws ModelException {
     checkName(ruleDefinition.getName());
-    Rule rule = ruleDefinition.compile(this);
-    if (rule.getType() != DataTypes.BoolType) {
-      throw new ModelException(
-          String.format("Constraint check expression has to return a 'boolean': '%s'.", rule.getExpr().print()),
-          ruleDefinition.getName());
-    }
-    return rule.toBooleanRule();
+    return ruleDefinition.compile(reader());
   }
 
   public void addRule(BooleanRule booleanRule) {
@@ -418,11 +405,11 @@ public class MaterializedTable {
     ruleDependencies.addToThis(booleanRule.getDeps());
   }
 
-  void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, BooleanRule rule) {
+  void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {
     reverseRuleDependencies.addReverseRuleDependency(reverseForeignKeyChain, rule);
   }
 
-  void removeReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, BooleanRule rule) {
+  void removeReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {
     reverseRuleDependencies.removeReverseRuleDependency(reverseForeignKeyChain, rule);
   }
 
@@ -446,7 +433,7 @@ public class MaterializedTable {
     }
     for (Rule rule : rules().values()) {
       try {
-        rule.reCompile(reader());
+        rule.reCompile();
       } catch (ModelException e) {
         throw new ModelException(
             String.format("Cannot drop foreign key '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
@@ -454,7 +441,7 @@ public class MaterializedTable {
     }
     for (Rule rule : reverseRuleDependencies().allRules()) {
       try {
-        rule.reCompile(rule.getTable());
+        rule.reCompile();
       } catch (ModelException e) {
         throw new ModelException(
             String.format("Cannot drop foreign '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
@@ -467,7 +454,7 @@ public class MaterializedTable {
     refs.remove(ident.getString());
     for (Rule rule : rules().values()) {
       try {
-        rule.reCompile(reader());
+        rule.reCompile();
       } catch (ModelException e) {
         throw new ModelException(
             String.format("Cannot drop ref '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
@@ -475,7 +462,7 @@ public class MaterializedTable {
     }
     for (Rule rule : reverseRuleDependencies().allRules()) {
       try {
-        rule.reCompile(rule.getTable());
+        rule.reCompile();
       } catch (ModelException e) {
         throw new ModelException(
             String.format("Cannot drop ref '%s', check '%s' fails.\n%s", ident, rule, e.getMessage()), ident);
@@ -602,7 +589,7 @@ public class MaterializedTable {
   public ForeignKey foreignKey(Ident ident) throws ModelException {
     String name = ident.getString();
     if (!foreignKeys.containsKey(name)) {
-      throw new ModelException(String.format("Invalid foreign key reference '%s' in table '%s'.", name, tableName),
+      throw new ModelException(String.format("Invalid foreign key reference '%s' in table '%s'.", name, name()),
           ident);
     }
     return foreignKeys.get(name);
@@ -632,7 +619,7 @@ public class MaterializedTable {
     String name = ident.getString();
     if (!reverseForeignKeys.containsKey(name)) {
       throw new ModelException(
-          String.format("Invalid reverse foreign key reference '%s' in table '%s'.", name, tableName), ident);
+          String.format("Invalid reverse foreign key reference '%s' in table '%s'.", name, name()), ident);
     }
     return reverseForeignKeys.get(name);
   }
@@ -701,7 +688,7 @@ public class MaterializedTable {
       }
       for (Rule rule : rules().values()) {
         try {
-          rule.reCompile(reader());
+          rule.reCompile();
         } catch (ModelException e) {
           throw new ModelException(
               String.format("Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()), column);
@@ -709,7 +696,7 @@ public class MaterializedTable {
       }
       for (Rule rule : reverseRuleDependencies().allRules()) {
         try {
-          rule.reCompile(rule.getTable());
+          rule.reCompile();
         } catch (ModelException e) {
           throw new ModelException(
               String.format("Cannot drop column '%s', check '%s' fails.\n%s", column, rule, e.getMessage()), column);
@@ -728,5 +715,14 @@ public class MaterializedTable {
     }
     raf.close();
     new File(fileName()).delete();
+  }
+
+  public SeekableTableReader createReader() throws IOException {
+    return new MaterializedTableReader(
+        this,
+        fileName(),
+        fileReader(),
+        allColumns(),
+        allIndexReaders());
   }
 }

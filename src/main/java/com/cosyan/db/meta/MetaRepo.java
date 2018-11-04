@@ -24,7 +24,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
 
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
@@ -38,7 +41,6 @@ import com.cosyan.db.index.IndexStat.ByteMultiTrieStat;
 import com.cosyan.db.index.IndexStat.ByteTrieStat;
 import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.io.MetaSerializer;
-import com.cosyan.db.io.TableReader.MaterializedTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Expression;
@@ -54,6 +56,7 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.Rule.BooleanViewRule;
 import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMultiIndex;
@@ -115,7 +118,7 @@ public class MetaRepo {
   }
 
   private Map<String, MaterializedTable> tablesWithNames() {
-    return allTables().stream().collect(Collectors.toMap(t -> t.owner() + "." + t.tableName(), t -> t));
+    return allTables().stream().collect(Collectors.toMap(t -> t.owner() + "." + t.name(), t -> t));
   }
 
   public void init() throws IOException {
@@ -265,40 +268,54 @@ public class MetaRepo {
     grants.checkAccess(resource, authToken);
   }
 
-  private MaterializedTable table(TableWithOwner table) throws ModelException {
-    if (!tables.containsKey(table.getOwner())) {
-      throw new ModelException(String.format("Table '%s' does not exist.", table), table.getTable());
-    }
-    Map<String, MaterializedTable> userTables = tables.get(table.getOwner());
-    if (!userTables.containsKey(table.getTable().getString())) {
-      throw new ModelException(String.format("Table '%s' does not exist.", table), table.getTable());
-    }
-    return userTables.get(table.getTable().getString());
+  @Nullable
+  private MaterializedTable tableOrNull(TableWithOwner table) {
+    return Optional.ofNullable(tables.get(table.getOwner()))
+        .map(t -> Optional.ofNullable(t.get(table.getTable().getString()))).orElse(Optional.empty()).orElse(null);
   }
 
-  private ExposedTableMeta tableOrView(TableWithOwner table) throws ModelException {
-    try {
-      return table(table).reader();
-    } catch (ModelException e) {
-      if (!views.containsKey(table.getOwner())) {
-        throw new ModelException(String.format("Table or view '%s' does not exist.", table), table.getTable());
-      }
-      Map<String, View> userTables = views.get(table.getOwner());
-      if (!userTables.containsKey(table.getTable().getString())) {
-        throw new ModelException(String.format("Table or view '%s' does not exist.", table), table.getTable());
-      }
-      return userTables.get(table.getTable().getString()).table(); 
+  @Nullable
+  private View viewOrNull(TableWithOwner table) {
+    return Optional.ofNullable(views.get(table.getOwner()))
+        .map(t -> Optional.ofNullable(t.get(table.getTable().getString()))).orElse(Optional.empty()).orElse(null);
+  }
+
+  private MaterializedTable table(TableWithOwner table) throws ModelException {
+    MaterializedTable tableMeta = tableOrNull(table);
+    if (tableMeta == null) {
+      throw new ModelException(String.format("Table '%s' does not exist.", table), table.getTable());
     }
+    return tableMeta;
+  }
+
+  private View view(TableWithOwner table) throws ModelException {
+    View view = viewOrNull(table);
+    if (view == null) {
+      throw new ModelException(String.format("View '%s' does not exist.", table), table.getTable());
+    }
+    return view;
+  }
+
+  private ExposedTableMeta tableOrView(TableWithOwner ident) throws ModelException {
+    MaterializedTable table = tableOrNull(ident);
+    if (table != null) {
+      return table.reader();
+    }
+    View view = viewOrNull(ident);
+    if (view != null) {
+      return view.table();
+    }
+    throw new ModelException(String.format("Table or view '%s' does not exist.", ident), ident.getTable());
   }
 
   public Resources resources(MetaResources metaResources, AuthToken authToken) throws IOException {
     ImmutableMap.Builder<String, SeekableTableReader> readers = ImmutableMap.builder();
     ImmutableMap.Builder<String, TableWriter> writers = ImmutableMap.builder();
-    ImmutableMap.Builder<String, MaterializedTable> metas = ImmutableMap.builder();
+    ImmutableMap.Builder<String, DBObject> metas = ImmutableMap.builder();
     for (TableMetaResource resource : metaResources.tables()) {
       if (resource.write()) {
-        MaterializedTable tableMeta = resource.getTableMeta();
-        writers.put(resource.getTableMeta().fullName(), new TableWriter(
+        MaterializedTable tableMeta = (MaterializedTable) resource.getObject();
+        writers.put(tableMeta.fullName(), new TableWriter(
             tableMeta,
             tableMeta.fileName(),
             tableMeta.fileWriter(),
@@ -313,17 +330,14 @@ public class MetaRepo {
             tableMeta.reverseRuleDependencies(),
             tableMeta.primaryKey()));
       } else {
-        MaterializedTable tableMeta = resource.getTableMeta();
-        readers.put(resource.getTableMeta().fullName(), new MaterializedTableReader(
-            tableMeta,
-            tableMeta.fileName(),
-            tableMeta.fileReader(),
-            tableMeta.allColumns(),
-            tableMeta.allIndexReaders()));
+        DBObject object = resource.getObject();
+        if (object instanceof MaterializedTable) {
+          readers.put(object.fullName(), ((MaterializedTable) object).createReader());
+        }
       }
       if (resource.isMeta()) {
-        MaterializedTable tableMeta = resource.getTableMeta();
-        metas.put(resource.getTableMeta().fullName(), tableMeta);
+        DBObject meta = resource.getObject();
+        metas.put(meta.fullName(), meta);
       }
     }
     return new Resources(readers.build(), writers.build(), metas.build());
@@ -401,7 +415,8 @@ public class MetaRepo {
 
       @Override
       public ImmutableMap<String, TableStat> tableStats() throws IOException {
-        return Util.<String, MaterializedTable, TableStat>mapValuesIOException(tablesWithNames(), MaterializedTable::stat);
+        return Util.<String, MaterializedTable, TableStat>mapValuesIOException(tablesWithNames(),
+            MaterializedTable::stat);
       }
 
       @Override
@@ -459,10 +474,17 @@ public class MetaRepo {
     return new MetaWriter() {
 
       @Override
-      public MaterializedTable table(TableWithOwner table, AuthToken authToken) throws ModelException, GrantException {
-        MaterializedTable tableMeta = MetaRepo.this.table(table);
+      public MaterializedTable table(TableWithOwner ident, AuthToken authToken) throws ModelException, GrantException {
+        MaterializedTable tableMeta = MetaRepo.this.table(ident);
         grants.checkOwner(tableMeta, authToken);
         return tableMeta;
+      }
+
+      @Override
+      public View view(TableWithOwner ident, AuthToken authToken) throws ModelException, GrantException {
+        View view = MetaRepo.this.view(ident);
+        grants.checkOwner(view, authToken);
+        return view;
       }
 
       @Override
@@ -475,8 +497,9 @@ public class MetaRepo {
         }
       }
 
-      private void syncMeta(View view) {
-        for (BooleanRule rule : view.rules().values()) {
+      @Override
+      public void syncMeta(View view) {
+        for (BooleanViewRule rule : view.rules().values()) {
           rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */true);
         }
       }
@@ -488,7 +511,7 @@ public class MetaRepo {
         if (!tables.containsKey(tableMeta.owner())) {
           tables.put(tableMeta.owner(), new HashMap<>());
         }
-        tables.get(tableMeta.owner()).put(tableMeta.tableName(), tableMeta);
+        tables.get(tableMeta.owner()).put(tableMeta.name(), tableMeta);
         lockManager.registerLock(tableMeta);
       }
 
@@ -499,19 +522,21 @@ public class MetaRepo {
           views.put(view.owner(), new HashMap<>());
         }
         views.get(view.owner()).put(view.name(), view);
+        lockManager.registerLock(view);
       }
 
       @Override
       public void dropTable(MaterializedTable tableMeta, AuthToken authToken) throws IOException, GrantException {
         grants.checkOwner(tableMeta, authToken);
-        tables.get(tableMeta.owner()).remove(tableMeta.tableName());
+        tables.get(tableMeta.owner()).remove(tableMeta.name());
         tableMeta.drop();
         lockManager.removeLock(tableMeta);
       }
 
       @Override
       public int maxRefIndex() {
-        return allTables().stream().mapToInt(t -> t.refs().values().stream().mapToInt(r -> r.getIndex()).max().orElse(0)).max().orElse(0);
+        return allTables().stream()
+            .mapToInt(t -> t.refs().values().stream().mapToInt(r -> r.getIndex()).max().orElse(0)).max().orElse(0);
       }
 
       @Override
