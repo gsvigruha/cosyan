@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableReader.ViewReader;
 import com.cosyan.db.lang.expr.Expression;
@@ -36,35 +38,37 @@ import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.GroupByKey;
-import com.cosyan.db.model.References.AggRefTableMeta;
-import com.cosyan.db.model.References.FlatRefTableMeta;
 import com.cosyan.db.model.References.GroupByFilterTableMeta;
-import com.cosyan.db.model.References.ReferencingTable;
 import com.cosyan.db.model.Rule.BooleanViewRule;
 import com.cosyan.db.model.SeekableTableMeta;
-import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.google.common.collect.ImmutableList;
 
 public class View extends DBObject {
 
-  private final ExposedTableMeta tableMeta;
-  private final ReferencingTable refTableMeta;
+  @Nullable
+  private final MaterializedTable parentTable;
+  private DerivedTableMeta tableMeta;
   private final Map<String, BooleanViewRule> rules;
 
-  public View(String name, String owner, ExposedTableMeta tableMeta, ReferencingTable refTableMeta) {
+  public View(String name, String owner) {
     super(name, owner);
-    this.tableMeta = tableMeta;
-    this.refTableMeta = refTableMeta;
     this.rules = new HashMap<>();
+    this.parentTable = null;
   }
 
-  public ExposedTableMeta table() {
+  public View(String name, MaterializedTable parentTable, String owner) {
+    super(name, owner);
+    this.rules = new HashMap<>();
+    this.parentTable = parentTable;
+  }
+
+  public DerivedTableMeta table() {
     return tableMeta;
   }
 
-  public ReferencingTable refTable() {
-    return refTableMeta;
+  public void setTable(DerivedTableMeta tableMeta) {
+    this.tableMeta = tableMeta;
   }
 
   public Map<String, BooleanViewRule> rules() {
@@ -87,11 +91,13 @@ public class View extends DBObject {
     rules.put(rule.getName(), rule);
   }
 
-  private static TableColumns groupByTable(ViewDefinition ref, SeekableTableMeta seekableTableMeta) throws ModelException, IOException {
+  private static TableColumns groupByTable(ViewDefinition ref, View view, SeekableTableMeta seekableTableMeta)
+      throws ModelException, IOException {
     ImmutableList<Expression> groupBy = ref.getSelect().getGroupBy().get();
     GroupByKey groupByKey = new GroupByKey(
         "#" + groupBy.stream().map(c -> c.print()).collect(Collectors.joining("#")),
         seekableTableMeta.tableMeta(),
+        view,
         Select.groupByColumns(seekableTableMeta, groupBy));
     GroupByFilterTableMeta selfAggrTableMeta = new GroupByFilterTableMeta(seekableTableMeta, groupByKey);
     ExposedTableMeta derivedTable;
@@ -108,31 +114,13 @@ public class View extends DBObject {
     return columns;
   }
 
-  public static TableMeta createRefView(ViewDefinition ref, TableProvider tableProvider, String owner)
+  public static DerivedTableMeta createView(ViewDefinition ref, View view, TableProvider tableProvider, String owner)
       throws ModelException, IOException {
     ExposedTableMeta srcTableMeta = ref.getSelect().getTable().compile(tableProvider, owner);
     if (srcTableMeta instanceof SeekableTableMeta) {
       SeekableTableMeta seekableTableMeta = (SeekableTableMeta) srcTableMeta;
       if (ref.getSelect().getGroupBy().isPresent()) {
-        TableColumns columns = groupByTable(ref, seekableTableMeta);
-        return new AggRefTableMeta(columns.getTable(), columns.getColumns());
-      } else {
-        TableColumns columns = Select.tableColumns(srcTableMeta, ref.getSelect().getColumns());
-        return new FlatRefTableMeta(srcTableMeta, columns.getColumns());
-      }
-    } else {
-      throw new ModelException(String.format("Unsupported table '%s' for view.", ref.getSelect().getTable().print()),
-          ref.getName());
-    }
-  }
-
-  public static ExposedTableMeta createView(ViewDefinition ref, TableProvider tableProvider, String owner)
-      throws ModelException, IOException {
-    ExposedTableMeta srcTableMeta = ref.getSelect().getTable().compile(tableProvider, owner);
-    if (srcTableMeta instanceof SeekableTableMeta) {
-      SeekableTableMeta seekableTableMeta = (SeekableTableMeta) srcTableMeta;
-      if (ref.getSelect().getGroupBy().isPresent()) {
-        TableColumns columns = groupByTable(ref, seekableTableMeta);
+        TableColumns columns = groupByTable(ref, view, seekableTableMeta);
         return new DerivedTableMeta(columns.getTable(), columns.getColumns());
       } else {
         TableColumns columns = Select.tableColumns(srcTableMeta, ref.getSelect().getColumns());
@@ -147,5 +135,9 @@ public class View extends DBObject {
   @Override
   public SeekableTableReader createReader() throws IOException {
     return new ViewReader(this);
+  }
+
+  public DBObject dbObject() {
+    return parentTable != null ? parentTable : this;
   }
 }

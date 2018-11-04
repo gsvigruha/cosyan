@@ -634,12 +634,12 @@ public class AlterStatementTest extends UnitTestBase {
   public void testAlterTableAddFlatRef() throws Exception {
     execute("create table t56 (a id, b integer);");
     execute("create table t57 (a integer, constraint fk_a foreign key (a) references t56);");
-    execute("insert into t56 values (10);");
-    execute("insert into t57 values (0);");
+    execute("insert into t56 values (10), (20);");
+    execute("insert into t57 values (0), (1);");
     execute("alter table t57 add view r (select fk_a.b + 1 as c from t57);");
     QueryResult result = query("select r.c from t57;");
     assertHeader(new String[] { "c" }, result);
-    assertValues(new Object[][] { { 11L } }, result);
+    assertValues(new Object[][] { { 11L }, { 21L } }, result);
   }
 
   @Test

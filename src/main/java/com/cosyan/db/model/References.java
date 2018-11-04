@@ -29,6 +29,7 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
+import com.cosyan.db.model.ColumnMeta.ReferencedIndexColumn;
 import com.cosyan.db.model.DataTypes.DataType;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.GroupByKey;
@@ -81,7 +82,7 @@ public class References {
     if (column == null) {
       return null;
     }
-    return new IndexColumn((TableMeta) table, column.getIndex(), column.getType(), TableDependencies.of(table));
+    return new ReferencedIndexColumn(table, column.getIndex(), column.getType(), TableDependencies.of(table));
   }
 
   public static TableMeta getRefTable(ReferencedTable parent, String tableName, Ident key,
@@ -102,7 +103,7 @@ public class References {
   public static class ReferencedRefTableMeta extends TableMeta implements ReferencedTable {
 
     private final ReferencedTable parent;
-    private final TableMeta refTable;
+    private final ReferencingTable refTable;
 
     @Override
     public ImmutableList<String> columnNames() {
@@ -112,7 +113,12 @@ public class References {
     @Override
     public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
         throws IOException {
-      return refTable.values(parent.values(sourceValues, resources, context), resources, context);
+      return refTable.values(parent.values(sourceValues, resources, context), resources);
+    }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      throw new UnsupportedOperationException();
     }
 
     @Override
@@ -122,12 +128,12 @@ public class References {
         return null;
       }
       TableDependencies deps = new TableDependencies(this, column.tableDependencies());
-      return new IndexColumn(this, column.index(), column.getType(), deps);
+      return new ReferencedIndexColumn(this, column.index(), column.getType(), deps);
     }
 
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
-      return refTable.getRefTable(ident);
+      return null;
     }
 
     @Override
@@ -200,6 +206,11 @@ public class References {
         SeekableTableReader reader = resources.reader(foreignKey.getRefTable().fullName());
         return reader.get(key, resources).getValues();
       }
+    }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      throw new UnsupportedOperationException();
     }
 
     @Override
@@ -289,6 +300,11 @@ public class References {
     }
 
     @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public ImmutableList<String> columnNames() {
       return sourceTable.columnNames();
     }
@@ -301,6 +317,11 @@ public class References {
     @Override
     public TableMeta parent() {
       return parent.parent();
+    }
+
+    @Override
+    public Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException {
+      return sourceValues;
     }
   }
 
@@ -356,6 +377,11 @@ public class References {
     }
 
     @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public ImmutableList<String> columnNames() {
       return parent.columnNames();
     }
@@ -374,9 +400,20 @@ public class References {
     public TableMeta parent() {
       return parent.parent();
     }
+
+    @Override
+    public Object[] values(Object[] sourceValues, Resources resources, TableContext context) throws IOException {
+      return sourceValues;
+    }
   }
 
   public static interface ReferencingTable {
+
+    public MetaResources readResources();
+
+    public ImmutableList<String> columnNames();
+
+    public IndexColumn column(Ident ident) throws ModelException;
 
     public Object[] values(Object[] key, Resources resources) throws IOException;
 
@@ -394,7 +431,7 @@ public class References {
     }
 
     @Override
-    protected TableMeta getRefTable(Ident ident) throws ModelException {
+    public TableMeta getRefTable(Ident ident) throws ModelException {
       // Cannot reference any further tables from a ref, only access its fields.
       return null;
     }
@@ -409,52 +446,12 @@ public class References {
       return columns.keySet().asList();
     }
 
-    @Override
     public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
         throws IOException {
       IterableTableReader reader = sourceTable.reader(resources, TableContext.withParent(sourceValues));
       Object[] aggrValues = reader.next();
       reader.close();
       return mapValues(aggrValues, resources, context, columns);
-    }
-
-    @Override
-    public Object[] values(Object[] key, Resources resources) throws IOException {
-      return values(key, resources, TableContext.EMPTY);
-    }
-  }
-
-  @Data
-  @EqualsAndHashCode(callSuper = true)
-  public static class FlatRefTableMeta extends TableMeta implements ReferencingTable {
-    private final ExposedTableMeta sourceTable;
-    private final ImmutableMap<String, ColumnMeta> columns;
-
-    @Override
-    protected IndexColumn getColumn(Ident ident) throws ModelException {
-      return shiftColumn(sourceTable, columns, ident);
-    }
-
-    @Override
-    protected TableMeta getRefTable(Ident ident) throws ModelException {
-      // Cannot reference any further tables from a ref, only access its fields.
-      return null;
-    }
-
-    @Override
-    public MetaResources readResources() {
-      return sourceTable.readResources().merge(DerivedTables.resourcesFromColumns(columns.values()));
-    }
-
-    @Override
-    public ImmutableList<String> columnNames() {
-      return columns.keySet().asList();
-    }
-
-    @Override
-    public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
-        throws IOException {
-      return mapValues(sourceTable.values(sourceValues, resources, context), resources, context, columns);
     }
 
     @Override
@@ -475,18 +472,29 @@ public class References {
     }
 
     @Override
-    public Object[] values(Object[] sourceValues, Resources resources, TableContext context)
-        throws IOException {
-      return context.values(TableContext.PARENT);
-    }
-
-    @Override
     protected IndexColumn getColumn(Ident ident) throws ModelException {
       IndexColumn column = sourceTable.column(ident);
       if (column == null) {
         return null;
       }
-      return IndexColumn.of(this, column, column.index());
+      return new IndexColumn(sourceTable.readResources(), column.index(), column.getType(),
+          column.tableDependencies()) {
+
+        @Override
+        public Object value(Object[] values, Resources resources, TableContext context) throws IOException {
+          return context.values(TableContext.PARENT)[index()];
+        }
+
+        @Override
+        public String print(Object[] values, Resources resources, TableContext context) throws IOException {
+          return String.valueOf(context.values(TableContext.PARENT)[index()]);
+        }
+      };
+    }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      return sourceTable.values(key, resources);
     }
 
     @Override

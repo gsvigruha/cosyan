@@ -71,6 +71,7 @@ import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
 import com.cosyan.db.model.References.AggRefTableMeta;
 import com.cosyan.db.model.References.ReferencedMultiTableMeta;
+import com.cosyan.db.model.References.ReferencingTable;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.SeekableTableMeta;
@@ -282,8 +283,9 @@ public class MaterializedTable extends DBObject {
     assert !columnNames().contains(name) && !foreignKeys.containsKey(name) && !reverseForeignKeys.containsKey(name);
   }
 
-  public TableMeta createView(ViewDefinition ref, String owner) throws ModelException, IOException {
+  public ReferencingTable createView(ViewDefinition ref, String owner) throws ModelException, IOException {
     checkName(ref.getName());
+    View view = new View(ref.getName().getString(), this, owner);
     TableMeta tableMeta = ref.getSelect().getTable().compile(reader(), owner);
     if (tableMeta instanceof ReferencedMultiTableMeta) {
       ReferencedMultiTableMeta srcTableMeta = (ReferencedMultiTableMeta) tableMeta;
@@ -303,8 +305,11 @@ public class MaterializedTable extends DBObject {
       // Columns have aggregations, recompile with an AggrTable.
       TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
       return new AggRefTableMeta(aggrTable, tableColumns.getColumns());
+    } else if (tableMeta instanceof SeekableTableMeta) {
+      return View.createView(ref, view, reader(), owner);
     } else {
-      return View.createRefView(ref, reader(), owner);
+      //return View.createRefView(ref, reader(), owner);
+      throw new ModelException("Invalid table type.", ref.getName());
     }
   }
 

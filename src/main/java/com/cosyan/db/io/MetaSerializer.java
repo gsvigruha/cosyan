@@ -43,9 +43,9 @@ import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
+import com.cosyan.db.model.References.ReferencingTable;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
-import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableRef;
 import com.cosyan.db.session.ILexer;
 import com.cosyan.db.session.IParser;
@@ -189,7 +189,7 @@ public class MetaSerializer {
       throws JSONException, IOException, ModelException, ParserException {
     String name = refObj.getString("name");
     String expr = refObj.getString("expr");
-    TableMeta refTableMeta;
+    ReferencingTable refTableMeta;
     ViewDefinition ref = new ViewDefinition(
         new Ident(name),
         parser.parseSelect(lexer.tokenizeExpression(expr)));

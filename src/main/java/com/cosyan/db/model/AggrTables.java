@@ -119,6 +119,14 @@ public abstract class AggrTables extends IterableTableMeta {
       return sourceTable;
     }
 
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      IterableTableReader reader = reader(resources, TableContext.withParent(key));
+      Object[] aggrValues = reader.next();
+      reader.close();
+      return aggrValues;
+    }
+
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       return new AggrTableReader(sourceTable.reader(resources, context)) {
         @Override
@@ -204,6 +212,11 @@ public abstract class AggrTables extends IterableTableMeta {
     @Override
     public KeyValueTableMeta sourceTable() {
       return sourceTable;
+    }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      throw new UnsupportedOperationException();
     }
 
     @Override

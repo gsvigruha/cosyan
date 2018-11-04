@@ -48,6 +48,7 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.DataTypes.DataType;
+import com.cosyan.db.model.References.ReferencingTable;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMeta.IterableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -78,7 +79,7 @@ public class DerivedTables {
    */
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class DerivedTableMeta extends ExposedTableMeta {
+  public static class DerivedTableMeta extends ExposedTableMeta implements ReferencingTable {
     private final IterableTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
 
@@ -123,6 +124,11 @@ public class DerivedTables {
     @Override
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
+    }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      return mapValues(sourceTable.values(key, resources), resources, TableContext.EMPTY, columns);
     }
   }
 
@@ -186,6 +192,16 @@ public class DerivedTables {
     }
 
     @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      Object[] values = sourceTable.values(key, resources);
+      if ((boolean) whereColumn.value(values, resources, TableContext.EMPTY)) {
+        return values;
+      } else {
+        return null;
+      }
+    }
+
+    @Override
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
     }
@@ -241,6 +257,16 @@ public class DerivedTables {
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
     }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      Object[] values = sourceTable.values(key, resources);
+      if ((boolean) whereColumn.value(values, resources, TableContext.EMPTY)) {
+        return values;
+      } else {
+        return null;
+      }
+    }
   }
 
   /**
@@ -275,6 +301,11 @@ public class DerivedTables {
     @Override
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       return sourceTable.reader(resources, context);
+    }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      throw new UnsupportedOperationException();
     }
 
     @Override
@@ -385,6 +416,11 @@ public class DerivedTables {
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
     }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      return sourceTable.values(key, resources);
+    }
   }
 
   /**
@@ -457,6 +493,11 @@ public class DerivedTables {
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
     }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      throw new UnsupportedOperationException();
+    }
   }
 
   /**
@@ -510,6 +551,11 @@ public class DerivedTables {
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
     }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      return sourceTable.values(key, resources);
+    }
   }
 
   @Data
@@ -547,6 +593,11 @@ public class DerivedTables {
     @Override
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
+    }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      return sourceTable.values(key, resources);
     }
   }
 
@@ -609,6 +660,11 @@ public class DerivedTables {
     @Override
     public TableDependencies tableDependencies() {
       return sourceTable.tableDependencies();
+    }
+
+    @Override
+    public Object[] values(Object[] key, Resources resources) throws IOException {
+      return sourceTable.values(key, resources);
     }
   }
 }

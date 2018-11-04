@@ -134,7 +134,7 @@ public class Keys {
 
     @Override
     public DBObject getRefTable() {
-      return refView;
+      return refView.dbObject();
     }
 
     @Override

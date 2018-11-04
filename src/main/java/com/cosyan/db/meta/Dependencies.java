@@ -218,7 +218,7 @@ public class Dependencies {
     }
 
     public void addRule(BooleanRule rule) {
-      assert rule.getTable().fullName().equals(key.getRefTable().fullName());
+      assert rule.getTable().fullName().equals(key.getRefTable().fullName()) : String.format("%s != %s", rule.getTable().fullName(), key.getRefTable().fullName());
       BooleanRule existingRule = rules.get(rule.getName());
       if (existingRule == null) {
         rules.put(rule.getName(), rule);

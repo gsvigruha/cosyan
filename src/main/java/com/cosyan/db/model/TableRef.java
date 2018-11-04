@@ -23,6 +23,7 @@ import com.cosyan.db.lang.sql.Parser;
 import com.cosyan.db.lang.sql.SelectStatement.Select;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.model.References.ReferencingTable;
 import com.cosyan.db.session.IParser.ParserException;
 
 import lombok.Data;
@@ -33,7 +34,7 @@ public class TableRef {
   private final String name;
   private final String expr;
   private final int index;
-  protected final transient TableMeta tableMeta;
+  protected final transient ReferencingTable tableMeta;
 
   @Override
   public String toString() {
