@@ -19,6 +19,7 @@ import java.io.IOException;
 
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.io.Indexes.IndexWriter;
+import com.cosyan.db.io.TableReader.IterableTableReader;
 import com.cosyan.db.io.TableReader.SeekableTableReader;
 import com.cosyan.db.io.TableWriter;
 import com.cosyan.db.lang.expr.Statements.AlterStatement;
@@ -38,6 +39,7 @@ import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Rule.BooleanRule;
 import com.cosyan.db.model.Rule.BooleanViewRule;
+import com.cosyan.db.model.TableContext;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
 
@@ -142,8 +144,8 @@ public class AlterStatementConstraints {
     @Override
     public Result executeData(MetaWriter metaRepo, Resources resources) throws RuleException, IOException {
       View view = (View) resources.meta(tableWithOwner.resourceId());
-      reader = resources.reader(tableWithOwner.resourceId());
-      reader.checkRule(rule, resources);
+      IterableTableReader reader = view.table().reader(resources, TableContext.EMPTY);
+      SeekableTableReader.checkRule(rule, reader, resources);
       view.addRule(rule);
       metaRepo.syncMeta(view);
       return Result.META_OK;

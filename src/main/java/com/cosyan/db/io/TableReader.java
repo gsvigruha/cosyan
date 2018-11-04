@@ -28,7 +28,6 @@ import com.cosyan.db.io.RecordProvider.RecordReader;
 import com.cosyan.db.io.RecordProvider.SeekableRecordReader;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.RuleException;
-import com.cosyan.db.meta.View;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.Keys.PrimaryKey;
@@ -109,10 +108,13 @@ public abstract class TableReader implements TableIO {
     public abstract IndexReader getIndex(String name);
 
     public void checkRule(Rule rule, Resources resources) throws IOException, RuleException {
-      IterableTableReader reader = iterableReader(resources);
+      checkRule(rule, iterableReader(resources), resources);
+    }
+
+    public static void checkRule(Rule rule, IterableTableReader reader, Resources resources) throws IOException, RuleException {
       Object[] values;
       try {
-        while ((values = reader.next()) != null && !cancelled) {
+        while ((values = reader.next()) != null) {
           if (!rule.check(resources, values)) {
             throw new RuleException(String.format("Constraint check %s failed.", rule.getName()));
           }
@@ -203,50 +205,6 @@ public abstract class TableReader implements TableIO {
 
     protected RecordReader recordReader() throws IOException {
       return new RecordReader(columns, new BufferedInputStream(new FileInputStream(fileName)));
-    }
-  }
-
-  public static class ViewReader extends SeekableTableReader {
-
-    private final View view;
-
-    public ViewReader(View view) {
-      this.view = view;
-    }
-
-    @Override
-    public void close() throws IOException {
-      // TODO Auto-generated method stub
-      
-    }
-
-    @Override
-    public Record get(long position) throws IOException {
-      // TODO Auto-generated method stub
-      return null;
-    }
-
-    @Override
-    public Record get(Object key, Resources resources) throws IOException {
-      // TODO Auto-generated method stub
-      return null;
-    }
-
-    @Override
-    public IterableTableReader iterableReader(Resources resources) throws IOException {
-      return view.table().reader(resources, TableContext.EMPTY);
-    }
-
-    @Override
-    public TableUniqueIndex getPrimaryKeyIndex() {
-      // TODO Auto-generated method stub
-      return null;
-    }
-
-    @Override
-    public IndexReader getIndex(String name) {
-      // TODO Auto-generated method stub
-      return null;
     }
   }
 

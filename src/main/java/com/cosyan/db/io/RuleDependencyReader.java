@@ -56,8 +56,10 @@ public class RuleDependencyReader {
                     rule.getTable().tableName(), rule.name()));
           }
         }
-        SeekableTableReader reader = resources.reader(ref.getRefTable().fullName());
-        checkReferencingRules(dep.getDeps().values(), reader.get(pointer));
+        if (!dep.getDeps().isEmpty()) {
+          SeekableTableReader reader = resources.reader(ref.getRefTable().fullName());
+          checkReferencingRules(dep.getDeps().values(), reader.get(pointer));
+        }
       }
       for (BooleanViewRule rule : dep.viewRules()) {
         if (!rule.check(resources, record.getValues())) {

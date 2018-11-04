@@ -23,8 +23,6 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
-import com.cosyan.db.io.TableReader.SeekableTableReader;
-import com.cosyan.db.io.TableReader.ViewReader;
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ViewDefinition;
@@ -130,11 +128,6 @@ public class View extends DBObject {
       throw new ModelException(String.format("Unsupported table '%s' for view.", ref.getSelect().getTable().print()),
           ref.getName());
     }
-  }
-
-  @Override
-  public SeekableTableReader createReader() throws IOException {
-    return new ViewReader(this);
   }
 
   public DBObject dbObject() {

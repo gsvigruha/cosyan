@@ -331,7 +331,9 @@ public class MetaRepo {
             tableMeta.primaryKey()));
       } else {
         DBObject object = resource.getObject();
-        readers.put(object.fullName(), object.createReader());
+        if (object instanceof MaterializedTable) {
+          readers.put(object.fullName(), ((MaterializedTable) object).createReader());
+        }
       }
       if (resource.isMeta()) {
         DBObject meta = resource.getObject();

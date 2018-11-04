@@ -717,7 +717,6 @@ public class MaterializedTable extends DBObject {
     new File(fileName()).delete();
   }
 
-  @Override
   public SeekableTableReader createReader() throws IOException {
     return new MaterializedTableReader(
         this,

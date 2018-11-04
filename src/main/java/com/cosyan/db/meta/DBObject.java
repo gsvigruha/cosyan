@@ -1,9 +1,5 @@
 package com.cosyan.db.meta;
 
-import java.io.IOException;
-
-import com.cosyan.db.io.TableReader.SeekableTableReader;
-
 public abstract class DBObject {
 
   private final String name;
@@ -25,6 +21,4 @@ public abstract class DBObject {
   public String fullName() {
     return owner + "." + name;
   }
-
-  public abstract SeekableTableReader createReader() throws IOException;
 }
