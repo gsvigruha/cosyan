@@ -103,7 +103,7 @@ public class References {
   public static class ReferencedRefTableMeta extends TableMeta implements ReferencedTable {
 
     private final ReferencedTable parent;
-    private final ReferencingTable refTable;
+    private final TableMeta refTable;
 
     @Override
     public ImmutableList<String> columnNames() {
@@ -407,21 +407,9 @@ public class References {
     }
   }
 
-  public static interface ReferencingTable {
-
-    public MetaResources readResources();
-
-    public ImmutableList<String> columnNames();
-
-    public IndexColumn column(Ident ident) throws ModelException;
-
-    public Object[] values(Object[] key, Resources resources) throws IOException;
-
-  }
-
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class AggRefTableMeta extends TableMeta implements ReferencingTable {
+  public static class AggRefTableMeta extends TableMeta {
     private final IterableTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
 

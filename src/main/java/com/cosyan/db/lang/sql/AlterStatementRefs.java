@@ -29,7 +29,7 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.model.Ident;
-import com.cosyan.db.model.References.ReferencingTable;
+import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableRef;
 import com.cosyan.db.transaction.MetaResources;
 import com.cosyan.db.transaction.Resources;
@@ -46,7 +46,7 @@ public class AlterStatementRefs {
     private final ViewDefinition ref;
 
     private TableWithOwner tableWithOwner;
-    private ReferencingTable refTableMeta;
+    private TableMeta refTableMeta;
 
     @Override
     public MetaResources executeMeta(MetaWriter metaRepo, AuthToken authToken) throws ModelException, GrantException, IOException {

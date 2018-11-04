@@ -48,7 +48,6 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.model.ColumnMeta.IndexColumn;
 import com.cosyan.db.model.ColumnMeta.OrderColumn;
 import com.cosyan.db.model.DataTypes.DataType;
-import com.cosyan.db.model.References.ReferencingTable;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.cosyan.db.model.TableMeta.IterableTableMeta;
 import com.cosyan.db.transaction.MetaResources;
@@ -79,7 +78,7 @@ public class DerivedTables {
    */
   @Data
   @EqualsAndHashCode(callSuper = true)
-  public static class DerivedTableMeta extends ExposedTableMeta implements ReferencingTable {
+  public static class DerivedTableMeta extends ExposedTableMeta {
     private final IterableTableMeta sourceTable;
     private final ImmutableMap<String, ColumnMeta> columns;
 
