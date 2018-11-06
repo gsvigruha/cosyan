@@ -103,6 +103,6 @@ public class Resources {
   }
 
   public IndexReader getIndex(GroupByKey groupByKey) {
-    return Preconditions.checkNotNull(reader(groupByKey.getTable().fullName()).getIndex(groupByKey.getName()));
+    return Preconditions.checkNotNull(reader(groupByKey.getRefTable().fullName()).getIndex(groupByKey.getName()));
   }
 }

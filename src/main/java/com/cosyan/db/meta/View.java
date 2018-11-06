@@ -94,8 +94,8 @@ public class View extends DBObject {
     ImmutableList<Expression> groupBy = ref.getSelect().getGroupBy().get();
     GroupByKey groupByKey = new GroupByKey(
         "#" + groupBy.stream().map(c -> c.print()).collect(Collectors.joining("#")),
-        seekableTableMeta.tableMeta(),
         view,
+        seekableTableMeta.tableMeta(),
         Select.groupByColumns(seekableTableMeta, groupBy));
     GroupByFilterTableMeta selfAggrTableMeta = new GroupByFilterTableMeta(seekableTableMeta, groupByKey);
     ExposedTableMeta derivedTable;

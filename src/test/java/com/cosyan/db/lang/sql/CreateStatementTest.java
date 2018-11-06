@@ -173,7 +173,7 @@ public class CreateStatementTest extends UnitTestBase {
     execute("alter table t15 add view s (select sum(c) as sb from rev_fk_a);");
 
     MaterializedTable t15 = metaRepo.table("admin", "t15");
-    TableDependencies deps = t15.reader().table(new Ident("s")).column(new Ident("sb")).tableDependencies();
+    TableDependencies deps = t15.meta().table(new Ident("s")).column(new Ident("sb")).tableDependencies();
     assertEquals(1, deps.getDeps().size());
     assertEquals(0, deps.getDeps().get("rev_fk_a").size());
   }
@@ -188,7 +188,7 @@ public class CreateStatementTest extends UnitTestBase {
     execute("alter table t17 add view s (select sum(s.sd) as ssd from rev_fk_a);");
 
     MaterializedTable t17 = metaRepo.table("admin", "t17");
-    TableDependencies deps = t17.reader().table(new Ident("s")).column(new Ident("ssd")).tableDependencies();
+    TableDependencies deps = t17.meta().table(new Ident("s")).column(new Ident("ssd")).tableDependencies();
     assertEquals(1, deps.getDeps().size());
     assertEquals(1, deps.getDeps().get("rev_fk_a").size());
     assertEquals(0, deps.getDeps().get("rev_fk_a").dep("rev_fk_b").size());

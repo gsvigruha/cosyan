@@ -146,9 +146,9 @@ public class Dependencies {
       Ref reverseRef = tableDependency.ref().getReverse();
       reverseForeignKeyChain.addFirst(reverseRef);
       if (add) {
-        reverseRef.getTable().addReverseRuleDependency(reverseForeignKeyChain, rule);
+        ((MaterializedTable) reverseRef.getTable()).addReverseRuleDependency(reverseForeignKeyChain, rule);
       } else {
-        reverseRef.getTable().removeReverseRuleDependency(reverseForeignKeyChain, rule);
+        ((MaterializedTable) reverseRef.getTable()).removeReverseRuleDependency(reverseForeignKeyChain, rule);
       }
       for (TableDependency childDep : tableDependency.deps.values()) {
         LinkedList<Ref> newReverseForeignKeyChain = new LinkedList<>(reverseForeignKeyChain);
@@ -160,13 +160,13 @@ public class Dependencies {
       return ImmutableMap.copyOf(deps);
     }
 
-    public Iterable<MaterializedTable> allTables() {
-      ArrayList<MaterializedTable> tables = new ArrayList<>();
+    public Iterable<DBObject> allTables() {
+      ArrayList<DBObject> tables = new ArrayList<>();
       allTables(tables, deps);
       return tables;
     }
 
-    private void allTables(ArrayList<MaterializedTable> tables, Map<String, TableDependency> deps) {
+    private void allTables(ArrayList<DBObject> tables, Map<String, TableDependency> deps) {
       for (TableDependency dep : deps.values()) {
         tables.addAll(dep.deps.values().stream().map(d -> d.ref.getTable()).collect(Collectors.toList()));
         allTables(tables, dep.deps);

@@ -40,7 +40,7 @@ public class Keys {
 
     String getName();
 
-    MaterializedTable getTable();
+    DBObject getTable();
 
     DBObject getRefTable();
 
@@ -108,12 +108,40 @@ public class Keys {
   @Data
   public static class GroupByKey implements Ref {
     private final String name;
-    private final MaterializedTable table;
-    private final View refView;
+    private final View table;
+    private final MaterializedTable refTable;
     private final ImmutableMap<String, ColumnMeta> columns;
 
     public ImmutableList<DataType<?>> columnTypes() {
       return getColumns().values().stream().map(c -> c.getType()).collect(ImmutableList.toImmutableList());
+    }
+
+    @Override
+    public long[] resolve(Object[] values, Resources resources) throws IOException {
+      return null;
+    }
+
+    @Override
+    public ReverseGroupByKey getReverse() {
+      return new ReverseGroupByKey("rev_" + name, refTable, table, columns);
+    }
+
+    @Override
+    public DBObject getTable() {
+      return table.dbObject();
+    }
+  }
+
+  @Data
+  public static class ReverseGroupByKey implements Ref {
+    private final String name;
+    private final MaterializedTable table;
+    private final View refTable;
+    private final ImmutableMap<String, ColumnMeta> columns;
+
+    @Override
+    public GroupByKey getReverse() {
+      return new GroupByKey(name.substring(4), refTable, table, columns);
     }
 
     public Object[] resolveKey(Object[] values, Resources resources, TableContext context) throws IOException {
@@ -128,18 +156,13 @@ public class Keys {
     @Override
     public long[] resolve(Object[] values, Resources resources) throws IOException {
       Object[] key = resolveKey(values, resources, TableContext.EMPTY);
-      IndexReader index = resources.getIndex(this);
+      IndexReader index = resources.getIndex(getReverse());
       return index.get(key);
     }
 
     @Override
     public DBObject getRefTable() {
-      return refView.dbObject();
-    }
-
-    @Override
-    public Ref getReverse() {
-      return this;
+      return refTable.dbObject();
     }
   }
 }

@@ -246,7 +246,7 @@ public abstract class TableMultiIndex implements IndexReader, IndexWriter {
     }
 
     public Object[] resolveKey(Object[] values, Resources resources) throws IOException {
-      return groupByKey.resolveKey(values, resources, TableContext.EMPTY);
+      return groupByKey.getReverse().resolveKey(values, resources, TableContext.EMPTY);
     }
 
     @Override

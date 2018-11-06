@@ -80,7 +80,7 @@ public class UpdateStatement {
     public MetaResources compile(MetaReader metaRepo, AuthToken authToken) throws ModelException {
       tableWithOwner = table.resolve(authToken);
       MaterializedTable materializedTableMeta = metaRepo.table(tableWithOwner);
-      tableMeta = materializedTableMeta.reader();
+      tableMeta = materializedTableMeta.meta();
       ImmutableMap.Builder<Integer, ColumnMeta> columnExprsBuilder = ImmutableMap.builder();
       for (SetExpression update : updates) {
         BasicColumn column = materializedTableMeta.column(update.getIdent());
