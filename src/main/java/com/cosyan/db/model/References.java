@@ -271,7 +271,7 @@ public class References {
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
       if (ident.is(Tokens.PARENT)) {
-        return new ParentTableMeta(foreignKeyChain().get(0).getTable().reader());
+        return new ParentTableMeta(((MaterializedTable) foreignKeyChain().get(0).getTable()).meta());
       }
       return References.getRefTable(this, reverseForeignKey.getTable().name(), ident,
           reverseForeignKey.getRefTable().foreignKeys(),
@@ -349,7 +349,9 @@ public class References {
 
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
-      return parent.getRefTable(ident);
+      return References.getRefTable(this, groupByKey.getRefTable().name(), ident,
+          groupByKey.getRefTable().foreignKeys(), groupByKey.getRefTable().reverseForeignKeys(),
+          groupByKey.getRefTable().refs());
     }
 
     @Override
@@ -361,7 +363,7 @@ public class References {
     public IterableTableReader reader(Resources resources, TableContext context) throws IOException {
       if (context.has(TableContext.PARENT)) {
         Object[] sourceValues = context.values(TableContext.PARENT);
-        Object[] key = groupByKey.resolveKey(sourceValues, resources, context);
+        Object[] key = groupByKey.getReverse().resolveKey(sourceValues, resources, context);
         final IndexReader index = resources.getIndex(groupByKey);
         return new MultiFilteredTableReader(resources.reader(parent.fullName()),
             ColumnMeta.TRUE_COLUMN, resources) {

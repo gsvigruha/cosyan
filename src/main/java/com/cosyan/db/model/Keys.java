@@ -40,7 +40,7 @@ public class Keys {
 
     String getName();
 
-    MaterializedTable getTable();
+    DBObject getTable();
 
     DBObject getRefTable();
 
@@ -108,12 +108,44 @@ public class Keys {
   @Data
   public static class GroupByKey implements Ref {
     private final String name;
-    private final MaterializedTable table;
-    private final View refView;
+    private final View table;
+    private final MaterializedTable refTable;
     private final ImmutableMap<String, ColumnMeta> columns;
 
     public ImmutableList<DataType<?>> columnTypes() {
       return getColumns().values().stream().map(c -> c.getType()).collect(ImmutableList.toImmutableList());
+    }
+
+    @Override
+    public long[] resolve(Object[] values, Resources resources) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ReverseGroupByKey getReverse() {
+      return new ReverseGroupByKey("rev_" + name, refTable, table, columns);
+    }
+
+    @Override
+    public DBObject getTable() {
+      return table.dbObject();
+    }
+  }
+
+  @Data
+  public static class ReverseGroupByKey implements Ref {
+    private final String name;
+    private final MaterializedTable table;
+    private final View refTable;
+    private final ImmutableMap<String, ColumnMeta> columns;
+
+    public String getRevName() {
+      return name.substring(4);
+    }
+
+    @Override
+    public GroupByKey getReverse() {
+      return new GroupByKey(getRevName(), refTable, table, columns);
     }
 
     public Object[] resolveKey(Object[] values, Resources resources, TableContext context) throws IOException {
@@ -134,12 +166,7 @@ public class Keys {
 
     @Override
     public DBObject getRefTable() {
-      return refView.dbObject();
-    }
-
-    @Override
-    public Ref getReverse() {
-      return this;
+      return refTable.dbObject();
     }
   }
 }

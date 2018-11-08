@@ -56,7 +56,7 @@ public class DeleteStatement {
     public MetaResources compile(MetaReader metaRepo, AuthToken authToken) throws ModelException {
       tableWithOwner = table.resolve(authToken);
       MaterializedTable materializedTableMeta = metaRepo.table(tableWithOwner);
-      tableMeta = materializedTableMeta.reader();
+      tableMeta = materializedTableMeta.meta();
       whereColumn = where.compileColumn(tableMeta);
       clause = PredicateHelper.getBestClause(tableMeta, where);
       return MetaResources.deleteFromTable(materializedTableMeta);

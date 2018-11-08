@@ -62,7 +62,7 @@ public class RuleDependencyReader {
         }
       }
       for (BooleanViewRule rule : dep.viewRules()) {
-        if (!rule.check(resources, record.getValues())) {
+        if (!rule.checkRecord(resources, record.getValues())) {
           throw new RuleException(
               String.format("Referencing constraint check %s.%s failed.",
                   rule.getView().name(), rule.name()));

@@ -1,5 +1,8 @@
 package com.cosyan.db.meta;
 
+import com.cosyan.db.model.Keys.Ref;
+import com.cosyan.db.model.Rule;
+
 public abstract class DBObject {
 
   private final String name;
@@ -21,4 +24,8 @@ public abstract class DBObject {
   public String fullName() {
     return owner + "." + name;
   }
+
+  protected abstract void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule);
+
+  protected abstract void removeReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule);
 }

@@ -285,7 +285,7 @@ public class MaterializedTable extends DBObject {
   public TableMeta createView(ViewDefinition ref, String owner) throws ModelException, IOException {
     checkName(ref.getName());
     View view = new View(ref.getName().getString(), this, owner);
-    TableMeta tableMeta = ref.getSelect().getTable().compile(reader(), owner);
+    TableMeta tableMeta = ref.getSelect().getTable().compile(meta(), owner);
     if (tableMeta instanceof ReferencedMultiTableMeta) {
       ReferencedMultiTableMeta srcTableMeta = (ReferencedMultiTableMeta) tableMeta;
       if (ref.getSelect().getGroupBy().isPresent()) {
@@ -305,7 +305,7 @@ public class MaterializedTable extends DBObject {
       TableColumns tableColumns = SelectStatement.Select.tableColumns(aggrTable, ref.getSelect().getColumns());
       return new AggRefTableMeta(aggrTable, tableColumns.getColumns());
     } else if (tableMeta instanceof SeekableTableMeta) {
-      return View.createView(ref, view, reader(), owner);
+      return View.createView(ref, view, meta(), owner);
     } else {
       //return View.createRefView(ref, reader(), owner);
       throw new ModelException("Invalid table type.", ref.getName());
@@ -397,7 +397,7 @@ public class MaterializedTable extends DBObject {
 
   public BooleanRule createRule(RuleDefinition ruleDefinition) throws ModelException {
     checkName(ruleDefinition.getName());
-    return ruleDefinition.compile(reader());
+    return ruleDefinition.compile(meta());
   }
 
   public void addRule(BooleanRule booleanRule) {
@@ -405,11 +405,13 @@ public class MaterializedTable extends DBObject {
     ruleDependencies.addToThis(booleanRule.getDeps());
   }
 
-  void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {
+  @Override
+  protected void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {
     reverseRuleDependencies.addReverseRuleDependency(reverseForeignKeyChain, rule);
   }
 
-  void removeReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {
+  @Override
+  protected void removeReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {
     reverseRuleDependencies.removeReverseRuleDependency(reverseForeignKeyChain, rule);
   }
 
@@ -515,7 +517,7 @@ public class MaterializedTable extends DBObject {
   }
 
   public IndexWriter registerIndex(GroupByKey groupByKey) throws IOException {
-    assert groupByKey.getTable() == this;
+    assert groupByKey.getRefTable() == this;
     String indexName = groupByKey.getName();
     String path = config.indexDir() + File.separator + fullName() + "." + indexName;
     if (!extraIndexes.containsKey(indexName)) {
@@ -656,7 +658,7 @@ public class MaterializedTable extends DBObject {
     return readResources;
   }
 
-  public SeekableTableMeta reader() {
+  public SeekableTableMeta meta() {
     return new SeekableTableMeta(this);
   }
 

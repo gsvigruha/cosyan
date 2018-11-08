@@ -135,10 +135,14 @@ public abstract class Rule {
       this.view = view;
     }
 
+    public boolean checkRecord(Resources resources, Object[] sourceValues) throws IOException {
+      Object[] values = view.table().values(sourceValues, resources);
+      return check(resources, values);
+    }
+
     @Override
     public boolean check(Resources resources, Object[] sourceValues) throws IOException {
-      Object[] values = view.table().values(sourceValues, resources);
-      Object check = column.value(values, resources, TableContext.EMPTY);
+      Object check = column.value(sourceValues, resources, TableContext.EMPTY);
       if (check == null) {
         return nullIsTrue;
       }

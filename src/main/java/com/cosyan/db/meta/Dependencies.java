@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.References.ReferencedRefTableMeta;
@@ -81,6 +82,14 @@ public class Dependencies {
     @Override
     public Iterable<? extends TransitiveTableDependency> childDeps() {
       return deps.values();
+    }
+
+    private void print(StringBuilder sb, int indent) {
+      for (Map.Entry<String, TableDependency> dep : deps.entrySet()) {
+        IntStream.range(1, indent).forEach(i -> sb.append(" "));
+        sb.append(dep.getKey()).append(":\n");
+        dep.getValue().print(sb, indent + 1);
+      }
     }
   }
 
@@ -160,17 +169,27 @@ public class Dependencies {
       return ImmutableMap.copyOf(deps);
     }
 
-    public Iterable<MaterializedTable> allTables() {
-      ArrayList<MaterializedTable> tables = new ArrayList<>();
+    public Iterable<DBObject> allTables() {
+      ArrayList<DBObject> tables = new ArrayList<>();
       allTables(tables, deps);
       return tables;
     }
 
-    private void allTables(ArrayList<MaterializedTable> tables, Map<String, TableDependency> deps) {
+    private void allTables(ArrayList<DBObject> tables, Map<String, TableDependency> deps) {
       for (TableDependency dep : deps.values()) {
         tables.addAll(dep.deps.values().stream().map(d -> d.ref.getTable()).collect(Collectors.toList()));
         allTables(tables, dep.deps);
       }
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder();
+      for (Map.Entry<String, TableDependency> dep : deps.entrySet()) {
+        sb.append(dep.getKey()).append(":\n");
+        dep.getValue().print(sb, 1);
+      }
+      return sb.toString();
     }
   }
 
@@ -218,7 +237,8 @@ public class Dependencies {
     }
 
     public void addRule(BooleanRule rule) {
-      assert rule.getTable().fullName().equals(key.getRefTable().fullName()) : String.format("%s != %s", rule.getTable().fullName(), key.getRefTable().fullName());
+      assert rule.getTable().fullName().equals(key.getRefTable().fullName())
+          : String.format("%s != %s", rule.getTable().fullName(), key.getRefTable().fullName());
       BooleanRule existingRule = rules.get(rule.getName());
       if (existingRule == null) {
         rules.put(rule.getName(), rule);
@@ -228,7 +248,8 @@ public class Dependencies {
     }
 
     public void addRule(BooleanViewRule rule) {
-      assert rule.getView().fullName().equals(key.getRefTable().fullName());
+      assert rule.getView().fullName().equals(key.getRefTable().fullName())
+          : String.format("%s != %s", rule.getView().fullName(), key.getRefTable().fullName());
       BooleanViewRule existingRule = viewRules.get(rule.getName());
       if (existingRule == null) {
         viewRules.put(rule.getName(), rule);
@@ -238,14 +259,16 @@ public class Dependencies {
     }
 
     public void removeRule(BooleanRule rule) {
-      assert rule.getTable().fullName().equals(key.getRefTable().fullName());
+      assert rule.getTable().fullName().equals(key.getRefTable().fullName())
+          : String.format("%s != %s", rule.getTable().fullName(), key.getRefTable().fullName());
       BooleanRule existingRule = rules.get(rule.getName());
       assert existingRule == rule;
       rules.remove(rule.getName());
     }
 
     public void removeRule(BooleanViewRule rule) {
-      assert rule.getView().fullName().equals(key.getRefTable().fullName());
+      assert rule.getView().fullName().equals(key.getRefTable().fullName())
+          : String.format("%s != %s", rule.getView().fullName(), key.getRefTable().fullName());
       BooleanViewRule existingRule = viewRules.get(rule.getName());
       assert existingRule == rule;
       viewRules.remove(rule.getName());

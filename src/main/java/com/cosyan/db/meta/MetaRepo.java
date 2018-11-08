@@ -200,7 +200,7 @@ public class MetaRepo {
           if (!userTables.containsKey(ident2.getString())) {
             throw new ModelException(String.format("Table '%s.%s' does not exist.", ident, ident2), ident2);
           }
-          return userTables.get(ident2.getString()).reader();
+          return userTables.get(ident2.getString()).meta();
         }
 
         @Override
@@ -217,7 +217,7 @@ public class MetaRepo {
       // Otherwise check if it matches a table owned by the current user (owner).
       Map<String, MaterializedTable> userTables = tables.get(owner);
       if (userTables.containsKey(ident.getString())) {
-        return userTables.get(ident.getString()).reader();
+        return userTables.get(ident.getString()).meta();
       }
     }
     throw new ModelException(String.format("Table '%s' does not exist.", ident), ident);
@@ -299,7 +299,7 @@ public class MetaRepo {
   private ExposedTableMeta tableOrView(TableWithOwner ident) throws ModelException {
     MaterializedTable table = tableOrNull(ident);
     if (table != null) {
-      return table.reader();
+      return table.meta();
     }
     View view = viewOrNull(ident);
     if (view != null) {
@@ -586,7 +586,7 @@ public class MetaRepo {
 
       @Override
       public ExposedTableMeta tableMeta(TableWithOwner table) throws ModelException {
-        return MetaRepo.this.table(table).reader();
+        return MetaRepo.this.table(table).meta();
       }
 
       @Override

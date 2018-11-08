@@ -137,7 +137,7 @@ public class CreateStatement {
       addConstraints(metaRepo, tableMeta, constraints, authToken);
 
       if (partitioning.isPresent()) {
-        ColumnMeta columnMeta = partitioning.get().compileColumn(tableMeta.reader());
+        ColumnMeta columnMeta = partitioning.get().compileColumn(tableMeta.meta());
         tableMeta.setPartitioning(Optional.of(columnMeta));
       }
 
