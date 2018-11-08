@@ -82,6 +82,16 @@ public class Dependencies {
     public Iterable<? extends TransitiveTableDependency> childDeps() {
       return deps.values();
     }
+
+    public void print(StringBuilder sb, int indent) {
+      for (Map.Entry<String, TableDependency> dep : deps.entrySet()) {
+        for (int i = 0; i < indent; i++) {
+          sb.append(" ");
+        }
+        sb.append(dep.getKey()).append(":\n");
+        dep.getValue().print(sb, indent + 1);
+      }
+    }
   }
 
   public static class TableDependencies {
@@ -172,6 +182,16 @@ public class Dependencies {
         allTables(tables, dep.deps);
       }
     }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder();
+      for (Map.Entry<String, TableDependency> dep : deps.entrySet()) {
+        sb.append(dep.getKey()).append(":\n");
+        dep.getValue().print(sb, 1);
+      }
+      return sb.toString();
+    }
   }
 
   public static class ReverseRuleDependency implements TransitiveTableDependency {
@@ -218,7 +238,8 @@ public class Dependencies {
     }
 
     public void addRule(BooleanRule rule) {
-      assert rule.getTable().fullName().equals(key.getRefTable().fullName()) : String.format("%s != %s", rule.getTable().fullName(), key.getRefTable().fullName());
+      assert rule.getTable().fullName().equals(key.getRefTable().fullName()) : String.format("%s != %s",
+          rule.getTable().fullName(), key.getRefTable().fullName());
       BooleanRule existingRule = rules.get(rule.getName());
       if (existingRule == null) {
         rules.put(rule.getName(), rule);
@@ -228,7 +249,8 @@ public class Dependencies {
     }
 
     public void addRule(BooleanViewRule rule) {
-      assert rule.getView().fullName().equals(key.getRefTable().fullName());
+      assert rule.getView().fullName().equals(key.getRefTable().fullName()) : String.format("%s != %s",
+          rule.getView().fullName(), key.getRefTable().fullName());
       BooleanViewRule existingRule = viewRules.get(rule.getName());
       if (existingRule == null) {
         viewRules.put(rule.getName(), rule);

@@ -349,7 +349,9 @@ public class References {
 
     @Override
     protected TableMeta getRefTable(Ident ident) throws ModelException {
-      return parent.getRefTable(ident);
+      return References.getRefTable(this, groupByKey.getRefTable().name(), ident,
+          groupByKey.getRefTable().foreignKeys(), groupByKey.getRefTable().reverseForeignKeys(),
+          groupByKey.getRefTable().refs());
     }
 
     @Override
