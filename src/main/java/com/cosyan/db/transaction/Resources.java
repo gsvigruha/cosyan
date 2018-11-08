@@ -26,6 +26,7 @@ import com.cosyan.db.meta.DBObject;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.GroupByKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
+import com.cosyan.db.model.Keys.ReverseGroupByKey;
 import com.cosyan.db.model.TableUniqueIndex;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -104,5 +105,9 @@ public class Resources {
 
   public IndexReader getIndex(GroupByKey groupByKey) {
     return Preconditions.checkNotNull(reader(groupByKey.getRefTable().fullName()).getIndex(groupByKey.getName()));
+  }
+
+  public IndexReader getIndex(ReverseGroupByKey groupByKey) {
+    return Preconditions.checkNotNull(reader(groupByKey.getTable().fullName()).getIndex(groupByKey.getRevName()));
   }
 }

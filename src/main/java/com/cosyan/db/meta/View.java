@@ -36,7 +36,9 @@ import com.cosyan.db.model.DerivedTables.FilteredTableMeta;
 import com.cosyan.db.model.DerivedTables.KeyValueTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.GroupByKey;
+import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.References.GroupByFilterTableMeta;
+import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanViewRule;
 import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
@@ -132,5 +134,13 @@ public class View extends DBObject {
 
   public DBObject dbObject() {
     return parentTable != null ? parentTable : this;
+  }
+
+  @Override
+  protected void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {  
+  }
+
+  @Override
+  protected void removeReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {
   }
 }

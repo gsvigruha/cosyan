@@ -118,7 +118,7 @@ public class Keys {
 
     @Override
     public long[] resolve(Object[] values, Resources resources) throws IOException {
-      return null;
+      throw new UnsupportedOperationException();
     }
 
     @Override
@@ -139,9 +139,13 @@ public class Keys {
     private final View refTable;
     private final ImmutableMap<String, ColumnMeta> columns;
 
+    public String getRevName() {
+      return name.substring(4);
+    }
+
     @Override
     public GroupByKey getReverse() {
-      return new GroupByKey(name.substring(4), refTable, table, columns);
+      return new GroupByKey(getRevName(), refTable, table, columns);
     }
 
     public Object[] resolveKey(Object[] values, Resources resources, TableContext context) throws IOException {
@@ -156,7 +160,7 @@ public class Keys {
     @Override
     public long[] resolve(Object[] values, Resources resources) throws IOException {
       Object[] key = resolveKey(values, resources, TableContext.EMPTY);
-      IndexReader index = resources.getIndex(getReverse());
+      IndexReader index = resources.getIndex(this);
       return index.get(key);
     }
 

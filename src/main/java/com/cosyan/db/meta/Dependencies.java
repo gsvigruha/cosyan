@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.cosyan.db.model.Keys.Ref;
 import com.cosyan.db.model.References.ReferencedRefTableMeta;
@@ -83,11 +84,9 @@ public class Dependencies {
       return deps.values();
     }
 
-    public void print(StringBuilder sb, int indent) {
+    private void print(StringBuilder sb, int indent) {
       for (Map.Entry<String, TableDependency> dep : deps.entrySet()) {
-        for (int i = 0; i < indent; i++) {
-          sb.append(" ");
-        }
+        IntStream.range(1, indent).forEach(i -> sb.append(" "));
         sb.append(dep.getKey()).append(":\n");
         dep.getValue().print(sb, indent + 1);
       }
@@ -156,9 +155,9 @@ public class Dependencies {
       Ref reverseRef = tableDependency.ref().getReverse();
       reverseForeignKeyChain.addFirst(reverseRef);
       if (add) {
-        ((MaterializedTable) reverseRef.getTable()).addReverseRuleDependency(reverseForeignKeyChain, rule);
+        reverseRef.getTable().addReverseRuleDependency(reverseForeignKeyChain, rule);
       } else {
-        ((MaterializedTable) reverseRef.getTable()).removeReverseRuleDependency(reverseForeignKeyChain, rule);
+        reverseRef.getTable().removeReverseRuleDependency(reverseForeignKeyChain, rule);
       }
       for (TableDependency childDep : tableDependency.deps.values()) {
         LinkedList<Ref> newReverseForeignKeyChain = new LinkedList<>(reverseForeignKeyChain);
@@ -238,8 +237,8 @@ public class Dependencies {
     }
 
     public void addRule(BooleanRule rule) {
-      assert rule.getTable().fullName().equals(key.getRefTable().fullName()) : String.format("%s != %s",
-          rule.getTable().fullName(), key.getRefTable().fullName());
+      assert rule.getTable().fullName().equals(key.getRefTable().fullName())
+          : String.format("%s != %s", rule.getTable().fullName(), key.getRefTable().fullName());
       BooleanRule existingRule = rules.get(rule.getName());
       if (existingRule == null) {
         rules.put(rule.getName(), rule);
@@ -249,8 +248,8 @@ public class Dependencies {
     }
 
     public void addRule(BooleanViewRule rule) {
-      assert rule.getView().fullName().equals(key.getRefTable().fullName()) : String.format("%s != %s",
-          rule.getView().fullName(), key.getRefTable().fullName());
+      assert rule.getView().fullName().equals(key.getRefTable().fullName())
+          : String.format("%s != %s", rule.getView().fullName(), key.getRefTable().fullName());
       BooleanViewRule existingRule = viewRules.get(rule.getName());
       if (existingRule == null) {
         viewRules.put(rule.getName(), rule);
@@ -260,14 +259,16 @@ public class Dependencies {
     }
 
     public void removeRule(BooleanRule rule) {
-      assert rule.getTable().fullName().equals(key.getRefTable().fullName());
+      assert rule.getTable().fullName().equals(key.getRefTable().fullName())
+          : String.format("%s != %s", rule.getTable().fullName(), key.getRefTable().fullName());
       BooleanRule existingRule = rules.get(rule.getName());
       assert existingRule == rule;
       rules.remove(rule.getName());
     }
 
     public void removeRule(BooleanViewRule rule) {
-      assert rule.getView().fullName().equals(key.getRefTable().fullName());
+      assert rule.getView().fullName().equals(key.getRefTable().fullName())
+          : String.format("%s != %s", rule.getView().fullName(), key.getRefTable().fullName());
       BooleanViewRule existingRule = viewRules.get(rule.getName());
       assert existingRule == rule;
       viewRules.remove(rule.getName());

@@ -405,11 +405,13 @@ public class MaterializedTable extends DBObject {
     ruleDependencies.addToThis(booleanRule.getDeps());
   }
 
-  void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {
+  @Override
+  protected void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {
     reverseRuleDependencies.addReverseRuleDependency(reverseForeignKeyChain, rule);
   }
 
-  void removeReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {
+  @Override
+  protected void removeReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {
     reverseRuleDependencies.removeReverseRuleDependency(reverseForeignKeyChain, rule);
   }
 
