@@ -34,7 +34,7 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
-import com.cosyan.db.meta.View;
+import com.cosyan.db.meta.View.TopLevelView;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Rule.BooleanRule;
@@ -129,7 +129,7 @@ public class AlterStatementConstraints {
     private final RuleDefinition constraint;
 
     private TableWithOwner tableWithOwner;
-    private View view;
+    private TopLevelView view;
     private BooleanViewRule rule;
     private SeekableTableReader reader;
 
@@ -143,7 +143,7 @@ public class AlterStatementConstraints {
 
     @Override
     public Result executeData(MetaWriter metaRepo, Resources resources) throws RuleException, IOException {
-      View view = (View) resources.meta(tableWithOwner.resourceId());
+      TopLevelView view = (TopLevelView) resources.meta(tableWithOwner.resourceId());
       IterableTableReader reader = view.table().reader(resources, TableContext.EMPTY);
       SeekableTableReader.checkRule(rule, reader, resources);
       view.addRule(rule);

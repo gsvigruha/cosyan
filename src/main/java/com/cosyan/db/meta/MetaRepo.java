@@ -52,6 +52,7 @@ import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.Grants.GrantToken;
 import com.cosyan.db.meta.Grants.Method;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
+import com.cosyan.db.meta.View.TopLevelView;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
@@ -77,7 +78,7 @@ public class MetaRepo {
 
   private final Config config;
   private final HashMap<String, Map<String, MaterializedTable>> tables;
-  private final HashMap<String, Map<String, View>> views;
+  private final HashMap<String, Map<String, TopLevelView>> views;
   private final Grants grants;
 
   private final LockManager lockManager;
@@ -275,7 +276,7 @@ public class MetaRepo {
   }
 
   @Nullable
-  private View viewOrNull(TableWithOwner table) {
+  private TopLevelView viewOrNull(TableWithOwner table) {
     return Optional.ofNullable(views.get(table.getOwner()))
         .map(t -> Optional.ofNullable(t.get(table.getTable().getString()))).orElse(Optional.empty()).orElse(null);
   }
@@ -288,8 +289,8 @@ public class MetaRepo {
     return tableMeta;
   }
 
-  private View view(TableWithOwner table) throws ModelException {
-    View view = viewOrNull(table);
+  private TopLevelView view(TableWithOwner table) throws ModelException {
+    TopLevelView view = viewOrNull(table);
     if (view == null) {
       throw new ModelException(String.format("View '%s' does not exist.", table), table.getTable());
     }
@@ -481,8 +482,8 @@ public class MetaRepo {
       }
 
       @Override
-      public View view(TableWithOwner ident, AuthToken authToken) throws ModelException, GrantException {
-        View view = MetaRepo.this.view(ident);
+      public TopLevelView view(TableWithOwner ident, AuthToken authToken) throws ModelException, GrantException {
+        TopLevelView view = MetaRepo.this.view(ident);
         grants.checkOwner(view, authToken);
         return view;
       }
@@ -498,7 +499,7 @@ public class MetaRepo {
       }
 
       @Override
-      public void syncMeta(View view) {
+      public void syncMeta(TopLevelView view) {
         for (BooleanViewRule rule : view.rules().values()) {
           rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */true);
         }
@@ -516,7 +517,7 @@ public class MetaRepo {
       }
 
       @Override
-      public void registerView(View view) {
+      public void registerView(TopLevelView view) {
         syncMeta(view);
         if (!views.containsKey(view.owner())) {
           views.put(view.owner(), new HashMap<>());

@@ -42,6 +42,7 @@ import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
 import com.cosyan.db.meta.View;
+import com.cosyan.db.meta.View.TopLevelView;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
 import com.cosyan.db.model.DataTypes;
@@ -229,7 +230,7 @@ public class CreateStatement {
       if (metaRepo.hasTable(name.getString(), authToken.username())) {
         throw new ModelException(String.format("Table or view '%s.%s' already exists.", authToken.username(), name), name);
       }
-      View view = new View(viewDefinition.getName().getString(), authToken.username());
+      TopLevelView view = new TopLevelView(viewDefinition.getName().getString(), authToken.username());
       DerivedTableMeta tableMeta = View.createView(viewDefinition, view, metaRepo, authToken.username());
       view.setTable(tableMeta);
       metaRepo.registerView(view);

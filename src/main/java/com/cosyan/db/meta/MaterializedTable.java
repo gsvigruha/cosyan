@@ -56,6 +56,7 @@ import com.cosyan.db.meta.Dependencies.TableDependency;
 import com.cosyan.db.meta.Dependencies.TransitiveTableDependency;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
+import com.cosyan.db.meta.View.SubView;
 import com.cosyan.db.model.AggrTables.GlobalAggrTableMeta;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.ColumnMeta;
@@ -284,7 +285,7 @@ public class MaterializedTable extends DBObject {
 
   public TableMeta createView(ViewDefinition ref, String owner) throws ModelException, IOException {
     checkName(ref.getName());
-    View view = new View(ref.getName().getString(), this, owner);
+    SubView view = new SubView(ref.getName().getString(), this, owner);
     TableMeta tableMeta = ref.getSelect().getTable().compile(meta(), owner);
     if (tableMeta instanceof ReferencedMultiTableMeta) {
       ReferencedMultiTableMeta srcTableMeta = (ReferencedMultiTableMeta) tableMeta;
