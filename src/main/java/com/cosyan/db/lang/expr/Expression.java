@@ -16,6 +16,9 @@
 package com.cosyan.db.lang.expr;
 
 import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.UUID;
 
 import com.cosyan.db.lang.sql.Tokens.Loc;
 import com.cosyan.db.meta.MetaRepo.ModelException;
@@ -35,6 +38,18 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public abstract class Expression extends Node {
+
+  public static UUID hash(Iterable<Expression> expressions){
+    try {
+      MessageDigest md = MessageDigest.getInstance("MD5");
+      for (Expression expr : expressions) {
+        md.update(expr.print().getBytes());
+      }
+      return UUID.nameUUIDFromBytes(md.digest());
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   public ColumnMeta compileColumn(TableMeta sourceTable) throws ModelException {
     CompiledObject obj = compile(sourceTable);

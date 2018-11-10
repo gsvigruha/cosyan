@@ -25,13 +25,14 @@ import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.Grants.GrantToken;
 import com.cosyan.db.meta.Grants.Method;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.View.TopLevelView;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 
 public interface MetaWriter extends TableProvider {
 
   void syncMeta(MaterializedTable tableMeta);
 
-  void syncMeta(View view);
+  void syncMeta(TopLevelView view);
 
   int maxRefIndex();
 
@@ -39,13 +40,13 @@ public interface MetaWriter extends TableProvider {
 
   void registerTable(MaterializedTable tableMeta) throws IOException;
 
-  void registerView(View view);
+  void registerView(TopLevelView view);
 
   void dropTable(MaterializedTable tableMeta, AuthToken authToken) throws IOException, GrantException;
 
   MaterializedTable table(TableWithOwner table, AuthToken authToken) throws ModelException, GrantException;
 
-  View view(TableWithOwner tableWithOwner, AuthToken authToken) throws ModelException, GrantException;
+  TopLevelView view(TableWithOwner tableWithOwner, AuthToken authToken) throws ModelException, GrantException;
 
   Config config();
 

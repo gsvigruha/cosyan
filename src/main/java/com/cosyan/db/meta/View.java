@@ -19,9 +19,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nullable;
 
 import com.cosyan.db.lang.expr.Expression;
 import com.cosyan.db.lang.expr.TableDefinition.RuleDefinition;
@@ -44,23 +41,16 @@ import com.cosyan.db.model.SeekableTableMeta;
 import com.cosyan.db.model.TableMeta.ExposedTableMeta;
 import com.google.common.collect.ImmutableList;
 
-public class View extends DBObject {
+public abstract class View extends DBObject {
 
-  @Nullable
-  private final MaterializedTable parentTable;
   private DerivedTableMeta tableMeta;
-  private final Map<String, BooleanViewRule> rules;
 
   public View(String name, String owner) {
     super(name, owner);
-    this.rules = new HashMap<>();
-    this.parentTable = null;
   }
 
   public View(String name, MaterializedTable parentTable, String owner) {
     super(name, owner);
-    this.rules = new HashMap<>();
-    this.parentTable = parentTable;
   }
 
   public DerivedTableMeta table() {
@@ -71,31 +61,11 @@ public class View extends DBObject {
     this.tableMeta = tableMeta;
   }
 
-  public Map<String, BooleanViewRule> rules() {
-    return Collections.unmodifiableMap(rules);
-  }
-
-  public void checkName(Ident ident) throws ModelException {
-    String name = ident.getString();
-    if (rules.containsKey(name)) {
-      throw new ModelException(String.format("Duplicate name in '%s': '%s'.", name(), name), ident);
-    }
-  }
-
-  public BooleanViewRule createRule(RuleDefinition ruleDefinition) throws ModelException {
-    checkName(ruleDefinition.getName());
-    return ruleDefinition.compile(this);
-  }
-
-  public void addRule(BooleanViewRule rule) {
-    rules.put(rule.getName(), rule);
-  }
-
   private static TableColumns groupByTable(ViewDefinition ref, View view, SeekableTableMeta seekableTableMeta)
       throws ModelException, IOException {
     ImmutableList<Expression> groupBy = ref.getSelect().getGroupBy().get();
     GroupByKey groupByKey = new GroupByKey(
-        "#" + groupBy.stream().map(c -> c.print()).collect(Collectors.joining("#")),
+        "#" + Expression.hash(groupBy),
         view,
         seekableTableMeta.tableMeta(),
         Select.groupByColumns(seekableTableMeta, groupBy));
@@ -132,15 +102,63 @@ public class View extends DBObject {
     }
   }
 
-  public DBObject dbObject() {
-    return parentTable != null ? parentTable : this;
-  }
+  public abstract DBObject dbObject();
 
   @Override
-  protected void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {  
+  protected void addReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {
   }
 
   @Override
   protected void removeReverseRuleDependency(Iterable<Ref> reverseForeignKeyChain, Rule rule) {
+  }
+
+  public static class TopLevelView extends View {
+
+    private final Map<String, BooleanViewRule> rules;
+
+    public TopLevelView(String name, String owner) {
+      super(name, owner);
+      this.rules = new HashMap<>();
+    }
+
+    public Map<String, BooleanViewRule> rules() {
+      return Collections.unmodifiableMap(rules);
+    }
+
+    public void checkName(Ident ident) throws ModelException {
+      String name = ident.getString();
+      if (rules.containsKey(name)) {
+        throw new ModelException(String.format("Duplicate name in '%s': '%s'.", name(), name), ident);
+      }
+    }
+
+    public BooleanViewRule createRule(RuleDefinition ruleDefinition) throws ModelException {
+      checkName(ruleDefinition.getName());
+      return ruleDefinition.compile(this);
+    }
+
+    public void addRule(BooleanViewRule rule) {
+      rules.put(rule.getName(), rule);
+    }
+
+    @Override
+    public DBObject dbObject() {
+      return this;
+    }
+  }
+
+  public static class SubView extends View {
+
+    private final MaterializedTable parentTable;
+
+    public SubView(String name, MaterializedTable parentTable, String owner) {
+      super(name, parentTable, owner);
+      this.parentTable = parentTable;
+    }
+
+    @Override
+    public DBObject dbObject() {
+      return parentTable;
+    }
   }
 }
