@@ -66,6 +66,7 @@ import com.cosyan.db.session.ILexer;
 import com.cosyan.db.session.IParser;
 import com.cosyan.db.session.IParser.ParserException;
 import com.cosyan.db.transaction.MetaResources;
+import com.cosyan.db.transaction.MetaResources.MetaResource;
 import com.cosyan.db.transaction.MetaResources.TableMetaResource;
 import com.cosyan.db.transaction.Resources;
 import com.cosyan.db.util.Util;
@@ -265,7 +266,7 @@ public class MetaRepo {
     return builder.build();
   }
 
-  private void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
+  private void checkAccess(MetaResource resource, AuthToken authToken) throws GrantException {
     grants.checkAccess(resource, authToken);
   }
 
@@ -315,7 +316,7 @@ public class MetaRepo {
     ImmutableMap.Builder<String, DBObject> metas = ImmutableMap.builder();
     for (TableMetaResource resource : metaResources.tables()) {
       if (resource.write()) {
-        MaterializedTable tableMeta = (MaterializedTable) resource.getObject();
+        MaterializedTable tableMeta = resource.getTable();
         writers.put(tableMeta.fullName(), new TableWriter(
             tableMeta,
             tableMeta.fileName(),
@@ -331,11 +332,10 @@ public class MetaRepo {
             tableMeta.reverseRuleDependencies(),
             tableMeta.primaryKey()));
       } else {
-        DBObject object = resource.getObject();
-        if (object instanceof MaterializedTable) {
-          readers.put(object.fullName(), ((MaterializedTable) object).createReader());
-        }
+        readers.put(resource.getTable().fullName(), resource.getTable().createReader());
       }
+    }
+    for (MetaResource resource : metaResources.objects()) {
       if (resource.isMeta()) {
         DBObject meta = resource.getObject();
         metas.put(meta.fullName(), meta);
@@ -453,7 +453,7 @@ public class MetaRepo {
       }
 
       @Override
-      public void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
+      public void checkAccess(MetaResource resource, AuthToken authToken) throws GrantException {
         MetaRepo.this.checkAccess(resource, authToken);
       }
 
@@ -566,7 +566,7 @@ public class MetaRepo {
       }
 
       @Override
-      public void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
+      public void checkAccess(MetaResource resource, AuthToken authToken) throws GrantException {
         MetaRepo.this.checkAccess(resource, authToken);
       }
 

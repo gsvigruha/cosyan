@@ -652,7 +652,7 @@ public class MaterializedTable extends DBObject {
   }
 
   public static MetaResources readResources(TransitiveTableDependency dependency) {
-    MetaResources readResources = MetaResources.readTable(dependency.table());
+    MetaResources readResources = MetaResources.readObject(dependency.object());
     for (TransitiveTableDependency childDep : dependency.childDeps()) {
       readResources = readResources.merge(readResources(childDep));
     }
@@ -720,7 +720,7 @@ public class MaterializedTable extends DBObject {
     new File(fileName()).delete();
   }
 
-  public SeekableTableReader createReader() throws IOException {
+  protected SeekableTableReader createReader() throws IOException {
     return new MaterializedTableReader(
         this,
         fileName(),

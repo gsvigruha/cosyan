@@ -26,7 +26,7 @@ import com.cosyan.db.meta.Grants.GrantToken;
 import com.cosyan.db.meta.Grants.Method;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.View.TopLevelView;
-import com.cosyan.db.transaction.MetaResources.TableMetaResource;
+import com.cosyan.db.transaction.MetaResources.MetaResource;
 
 public interface MetaWriter extends TableProvider {
 
@@ -56,7 +56,7 @@ public interface MetaWriter extends TableProvider {
 
   void createUser(String username, String password, AuthToken authToken) throws GrantException;
 
-  void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException;
+  void checkAccess(MetaResource resource, AuthToken authToken) throws GrantException;
 
   boolean hasAccess(MaterializedTable tableMeta, AuthToken authToken, Method method);
 

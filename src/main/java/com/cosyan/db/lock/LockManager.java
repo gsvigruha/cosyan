@@ -53,7 +53,7 @@ public class LockManager {
 
   public synchronized boolean tryLock(MetaResources metaResources) {
     List<Lock> locks = new ArrayList<>();
-    for (Resource resource : metaResources.all()) {
+    for (Resource resource : metaResources.resources()) {
       ReentrantReadWriteLock rwlock = lockMap.get(resource.getResourceId());
       assert rwlock != null : String.format("Invalid resource '%s'. Existing: %s.", resource.getResourceId(), lockMap.keySet());
       Lock lock;
@@ -76,7 +76,7 @@ public class LockManager {
   }
 
   public synchronized void unlock(MetaResources metaResources) {
-    for (Resource resource : metaResources.all()) {
+    for (Resource resource : metaResources.resources()) {
       ReentrantReadWriteLock lock = lockMap.get(resource.getResourceId());
       assert lock != null : String.format("Invalid resource '%s'. Existing: %s.", resource.getResourceId(), lockMap.keySet());
       if (resource.isWrite()) {

@@ -47,7 +47,7 @@ public class MetaResourcesTest extends UnitTestBase {
         .begin(parser.parseStatements(lexer.tokenize(sql)), metaRepo.config());
     MetaReader metaReader = metaRepo.metaRepoReadLock();
     try {
-      Iterable<Resource> ress = transaction.collectResources(metaReader, token).all();
+      Iterable<Resource> ress = transaction.collectResources(metaReader, token).resources();
       Map<String, Resource> map = new HashMap<>();
       for (Resource res : ress) {
         map.put(res.getResourceId(), res);

@@ -27,7 +27,7 @@ import com.cosyan.db.io.Indexes.IndexReader;
 import com.cosyan.db.meta.Grants.GrantException;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
-import com.cosyan.db.transaction.MetaResources.TableMetaResource;
+import com.cosyan.db.transaction.MetaResources.MetaResource;
 import com.google.common.collect.ImmutableMap;
 
 public interface MetaReader extends TableProvider {
@@ -46,7 +46,7 @@ public interface MetaReader extends TableProvider {
 
   List<MaterializedTable> getTables(AuthToken authToken);
 
-  void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException;
+  void checkAccess(MetaResource resource, AuthToken authToken) throws GrantException;
 
   IndexReader getIndex(String id) throws RuleException;
 }

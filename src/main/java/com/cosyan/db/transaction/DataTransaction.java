@@ -35,7 +35,7 @@ import com.cosyan.db.meta.MetaRepo;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.session.Session;
-import com.cosyan.db.transaction.MetaResources.TableMetaResource;
+import com.cosyan.db.transaction.MetaResources.MetaResource;
 import com.google.common.collect.ImmutableList;
 
 public class DataTransaction extends Transaction {
@@ -81,7 +81,7 @@ public class DataTransaction extends Transaction {
     MetaResources metaResources;
     try {
       metaResources = collectResources(metaReader, session.authToken());
-      for (TableMetaResource resource : metaResources.tables()) {
+      for (MetaResource resource : metaResources.objects()) {
         metaReader.checkAccess(resource, session.authToken());
       }
     } catch (ModelException | GrantException e) {

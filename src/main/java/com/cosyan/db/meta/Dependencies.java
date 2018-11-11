@@ -36,7 +36,7 @@ public class Dependencies {
 
   public static interface TransitiveTableDependency {
 
-    DBObject table();
+    DBObject object();
 
     Iterable<? extends TransitiveTableDependency> childDeps();
 
@@ -75,7 +75,7 @@ public class Dependencies {
     }
 
     @Override
-    public DBObject table() {
+    public DBObject object() {
       return ref.getRefTable();
     }
 
@@ -204,7 +204,7 @@ public class Dependencies {
     }
 
     @Override
-    public DBObject table() {
+    public DBObject object() {
       return key.getRefTable();
     }
 
