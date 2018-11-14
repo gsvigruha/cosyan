@@ -37,14 +37,19 @@ import com.cosyan.db.lang.expr.TableDefinition.TableWithOwnerDefinition;
 import com.cosyan.db.lang.expr.TableDefinition.ViewDefinition;
 import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo;
+import com.cosyan.db.meta.TableProvider;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.View;
+import com.cosyan.db.meta.View.TopLevelView;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
+import com.cosyan.db.model.DerivedTables.DerivedTableMeta;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.PrimaryKey;
 import com.cosyan.db.model.Rule;
 import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.Rule.BooleanViewRule;
 import com.cosyan.db.model.TableMeta;
 import com.cosyan.db.model.TableRef;
 import com.cosyan.db.session.ILexer;
@@ -76,6 +81,16 @@ public class MetaSerializer {
     obj.put("foreign_keys", table.foreignKeys().values().stream().map(fk -> toJSON(fk)).collect(Collectors.toList()));
     obj.put("refs", table.refs().values().stream().map(r -> toJSON(r)).collect(Collectors.toList()));
     obj.put("rules", table.rules().values().stream().map(r -> toJSON(r)).collect(Collectors.toList()));
+    return obj;
+  }
+
+  public JSONObject toJSON(TopLevelView view) {
+    JSONObject obj = new JSONObject();
+    obj.put("name", view.name());
+    obj.put("owner", view.owner());
+    obj.put("index", view.index());
+    obj.put("expr", view.expr());
+    obj.put("rules", view.rules().values().stream().map(r -> toJSON(r)).collect(Collectors.toList()));
     return obj;
   }
 
@@ -246,5 +261,47 @@ public class MetaSerializer {
       columns.add(column);
     }
     return columns;
+  }
+
+  public void loadViews(Config config, List<JSONObject> jsons, TableProvider tableProvider, Map<String, Map<String, TopLevelView>> views)
+      throws JSONException, IOException, ModelException, ParserException {
+    for (JSONObject json : jsons) {
+      String name = json.getString("name");
+      TopLevelView view = view(config, name, json, tableProvider);
+      if (!views.containsKey(view.owner())) {
+        views.put(view.owner(), new HashMap<>());
+      }
+      views.get(view.owner()).put(name, view);
+    }
+  }
+
+  public TopLevelView view(Config config, String viewName, JSONObject obj, TableProvider tableProvider)
+      throws JSONException, IOException, ModelException, ParserException {
+    String owner = obj.getString("owner");
+    TopLevelView view = new TopLevelView(
+        viewName,
+        owner,
+        obj.getInt("index"));
+    String expr = obj.getString("expr");
+    ViewDefinition ref = new ViewDefinition(
+        new Ident(viewName),
+        parser.parseSelect(lexer.tokenize(expr + ";")));
+    DerivedTableMeta tableMeta = View.createView(ref, view, tableProvider, owner);
+    view.setTable(tableMeta, expr);
+    return view;
+  }
+
+  public void loadRules(TopLevelView view, JSONObject obj)
+      throws JSONException, IOException, ModelException, ParserException {
+    JSONArray arr = obj.getJSONArray("rules");
+    for (int i = 0; i < arr.length(); i++) {
+      JSONObject ruleObj = arr.getJSONObject(i);
+      RuleDefinition ruleDefinition = new RuleDefinition(
+          new Ident(ruleObj.getString("name")),
+          parser.parseExpression(lexer.tokenizeExpression(ruleObj.getString("expr"))),
+          ruleObj.getBoolean("null_is_true"));
+      BooleanViewRule rule = view.createRule(ruleDefinition);
+      view.addRule(rule);
+    }
   }
 }
