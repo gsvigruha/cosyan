@@ -31,7 +31,7 @@ import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.session.Session;
-import com.cosyan.db.transaction.MetaResources.TableMetaResource;
+import com.cosyan.db.transaction.MetaResources.MetaResource;
 
 public class AlterTransaction extends Transaction {
 
@@ -50,7 +50,7 @@ public class AlterTransaction extends Transaction {
     try {
       try {
         metaResources = alterStatement.executeMeta(metaWriter, session.authToken());
-        for (TableMetaResource resource : metaResources.tables()) {
+        for (MetaResource resource : metaResources.objects()) {
           metaWriter.checkAccess(resource, session.authToken());
         }
       } catch (ModelException | GrantException | IOException e) {

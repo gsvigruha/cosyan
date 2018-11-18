@@ -25,7 +25,7 @@ import org.json.JSONObject;
 import com.cosyan.db.auth.AuthToken;
 import com.cosyan.db.auth.Authenticator.AuthException;
 import com.cosyan.db.auth.LocalUsers;
-import com.cosyan.db.transaction.MetaResources.TableMetaResource;
+import com.cosyan.db.transaction.MetaResources.MetaResource;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -202,7 +202,7 @@ public class Grants {
     return false;
   }
 
-  public void checkAccess(TableMetaResource resource, AuthToken authToken) throws GrantException {
+  public void checkAccess(MetaResource resource, AuthToken authToken) throws GrantException {
     DBObject object = resource.getObject();
     if (authToken.isAdmin() || authToken.username().equals(resource.getObject().owner())) {
       return;

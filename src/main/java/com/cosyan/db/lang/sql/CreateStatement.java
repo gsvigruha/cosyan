@@ -230,9 +230,9 @@ public class CreateStatement {
       if (metaRepo.hasTable(name.getString(), authToken.username())) {
         throw new ModelException(String.format("Table or view '%s.%s' already exists.", authToken.username(), name), name);
       }
-      TopLevelView view = new TopLevelView(viewDefinition.getName().getString(), authToken.username());
+      TopLevelView view = new TopLevelView(viewDefinition.getName().getString(), authToken.username(), metaRepo.maxRefIndex());
       DerivedTableMeta tableMeta = View.createView(viewDefinition, view, metaRepo, authToken.username());
-      view.setTable(tableMeta);
+      view.setTable(tableMeta, viewDefinition.getSelect().print());
       metaRepo.registerView(view);
       return Result.META_OK;
     }

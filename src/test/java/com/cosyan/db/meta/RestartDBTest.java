@@ -37,6 +37,7 @@ import com.cosyan.db.lang.transaction.Result.CrashResult;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.lang.transaction.Result.TransactionResult;
+import com.cosyan.db.meta.View.TopLevelView;
 import com.cosyan.db.session.Session;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -347,6 +348,36 @@ public class RestartDBTest {
     {
       MaterializedTable t20 = dbApi.getMetaRepo().table("admin", "t20");
       assertEquals("select (fk1.b + 1) as x, (fk1.b + 2) as y from t20 ;", t20.refs().get("s").getExpr());
+    }
+  }
+
+  @Test
+  public void testViews() throws Exception {
+    DBApi dbApi = new DBApi(config);
+    dbApi.newAdminSession().execute("create table t21(a integer, b integer);");
+    dbApi.newAdminSession().execute("create view v22 as select b, sum(a) as a from t21 group by b;");
+    dbApi.newAdminSession().execute("alter view v22 add constraint c_1 check(a < 5);");
+    dbApi.newAdminSession().execute("insert into t21 values (1, 1), (1, 1);");
+
+    {
+      TopLevelView v22 = dbApi.getMetaRepo().view("admin", "v22");
+      assertEquals("admin.v22", v22.fullName());
+      QueryResult r = query("select * from v22;", dbApi.newAdminSession());
+      assertArrayEquals(new Object[] { 1L, 2L }, r.getValues().get(0));
+      assertEquals("(a < 5)", v22.rules().get("c_1").getExpr().print());
+      ErrorResult e = (ErrorResult) dbApi.newAdminSession().execute("insert into t21 values (3, 1);");
+      assertEquals("Referencing constraint check v22.c_1 failed.", e.getError().getMessage());
+    }
+
+    dbApi = new DBApi(config);
+    {
+      TopLevelView v22 = dbApi.getMetaRepo().view("admin", "v22");
+      assertEquals("admin.v22", v22.fullName());
+      QueryResult r = query("select * from v22;", dbApi.newAdminSession());
+      assertArrayEquals(new Object[] { 1L, 2L }, r.getValues().get(0));
+      assertEquals("(a < 5)", v22.rules().get("c_1").getExpr().print());
+      ErrorResult e = (ErrorResult) dbApi.newAdminSession().execute("insert into t21 values (3, 1);");
+      assertEquals("Referencing constraint check v22.c_1 failed.", e.getError().getMessage());
     }
   }
 }

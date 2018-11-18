@@ -22,6 +22,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 
 public class Util {
 
@@ -59,6 +60,18 @@ public class Util {
       }
     }
     return ImmutableMap.copyOf(merged);
+  }
+
+  public static <K, V> ImmutableMap<K, V> filter(
+      ImmutableMap<K, V> map,
+      Function<? super V, Boolean> filterFunction) {
+    Builder<K, V> filtered = ImmutableMap.builder();
+    for (Map.Entry<K, V> entry : map.entrySet()) {
+      if (filterFunction.apply(entry.getValue())) {
+        filtered.put(entry.getKey(), entry.getValue());
+      }
+    }
+    return filtered.build();
   }
 
   @FunctionalInterface

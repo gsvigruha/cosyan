@@ -15,6 +15,8 @@
  */
 package com.cosyan.db.lang.sql;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Random;
 
 import org.junit.Test;
@@ -64,5 +66,25 @@ public class SelectStatementPerformanceTest extends UnitTestBase {
     }
     t = System.currentTimeMillis() - t;
     System.out.println("Records without index queried in " + t + " " + speed(t, N));
+  }
+
+  @Test
+  public void testSelectWithLookups() {
+    final int N = 100000;
+    final int K = 10;
+    execute("create table t3 (a varchar, b integer, c float, d integer, e float, constraint pk_a primary key (a));");
+    execute("create table t4 (a varchar, constraint fk_a foreign key (a) references t3(a));");
+    for (int i = 0; i < K; i++) {
+      execute("insert into t3 values ('abc" + i + "', " + (i % 2) + " ," + (i % 3) + ".0 ," + (i % 5) + " ," + (i % 7) + ".0);");
+    }
+    for (int i = 0; i < N; i++) {
+      execute("insert into t4 values ('abc" + (i % K) + "');");
+    }
+    long t = System.currentTimeMillis();
+    t = System.currentTimeMillis();
+    QueryResult result = query("select sum(fk_a.b * fk_a.c + fk_a.d * fk_a.e) from t4;");
+    assertEquals(580000.0, result.getValues().get(0)[0]);
+    t = System.currentTimeMillis() - t;
+    System.out.println("Records aggregated in " + t + " " + speed(t, N));
   }
 }

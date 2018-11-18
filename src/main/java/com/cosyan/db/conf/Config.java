@@ -75,6 +75,14 @@ public class Config {
     return props.getProperty(DATA_DIR) + File.separator + "meta";
   }
 
+  public String metaTableDir() {
+    return metaDir() + File.separator + "tables";
+  }
+
+  public String metaViewDir() {
+    return metaDir() + File.separator + "views";
+  }
+
   public String tableDir() {
     return props.getProperty(DATA_DIR) + File.separator + "table";
   }

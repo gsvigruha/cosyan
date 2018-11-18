@@ -44,6 +44,7 @@ import com.google.common.collect.ImmutableList;
 public abstract class View extends DBObject {
 
   private DerivedTableMeta tableMeta;
+  private transient String expr;
 
   public View(String name, String owner) {
     super(name, owner);
@@ -57,8 +58,13 @@ public abstract class View extends DBObject {
     return tableMeta;
   }
 
-  public void setTable(DerivedTableMeta tableMeta) {
+  public String expr() {
+    return expr;
+  }
+
+  public void setTable(DerivedTableMeta tableMeta, String expr) {
     this.tableMeta = tableMeta;
+    this.expr = expr;
   }
 
   private static TableColumns groupByTable(ViewDefinition ref, View view, SeekableTableMeta seekableTableMeta)
@@ -115,14 +121,20 @@ public abstract class View extends DBObject {
   public static class TopLevelView extends View {
 
     private final Map<String, BooleanViewRule> rules;
+    private final int index;
 
-    public TopLevelView(String name, String owner) {
+    public TopLevelView(String name, String owner, int index) {
       super(name, owner);
       this.rules = new HashMap<>();
+      this.index = index;
     }
 
     public Map<String, BooleanViewRule> rules() {
       return Collections.unmodifiableMap(rules);
+    }
+
+    public int index() {
+      return index;
     }
 
     public void checkName(Ident ident) throws ModelException {
