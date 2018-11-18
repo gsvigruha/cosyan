@@ -273,6 +273,14 @@ public class MetaSerializer {
       }
       views.get(view.owner()).put(name, view);
     }
+    for (JSONObject json : jsons) {
+      loadRules(views.get(json.get("owner")).get(json.get("name")), json);
+    }
+    for (TopLevelView view : MetaRepo.allTables(views)) {
+      for (BooleanViewRule rule : view.rules().values()) {
+        rule.getDeps().forAllReverseRuleDependencies(rule, /* add= */true);
+      }
+    }
   }
 
   public TopLevelView view(Config config, String viewName, JSONObject obj, TableProvider tableProvider)

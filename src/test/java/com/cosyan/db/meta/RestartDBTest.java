@@ -356,6 +356,7 @@ public class RestartDBTest {
     DBApi dbApi = new DBApi(config);
     dbApi.newAdminSession().execute("create table t21(a integer, b integer);");
     dbApi.newAdminSession().execute("create view v22 as select b, sum(a) as a from t21 group by b;");
+    dbApi.newAdminSession().execute("alter view v22 add constraint c_1 check(a < 5);");
     dbApi.newAdminSession().execute("insert into t21 values (1, 1), (1, 1);");
 
     {
@@ -363,6 +364,9 @@ public class RestartDBTest {
       assertEquals("admin.v22", v22.fullName());
       QueryResult r = query("select * from v22;", dbApi.newAdminSession());
       assertArrayEquals(new Object[] { 1L, 2L }, r.getValues().get(0));
+      assertEquals("(a < 5)", v22.rules().get("c_1").getExpr().print());
+      ErrorResult e = (ErrorResult) dbApi.newAdminSession().execute("insert into t21 values (3, 1);");
+      assertEquals("Referencing constraint check v22.c_1 failed.", e.getError().getMessage());
     }
 
     dbApi = new DBApi(config);
@@ -371,6 +375,9 @@ public class RestartDBTest {
       assertEquals("admin.v22", v22.fullName());
       QueryResult r = query("select * from v22;", dbApi.newAdminSession());
       assertArrayEquals(new Object[] { 1L, 2L }, r.getValues().get(0));
+      assertEquals("(a < 5)", v22.rules().get("c_1").getExpr().print());
+      ErrorResult e = (ErrorResult) dbApi.newAdminSession().execute("insert into t21 values (3, 1);");
+      assertEquals("Referencing constraint check v22.c_1 failed.", e.getError().getMessage());
     }
   }
 }

@@ -61,8 +61,8 @@ public class BackupManager {
       ZipOutputStream stream = new ZipOutputStream(
           Files.newOutputStream(Paths.get(config.backupDir() + File.separator + name)));
       try {
-        backupDir(config.metaDir() + File.separator + "tables", "meta" + File.separator + "tables", stream);
-        backupDir(config.metaDir() + File.separator + "views", "meta" + File.separator + "views", stream);
+        backupDir(config.metaTableDir(), "meta" + File.separator + "tables", stream);
+        backupDir(config.metaViewDir(), "meta" + File.separator + "views", stream);
         backupDir(config.tableDir(), "table", stream);
         backupDir(config.indexDir(), "index", stream);
         backupFile(config.usersFile(), "users", stream);
@@ -86,8 +86,8 @@ public class BackupManager {
       Files.createDirectories(Paths.get(config.tableDir()));
       Files.createDirectories(Paths.get(config.indexDir()));
       Files.createDirectories(Paths.get(config.metaDir()));
-      Files.createDirectories(Paths.get(config.metaDir() + File.separator + "tables"));
-      Files.createDirectories(Paths.get(config.metaDir() + File.separator + "views"));
+      Files.createDirectories(Paths.get(config.metaTableDir()));
+      Files.createDirectories(Paths.get(config.metaViewDir()));
 
       ZipInputStream stream = new ZipInputStream(
           Files.newInputStream(Paths.get(config.backupDir() + File.separator + name)));

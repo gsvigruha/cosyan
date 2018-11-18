@@ -293,9 +293,10 @@ public class MetaResources {
     return new MetaResources(ImmutableMap.of());
   }
 
-  public Iterable<Resource> resources() {
+  public Iterable<Resource> lockResources() {
+    ImmutableMap<String, MetaResource> tables = Util.filter(objects, r -> r instanceof TableMetaResource);
     return Util.merge(
-        Util.mapValues(objects, MetaResource::resources).values(),
+        Util.mapValues(tables, MetaResource::resources).values(),
         Resource::merge).values();
   }
 }

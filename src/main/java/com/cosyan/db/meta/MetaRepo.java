@@ -103,8 +103,8 @@ public class MetaRepo {
     Files.createDirectories(Paths.get(config.indexDir()));
     Files.createDirectories(Paths.get(config.journalDir()));
     Files.createDirectories(Paths.get(config.metaDir()));
-    Files.createDirectories(Paths.get(config.metaDir() + File.separator + "tables"));
-    Files.createDirectories(Paths.get(config.metaDir() + File.separator + "views"));
+    Files.createDirectories(Paths.get(config.metaTableDir()));
+    Files.createDirectories(Paths.get(config.metaViewDir()));
 
     readTables();
   }
@@ -145,14 +145,14 @@ public class MetaRepo {
     for (MaterializedTable table : allTables()) {
       JSONObject obj = metaSerializer.toJSON(table);
       FileUtils.writeStringToFile(
-          new File(config.metaDir() + File.separator + "tables" + File.separator + table.fullName()),
+          new File(config.metaTableDir() + File.separator + table.fullName()),
           obj.toString(),
           Charset.defaultCharset());
     }
     for (TopLevelView view : allViews()) {
       JSONObject obj = metaSerializer.toJSON(view);
       FileUtils.writeStringToFile(
-          new File(config.metaDir() + File.separator + "views" + File.separator + view.fullName()),
+          new File(config.metaViewDir() + File.separator + view.fullName()),
           obj.toString(),
           Charset.defaultCharset());
     }
@@ -170,7 +170,7 @@ public class MetaRepo {
       List<JSONObject> tableJsons = new ArrayList<>();
       for (String fileName : tables.list()) {
         JSONObject json = new JSONObject(FileUtils.readFileToString(
-            new File(config.metaDir() + File.separator + "tables" + File.separator + fileName),
+            new File(config.metaTableDir() + File.separator + fileName),
             Charset.defaultCharset()));
         tableJsons.add(json);
       }
@@ -178,7 +178,7 @@ public class MetaRepo {
       List<JSONObject> viewJsons = new ArrayList<>();
       for (String fileName : views.list()) {
         JSONObject json = new JSONObject(FileUtils.readFileToString(
-            new File(config.metaDir() + File.separator + "views" + File.separator + fileName),
+            new File(config.metaViewDir() + File.separator + fileName),
             Charset.defaultCharset()));
         viewJsons.add(json);
       }
@@ -562,7 +562,6 @@ public class MetaRepo {
           views.put(view.owner(), new HashMap<>());
         }
         views.get(view.owner()).put(view.name(), view);
-        lockManager.registerLock(view);
       }
 
       @Override
