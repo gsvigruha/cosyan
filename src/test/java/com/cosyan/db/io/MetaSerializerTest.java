@@ -23,11 +23,13 @@ import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.sql.Lexer;
 import com.cosyan.db.lang.sql.Parser;
 import com.cosyan.db.meta.MetaRepo.ModelException;
+import com.cosyan.db.meta.View.TopLevelView;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.DataTypes;
 import com.cosyan.db.model.Ident;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Rule.BooleanRule;
+import com.cosyan.db.model.Rule.BooleanViewRule;
 import com.cosyan.db.model.TableRef;
 import com.google.common.collect.ImmutableList;
 
@@ -76,6 +78,25 @@ public class MetaSerializerTest extends UnitTestBase {
     execute("create table t5 (a integer, constraint c_1 check (a > 0));");
     BooleanRule rule = metaRepo.table("admin", "t5").rules().get("c_1");
     assertEquals("{\"name\":\"c_1\",\"null_is_true\":true,\"expr\":\"(a > 0)\"}",
+        serializer.toJSON(rule).toString());
+  }
+
+  @Test
+  public void testView() throws ModelException {
+    execute("create table t6 (a integer);");
+    execute("create view v7 as select count(1) as c from t6 group by a;");
+    TopLevelView view = metaRepo.view("admin", "v7");
+    assertEquals("{\"owner\":\"admin\",\"name\":\"v7\",\"index\":1,\"expr\":\"select count(1) as c from t6 group by a \",\"rules\":[]}",
+        serializer.toJSON(view).toString());
+  }
+
+  @Test
+  public void testViewRule() throws ModelException {
+    execute("create table t8 (a integer);");
+    execute("create view v9 as select count(1) as c from t8 group by a;");
+    execute("alter view v9 add constraint c_1 check(c < 10);");
+    BooleanViewRule rule = metaRepo.view("admin", "v9").rules().get("c_1");
+    assertEquals("{\"name\":\"c_1\",\"null_is_true\":true,\"expr\":\"(c < 10)\"}",
         serializer.toJSON(rule).toString());
   }
 }
