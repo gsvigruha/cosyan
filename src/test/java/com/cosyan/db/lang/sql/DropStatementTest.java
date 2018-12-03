@@ -80,4 +80,13 @@ public class DropStatementTest extends UnitTestBase {
       assertEquals("[14, 15]: Column 'c' not found in table 'admin.t6'.", e.getError().getMessage());
     }
   }
+
+  @Test
+  public void testDropView() throws Exception {
+    execute("create table t7 (a integer, b varchar);");
+    execute("create view v8 as select sum(a) as sa, b from t7 group by b;");
+    assertEquals("admin.v8", metaRepo.view("admin", "v8").fullName());
+    execute("drop view v8;");
+    assertFalse(metaRepo.hasView("admin", "v8"));
+  }
 }

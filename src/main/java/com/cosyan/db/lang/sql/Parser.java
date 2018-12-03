@@ -59,6 +59,7 @@ import com.cosyan.db.lang.sql.CreateStatement.CreateView;
 import com.cosyan.db.lang.sql.DeleteStatement.Delete;
 import com.cosyan.db.lang.sql.DropStatement.DropIndex;
 import com.cosyan.db.lang.sql.DropStatement.DropTable;
+import com.cosyan.db.lang.sql.DropStatement.DropView;
 import com.cosyan.db.lang.sql.GrantStatement.Grant;
 import com.cosyan.db.lang.sql.InsertIntoStatement.InsertInto;
 import com.cosyan.db.lang.sql.SelectStatement.AsExpression;
@@ -371,10 +372,13 @@ public class Parser implements IParser {
 
   private MetaStatement parseDrop(PeekingIterator<Token> tokens) throws ParserException {
     assertNext(tokens, Tokens.DROP);
-    assertPeek(tokens, Tokens.TABLE, Tokens.INDEX);
+    assertPeek(tokens, Tokens.TABLE, Tokens.INDEX, Tokens.VIEW);
     if (tokens.peek().is(Tokens.TABLE)) {
       tokens.next();
       return new DropTable(parseTableWithOwner(tokens));
+    } else if (tokens.peek().is(Tokens.VIEW)){
+      tokens.next();
+      return new DropView(parseTableWithOwner(tokens));
     } else {
       assertNext(tokens, Tokens.INDEX);
       TableColumnDefinition tableColumn = parseTableColumn(tokens);

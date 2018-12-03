@@ -269,6 +269,14 @@ public class MetaRepo {
     return tables.get(owner).containsKey(tableName);
   }
 
+  @VisibleForTesting
+  public boolean hasView(String tableName, String owner) {
+    if (!views.containsKey(owner)) {
+      return false;
+    }
+    return views.get(owner).containsKey(tableName);
+  }
+
   private List<MaterializedTable> getTables(AuthToken authToken) {
     return allTables()
         .stream()
@@ -570,6 +578,12 @@ public class MetaRepo {
         tables.get(tableMeta.owner()).remove(tableMeta.name());
         tableMeta.drop();
         lockManager.removeLock(tableMeta);
+      }
+
+      @Override
+      public void dropView(TopLevelView view, AuthToken authToken) throws IOException, GrantException {
+        grants.checkOwner(view, authToken);
+        views.get(view.owner()).remove(view.name());
       }
 
       @Override
