@@ -8,6 +8,7 @@ import com.cosyan.db.UnitTestBase;
 import com.cosyan.db.lang.transaction.Result.ErrorResult;
 import com.cosyan.db.lang.transaction.Result.QueryResult;
 import com.cosyan.db.meta.View;
+import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaRepo.RuleException;
 import com.google.common.collect.ImmutableList;
 
@@ -96,5 +97,13 @@ public class CreateViewTest extends UnitTestBase {
     execute("alter view v5 add constraint c_1 check(b < 8);");
     ErrorResult e1 = error("update t5 set b=3 where a=0;");
     assertError(RuleException.class, "Referencing constraint check v5.c_1 failed.", e1);
+  }
+
+  @Test
+  public void testViewInView() throws Exception {
+    execute("create table t7 (a integer);");
+    execute("create view v8 as select a + 1 as b from t7;");
+    ErrorResult e = error("create view v9 as select b + 1 as c from v8;");
+    assertError(ModelException.class, "[12, 14]: Unsupported table 'v8' for view.", e);
   }
 }

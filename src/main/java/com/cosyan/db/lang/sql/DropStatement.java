@@ -27,6 +27,7 @@ import com.cosyan.db.meta.MaterializedTable;
 import com.cosyan.db.meta.MetaRepo.ModelException;
 import com.cosyan.db.meta.MetaWriter;
 import com.cosyan.db.meta.TableProvider.TableWithOwner;
+import com.cosyan.db.meta.View.TopLevelView;
 import com.cosyan.db.model.BasicColumn;
 import com.cosyan.db.model.Keys.ForeignKey;
 import com.cosyan.db.model.Keys.ReverseForeignKey;
@@ -84,6 +85,22 @@ public class DropStatement {
             tableMeta.fullName(), basicColumn.getName()), tableColumn.getColumn());
       }
       tableMeta.dropIndex(basicColumn);
+      return Result.META_OK;
+    }
+  }
+
+  @Data
+  @EqualsAndHashCode(callSuper = true)
+  public static class DropView extends GlobalStatement {
+    private final TableWithOwnerDefinition table;
+
+    private TableWithOwner tableWithOwner;
+
+    @Override
+    public Result execute(MetaWriter metaRepo, AuthToken authToken) throws ModelException, IOException, GrantException {
+      tableWithOwner = table.resolve(authToken);
+      TopLevelView view = metaRepo.view(tableWithOwner, authToken);
+      metaRepo.dropView(view, authToken);
       return Result.META_OK;
     }
   }

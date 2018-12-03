@@ -44,6 +44,8 @@ public interface MetaWriter extends TableProvider {
 
   void dropTable(MaterializedTable tableMeta, AuthToken authToken) throws IOException, GrantException;
 
+  void dropView(TopLevelView view, AuthToken authToken) throws IOException, GrantException;
+
   MaterializedTable table(TableWithOwner table, AuthToken authToken) throws ModelException, GrantException;
 
   TopLevelView view(TableWithOwner tableWithOwner, AuthToken authToken) throws ModelException, GrantException;
